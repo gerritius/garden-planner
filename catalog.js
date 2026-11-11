@@ -115,3 +115,62 @@ for (const c of CATALOG) { const x = CROP_EXTRA[c.id] || ['other', []]; c.family
 // Fertiliser / amendment units. A handful (一握り) of granular fertiliser is roughly 30 g.
 const UNITS = ['g', 'handful', 'mL', 'L'];
 const HANDFUL_G = 30;
+
+// germ: days to emerge in warm soil [min, max] (slower in cold months — see germWindow)
+// win: days the crop stays good after the earliest harvest date; late: what happens if left; cont: picked over a long season
+// jobs: suggested jobs [title, days after sowing/planting, repeat every N (0 = once), per]
+const NET = ['Cover with insect netting (防虫ネット)', 0];
+const CROP_CARE = {
+  nasu: { win: 90, cont: 1, late: 'fruit goes seedy and dull', jobs: [['Put in stake / support (支柱)', 0], ['Remove side shoots below first flower (わき芽かき)', 14], ['Tie stems to support (誘引)', 14, 2, 'week'], ['Summer prune for autumn crop (更新剪定)', 90]] },
+  celery: { win: 30, late: 'stalks get stringy and hollow', jobs: [['Side-dress (追肥)', 21, 3, 'week']] },
+  potato: { germ: [20, 30], win: 21, late: 'skins split, pests get in', jobs: [['Remove extra stems, keep 2–3 (芽かき)', 25], ['Earth up (土寄せ)', 30], ['Earth up again (土寄せ)', 50]] },
+  minitomato: { win: 90, cont: 1, late: 'fruit splits after rain', jobs: [['Put in stake / support (支柱)', 0], ['Remove side shoots (わき芽かき)', 14, 1, 'week'], ['Tie stems to support (誘引)', 14, 1, 'week']] },
+  tomato: { win: 90, cont: 1, late: 'fruit splits after rain', jobs: [['Put in stake / support (支柱)', 0], ['Remove side shoots (わき芽かき)', 14, 1, 'week'], ['Tie stems to support (誘引)', 14, 1, 'week']] },
+  naganegi: { win: 60, late: 'flower stalks form (ねぎ坊主)', jobs: [['Earth up (土寄せ)', 30, 4, 'week']] },
+  hatamanegi: { win: 30, late: 'bulbs swell and leaves fall over', jobs: [['Side-dress (追肥)', 60]] },
+  carrot: { germ: [7, 14], win: 30, late: 'roots crack and go woody', jobs: [['Keep soil moist until seedlings are up', 0, 1, 'day'], ['Earth up around shoulders (土寄せ)', 40]] },
+  komatsuna: { germ: [2, 4], win: 12, late: 'leaves get tough and it bolts', jobs: [NET] },
+  edamame: { germ: [5, 8], win: 5, late: 'beans harden and lose sweetness', jobs: [['Net against birds until up', 0], ['Earth up (土寄せ)', 20]] },
+  hakusai: { germ: [2, 4], win: 40, late: 'heads crack or bolt in spring', jobs: [NET, ['Side-dress & earth up (追肥・土寄せ)', 30], ['Tie up outer leaves for frost (頭を縛る)', 75]] },
+  daikon: { germ: [2, 4], win: 20, late: 'roots go pithy (す入り)', jobs: [NET, ['Earth up after thinning (土寄せ)', 28]] },
+  hatsuka: { germ: [2, 4], win: 7, late: 'roots go pithy and split', jobs: [NET] },
+  cabbage: { win: 21, late: 'heads split open', jobs: [NET, ['Side-dress & earth up (追肥・土寄せ)', 21], ['Side-dress again (追肥)', 45]] },
+  spinach: { germ: [5, 10], win: 14, late: 'bolts as days lengthen', jobs: [] },
+  kabu: { germ: [2, 4], win: 10, late: 'roots crack and go pithy', jobs: [NET] },
+  piman: { win: 100, cont: 1, late: 'fruit turns red and plant slows', jobs: [['Put in stake / support (支柱)', 0], ['Remove side shoots below first flower (わき芽かき)', 14]] },
+  chilli: { win: 100, cont: 1, late: 'pods shrivel on the plant', jobs: [['Put in stake / support (支柱)', 0], ['Remove side shoots below first flower (わき芽かき)', 14]] },
+  snappea: { germ: [7, 12], win: 30, cont: 1, late: 'pods get stringy', jobs: [['Put up net / trellis (ネット)', 25], ['Side-dress in spring (追肥)', 120]] },
+  kyuri: { win: 50, cont: 1, late: 'fruit gets huge and seedy', jobs: [['Put up net / trellis (ネット)', 0], ['Remove side shoots up to 5th leaf (わき芽かき)', 14], ['Tie in vines (誘引)', 14, 1, 'week']] },
+  onion: { win: 21, late: 'bulbs rot if left in wet soil', jobs: [['Side-dress (追肥)', 60], ['Final side-dress (止め肥)', 110]] },
+  lettuce: { win: 14, late: 'bolts and turns bitter', jobs: [] },
+  broccoli: { win: 7, late: 'heads flower (yellow buds)', jobs: [NET, ['Side-dress & earth up (追肥・土寄せ)', 21], ['Pick side shoots after main head', 80]] },
+  satoimo: { germ: [30, 45], win: 30, late: 'tubers damaged by frost', jobs: [['Earth up (土寄せ)', 60], ['Mulch with straw for summer (敷きわら)', 70]] },
+  satsumaimo: { win: 30, late: 'tubers damaged by cold below 10°', jobs: [['Lift vines to stop rooting (つる返し)', 60]] },
+  shungiku: { germ: [4, 7], win: 21, cont: 1, late: 'flowers form and leaves toughen', jobs: [['Pinch out tip for side shoots (摘心)', 40]] },
+  mizuna: { germ: [2, 4], win: 14, late: 'stems get tough', jobs: [NET] },
+  zucchini: { win: 60, cont: 1, late: 'fruit becomes marrows', jobs: [['Start hand-pollinating female flowers (人工授粉)', 30]] },
+  corn: { germ: [5, 8], win: 4, late: 'kernels turn starchy', jobs: [['Net against birds until up', 0], ['Side-dress & earth up (追肥・土寄せ)', 30], ['Remove extra cobs, keep the top one (除房)', 60]] },
+  ingen: { germ: [5, 8], win: 30, cont: 1, late: 'pods get stringy and lumpy', jobs: [['Earth up (土寄せ)', 20]] },
+  chingensai: { germ: [2, 4], win: 10, late: 'bolts and base gets tough', jobs: [NET] },
+  garlic: { win: 14, late: 'bulbs split and skins rot', jobs: [['Side-dress (追肥)', 90], ['Remove flower stalk (芽摘み)', 180]] },
+  shishito: { win: 100, cont: 1, late: 'fruit turns hot and red', jobs: [['Put in stake / support (支柱)', 0], ['Remove side shoots below first flower (わき芽かき)', 14]] },
+  sayaendo: { germ: [7, 12], win: 30, cont: 1, late: 'pods get stringy', jobs: [['Put up net / trellis (ネット)', 25], ['Side-dress in spring (追肥)', 120]] },
+  soramame: { germ: [10, 14], win: 10, late: 'beans turn hard and black-eyed', jobs: [['Pinch out tips once pods set (摘心)', 150], ['Check for aphids (アブラムシ)', 140]] },
+  cauliflower: { win: 7, late: 'curds loosen and discolour', jobs: [NET, ['Side-dress & earth up (追肥・土寄せ)', 21], ['Fold leaves over curd (軟白)', 70]] },
+  strawberry: { win: 30, cont: 1, late: 'fruit rots on the plant', jobs: [['Remove runners (ランナー)', 14, 2, 'week'], ['Lay straw / mulch (敷きわら)', 150]] },
+  nanohana: { germ: [3, 5], win: 21, cont: 1, late: 'buds open into flowers', jobs: [['Pick tips to encourage side shoots', 100]] },
+};
+for (const c of CATALOG) Object.assign(c, CROP_CARE[c.id] || {});
+
+// Ready-made jobs for the "add job" picker.
+const JOB_TEMPLATES = [
+  ['Protect', ['Cover with insect netting (防虫ネット)', 'Cover with fleece / row cover (不織布)', 'Frost cover tonight', 'Bird netting', 'Remove covers']],
+  ['Support', ['Put in stake / support (支柱)', 'Tie stems to support (誘引)', 'Put up net / trellis (ネット)']],
+  ['Soil', ['Earth up (土寄せ)', 'Lay mulch film (マルチ)', 'Straw mulch (敷きわら)', 'Weed', 'Loosen soil (中耕)']],
+  ['Feed & water', ['Side-dress (追肥)', 'Liquid feed (液肥)', 'Deep water']],
+  ['Plant care', ['Remove side shoots (わき芽かき)', 'Pinch out tip (摘心)', 'Remove lower / yellow leaves', 'Hand-pollinate (人工授粉)', 'Remove flowers / runners', 'Thin seedlings (間引き)']],
+  ['Check', ['Check for pests', 'Check for disease', 'Check soil moisture']],
+];
+const PESTS = [['aphids', 'Aphids', 'アブラムシ'], ['caterpillars', 'Caterpillars', '青虫・ヨトウムシ'], ['slugs', 'Slugs / snails', 'ナメクジ'], ['fleabeetle', 'Flea beetles', 'キスジノミハムシ'],
+  ['leafminer', 'Leaf miners', 'ハモグリバエ'], ['cutworm', 'Cutworms', 'ネキリムシ'], ['stinkbug', 'Stink bugs', 'カメムシ'], ['ladybird28', '28-spot ladybird', 'テントウムシダマシ'],
+  ['powdery', 'Powdery mildew', 'うどんこ病'], ['downy', 'Downy mildew', 'べと病'], ['rot', 'Rot / wilt', '軟腐病・萎凋'], ['birds', 'Birds', '鳥'], ['other', 'Other problem', 'その他']];

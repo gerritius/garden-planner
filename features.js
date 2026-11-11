@@ -71,29 +71,15 @@ const dayN = (p, date) => p.sowDate ? daysBetween(p.sowDate, date) : null;
 function diarySection(p) {
   const ds = (p.diary || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
   return `<section><h3>Photo diary</h3><div class="diary">
-    <label class="dthumb add"><span>＋<br>Add photo</span><input type="file" accept="image/*" id="diaryIn" hidden></label>
-    ${ds.map(d => { const n = dayN(p, d.date); return `<a class="dthumb ph" href="#/plant/${p.id}/diary/${d.id}"><img data-photo="${d.photo}" alt=""><span>${shortDate(d.date)}${n != null && n >= 0 ? ` · day ${n}` : ''}</span></a>`; }).join('')}
+    <label class="dthumb add"><span>＋<br>Photo</span><input type="file" accept="image/*" id="diaryIn" hidden></label>
+    <button type="button" class="dthumb add" data-act="diaryNote"><span>＋<br>Note / pest</span></button>
+    ${ds.map(d => { const n = dayN(p, d.date); return `<a class="dthumb ph${d.photo ? '' : ' txt'}" href="#/plant/${p.id}/diary/${d.id}">${d.photo ? `<img data-photo="${d.photo}" alt="">` : `<em>${esc(d.note || (d.tags || []).map(pestName).join(', '))}</em>`}${(d.tags || []).length ? '<i class="pestdot">🐛</i>' : ''}<span>${shortDate(d.date)}${n != null && n >= 0 ? ` · day ${n}` : ''}</span></a>`; }).join('')}
   </div></section>`;
 }
 function diaryAfter(p) {
+  A.diaryNote = () => diaryEntryDialog(p, null);
   const inp = $('#diaryIn'); if (!inp) return;
-  inp.addEventListener('change', async () => {
-    const f = inp.files[0]; if (!f) return;
-    const blob = await compress(f), url = URL.createObjectURL(blob);
-    const guess = f.lastModified ? iso(new Date(f.lastModified)) : todayStr();
-    modal(`<h3>Add to photo diary</h3><img class="dprev" src="${url}" alt="">
-      <form id="df" class="form"><label>Date<input type="date" name="date" value="${guess > todayStr() ? todayStr() : guess}"></label>
-      <label>Note<textarea name="note" rows="2" placeholder="e.g. first true leaves, aphids on undersides…"></textarea></label>
-      <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>`, (m, close) => {
-      m.querySelector('[data-x=no]').onclick = close;
-      m.querySelector('#df').onsubmit = async e => {
-        e.preventDefault();
-        const id = uid(); await DB.putPhoto(id, blob);
-        (p.diary = p.diary || []).push({ id: uid(), date: e.target.date.value || todayStr(), photo: id, note: e.target.note.value.trim() });
-        await save(); close(); render();
-      };
-    });
-  });
+  inp.addEventListener('change', () => addDiaryFromFile(p, inp.files[0]));
 }
 function pageDiary(p, eid) {
   if (!p) return { html: notFound() };
@@ -102,18 +88,18 @@ function pageDiary(p, eid) {
   if (!d) return { html: notFound() };
   setChrome('Photo diary', { back: true, kicker: crop(p.cropId).en + (p.variety ? ' · ' + p.variety : '') });
   const n = dayN(p, d.date);
-  A.saveDiary = async () => { const f = $('#def'); d.date = f.date.value || d.date; d.note = f.note.value.trim(); await save(); history.back(); };
+  A.saveDiary = async () => { const f = $('#def'); d.date = f.date.value || d.date; d.note = f.note.value.trim(); d.tags = readPests(f); await save(); history.back(); };
   A.delDiary = async () => {
     if (!await confirmBox('Delete this diary photo?', 'Delete', true)) return;
-    await DB.delPhoto(d.photo); delete photoURLs[d.photo];
+    if (d.photo) { await DB.delPhoto(d.photo); delete photoURLs[d.photo]; }
     p.diary = p.diary.filter(x => x.id !== d.id); await save(); history.back();
   };
   const nav = (j, l) => list[j] ? `<a class="btn small" href="#/plant/${p.id}/diary/${list[j].id}" onclick="location.replace(this.href);return false;">${l}</a>` : '<span></span>';
-  const html = `<figure class="bigphoto ph"><img data-photo="${d.photo}" alt=""></figure>
+  const html = `${d.photo ? `<figure class="bigphoto ph"><img data-photo="${d.photo}" alt=""></figure>` : ''}
     <div class="dnav">${nav(i - 1, '‹ Older')}<span class="muted">${i + 1} / ${list.length}</span>${nav(i + 1, 'Newer ›')}</div>
     <p class="center dday">${niceDate(d.date)}${n != null && n >= 0 ? ` · day ${n} since ${p.method === 'seed' ? 'sowing' : 'planting'}` : ''}</p>
     <form id="def" class="form" onsubmit="return false"><label>Date<input type="date" name="date" value="${d.date}"></label>
-      <label>Note<textarea name="note" rows="3">${esc(d.note || '')}</textarea></label></form>
+      <label>Note<textarea name="note" rows="3">${esc(d.note || '')}</textarea></label>${pestPicker(d.tags || [])}</form>
     <div class="btnrow"><button class="btn danger" data-act="delDiary">Delete</button><button class="btn primary" data-act="saveDiary">Save</button></div>`;
   return { html };
 }
@@ -160,7 +146,7 @@ const Weather = {
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7&past_days=1`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       w.daily = (await r.json()).daily; w.fetched = Date.now();

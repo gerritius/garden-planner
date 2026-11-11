@@ -35,7 +35,7 @@ function blank() {
 }
 function save() { return DB.set('state', S).catch(e => alert('Could not save: ' + e)); }
 
-const allCrops = () => CATALOG.concat(S.customCrops || []);
+const allCrops = () => CATALOG.concat(S.customCrops || []).map(dispCrop);
 const crop = id => allCrops().find(c => c.id === id) || { id, en: 'Unknown crop', ja: '', color: '#6a9' };
 const cropName = id => { const c = crop(id); return c.ja ? `${c.en} (${c.ja})` : c.en; };
 const varieties = id => [...(crop(id).varieties || []), ...((S.customVarieties || {})[id] || [])];
@@ -81,9 +81,11 @@ function dueText(t) {
   return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${niceDate(d)} · in ${n} days`;
 }
 function taskLi(t, showCrop = true) {
-  const p = planting(t.plantingId), c = p && container(p.containerId);
+  const { p, c } = taskOwner(t);
   const meta = [];
-  if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
+  if (t.kind === 'water') meta.push(`${CAN_ICON(22)}<span>${esc(t.note || '')}</span>`);
+  else if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
+  else if (showCrop && c) meta.push(`${BED_ICON(20)}<b>${esc(c.name)}</b>`);
   if (!showCrop && !t.done) meta.push(dueText(t));
   if (t.done) meta.push('Done ' + shortDate(t.doneOn));
   return `<li class="task${t.done ? ' done' : ''}"><label class="chk"><input type="checkbox" data-task="${t.id}"${t.done ? ' checked' : ''}><span></span></label>
@@ -102,6 +104,7 @@ function syncTasks(p) {
   upsertAuto(p, 'thin', !p.no_thin && p.method === 'seed' && p.thinSp > 0 && !!p.thinDate && !p.thinned, p.thinDate,
     `Thin${p.thinStage ? ' (' + p.thinStage + ')' : ''} to ${p.thinSp} cm`);
   upsertAuto(p, 'harvest', !p.no_harvest && !!p.harvestDate, p.harvestDate, 'Earliest harvest – check crop');
+  syncCareTasks(p);
   const ids = new Set((p.series || []).map(s => s.id));
   S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && t.seriesId && !t.done && !ids.has(t.seriesId)));
   for (const s of p.series || []) {
@@ -114,9 +117,11 @@ function syncTasks(p) {
 }
 function toggleTask(id, done) {
   const t = S.tasks.find(x => x.id === id); if (!t) return;
-  const p = planting(t.plantingId), td = todayStr();
+  const p = t.plantingId ? planting(t.plantingId) : null, td = todayStr();
   if (done) {
     t.done = true; t.doneOn = td;
+    if (t.kind === 'water') { t.prevLast = S.water && S.water.lastDone; S.water = Object.assign({}, S.water, { lastDone: td }); }
+    if (t.kind === 'germ' && p) setTimeout(() => germDialog(p), 320);
     if (t.kind === 'thin' && p) { p.thinned = true; p.thinDoneOn = td; }
     if (t.seriesId && p) {
       const s = (p.series || []).find(x => x.id === t.seriesId);
@@ -130,6 +135,8 @@ function toggleTask(id, done) {
     }
   } else {
     t.done = false; t.doneOn = null;
+    if (t.kind === 'water') { S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t)); S.water = Object.assign({}, S.water, { lastDone: t.prevLast || null }); }
+    if (t.kind === 'germ' && p) p.germ = null;
     if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; }
     if (t.spawned) { S.tasks = S.tasks.filter(x => !(x.id === t.spawned && !x.done)); t.spawned = null; }
   }
@@ -207,11 +214,17 @@ function render() {
   const key = location.hash;
   if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
   A = {};
+  try { syncWater(); } catch (e) { console.warn(e); }
   let html = '', after = null;
   try {
     const [a, b, c] = parts;
     if (!a) ({ html, after } = pageHome());
     else if (a === 'cal') ({ html, after } = pageCalendar());
+    else if (a === 'search') ({ html, after } = pageSearch(q));
+    else if (a === 'map') ({ html, after } = pageMap(q));
+    else if (a === 'review') ({ html, after } = pageReview(q));
+    else if (a === 'compare') ({ html, after } = pageCompare(q));
+    else if (a === 'container' && c === 'sections') ({ html, after } = pageSections(container(b)));
     else if (a === 'settings') ({ html, after } = pageSettings());
     else if (a === 'container' && b === 'new') ({ html, after } = pageContainerForm(null));
     else if (a === 'container' && c === 'edit') ({ html, after } = pageContainerForm(container(b)));
@@ -232,9 +245,18 @@ function render() {
 const notFound = () => { setChrome('Not found', { back: true }); return `<div class="empty-state">That item no longer exists.<br><a class="btn" href="#/">Go home</a></div>`; };
 
 // ---------- pages: home ----------
+function homeMap() {
+  ensureAreas();
+  const aid = S.mapArea && S.areas.find(x => x.id === S.mapArea) ? S.mapArea : S.areas[0].id;
+  A.harea = async el => { S.mapArea = el.dataset.id; await save(); render(); };
+  setTimeout(() => { const b = $('#homemap'); if (b) b.addEventListener('click', e => { const g = e.target.closest('[data-cid]'); if (g) go('#/container/' + g.dataset.cid); }); });
+  return `${S.areas.length > 1 ? `<div class="seg wrap">${S.areas.map(x => `<button type="button" data-act="harea" data-id="${x.id}" class="${x.id === aid ? 'on' : ''}">${esc(x.name)}</button>`).join('')}</div>` : ''}
+    <div class="mapbox" id="homemap">${mapSVG(aid, { width: Math.min(window.innerWidth, 680) - 32 })}</div>
+    <div class="btnrow"><a class="btn small" href="#/map?a=${aid}&edit=1">✥ Arrange map &amp; areas</a></div>`;
+}
 function pageHome() {
   const td = todayStr();
-  const open = S.tasks.filter(t => !t.done && planting(t.plantingId));
+  const open = S.tasks.filter(t => !t.done && taskVisible(t));
   const today = sortTasks(open.filter(t => effDue(t) === td));
   const soon = open.filter(t => { const n = daysBetween(td, effDue(t)); return n > 0 && n <= 7; }).length;
   const card = c => {
@@ -260,10 +282,14 @@ function pageHome() {
       ${today.length ? `<ul class="tasks">${today.map(t => taskLi(t)).join('')}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
       ${soon ? `<a class="more" href="#/cal">${soon} more in the next 7 days →</a>` : ''}</section>
     ${!S.containers.length ? `<div class="empty-state"><p>No beds or pots yet.</p><a class="btn primary" href="#/container/new">＋ Add a bed or pot</a></div>` : ''}
+    ${S.containers.length ? `<div class="viewtog seg"><button type="button" data-act="hv" data-v="cards" class="${S.homeView !== 'map' ? 'on' : ''}">▦ Cards</button><button type="button" data-act="hv" data-v="map" class="${S.homeView === 'map' ? 'on' : ''}">🗺 Map</button></div>` : ''}
+    ${S.homeView === 'map' && S.containers.length ? homeMap() : `
     ${beds.length ? `<h3 class="grp">Beds</h3><div class="grid">${beds.map(card).join('')}</div>` : ''}
-    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3><div class="grid">${pots.map(card).join('')}</div>` : ''}
+    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3><div class="grid">${pots.map(card).join('')}</div>` : ''}`}
     ${sowNowSection()}
-    <a class="fab" href="#/container/new" aria-label="Add bed or pot">＋</a>`;
+    <button class="fab" data-act="quick" aria-label="Quick add">＋</button>`;
+  A.quick = () => quickAdd();
+  A.hv = async el => { S.homeView = el.dataset.v; await save(); render(); };
   return { html, after: () => Weather.refresh().then(ch => { if (ch && !route().parts.length) render(); }) };
 }
 
@@ -271,7 +297,7 @@ function pageHome() {
 function pageCalendar() {
   setChrome('Calendar', { tab: 'cal', kicker: niceDate(todayStr()), sub: sekki() });
   const td = todayStr();
-  const open = sortTasks(S.tasks.filter(t => !t.done && planting(t.plantingId)));
+  const open = sortTasks(S.tasks.filter(t => !t.done && taskVisible(t)));
   const groups = {};
   for (const t of open) (groups[effDue(t)] = groups[effDue(t)] || []).push(t);
   const keys = Object.keys(groups).sort();
@@ -296,6 +322,7 @@ function pageContainer(c) {
   A.del = async () => {
     if (!await confirmBox(`Delete <b>${esc(c.name)}</b> and everything planted in it (including history)?`, 'Delete', true)) return;
     for (const p of S.plantings.filter(p => p.containerId === c.id)) await removePlanting(p, true);
+    S.tasks = S.tasks.filter(t => t.containerId !== c.id);
     S.containers = S.containers.filter(x => x !== c); await save(); go('#/');
   };
   const html = `<div class="plotwrap">${plotSVG(c, { width: vw, maxH: window.innerHeight * 0.62, labels: true, gaps: true, showMargin: true, grid: true })}</div>
@@ -306,7 +333,9 @@ function pageContainer(c) {
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
     ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}">${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${(() => { const hp = planting(h.plantingId); const n = hp ? harvestTotal(hp) : 0; return n ? ` · ${n} picked` : ''; })()}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
-    ${c.notes ? `<section><h3>Notes</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
+    ${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Adjust sections by dragging</a>` : ''}
+    ${bedSection(c)}
+    ${c.notes ? `<section><h3>About this ${c.type === 'bed' ? 'bed' : 'pot'}</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
     <div class="btnrow"><a class="btn" href="#/container/${c.id}/edit">Edit ${typeLabel(c).toLowerCase()}</a><button class="btn danger" data-act="del">Delete</button></div>`;
   return { html, after: () => $$('.plotwrap [data-gap]').forEach(r => r.addEventListener('click', () => A.gap(r))) };
 }
@@ -325,6 +354,7 @@ function pageContainerForm(c) {
        ${d.type === 'rect' ? `<label>Depth (cm)<input name="depth" type="number" inputmode="decimal" value="${esc(d.depth)}"></label>` : ''}`}
     <label>Margin from edges (cm)<input name="margin" type="number" inputmode="decimal" value="${esc(d.margin)}"><small>First and last rows start this far in from the edge.</small></label>
     ${isNew ? `<label>How many?<input name="count" type="number" min="1" max="50" value="${esc(d.count)}"><small>More than 1 numbers them, e.g. “Bag 1”, “Bag 2”…</small></label>` : ''}
+    ${(ensureAreas(), S.areas.length > 1) ? `<label>Area<select name="area">${S.areas.map(x => `<option value="${x.id}"${(d.area || S.areas[0].id) === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
     <div class="preview" id="cprev"></div>
     <button class="btn primary wide" type="submit">${isNew ? 'Add' : 'Save'}</button></form>`;
@@ -339,7 +369,8 @@ function pageContainerForm(c) {
     $('#cf').addEventListener('input', prev);
     $('#cf').addEventListener('submit', async e => {
       e.preventDefault(); read();
-      const base = { type: d.type, margin: num(d.margin) ?? 0, notes: d.notes || '' };
+      const base = { type: d.type, margin: num(d.margin) ?? 0, notes: d.notes || '', area: d.area || (S.areas && S.areas[0] ? S.areas[0].id : null) };
+      if (!isNew && c.area !== base.area) c.pos = null;
       if (d.type === 'round') { if (!(num(d.diameter) > 0)) return alert('Enter a diameter.'); Object.assign(base, { diameter: num(d.diameter), depth: num(d.depth) }); }
       else {
         let w = num(d.width), l = num(d.length);
@@ -375,7 +406,7 @@ function applyCrop(d, cr, c) {
   d.depth = cr.depth ?? ''; d.rowSp = cr.rowSp ?? ''; d.plantSp = cr.sowSp ?? '';
   d.thinStage = cr.thinStage || ''; d.thinSp = cr.thinSp ?? ''; d.spread = cr.spread ?? '';
   d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
-  d.dir = cr.dir || 'across'; d.rows = ''; d.variety = '';
+  d.dir = cr.dir || 'across'; d.rows = ''; d.variety = ''; d.sj = {};
   recalc(d);
 }
 function recalc(d) {
@@ -449,6 +480,9 @@ function pagePlantForm(p, c, q) {
       <div class="two"><label>Thin to (cm)<input name="thinSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.thinSp)}"></label>
       <label>Approx. date<input name="thinDate" type="date" value="${esc(d.thinDate || '')}" data-manual="thinManual"></label></div>
       <small class="hint">Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
+    ${isNew && cr && (cr.jobs || []).length ? `<fieldset><legend>Suggested jobs</legend>
+      ${cr.jobs.map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `day ${j[1]}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}</small></span></label>`).join('')}
+      <small class="hint">Untick any you don’t do. They become jobs on this crop’s page and the calendar.</small></fieldset>` : ''}
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
       <label>Mature size (cm across)<input name="spread" type="number" inputmode="decimal" value="${esc(d.spread)}"></label></div>
@@ -462,7 +496,7 @@ function pagePlantForm(p, c, q) {
     </fieldset>
     <fieldset><legend>Extra fertiliser &amp; repeating jobs</legend>
       ${d.series.map((s, i) => `<div class="series">
-        <div class="fert"><input name="series.${i}.product" value="${esc(s.product)}" placeholder="Product / job (e.g. 液肥)"><input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
+        <div class="fert">${s.title && !s.product ? `<input name="series.${i}.title" value="${esc(s.title)}">` : `<input name="series.${i}.product" value="${esc(s.product)}" placeholder="Product / job (e.g. 液肥)">`}<input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
         <select name="series.${i}.unit">${unitOpts(s.unit)}</select><button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
         <div class="rep-row"><select name="series.${i}.every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${+s.every === n ? ' selected' : ''}>${n === 0 ? 'Once' : 'Every ' + n}</option>`).join('')}</select>
         ${+s.every > 0 ? `<select name="series.${i}.per">${['day', 'week', 'month'].map(u => `<option value="${u}"${s.per === u ? ' selected' : ''}>${u}${+s.every > 1 ? 's' : ''}</option>`).join('')}</select>` : ''}
@@ -476,6 +510,7 @@ function pagePlantForm(p, c, q) {
   </form>`;
 
   const read = () => {
+    d.sj = d.sj || {};
     for (const el of $('#pf').elements) if (el.name) setPath(d, el.name, el.type === 'checkbox' ? el.checked : el.value);
     d.from = num(d.from) ?? 0; d.to = num(d.to) ?? L;
   };
@@ -548,6 +583,10 @@ async function savePlanting(p, d, c) {
     const o = oldSeries.find(x => x.id === s.id) || {};
     return Object.assign(o, { id: s.id || uid(), title: s.title || '', product: s.product, amount: num(s.amount), unit: s.unit || 'mL', every: +s.every || 0, per: s.per || 'week', start: s.start || p.sowDate, end: s.end || '', customTitle: o.customTitle && s.product === o.product ? o.customTitle : '' });
   });
+  if (isNew) {
+    const cj = crop(p.cropId).jobs || [];
+    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; p.series.push({ id: uid(), title: j[0], product: '', amount: null, unit: '', every: j[2] || 0, per: j[3] || 'week', start: addDays(p.sowDate || todayStr(), j[1] || 0), end: '' }); });
+  }
   if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;
   // photos
   p.photos = p.photos || {};
@@ -606,6 +645,7 @@ function pagePlant(p) {
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
+    (() => { const gw = germWindow(p); return gw ? ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${p.germ.result}</b> (${shortDate(p.germ.date)})` : ''}`] : null; })(),
     seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)}`}`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
     (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + fmtAmt(f.amount, f.unit) : ''}`).join('<br>')] : null,
@@ -634,6 +674,7 @@ function pagePlant(p) {
         <div><small>${seed ? 'Sown' : 'Planted'}</small><b>${shortDate(p.sowDate)}</b><small>${sowN == null ? '' : sowN === 0 ? 'today' : sowN > 0 ? sowN + ' days ago' : 'in ' + -sowN + ' days'}</small></div>
         <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : '🧺 ready now'}</small></div>
       </div></div>
+    ${(() => { const pb = pickBy(p); if (!pb || harvested) return ''; return `<p class="pickby${pb.date < td ? ' late' : ''}">${pb.cont ? `Picking season runs to about <b>${shortDate(pb.date)}</b>` : `Best picked by <b>${shortDate(pb.date)}</b>`} — after that ${esc(pb.late)}.</p>`; })()}
     <div class="varrow"><div class="grow"><small>Variety</small><div class="variety">${esc(p.variety || '—')}</div></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
     ${harvested ? `<div class="banner">This crop was harvested on ${niceDate(p.harvestedOn)}. <button class="link" data-act="unharvest">Undo</button></div>` : ''}
@@ -647,6 +688,7 @@ function pagePlant(p) {
       ${harvested ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
     <section><h3>Details</h3><dl class="details">${dl.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
       ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section>
+    ${S.plantings.filter(x => x.cropId === p.cropId).length > 1 ? `<a class="btn small" href="#/compare?crop=${p.cropId}">📊 Compare with other years</a>` : ''}
     <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested ? '' : `<button class="btn primary" data-act="harvest">🧺 Harvest finished</button>`}</div>
     <div class="btnrow"><button class="link danger" data-act="del">Delete planting</button></div>`;
   return { html, after: () => diaryAfter(p) };
@@ -662,13 +704,15 @@ async function removePlanting(p) {
 
 // Task add/edit dialog
 function taskDialog(t, p) {
+  if (t && t.kind === 'water') return waterTaskDialog(t);
+  if (t && !t.plantingId && t.containerId) return container(t.containerId) && bedTaskDialog(container(t.containerId), t);
   const isNew = !t;
   p = p || planting(t.plantingId);
   const s = t && t.seriesId ? (p.series || []).find(x => x.id === t.seriesId) : null;
   const every = s ? +s.every : 0;
   modal(`<h3>${isNew ? 'Add task' : 'Edit task'}</h3>
     <p class="muted small">${ic(p.cropId)} ${esc(cropName(p.cropId))}${container(p.containerId) ? ' · ' + esc(container(p.containerId).name) : ''}</p>
-    <form id="tf" class="form">
+    <form id="tf" class="form">${isNew ? templatePicker() : ''}
       <label>Task<input name="title" value="${esc(t ? t.title : '')}" placeholder="e.g. Add support netting" required></label>
       <label>${t && t.done ? 'Done on' : 'Date'}<input name="due" type="date" value="${esc(t ? (t.done ? t.doneOn : effDue(t)) : todayStr())}"></label>
       ${(isNew || s) && !(t && t.done) ? `<div class="rep-row"><select name="every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${every === n ? ' selected' : ''}>${n === 0 ? 'Does not repeat' : 'Repeat every ' + n}</option>`).join('')}</select>
@@ -677,7 +721,7 @@ function taskDialog(t, p) {
       <div class="btns">${isNew ? '' : `<button type="button" class="btn danger" data-x="del">Delete</button>`}${s && !t.done ? `<button type="button" class="btn" data-x="skip">Skip this one</button>` : ''}<button class="btn primary">Save</button></div>
       ${!isNew ? `<a class="link" href="#/plant/${p.id}" data-x="open">Open crop page →</a>` : ''}
     </form>`, (m, close) => {
-    const f = m.querySelector('#tf');
+    const f = m.querySelector('#tf'); wireTemplates(m, f);
     const op = m.querySelector('[data-x=open]'); if (op) op.onclick = () => close();
     f.onsubmit = async e => {
       e.preventDefault();
@@ -795,7 +839,14 @@ function pageSettings() {
   A.newCrop = () => newCropDialog(() => render());
   A.persist = async () => { if (navigator.storage && navigator.storage.persist) { const ok = await navigator.storage.persist(); alert(ok ? 'Storage is protected from automatic clearing.' : 'The browser declined. Installing the app to your home screen usually fixes this.'); render(); } };
   const cv = Object.entries(S.customVarieties || {}).filter(([, l]) => l.length);
-  const html = `${themeSettings()}${harvestTotalsSection()}<section><h3>Backup</h3>
+  A.lang = async el => { S.lang = el.dataset.v; await save(); render(); };
+  A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
+  const html = `${themeSettings()}
+    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section>
+    <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
+      <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section>
+    <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a></div></section>
+    ${harvestTotalsSection()}<section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
@@ -853,7 +904,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

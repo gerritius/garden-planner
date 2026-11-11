@@ -330,3 +330,53 @@ legend { font-family: var(--hand); font-weight: 600; font-size: 24px; padding: 0
 #rotWarn.note { color: var(--muted); font-size: 14px; }
 :root[data-theme="dark"] #rotWarn.warn { background: #3d2a1c; border-color: #7a4f2c; color: #f3cfa9; }
 .warnchip { display: inline-block; background: #fbe9d8; color: #8a4a1a; border-radius: 4px; padding: 0 6px; font-size: 13px; }
+
+/* ---------- v1.3 additions ---------- */
+.btns.col { flex-direction: column; }
+.chkline { align-items: flex-start !important; color: var(--ink) !important; font-weight: 500 !important; }
+.chkline input { width: 22px; min-height: 22px; height: 22px; flex: none; margin-top: 1px; accent-color: var(--green); }
+.tpl summary { cursor: pointer; color: var(--green); font-weight: 600; font-size: 14px; padding: 4px 0; }
+.tplg { margin: 6px 0; } .tplg small { display: block; font-family: var(--head); font-weight: 700; margin-bottom: 3px; }
+.chip.tog { position: relative; }
+.chip.tog input { position: absolute; opacity: 0; pointer-events: none; }
+.chip.tog:has(input:checked) { background: var(--terra); color: var(--terra-ink); border-color: var(--terra); }
+.chip.tog:has(input:checked) small { color: inherit; opacity: .85; }
+.pests .chip { font-weight: 500; }
+.qa { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.qa .btn.primary { grid-column: 1 / -1; }
+.viewtog { margin-top: 18px; }
+.seg.wrap { flex-wrap: wrap; }
+.seg a { flex: 1; text-align: center; padding: 10px 6px; text-decoration: none; color: var(--ink); font-family: var(--head); font-weight: 700; border-left: 1.5px solid var(--line-2); background: var(--card); }
+.seg a:first-child { border-left: 0; }
+.seg a.on { background: var(--green); color: var(--green-ink); }
+.mapbox { display: flex; justify-content: center; margin: 10px 0; }
+.mapbox svg { max-width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
+.map .mapgrid { stroke: var(--line); stroke-width: 1; }
+.map .mapbg { fill: transparent; }
+.map .mapc { cursor: pointer; }
+.map .mapc .hit { fill: transparent; }
+.map .mapc.sel .hit { stroke: var(--terra); stroke-width: 3; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; }
+.map .mapl { fill: var(--ink); font-family: 'Zilla Slab', Georgia, serif; font-weight: 700; }
+.handle { cursor: ns-resize; }
+.handle .hhit { fill: transparent; }
+.handle .hline { stroke: #fff; stroke-width: 3; }
+.handle .hpill { fill: var(--terra); }
+.handle .htxt { fill: #fff; font-weight: 700; font-family: system-ui, sans-serif; pointer-events: none; }
+#secinfo { margin: 8px 0; }
+.pickby { font-size: 14px; color: var(--muted); margin: -2px 0 8px; padding-left: 18px; }
+.pickby.late { color: var(--danger); }
+.rvcard { display: block; text-decoration: none; color: inherit; background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; }
+.rvh { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-family: var(--head); font-size: 18px; }
+.rvh span { font-family: var(--hand); font-size: 20px; color: var(--muted); }
+.rvg { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 4px 10px; margin-top: 6px; font-size: 15px; }
+.rvg small { display: block; font-size: 12px; }
+.rvx { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.cbar { position: relative; height: 22px; background: var(--chip); border-radius: 4px; margin-top: 8px; overflow: hidden; }
+.cbar span { position: absolute; left: 0; top: 0; bottom: 0; background: var(--green); opacity: .8; }
+.cbar b { position: relative; padding-left: 8px; font-size: 13px; line-height: 22px; }
+.dthumb.txt { align-items: flex-start; padding: 6px 6px 22px; background: var(--today); }
+.dthumb.txt em { font-style: normal; font-size: 12px; color: var(--ink); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; }
+button.dthumb { font: inherit; width: 100%; }
+.pestdot { position: absolute; top: 3px; right: 3px; font-style: normal; font-size: 14px; }
+mark { background: #f6e3a1; color: inherit; border-radius: 2px; }
+#sres h3 { margin-top: 16px; }

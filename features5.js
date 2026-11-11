@@ -318,7 +318,8 @@ function spinoMixer(p) {
 }
 function stochuLegal() { return 'Vinegar (食酢) is an approved special pesticide (特定農薬). Shōchū and wood vinegar are still under review by the ministry: using them yourself on your own judgement is not enforced against, but they must not be sold or advertised as pesticides.'; }
 function stochuCard() {
-  const r = S.stochu || { vinegar: 15, wood: 15, shochu: 15, tabasco: 'a few drops', water: '', note: '' };
+  const r = Object.assign({ vinegar: 15, wood: 15, shochu: 15, tabasco: 'a few drops', water: 1, note: '' }, S.stochu || {});
+  if (!r.water) r.water = 1;
   A.saveStochu = () => { const f = $('#stf'); S.stochu = { vinegar: num(f.vinegar.value), wood: num(f.wood.value), shochu: num(f.shochu.value), tabasco: f.tabasco.value.trim(), water: num(f.water.value), note: f.note.value.trim() }; save().then(() => { $('#stsaved').textContent = 'Saved ✓'; }); };
   const tot = (r.vinegar || 0) + (r.wood || 0) + (r.shochu || 0);
   return `<section><h3>Your recipe</h3>
@@ -326,7 +327,7 @@ function stochuCard() {
       <div class="two"><label>Vinegar 食酢 (mL)<input name="vinegar" type="number" inputmode="decimal" value="${r.vinegar ?? ''}"></label><label>Wood vinegar 木酢液 (mL)<input name="wood" type="number" inputmode="decimal" value="${r.wood ?? ''}"></label></div>
       <div class="two"><label>Shōchū 焼酎 (mL)<input name="shochu" type="number" inputmode="decimal" value="${r.shochu ?? ''}"></label><label>Tabasco<input name="tabasco" value="${esc(r.tabasco || '')}"></label></div>
       <label>Water (L)<input name="water" type="number" inputmode="decimal" step="0.1" value="${r.water ?? ''}" placeholder="how much water you mix it into"></label>
-      ${r.water ? `<p class="msg small">That’s about <b>${Math.round(r.water * 1000 / (tot || 1))}×</b> dilution (${tot} mL concentrate in ${r.water} L).</p>` : ''}
+      ${r.water ? `<p class="msg small">That’s about <b>${Math.round(r.water * 1000 / (tot || 1))}×</b> dilution (${tot} mL concentrate in ${r.water} L)${r.vinegar ? ` — the vinegar alone is about ${Math.round(r.water * 1000 / r.vinegar)}×` : ''}.</p>` : ''}
       <label>Notes<textarea name="note" rows="2" placeholder="e.g. spray every 7–10 days, evening">${esc(r.note || '')}</textarea></label>
       <div class="btns"><span id="stsaved" class="muted"></span><button class="btn primary" data-act="saveStochu">Save recipe</button></div></form>
     <ul class="bul"><li>1 tablespoon = 15 mL.</li><li>Typical stochu strength is 300–1,000× in water. Stronger mixes can scorch leaves — try a few leaves first and spray in the evening.</li>

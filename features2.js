@@ -311,7 +311,7 @@ function mapSVG(areaId, { edit = false, width = 360, sel = null } = {}) {
   autoPlace(areaId);
   let maxX = 0, maxY = 0;
   for (const c of cs) { const [w, h] = boxOf(c); maxX = Math.max(maxX, c.pos[0] + w); maxY = Math.max(maxY, c.pos[1] + h); }
-  const pad = 30, W = maxX + pad * 2, H = maxY + pad * 2 + 20, px = width / W;
+  const pad = 30, W = maxX + pad * 2, H = maxY + pad * 2 + 20 + (edit ? 250 : 0), px = width / W;
   let s = `<svg class="map" viewBox="${-pad} ${-pad} ${W} ${H}" width="${width}" height="${(H * px).toFixed(0)}" xmlns="http://www.w3.org/2000/svg">`;
   s += `<defs><pattern id="mg" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" class="mapgrid"/></pattern></defs><rect x="${-pad}" y="${-pad}" width="${W}" height="${H}" fill="url(#mg)" class="mapbg"/>`;
   for (const c of cs) {
@@ -369,20 +369,21 @@ function pageMap(q) {
     const toCm = e => { const svg = box.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
     box.addEventListener('click', e => { if (edit) return; const g = e.target.closest('[data-cid]'); if (g) go('#/container/' + g.dataset.cid); });
     if (!edit) return;
-    box.style.touchAction = 'none';
+    const dz = dragZone(box, t => !!t.closest('[data-cid]'));
     box.addEventListener('pointerdown', e => {
       const g = e.target.closest('[data-cid]'); if (!g) { sel = null; draw(); return; }
       const c = container(g.dataset.cid); sel = c.id;
       const p = toCm(e); drag = { c, dx: p.x - c.pos[0], dy: p.y - c.pos[1], g, start: c.pos.slice() };
       box.setPointerCapture(e.pointerId); g.classList.add('sel'); $('#selbar').hidden = false;
     });
-    box.addEventListener('pointermove', e => {
+    const mv = e => {
       if (!drag) return;
       const p = toCm(e); drag.c.pos = [Math.max(0, Math.round((p.x - drag.dx) / 5) * 5), Math.max(0, Math.round((p.y - drag.dy) / 5) * 5)];
       drag.g.setAttribute('transform', `translate(${drag.c.pos[0] - drag.start[0]} ${drag.c.pos[1] - drag.start[1]})`);
       drag.moved = true;
-    });
-    const end = async () => { if (!drag) return; const moved = drag.moved; drag = null; if (moved) await save(); draw(); };
+    };
+    box.addEventListener('pointermove', e => { if (!drag) return; mv(e); dz.move(e, mv); });
+    const end = async () => { dz.stop(); if (!drag) return; const moved = drag.moved; drag = null; if (moved) await save(); draw(); };
     box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
   };
   return { html, after };
@@ -427,20 +428,22 @@ function pageSections(c) {
     await save(); draft = null; history.back();
   };
   const html = `<p class="hint">Drag the orange tabs to move where a crop starts and ends — including the top and bottom of the bed, to free up space for another crop. Moves in 1 cm steps.</p>
-    <div class="plotwrap" id="secbox" style="touch-action:none"></div><ul class="plist" id="secinfo"></ul>
+    <div class="plotwrap" id="secbox"></div><ul class="plist" id="secinfo"></ul>
     <button class="btn primary wide" data-act="saveSec">Save sections</button>`;
   const after = () => {
     draw();
     const box = $('#secbox'); let drag = null;
     const toCm = e => { const svg = box.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; return pt.matrixTransform(svg.getScreenCTM().inverse()); };
     box.addEventListener('pointerdown', e => { const g = e.target.closest('[data-h]'); if (!g) return; const h = handles()[+g.dataset.h]; drag = { h, lim: limits(h) }; box.setPointerCapture(e.pointerId); e.preventDefault(); });
-    box.addEventListener('pointermove', e => {
+    const dz = dragZone(box, t => !!t.closest('[data-h]'));
+    const mv = e => {
       if (!drag) return;
       const y = Math.round(Math.max(drag.lim[0], Math.min(drag.lim[1], toCm(e).y)));
       for (const [p, k] of drag.h.refs) p[k] = y;
       drag.h.y = y; draw();
-    });
-    const end = () => { drag = null; };
+    };
+    box.addEventListener('pointermove', e => { if (!drag) return; mv(e); dz.move(e, mv); });
+    const end = () => { dz.stop(); drag = null; };
     box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
   };
   return { html, after };

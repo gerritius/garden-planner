@@ -806,6 +806,26 @@ function pagePhotos(p) {
   return { html, after };
 }
 
+
+// ---------- drag areas that still let the page scroll ----------
+// Touching something draggable (grab(target) true) blocks scrolling for that touch only;
+// touching empty space scrolls as normal. While dragging near the top/bottom edge the page auto-scrolls.
+function dragZone(box, grab) {
+  box.style.touchAction = 'auto';
+  box.addEventListener('touchstart', e => { if (grab(e.target)) e.preventDefault(); }, { passive: false });
+  let last = null, raf = 0, onMove = null;
+  const tick = () => {
+    raf = 0; if (!last || !onMove) return;
+    const H = window.innerHeight, top = 90, bot = H - 70;
+    const dy = last.clientY > bot ? Math.min(18, (last.clientY - bot) / 3 + 4) : last.clientY < top ? -Math.min(18, (top - last.clientY) / 3 + 4) : 0;
+    if (dy) { const y0 = window.scrollY; window.scrollBy(0, dy); if (window.scrollY !== y0) onMove(last); raf = requestAnimationFrame(tick); }
+  };
+  return {
+    move(e, fn) { last = { clientX: e.clientX, clientY: e.clientY }; onMove = fn; if (!raf) raf = requestAnimationFrame(tick); },
+    stop() { last = null; onMove = null; if (raf) cancelAnimationFrame(raf); raf = 0; },
+  };
+}
+
 // ---------- pages: arrange ----------
 function pageArrange(p) {
   if (!p) return { html: notFound() };
@@ -843,12 +863,14 @@ function pageArrange(p) {
       else if (d.mode === 'remove' && circ) { d.pts.splice(+circ.dataset.i, 1); draw(); }
       else if (d.mode === 'add') { const q = clampIn(toCm(e)); if (Draw.inside(c, q[0], q[1])) { d.pts.push(q); draw(); } }
     });
-    box.addEventListener('pointermove', e => {
+    const dz = dragZone(box, t => d.mode !== 'move' || !!t.closest('circle[data-i]'));
+    const mv = e => {
       if (drag == null) return;
       const q = clampIn(toCm(e)); d.pts[drag] = q;
       const el = box.querySelector(`circle[data-i="${drag}"]`); if (el) { el.setAttribute('cx', q[0]); el.setAttribute('cy', q[1]); }
-    });
-    const end = () => { if (drag != null) { drag = null; draw(); } };
+    };
+    box.addEventListener('pointermove', e => { if (drag == null) return; mv(e); dz.move(e, mv); });
+    const end = () => { dz.stop(); if (drag != null) { drag = null; draw(); } };
     box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
   };
   return { html, after };
@@ -934,7 +956,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.3.3';
+const APP_VERSION = '1.3.4';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

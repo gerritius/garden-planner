@@ -149,14 +149,14 @@ svg.plot { display: block; overflow: visible; }
 .plot .cut { stroke: rgba(255,245,225,.85); stroke-width: 1.5; stroke-dasharray: 5 3; }
 .plot .drill { stroke: var(--c); stroke-width: 2; opacity: .55; }
 .plot .plant { fill: var(--c); stroke: rgba(30,18,6,.55); stroke-width: .8; opacity: .93; }
-.plot .plant.drag { stroke: #fff; stroke-width: 2; cursor: grab; touch-action: none; }
+.plot .plant.drag { stroke: #fff; stroke-width: 2; cursor: grab; }
 .plot .dim { opacity: .35; }
 .plot .lbl { fill: #fff8ea; font-weight: 700; paint-order: stroke; stroke: rgba(40,22,8,.7); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; font-family: 'Zilla Slab', Georgia, serif; }
 .plot .lbl.empty { font-weight: 500; opacity: .85; }
 .plot [data-pid] { cursor: pointer; }
 .plotwrap { display: flex; justify-content: center; margin: 6px 0; text-decoration: none; }
 .plotwrap svg { max-width: 100%; height: auto; }
-#arr { touch-action: none; }
+
 .preview { display: flex; justify-content: center; padding: 12px; margin: 6px 0 12px; }
 .preview svg { max-width: 100%; height: auto; }
 
@@ -382,3 +382,5 @@ mark { background: #f6e3a1; color: inherit; border-radius: 2px; }
 #sres h3 { margin-top: 16px; }
 
 .plot .gap.newsec { fill: rgba(255,240,200,.35); stroke: #fff; stroke-dasharray: 5 3; }
+
+.map .mapc, .plot .handle { cursor: grab; }

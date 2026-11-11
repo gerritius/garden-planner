@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Garden Planner</title>
+<meta name="description" content="Plan and track beds, pots and sowings.">
+<meta name="theme-color" content="#3d6b35">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <button id="back" hidden aria-label="Back">‹</button>
+  <h1 id="title">Garden</h1>
+</header>
+<main id="view"></main>
+<nav id="tabs">
+  <a href="#/" data-tab="home"><span class="ic">🌱</span><span>Garden</span></a>
+  <a href="#/cal" data-tab="cal"><span class="ic">📅</span><span>Calendar</span></a>
+  <a href="#/settings" data-tab="settings"><span class="ic">⚙️</span><span>Settings</span></a>
+</nav>
+<div id="modal" hidden></div>
+<script src="catalog.js"></script>
+<script src="db.js"></script>
+<script src="draw.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

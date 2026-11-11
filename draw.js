@@ -101,17 +101,25 @@ const Draw = (() => {
 
   // Plant radius (cm) for "today": seed-sized → thinned → mature spread at harvest.
   function radius(p, todayS) {
-    const t = pd(todayS), sow = pd(p.sowDate) || t;
+    const t = pd(todayS) || new Date(), sow = pd(p.sowDate) || t;
     const R = Math.max(0.5, (+p.spread || spacingNow(p)) / 2);
-    const hv = pd(p.harvestDate) || new Date(sow.getTime() + 60 * DAY);
-    if (p.method === 'seed' && +p.thinSp > 0 && !p.thinned) {
-      const th = pd(p.thinDate) || new Date(sow.getTime() + 20 * DAY);
-      // before thinning: tiny seedlings; if thinning is overdue they keep growing anyway
-      if (t < th) { const f = clamp01((t - sow) / ((th - sow) || 1)); return 0.3 + f * (Math.min(R, 2) - 0.3); }
+    let hv = pd(p.harvestDate);
+    if (!hv || hv <= sow) hv = new Date(sow.getTime() + 60 * DAY);
+    if (t >= hv) return R;                       // at or past harvest: full size
+    if (t <= sow) return p.method === 'seed' ? Math.min(R, 0.3) : Math.max(0.5, R * 0.2);
+    const seed = p.method === 'seed', thinning = seed && +p.thinSp > 0;
+    if (thinning && !p.thinned) {
+      const th = pd(p.thinDate);
+      // tiny seedlings until the thinning date — only if that date sensibly falls before harvest
+      const capEnd = th && th > sow ? Math.min(+th, +sow + 0.4 * (hv - sow)) : 0;  // thinning happens early in a crop's life
+      if (capEnd && t < capEnd) { const f = clamp01((t - sow) / (capEnd - sow)); return 0.3 + f * (Math.min(R, 2) - 0.3); }
     }
-    const st = p.method === 'seed' ? (pd(p.thinDoneOn) || pd(p.thinDate) || sow) : sow;
-    const r0 = p.method === 'seed' ? Math.min(R, +p.thinSp > 0 ? 2 : 0.3) : Math.max(0.5, R * 0.2);
-    const f = clamp01((t - st) / ((hv - st) || 1));
+    let st = sow, r0 = seed ? 0.3 : Math.max(0.5, R * 0.2);
+    if (thinning) {
+      const th = pd(p.thinDoneOn) || pd(p.thinDate);
+      if (th && th > sow && th < hv && th <= t && (th - sow) <= 0.5 * (hv - sow)) { st = th; r0 = Math.min(R, 2); }
+    }
+    const f = clamp01((t - st) / (hv - st));
     return r0 + f * (R - r0);
   }
 

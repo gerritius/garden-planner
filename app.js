@@ -889,7 +889,7 @@ function pageSettings() {
   };
   A.delVar = async el => { const { id, v } = el.dataset; S.customVarieties[id] = (S.customVarieties[id] || []).filter(x => x !== v); await save(); render(); };
   A.newCrop = () => newCropDialog(() => render());
-  A.persist = async () => { if (navigator.storage && navigator.storage.persist) { const ok = await navigator.storage.persist(); alert(ok ? 'Storage is protected from automatic clearing.' : 'The browser declined. Installing the app to your home screen usually fixes this.'); render(); } };
+  A.persist = async () => { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist().catch(() => false); storageNote(true); };
   const cv = Object.entries(S.customVarieties || {}).filter(([, l]) => l.length);
   A.lang = async el => { S.lang = el.dataset.v; await save(); render(); };
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
@@ -915,14 +915,24 @@ function pageSettings() {
     <p class="hint center">Garden Planner · v${APP_VERSION}</p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));
-    if (navigator.storage && navigator.storage.persisted) {
-      const ok = await navigator.storage.persisted();
-      $('#persist').innerHTML = ok ? '🔒 Storage is protected from automatic clearing.' : '⚠️ The browser may clear storage if the phone runs low on space. <button class="link" data-act="persist">Protect storage</button>';
-    }
+    storageNote();
   };
   return { html, after };
 }
 
+async function storageNote(retried) {
+  const el = $('#persist'); if (!el) return;
+  const ok = navigator.storage && navigator.storage.persisted ? await navigator.storage.persisted().catch(() => false) : false;
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  let t;
+  if (ok) t = '🔒 Storage is marked as protected — the phone won’t clear it on its own.';
+  else if (ios && installed) t = '🔒 Installed on your Home Screen, so iOS keeps this app’s data (it isn’t cleared like ordinary Safari websites). It’s only lost if you delete the app from the Home Screen — keep exporting backups.';
+  else if (ios) t = 'ℹ️ Opened in Safari: Safari may clear data for sites you haven’t visited in a while. Use Share → <b>Add to Home Screen</b> and open the app from there — keep your data by exporting a backup first and restoring it in the installed app.';
+  else if (installed) t = `ℹ️ Your phone’s browser hasn’t marked storage as “protected”. It decides this itself (there’s no setting to force it) and normally only clears app data when the phone is almost out of space. Your backups are the real safety net. <button class="link" data-act="persist">${retried ? 'Still not granted — try again' : 'Ask again'}</button>`;
+  else t = 'ℹ️ Opened in the browser. Install it (browser menu → <b>Install app</b> / Add to Home screen) for the safest storage, and keep exporting backups.';
+  el.innerHTML = t;
+}
 async function exportBackup() {
   const photos = {};
   for (const k of await DB.photoKeys()) { const b = await DB.getPhoto(k); if (b) photos[k] = await blobToDataURL(b); }
@@ -956,7 +966,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.3.4';
+const APP_VERSION = '1.3.5';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

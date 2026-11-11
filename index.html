@@ -5,25 +5,34 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Garden Planner</title>
 <meta name="description" content="Plan and track beds, pots and sowings.">
-<meta name="theme-color" content="#3d6b35">
+<meta name="theme-color" content="#34492b">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preload" href="fonts/ZillaSlab-700.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header id="top">
-  <button id="back" hidden aria-label="Back">‹</button>
-  <h1 id="title">Garden</h1>
+  <div class="bar">
+    <button id="back" hidden aria-label="Back"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="ttl">
+      <div id="kicker"></div>
+      <h1 id="title">Garden</h1>
+      <div id="sub"></div>
+    </div>
+    <div id="hstats"></div>
+  </div>
 </header>
 <main id="view"></main>
 <nav id="tabs">
-  <a href="#/" data-tab="home"><span class="ic">🌱</span><span>Garden</span></a>
-  <a href="#/cal" data-tab="cal"><span class="ic">📅</span><span>Calendar</span></a>
-  <a href="#/settings" data-tab="settings"><span class="ic">⚙️</span><span>Settings</span></a>
+  <a href="#/" data-tab="home"><svg viewBox="0 0 32 32" width="28" height="28"><path d="M16 29 V15" stroke-width="2.2"/><path d="M16 17 C 16 10, 11 7, 5 8 C 5 14, 10 17, 16 17Z M16 14 C 16 8, 21 4, 27 5 C 27 11, 22 14, 16 14Z"/><path d="M8 29 H24" stroke-width="2.2"/></svg><span>Garden</span></a>
+  <a href="#/cal" data-tab="cal"><svg viewBox="0 0 32 32" width="28" height="28"><rect x="5" y="7" width="22" height="21" rx="2.5"/><path d="M5 13 H27 M11 4 V9 M21 4 V9"/><path d="M10 18 h2 M15 18 h2 M20 18 h2 M10 23 h2 M15 23 h2" stroke-width="2.4"/></svg><span>Calendar</span></a>
+  <a href="#/settings" data-tab="settings"><svg viewBox="0 0 32 32" width="28" height="28"><path d="M6 27 L19 14"/><path d="M19 14 C 17 9, 20 4, 26 5 L 22 9 L 23 12 L 26 13 L 30 9 C 30 15, 25 18, 19 14Z"/><path d="M5 9 L9 5 L14 10 L10 14Z"/></svg><span>Tools</span></a>
 </nav>
 <div id="modal" hidden></div>
 <script src="catalog.js"></script>
+<script src="icons.js"></script>
 <script src="db.js"></script>
 <script src="draw.js"></script>
 <script src="app.js"></script>

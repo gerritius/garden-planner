@@ -39,6 +39,7 @@ const allCrops = () => CATALOG.concat(S.customCrops || []);
 const crop = id => allCrops().find(c => c.id === id) || { id, en: 'Unknown crop', ja: '', color: '#6a9' };
 const cropName = id => { const c = crop(id); return c.ja ? `${c.en} (${c.ja})` : c.en; };
 const varieties = id => [...(crop(id).varieties || []), ...((S.customVarieties || {})[id] || [])];
+const ic = (id, size = 22) => Icons.crop(id, size, crop(id).color);
 const container = id => S.containers.find(c => c.id === id);
 const planting = id => S.plantings.find(p => p.id === id);
 const activeIn = cid => S.plantings.filter(p => p.containerId === cid && p.status !== 'harvested').sort((a, b) => a.from - b.from);
@@ -82,7 +83,7 @@ function dueText(t) {
 function taskLi(t, showCrop = true) {
   const p = planting(t.plantingId), c = p && container(p.containerId);
   const meta = [];
-  if (showCrop && p) meta.push(`<span class="dot" style="background:${crop(p.cropId).color}"></span><b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
+  if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
   if (!showCrop && !t.done) meta.push(dueText(t));
   if (t.done) meta.push('Done ' + shortDate(t.doneOn));
   return `<li class="task${t.done ? ' done' : ''}"><label class="chk"><input type="checkbox" data-task="${t.id}"${t.done ? ' checked' : ''}><span></span></label>
@@ -180,8 +181,24 @@ function route() {
   const [path, qs] = h.split('?');
   return { parts: path.split('/').filter(Boolean), q: new URLSearchParams(qs || '') };
 }
-function setChrome(title, { back = false, tab = null } = {}) {
+const SEKKI = [[1, 5, '小寒', 'Minor cold'], [1, 20, '大寒', 'Major cold'], [2, 4, '立春', 'Start of spring'], [2, 19, '雨水', 'Rain water'],
+  [3, 5, '啓蟄', 'Insects awaken'], [3, 20, '春分', 'Spring equinox'], [4, 4, '清明', 'Clear & bright'], [4, 20, '穀雨', 'Grain rain'],
+  [5, 5, '立夏', 'Start of summer'], [5, 21, '小満', 'Grain buds'], [6, 5, '芒種', 'Grain in ear'], [6, 21, '夏至', 'Summer solstice'],
+  [7, 7, '小暑', 'Minor heat'], [7, 22, '大暑', 'Major heat'], [8, 7, '立秋', 'Start of autumn'], [8, 23, '処暑', 'End of heat'],
+  [9, 7, '白露', 'White dew'], [9, 22, '秋分', 'Autumn equinox'], [10, 8, '寒露', 'Cold dew'], [10, 23, '霜降', 'Frost descends'],
+  [11, 7, '立冬', 'Start of winter'], [11, 22, '小雪', 'Minor snow'], [12, 7, '大雪', 'Major snow'], [12, 21, '冬至', 'Winter solstice']];
+function sekki(d = new Date()) {
+  const md = (d.getMonth() + 1) * 100 + d.getDate();
+  let cur = SEKKI[SEKKI.length - 1];
+  for (const s of SEKKI) if (s[0] * 100 + s[1] <= md) cur = s;
+  return `${cur[2]} · ${cur[3]}`;
+}
+function setChrome(title, { back = false, tab = null, kicker = '', sub = '', stats = '', big = false } = {}) {
   $('#title').textContent = title;
+  $('#kicker').textContent = kicker;
+  $('#sub').textContent = sub;
+  $('#hstats').innerHTML = stats;
+  $('#top').classList.toggle('big', big);
   $('#back').hidden = !back;
   $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
 }
@@ -214,18 +231,20 @@ const notFound = () => { setChrome('Not found', { back: true }); return `<div cl
 
 // ---------- pages: home ----------
 function pageHome() {
-  setChrome('My garden', { tab: 'home' });
   const td = todayStr();
   const open = S.tasks.filter(t => !t.done && planting(t.plantingId));
   const today = sortTasks(open.filter(t => effDue(t) === td));
   const soon = open.filter(t => { const n = daysBetween(td, effDue(t)); return n > 0 && n <= 7; }).length;
   const card = c => {
     const ps = activeIn(c.id);
-    const chips = ps.map(p => `<span class="chip"><span class="dot" style="background:${crop(p.cropId).color}"></span>${esc(crop(p.cropId).en)}</span>`).join('') || '<span class="chip muted">empty</span>';
+    const chips = ps.map(p => `<span class="chip">${ic(p.cropId)}${esc(crop(p.cropId).en)}</span>`).join('') || '<span class="chip muted">empty</span>';
     const { W, L } = Draw.dims(c);
     return `<a class="card" href="#/container/${c.id}"><div class="thumb">${plotSVG(c, { px: Math.min(150 / L, 150 / W), minPx: 1.2 })}</div>
       <div class="cname">${esc(c.name)}</div><div class="csize">${sizeLabel(c)}</div><div class="chips">${chips}</div></a>`;
   };
+  const growing = S.plantings.filter(p => p.status !== 'harvested').length;
+  setChrome('My Garden', { tab: 'home', big: true, kicker: pd(td).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), sub: sekki(),
+    stats: `<div><b>${today.length}</b><span>job${today.length === 1 ? '' : 's'} today</span></div><div><b>${growing}</b><span>growing</span></div>` });
   const beds = S.containers.filter(c => c.type === 'bed'), pots = S.containers.filter(c => c.type !== 'bed');
   let backupNote = '';
   if (S.plantings.length) {
@@ -233,7 +252,7 @@ function pageHome() {
     if (n === null || n >= 14) backupNote = `<a class="banner" href="#/settings">💾 ${n === null ? 'No backup yet' : `Last backup ${n} days ago`} — tap to back up</a>`;
   }
   const html = `${backupNote}
-    <section class="today"><h2>Today <small>${niceDate(td)}</small></h2>
+    <section class="today"><h2>Today’s jobs</h2>
       ${today.length ? `<ul class="tasks">${today.map(t => taskLi(t)).join('')}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
       ${soon ? `<a class="more" href="#/cal">${soon} more in the next 7 days →</a>` : ''}</section>
     ${!S.containers.length ? `<div class="empty-state"><p>No beds or pots yet.</p><a class="btn primary" href="#/container/new">＋ Add a bed or pot</a></div>` : ''}
@@ -245,7 +264,7 @@ function pageHome() {
 
 // ---------- pages: calendar ----------
 function pageCalendar() {
-  setChrome('Calendar', { tab: 'cal' });
+  setChrome('Calendar', { tab: 'cal', kicker: niceDate(todayStr()), sub: sekki() });
   const td = todayStr();
   const open = sortTasks(S.tasks.filter(t => !t.done && planting(t.plantingId)));
   const groups = {};
@@ -264,7 +283,7 @@ function pageCalendar() {
 // ---------- pages: container ----------
 function pageContainer(c) {
   if (!c) return { html: notFound() };
-  setChrome(c.name, { back: true });
+  setChrome(c.name, { back: true, kicker: typeLabel(c), sub: sizeLabel(c) });
   const ps = activeIn(c.id), gs = gaps(c);
   const vw = Math.min(window.innerWidth, 640) - 32;
   const hist = (c.history || []).slice().reverse();
@@ -274,14 +293,14 @@ function pageContainer(c) {
     for (const p of S.plantings.filter(p => p.containerId === c.id)) await removePlanting(p, true);
     S.containers = S.containers.filter(x => x !== c); await save(); go('#/');
   };
-  const html = `<div class="plotwrap">${plotSVG(c, { width: vw, maxH: window.innerHeight * 0.62, labels: true, gaps: true, showMargin: true })}</div>
+  const html = `<div class="plotwrap">${plotSVG(c, { width: vw, maxH: window.innerHeight * 0.62, labels: true, gaps: true, showMargin: true, grid: true })}</div>
     <p class="hint center">${typeLabel(c)} · ${sizeLabel(c)}${c.margin ? ` · ${c.margin} cm edge margin` : ''}${c.type !== 'round' ? ' · top → bottom = long side' : ''}</p>
     <section><h3>Growing now</h3>
-      ${ps.length ? `<ul class="plist">${ps.map(p => `<li><a href="#/plant/${p.id}"><span class="dot" style="background:${crop(p.cropId).color}"></span>
+      ${ps.length ? `<ul class="plist">${ps.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}
         <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
-    ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}"><span class="dot" style="background:${crop(h.cropId).color}"></span><span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
+    ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}">${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
     ${c.notes ? `<section><h3>Notes</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
     <div class="btnrow"><a class="btn" href="#/container/${c.id}/edit">Edit ${typeLabel(c).toLowerCase()}</a><button class="btn danger" data-act="del">Delete</button></div>`;
   return { html, after: () => $$('.plotwrap [data-gap]').forEach(r => r.addEventListener('click', () => A.gap(r))) };
@@ -289,7 +308,7 @@ function pageContainer(c) {
 
 function pageContainerForm(c) {
   const isNew = !c;
-  setChrome(isNew ? 'Add bed or pot' : 'Edit ' + c.name, { back: true });
+  setChrome(isNew ? 'Add bed or pot' : 'Edit ' + c.name, { back: true, kicker: isNew ? 'New' : typeLabel(c) });
   if (!draft) draft = isNew ? { type: 'bed', name: '', width: 100, length: 200, diameter: 40, depth: 35, margin: 10, count: 1, notes: '' } : Object.assign({}, c);
   const d = draft;
   const html = `<form id="cf" class="form">
@@ -307,7 +326,7 @@ function pageContainerForm(c) {
   const read = () => { const f = $('#cf'); for (const el of f.elements) if (el.name) d[el.name] = el.value; };
   const prev = () => { read(); const t = { id: 'prev', type: d.type, width: num(d.width) || 1, length: num(d.length) || 1, diameter: num(d.diameter) || 1, margin: num(d.margin) || 0 };
     if (t.type !== 'round' && t.width > t.length) [t.width, t.length] = [t.length, t.width];
-    $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true }); };
+    $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true, grid: true }); };
   A.type = el => { read(); d.type = el.dataset.v; if (d.type !== 'bed' && +d.margin === 10) d.margin = 2; if (d.type === 'bed' && +d.margin === 2) d.margin = 10; render(); };
   A.preset = () => { Object.assign(d, { type: 'round', name: d.name || 'Bag', diameter: 40, depth: 35, margin: 2, count: 12 }); render(); };
   const after = () => {
@@ -382,7 +401,7 @@ function pagePlantForm(p, c, q) {
     }
   }
   const d = draft;
-  setChrome(isNew ? 'New planting' : 'Edit planting', { back: true });
+  setChrome(isNew ? 'New planting' : 'Edit planting', { back: true, kicker: c.name });
   const cr = d.cropId ? crop(d.cropId) : null;
   const seed = d.method === 'seed';
   const rowish = ['rows', 'continuous', 'staggered'].includes(d.layout);
@@ -459,7 +478,7 @@ function pagePlantForm(p, c, q) {
     const others = decorate(activeIn(c.id).filter(x => !p || x.id !== p.id));
     const vw = Math.min(window.innerWidth, 640) - 48;
     const ft = $('#fitTxt'); if (ft) { const n = Draw.fitRows(c, tmp); ft.textContent = n ? `${n} row${n > 1 ? 's' : ''} fit at ${tmp.rowSp} cm. ` : ''; $('#pf').rows.placeholder = n ? 'auto: ' + n : 'auto'; }
-    $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true });
+    $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
   A.searchVar = () => { read(); const q = `${cr ? cr.ja : ''} ${d.variety || ''} 種 まき方`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
@@ -558,7 +577,7 @@ function newCropDialog(cb) {
 function pagePlant(p) {
   if (!p) return { html: notFound() };
   const c = container(p.containerId), cr = crop(p.cropId), td = todayStr();
-  setChrome(c ? c.name : 'Crop', { back: true });
+  setChrome(c ? c.name : 'Crop', { back: true, kicker: p.status === 'harvested' ? 'Grown in' : 'Growing in' });
   const open = sortTasks(S.tasks.filter(t => t.plantingId === p.id && !t.done));
   const done = S.tasks.filter(t => t.plantingId === p.id && t.done).sort((a, b) => (a.doneOn < b.doneOn ? 1 : -1));
   const sowN = p.sowDate ? daysBetween(p.sowDate, td) : null;
@@ -597,7 +616,7 @@ function pagePlant(p) {
   };
 
   const html = `<div class="crophead" style="--c:${cr.color}">
-      <h2>${esc(cr.en)} <span class="ja">${esc(cr.ja)}</span></h2>
+      <div class="chtitle">${ic(p.cropId, 52)}<h2>${esc(cr.en)} <span class="ja">${esc(cr.ja)}</span></h2></div>
       <div class="datebar">
         <div><small>${seed ? 'Sown' : 'Planted'}</small><b>${shortDate(p.sowDate)}</b><small>${sowN == null ? '' : sowN === 0 ? 'today' : sowN > 0 ? sowN + ' days ago' : 'in ' + -sowN + ' days'}</small></div>
         <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : '🧺 ready now'}</small></div>
@@ -609,7 +628,7 @@ function pagePlant(p) {
       ${open.length ? `<ul class="tasks">${open.map(t => taskLi(t, false)).join('')}</ul>` : '<p class="muted">Nothing to do.</p>'}
       ${harvested ? '' : `<button class="btn small" data-act="addTask">＋ Add task</button>`}</section>
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
-    ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, plantings: decorate(harvested ? [p] : activeIn(c.id)) })}</a>
+    ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : activeIn(c.id)) })}</a>
       ${harvested ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
     <section><h3>Details</h3><dl class="details">${dl.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
       ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section>
@@ -633,7 +652,7 @@ function taskDialog(t, p) {
   const s = t && t.seriesId ? (p.series || []).find(x => x.id === t.seriesId) : null;
   const every = s ? +s.every : 0;
   modal(`<h3>${isNew ? 'Add task' : 'Edit task'}</h3>
-    <p class="muted small"><span class="dot" style="background:${crop(p.cropId).color}"></span> ${esc(cropName(p.cropId))}${container(p.containerId) ? ' · ' + esc(container(p.containerId).name) : ''}</p>
+    <p class="muted small">${ic(p.cropId)} ${esc(cropName(p.cropId))}${container(p.containerId) ? ' · ' + esc(container(p.containerId).name) : ''}</p>
     <form id="tf" class="form">
       <label>Task<input name="title" value="${esc(t ? t.title : '')}" placeholder="e.g. Add support netting" required></label>
       <label>${t && t.done ? 'Done on' : 'Date'}<input name="due" type="date" value="${esc(t ? (t.done ? t.doneOn : effDue(t)) : todayStr())}"></label>
@@ -684,10 +703,9 @@ function taskDialog(t, p) {
 // ---------- pages: photos ----------
 function pagePhotos(p) {
   if (!p) return { html: notFound() };
-  setChrome(crop(p.cropId).en + ' packet', { back: true });
+  setChrome('Seed packet', { back: true, kicker: cropName(p.cropId) });
   const ph = p.photos || {};
-  const slot = (k, l) => `<figure class="bigphoto ph">${ph[k] ? `<img data-photo="${ph[k]}" alt="${l}">` : `<label class="phslot big"><span>＋ Add ${l.toLowerCase()}</span><input type="file" accept="image/*" data-slot="${k}" hidden></label>`}<figcaption>${l}${ph[k] ? ` · <a class="link" href="#" data-act="full" data-k="${k}">full screen</a> · <label class="link">replace<input type="file" accept="image/*" data-slot="${k}" hidden></label>` : ''}</figcaption></figure>`;
-  A.full = async el => { const u = await photoURL(ph[el.dataset.k]); modal(`<img class="fullimg" src="${u}">`, (m, close) => m.querySelector('img').onclick = close); };
+  const slot = (k, l) => `<figure class="bigphoto ph">${ph[k] ? `<img data-photo="${ph[k]}" alt="${l}">` : `<label class="phslot big"><span>＋ Add ${l.toLowerCase()}</span><input type="file" accept="image/*" data-slot="${k}" hidden></label>`}<figcaption>${l}${ph[k] ? ` · <label class="link">replace<input type="file" accept="image/*" data-slot="${k}" hidden></label>` : ''}</figcaption></figure>`;
   const html = `<h2 class="ptitle">${esc(cropName(p.cropId))}</h2>${p.variety ? `<p class="center">${esc(p.variety)}</p>` : ''}${slot('front', 'Front')}${slot('back', 'Back')}<p class="hint center">Pinch to zoom.</p>`;
   const after = () => $$('input[data-slot]').forEach(inp => inp.addEventListener('change', async () => {
     const f = inp.files[0]; if (!f) return;
@@ -703,7 +721,7 @@ function pagePhotos(p) {
 function pageArrange(p) {
   if (!p) return { html: notFound() };
   const c = container(p.containerId);
-  setChrome('Arrange ' + crop(p.cropId).en, { back: true });
+  setChrome('Arrange plants', { back: true, kicker: crop(p.cropId).en + (c ? ' · ' + c.name : '') });
   if (!draft) draft = { pts: p.layout === 'free' ? (p.positions || []).map(q => q.slice()) : Draw.layout(c, p).pts.map(q => q.slice()), mode: 'move' };
   const d = draft;
   const vw = Math.min(window.innerWidth, 640) - 32;
@@ -712,7 +730,7 @@ function pageArrange(p) {
   const draw = () => {
     const tmp = decorate([Object.assign({}, p, { layout: 'free', positions: d.pts })])[0];
     const others = decorate(activeIn(c.id).filter(x => x.id !== p.id));
-    $('#arr').innerHTML = Draw.svg(c, [...others, tmp], { px, today: todayStr(), highlight: p.id, edit: p.id, showMargin: true });
+    $('#arr').innerHTML = Draw.svg(c, [...others, tmp], { px, today: todayStr(), highlight: p.id, edit: p.id, showMargin: true, grid: true });
     $('#cnt').textContent = `${d.pts.length} plant${d.pts.length === 1 ? '' : 's'}`;
   };
   A.mode = el => { d.mode = el.dataset.v; $$('[data-act=mode]').forEach(b => b.classList.toggle('on', b.dataset.v === d.mode)); };
@@ -749,7 +767,7 @@ function pageArrange(p) {
 
 // ---------- pages: settings ----------
 function pageSettings() {
-  setChrome('Settings', { tab: 'settings' });
+  setChrome('Settings', { tab: 'settings', kicker: 'Backup & catalogue' });
   A.export = exportBackup;
   A.import = () => $('#impf').click();
   A.delCrop = async el => {
@@ -769,12 +787,12 @@ function pageSettings() {
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
       <p class="hint" id="persist"></p></section>
     <section><h3>Custom crops</h3>
-      ${S.customCrops.length ? `<ul class="plist">${S.customCrops.map(c => `<li><span class="dot" style="background:${c.color}"></span><span class="grow">${esc(c.en)} ${esc(c.ja)}</span><button class="link danger" data-act="delCrop" data-id="${c.id}">delete</button></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>'}
+      ${S.customCrops.length ? `<ul class="plist">${S.customCrops.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}</span><button class="link danger" data-act="delCrop" data-id="${c.id}">delete</button></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>'}
       <button class="btn small" data-act="newCrop">＋ Add crop</button></section>
     <section><h3>Your varieties</h3>
-      ${cv.length ? `<ul class="plist">${cv.flatMap(([id, l]) => l.map(v => `<li><span class="dot" style="background:${crop(id).color}"></span><span class="grow">${esc(v)} <small>${esc(crop(id).en)}</small></span><button class="link danger" data-act="delVar" data-id="${id}" data-v="${esc(v)}">delete</button></li>`)).join('')}</ul>` : '<p class="muted">Varieties you type in that aren’t in the catalogue are remembered here.</p>'}</section>
+      ${cv.length ? `<ul class="plist">${cv.flatMap(([id, l]) => l.map(v => `<li>${ic(id)}<span class="grow">${esc(v)} <small>${esc(crop(id).en)}</small></span><button class="link danger" data-act="delVar" data-id="${id}" data-v="${esc(v)}">delete</button></li>`)).join('')}</ul>` : '<p class="muted">Varieties you type in that aren’t in the catalogue are remembered here.</p>'}</section>
     <section><h3>Catalogue</h3><p class="muted">${CATALOG.length} built-in crops with about 5 varieties each. Values are typical starting points — always check the packet.</p>
-      <details><summary>Show crops</summary><ul class="plist">${CATALOG.map(c => `<li><span class="dot" style="background:${c.color}"></span><span class="grow">${esc(c.en)} ${esc(c.ja)}<small>${c.varieties.map(esc).join('、')}</small></span></li>`).join('')}</ul></details></section>
+      <details><summary>Show crops</summary><ul class="plist">${CATALOG.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}<small>${c.varieties.map(esc).join('、')}</small></span></li>`).join('')}</ul></details></section>
     <p class="hint center">Garden Planner · v${APP_VERSION}</p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));
@@ -818,7 +836,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

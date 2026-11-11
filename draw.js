@@ -127,15 +127,22 @@ const Draw = (() => {
   function svg(c, plantings, o = {}) {
     const { W, L } = dims(c);
     if (!(W > 0 && L > 0)) return '<svg viewBox="0 0 10 10"></svg>';
-    const pad = Math.max(W, L) * 0.025;
     const px = o.px || 2;
+    const pad = Math.max(W, L) * 0.025;
+    const padL = o.grid ? Math.max(pad, 24 / px) : pad, padT = o.grid ? Math.max(pad, 14 / px) : pad;
     const minR = (o.minPx || 1.4) / px;
     const key = 'k' + Math.random().toString(36).slice(2, 8);
     const ns = 'vector-effect="non-scaling-stroke"';
-    let s = `<svg viewBox="${-pad} ${-pad} ${W + 2 * pad} ${L + 2 * pad}" class="plot ${o.cls || ''}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
-    s += `<defs><clipPath id="${key}">${shape(c)}</clipPath></defs>`;
+    let s = `<svg viewBox="${-padL} ${-padT} ${W + padL + pad} ${L + padT + pad}" width="${((W + padL + pad) * px).toFixed(1)}" height="${((L + padT + pad) * px).toFixed(1)}" class="plot ${o.cls || ''}" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">`;
+    const cs = Math.max(W, L) / 40;
+    s += `<defs><clipPath id="${key}">${shape(c)}</clipPath><pattern id="${key}s" width="${cs * 3}" height="${cs * 3}" patternUnits="userSpaceOnUse"><circle cx="${cs * .6}" cy="${cs * .8}" r="${cs * .18}" class="crumb"/><circle cx="${cs * 2.1}" cy="${cs * 1.9}" r="${cs * .13}" class="crumb"/><circle cx="${cs * 1.4}" cy="${cs * 2.7}" r="${cs * .1}" class="crumb lt"/><circle cx="${cs * 2.6}" cy="${cs * .5}" r="${cs * .1}" class="crumb lt"/></pattern></defs>`;
     s += shape(c, 'class="soil"');
     s += `<g clip-path="url(#${key})">`;
+    s += shape(c, `fill="url(#${key}s)" class="crumbs"`);
+    if (o.grid) {
+      for (let x = 10; x < W; x += 10) s += `<line x1="${x}" y1="0" x2="${x}" y2="${L}" class="grid${x % 50 ? '' : ' g50'}" ${ns}/>`;
+      for (let y = 10; y < L; y += 10) s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" class="grid${y % 50 ? '' : ' g50'}" ${ns}/>`;
+    }
     const m = +c.margin || 0;
     if (o.showMargin && m > 0 && c.type !== 'round') s += `<rect x="${m}" y="${m}" width="${Math.max(0, W - 2 * m)}" height="${Math.max(0, L - 2 * m)}" class="margin" ${ns}/>`;
     for (const g of o.gaps || []) s += `<rect x="0" y="${g[0]}" width="${W}" height="${g[1] - g[0]}" class="gap" data-gap="${g[0]},${g[1]}"/>`;
@@ -158,6 +165,11 @@ const Draw = (() => {
     for (const y of cuts) s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" class="cut" ${ns}/>`;
     s += `</g>`;
     s += shape(c, `class="rim" ${ns}`);
+    if (o.grid) {
+      const gf = 9.5 / px;
+      for (let x = 0; x <= W + 0.01; x += 50) s += `<text x="${x}" y="${-4 / px}" font-size="${gf}" class="tick" text-anchor="middle">${x}</text>`;
+      for (let y = 0; y <= L + 0.01; y += 50) s += `<text x="${-4 / px}" y="${y + gf * 0.35}" font-size="${gf}" class="tick" text-anchor="end">${y}</text>`;
+    }
     if (o.labels) {
       const fs = 12 / px;
       for (const p of plantings) {

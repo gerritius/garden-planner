@@ -318,6 +318,7 @@ function pageContainer(c) {
   const ps = activeIn(c.id), gs = gaps(c);
   const vw = Math.min(window.innerWidth, 640) - 32;
   const hist = (c.history || []).slice().reverse();
+  A.split = () => splitDialog(c);
   A.gap = el => { const [f, t] = el.dataset.gap.split(','); go(`#/plant/new/${c.id}?from=${f}&to=${t}`); };
   A.del = async () => {
     if (!await confirmBox(`Delete <b>${esc(c.name)}</b> and everything planted in it (including history)?`, 'Delete', true)) return;
@@ -330,6 +331,7 @@ function pageContainer(c) {
     <section><h3>Growing now</h3>
       ${ps.length ? `<ul class="plist">${ps.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}
         <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
+      ${ps.length ? `<button class="btn wide primary" data-act="split">＋ Add another crop to this ${c.type === 'bed' ? 'bed' : 'pot'}</button>` : ''}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
     ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}">${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${(() => { const hp = planting(h.plantingId); const n = hp ? harvestTotal(hp) : 0; return n ? ` · ${n} picked` : ''; })()}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
@@ -461,7 +463,7 @@ function pagePlantForm(p, c, q) {
     <fieldset><legend>Where &amp; how</legend>
       <div id="rotWarn"></div>
       ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
-        `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. Split a bed into sections along its length.</small>`}
+        `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
       <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
       ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
       <label>${seed ? 'Sown' : 'Planted'} on<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>

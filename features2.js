@@ -401,7 +401,7 @@ function pageSections(c) {
   const handles = () => {
     const hs = [];
     const add = (y, ref) => { let h = hs.find(x => Math.abs(x.y - y) < 0.01); if (!h) hs.push(h = { y, refs: [] }); h.refs.push(ref); };
-    d.ps.forEach(p => { if (p.from > 0.01) add(p.from, [p, 'from']); if (p.to < L - 0.01) add(p.to, [p, 'to']); });
+    d.ps.forEach(p => { add(p.from, [p, 'from']); add(p.to, [p, 'to']); });
     return hs.sort((a, b) => a.y - b.y);
   };
   const limits = h => {
@@ -426,7 +426,7 @@ function pageSections(c) {
     for (const x of d.ps) { const p = planting(x.id); p.from = Math.round(x.from); p.to = Math.round(x.to); if (p.layout === 'free') p.positions = (p.positions || []).filter(q => q[1] >= p.from && q[1] <= p.to); }
     await save(); draft = null; history.back();
   };
-  const html = `<p class="hint">Drag the white lines to move where one crop ends and the next begins. Moves in 1 cm steps.</p>
+  const html = `<p class="hint">Drag the orange tabs to move where a crop starts and ends — including the top and bottom of the bed, to free up space for another crop. Moves in 1 cm steps.</p>
     <div class="plotwrap" id="secbox" style="touch-action:none"></div><ul class="plist" id="secinfo"></ul>
     <button class="btn primary wide" data-act="saveSec">Save sections</button>`;
   const after = () => {
@@ -487,4 +487,48 @@ function pageCompare(q) {
       <div class="cbar"><span style="width:${(st.total / maxT) * 100}%"></span><b>${st.total} picked</b></div>
       ${st.pests.length ? `<div class="rvx">Problems: ${st.pests.map(pestName).join(', ')}</div>` : ''}</a>`; }).join('')}`;
   return { html, after: () => $('#cmpSel').addEventListener('change', e => location.replace('#/compare?crop=' + e.target.value)) };
+}
+
+// ---------- split a bed to add another crop ----------
+function splitDialog(c) {
+  const L = Draw.dims(c).L, ps = activeIn(c.id), gs = gaps(c);
+  // crop to shrink: the one with the longest section
+  const big = ps.slice().sort((a, b) => (b.to - b.from) - (a.to - a.from))[0];
+  const half = Math.round((big.from + big.to) / 2);
+  modal(`<h3>Add another crop</h3>
+    ${gs.length ? `<p class="msg">There’s already free space: ${gs.map(g => `<b>${g[0]}–${g[1]} cm</b>`).join(', ')}.</p><div class="btns col">${gs.map(g => `<a class="btn primary" href="#/plant/new/${c.id}?from=${g[0]}&to=${g[1]}" data-x="go">Plant in ${g[0]}–${g[1]} cm</a>`).join('')}</div><p class="hint">…or make more room by shrinking a crop:</p>` : ''}
+    <form id="spf" class="form">
+      ${ps.length > 1 ? `<label>Make room by shrinking<select name="pid">${ps.map(p => `<option value="${p.id}"${p === big ? ' selected' : ''}>${esc(crop(p.cropId).en)} (${p.from}–${p.to} cm)</option>`).join('')}</select></label>` : `<p class="msg">${ic(big.cropId)} <b>${esc(crop(big.cropId).en)}</b> uses ${big.from}–${big.to} cm.</p>`}
+      <label>Split at (cm from top)<input name="at" type="number" inputmode="numeric" value="${half}"></label>
+      <div class="seg"><button type="button" data-side="bottom" class="on">New crop below</button><button type="button" data-side="top">New crop above</button></div>
+      <div id="spprev" class="preview"></div>
+      <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Next: choose crop</button></div>
+    </form>`, (m, close) => {
+    const f = m.querySelector('#spf');
+    let side = 'bottom';
+    const cur = () => planting(f.pid ? f.pid.value : big.id);
+    const preview = () => {
+      const p = cur(), at = Math.round(+f.at.value);
+      const ok = at > p.from + 4 && at < p.to - 4;
+      const shrunk = Object.assign({}, p, side === 'bottom' ? { to: at } : { from: at });
+      const list = decorate(ps.map(x => x.id === p.id ? shrunk : x));
+      m.querySelector('#spprev').innerHTML = ok ? Draw.svg(c, list, { px: Math.min(200 / L, 220 / Draw.dims(c).W), today: todayStr(), labels: false, gaps: [side === 'bottom' ? [at, p.to] : [p.from, at]].map(g => [g[0], g[1], 'new crop']), grid: true }).replace(/class="gap"/g, 'class="gap newsec"') : `<p class="muted">Pick a point between ${p.from + 5} and ${p.to - 5} cm.</p>`;
+      if (f.at.max != p.to - 5) { f.at.min = p.from + 5; f.at.max = p.to - 5; }
+    };
+    m.querySelectorAll('[data-side]').forEach(b => b.onclick = () => { side = b.dataset.side; m.querySelectorAll('[data-side]').forEach(x => x.classList.toggle('on', x === b)); preview(); });
+    f.addEventListener('input', preview); if (f.pid) f.pid.addEventListener('change', () => { const p = cur(); f.at.value = Math.round((p.from + p.to) / 2); preview(); });
+    m.querySelector('[data-x=no]').onclick = close;
+    m.querySelectorAll('[data-x=go]').forEach(x => x.onclick = () => close());
+    preview();
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const p = cur(), at = Math.round(+f.at.value);
+      if (!(at > p.from + 4 && at < p.to - 4)) return alert(`Pick a split point between ${p.from + 5} and ${p.to - 5} cm.`);
+      let nf, nt;
+      if (side === 'bottom') { nf = at; nt = p.to; p.to = at; } else { nf = p.from; nt = at; p.from = at; }
+      if (p.layout === 'free') p.positions = (p.positions || []).filter(q => q[1] >= p.from && q[1] <= p.to);
+      await save(); close();
+      go(`#/plant/new/${c.id}?from=${nf}&to=${nt}`);
+    };
+  });
 }

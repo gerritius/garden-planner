@@ -380,3 +380,5 @@ button.dthumb { font: inherit; width: 100%; }
 .pestdot { position: absolute; top: 3px; right: 3px; font-style: normal; font-size: 14px; }
 mark { background: #f6e3a1; color: inherit; border-radius: 2px; }
 #sres h3 { margin-top: 16px; }
+
+.plot .gap.newsec { fill: rgba(255,240,200,.35); stroke: #fff; stroke-dasharray: 5 3; }

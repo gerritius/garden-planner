@@ -94,7 +94,7 @@ function logDialog(e, preset = {}) {
     <form id="lf" class="form">
       <label>Date<input type="date" name="date" value="${e.date}" max="${todayStr()}"></label>
       <div class="sowchips kinds">${LOG_KINDS.map(([k, i, l]) => `<label class="chip big tog"><input type="radio" name="kind" value="${k}"${k === e.kind ? ' checked' : ''}><span>${i} ${l}</span></label>`).join('')}</div>
-      <div id="prodrow"><label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${prods.map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
+      <div id="prodrow">${libChips(e)}<label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${prods.map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
         <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(e.unit)}</select></label></div>
         <label id="perrow" hidden>The amount is<select name="per"><option value="each"${e.per !== 'total' ? ' selected' : ''}>for each bed / pot</option><option value="total"${e.per === 'total' ? ' selected' : ''}>in total, shared between them</option></select></label>
         <label id="phirow">Wait before harvest (収穫前日数)<div class="two"><input name="phi" type="number" inputmode="numeric" min="0" value="${e.phi ?? ''}" placeholder="days, from the label"><span class="hint">Leave empty if none. Remembered for this product.</span></div></label></div>
@@ -102,6 +102,7 @@ function logDialog(e, preset = {}) {
       <label>Where <small class="muted">(nothing ticked = whole garden)</small></label>
       <div class="sowchips">${S.containers.map(c => `<label class="chip big tog"><input type="checkbox" name="cid" value="${c.id}"${(e.cids || []).includes(c.id) ? ' checked' : ''}><span>${BED_ICON(16)} ${esc(c.name)}</span></label>`).join('')}</div>
       ${act.length ? `<details${(e.pids || []).length ? ' open' : ''}><summary class="muted">…or pick crops</summary><div class="sowchips">${act.map(p => `<label class="chip big tog"><input type="checkbox" name="pid" value="${p.id}"${(e.pids || []).includes(p.id) ? ' checked' : ''}><span>${ic(p.cropId, 18)} ${esc(crop(p.cropId).en)} <small>${esc((container(p.containerId) || {}).name || '')}</small></span></label>`).join('')}</div></details>` : ''}
+      <div id="legal"></div>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div>
     </form>`, (m, close) => {
     const f = m.querySelector('#lf');
@@ -114,6 +115,7 @@ function logDialog(e, preset = {}) {
     };
     f.product.addEventListener('change', () => { const v = (S.phi || {})[f.product.value.trim()]; if (v != null && f.phi.value === '') f.phi.value = v; });
     f.addEventListener('change', showProd); showProd();
+    wireLogLibrary(m, f, e);
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const del = m.querySelector('[data-x=del]');
     if (del) del.onclick = async () => { S.log = (S.log || []).filter(x => x.id !== e.id); await save(); close(); render(); };
@@ -123,7 +125,7 @@ function logDialog(e, preset = {}) {
         date: f.date.value || todayStr(), kind: f.querySelector('input[name=kind]:checked').value, product: f.product.value.trim(),
         amount: f.amount.value === '' ? null : +f.amount.value, unit: f.unit.value, text: f.text.value.trim(),
         cids: [...f.querySelectorAll('input[name=cid]:checked')].map(i => i.value), pids: [...f.querySelectorAll('input[name=pid]:checked')].map(i => i.value),
-        per: f.per.value, phi: f.querySelector('input[name=kind]:checked').value === 'spray' && f.phi.value !== '' ? +f.phi.value : null,
+        productId: f.productId.value || null, per: f.per.value, phi: f.querySelector('input[name=kind]:checked').value === 'spray' && f.phi.value !== '' ? +f.phi.value : null,
       });
       if (e.phi != null && e.product) (S.phi = S.phi || {})[e.product] = e.phi;
       if (isNew) (S.log = S.log || []).push(e);

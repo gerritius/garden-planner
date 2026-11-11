@@ -134,16 +134,17 @@ const bedArea = c => c.type === 'round' ? Math.PI * (c.diameter / 200) ** 2 : (c
 function prepDialog(c) {
   const a = bedArea(c), g = r => Math.round(a * r / 10) * 10 || Math.round(a * r);
   const sa = soilAdvice(c, 0, Draw.dims(c).L, null), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
+  const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']), lime = pick(['oysterLime']), base = pick(['bokashi', 'toshoAburakasu', 'aburakasu', 'chickenManure']);
   const items = [
-    ['lime', `Spread lime (苦土石灰) ~${g(100)} g`, -14, true],
-    ['compost', `Dig in compost (堆肥) ~${Math.max(1, Math.round(a * 2 * cm * 2) / 2)} kg`, -14, true],
-    ['base', `Base fertiliser (元肥) ~${g(100 * bm)} g`, -7, true],
-    ['ridge', 'Dig & shape the bed (畝立て)', -7, c.type === 'bed'],
-    ['mulch', 'Lay mulch film (マルチ)', -3, false],
+    ['compost', `Dig in ${comp ? comp.en : 'compost (堆肥)'} ~${Math.max(1, Math.round(a * 2 * cm * 2) / 2)} kg`, comp ? -Math.max(comp.wait, 7) : -14, true],
+    ['lime', `Spread ${lime ? lime.en : 'lime (苦土石灰)'} ~${g(100)} g`, lime ? 0 : -14, true],
+    ['base', `Base fertiliser: ${base ? base.en : '元肥'} ~${g(150 * bm)} g`, base ? -base.wait : -7, true],
+    ['ridge', 'Dig & shape the bed (畝立て)', -1, c.type === 'bed'],
+    ['mulch', 'Lay mulch film (マルチ)', -1, false],
   ];
   modal(`<h3>Prepare ${esc(c.name)}</h3><p class="muted small">${a.toFixed(2)} m² · amounts are typical per-area rates — adjust to your products.</p>${sa ? `<p class="msg small">🪱 ${sa.text}${bm !== 1 || cm !== 1 ? ' Amounts below are adjusted.' : ''}</p>` : ''}
     <form id="pf2" class="form"><label>Planting date<input type="date" name="plant" value="${addDays(todayStr(), 14)}"></label>
-      ${items.map(([k, l, off, on]) => `<label class="inl chkline"><input type="checkbox" name="${k}" ${on ? 'checked' : ''}> <span>${l} <small>(${-off} days before)</small></span></label>`).join('')}
+      ${items.map(([k, l, off, on]) => `<label class="inl chkline"><input type="checkbox" name="${k}" ${on ? 'checked' : ''}> <span>${l} <small>(${off === 0 ? 'on planting day — can go in straight away' : -off === 1 ? 'the day before' : -off + ' days before'})</small></span></label>`).join('')}
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Add jobs</button></div></form>`, (m, close) => {
     m.querySelector('[data-x=no]').onclick = close;
     m.querySelector('#pf2').onsubmit = async e => {

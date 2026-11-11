@@ -251,6 +251,8 @@ function render() {
     else if (a === 'cal') ({ html, after } = pageCalendar());
     else if (a === 'log') ({ html, after } = pageLog(q));
     else if (a === 'totals') ({ html, after } = pageTotals(q));
+    else if (a === 'products') ({ html, after } = pageProducts());
+    else if (a === 'product') ({ html, after } = pageProduct(b));
     else if (a === 'search') ({ html, after } = pageSearch(q));
     else if (a === 'map') ({ html, after } = pageMap(q));
     else if (a === 'review') ({ html, after } = pageReview(q));
@@ -441,6 +443,7 @@ function applyCrop(d, cr, c) {
   d.thinStage = cr.thinStage || ''; d.thinSp = cr.thinSp ?? ''; d.spread = cr.spread ?? '';
   d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
   d.dir = cr.dir || 'across'; d.rows = ''; d.variety = ''; d.sj = {};
+  if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, c, d.from, d.to); d.fertAuto = true; } catch (e) { console.warn(e); } }
   recalc(d);
 }
 function recalc(d) {
@@ -514,8 +517,8 @@ function pagePlantForm(p, c, q) {
       <div class="two"><label>Thin to (cm)<input name="thinSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.thinSp)}"></label>
       <label>Approx. date<input name="thinDate" type="date" value="${esc(d.thinDate || '')}" data-manual="thinManual"></label></div>
       <small class="hint">Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
-    ${isNew && cr && (cr.jobs || []).length ? `<fieldset><legend>Suggested jobs</legend>
-      ${cr.jobs.map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `day ${j[1]}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}</small></span></label>`).join('')}
+    ${isNew && cr && careJobs(cr.id).length ? `<fieldset><legend>Suggested jobs</legend>
+      ${careJobs(cr.id).map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `day ${j[1]}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}${esc(jobAmountText(j))}</small></span></label>`).join('')}
       <small class="hint">Untick any you don’t do. They become jobs on this crop’s page and the calendar.</small></fieldset>` : ''}
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
@@ -523,6 +526,7 @@ function pagePlantForm(p, c, q) {
       ${cr && cr.daysHarvest ? `<small class="hint">Catalogue estimate: about ${cr.daysHarvest} days from ${seed ? 'sowing' : 'planting'}. Change it to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
+      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, c))}.</p>` : ''}
       ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
         <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
       <button type="button" class="btn small" data-act="addFert">＋ Add fertiliser</button>
@@ -547,6 +551,7 @@ function pagePlantForm(p, c, q) {
     d.sj = d.sj || {};
     for (const el of $('#pf').elements) if (el.name) setPath(d, el.name, el.type === 'checkbox' ? el.checked : el.value);
     d.from = num(d.from) ?? 0; d.to = num(d.to) ?? L;
+    if (document.activeElement && /^fert\./.test(document.activeElement.name || '')) d.fertAuto = false;
   };
   const preview = () => {
     const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
@@ -562,8 +567,8 @@ function pagePlantForm(p, c, q) {
   };
   A.searchVar = () => { read(); const q = `${cr ? cr.ja : ''} ${d.variety || ''} 種 まき方`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
   A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
-  A.addFert = () => { read(); d.fert.push({ product: '', amount: '', unit: 'g' }); render(); };
-  A.rmFert = el => { read(); d.fert.splice(+el.dataset.i, 1); render(); };
+  A.addFert = () => { read(); d.fertAuto = false; d.fert.push({ product: '', amount: '', unit: 'g' }); render(); };
+  A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
   A.addSeries = () => { read(); d.series.push({ id: uid(), product: '', amount: '', unit: 'mL', every: 2, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
   A.rmSeries = el => { read(); d.series.splice(+el.dataset.i, 1); render(); };
   A.rmPhoto = el => { read(); const s = el.dataset.slot; if (d.newPhotos[s]) delete d.newPhotos[s]; else d.removePhotos[s] = true; render(); };
@@ -618,8 +623,8 @@ async function savePlanting(p, d, c) {
     return Object.assign(o, { id: s.id || uid(), title: s.title || '', product: s.product, amount: num(s.amount), unit: s.unit || 'mL', every: +s.every || 0, per: s.per || 'week', start: s.start || p.sowDate, end: s.end || '', customTitle: o.customTitle && s.product === o.product ? o.customTitle : '' });
   });
   if (isNew) {
-    const cj = crop(p.cropId).jobs || [];
-    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; p.series.push({ id: uid(), title: j[0], product: '', amount: null, unit: '', every: j[2] || 0, per: j[3] || 'week', start: addDays(p.sowDate || todayStr(), j[1] || 0), end: '' }); });
+    const cj = careJobs(p.cropId);
+    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: addDays(p.sowDate || todayStr(), j[1] || 0), end: /Pest check|Side-dress \(追肥\)$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
   }
   if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;
   // photos
@@ -721,6 +726,7 @@ function pagePlant(p) {
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
     ${harvestSection(p)}
     ${diarySection(p)}
+    ${harvested ? '' : spraySection(p)}
     ${harvested ? '' : logSection(null, p)}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : activeIn(c.id)) })}</a>
       ${harvested ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
@@ -905,7 +911,7 @@ function pageSettings() {
     <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section>
     <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section>
-    <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a></div></section>
+    <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a><a class="btn" href="#/products">🧴 Products &amp; sprays</a></div></section>
     ${harvestTotalsSection()}<section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
@@ -974,7 +980,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.5.0';
+const APP_VERSION = '1.6.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

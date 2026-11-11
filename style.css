@@ -407,3 +407,22 @@ label.inline select { flex: 1; }
 .tot .big small { font-family: var(--body, inherit); font-size: 13px; font-weight: 400; color: var(--muted); }
 .plist.tight li { padding-top: 6px; padding-bottom: 6px; }
 .btn.grow { flex: 1; }
+
+/* products & sprays */
+.orgchip { background: #dcebc8; color: #2f5a1a; border-radius: 3px; font-size: 11px; padding: 0 5px; font-weight: 700; }
+:root[data-theme="dark"] .orgchip { background: #2f4a22; color: #cfe8b5; }
+.plist li.no b, .legal li.no { color: #a2401c; }
+.plist li.off { opacity: .5; }
+.plist.sprays small b { color: var(--ink); }
+.libchips { margin: 6px 0 8px; }
+.libchips .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+ul.legal { list-style: none; padding: 0; margin: 6px 0; font-size: 14px; }
+ul.legal li { padding: 3px 0; }
+.tscroll { overflow-x: auto; margin: 6px 0; }
+table.reg { border-collapse: collapse; font-size: 13px; min-width: 520px; }
+table.reg th, table.reg td { border-bottom: 1px solid var(--line); padding: 5px 6px; text-align: left; vertical-align: top; }
+table.reg td small { display: block; color: var(--muted); }
+table.reg tr.no td { color: #a2401c; }
+ul.bul { padding-left: 18px; margin: 6px 0; } ul.bul li { margin: 3px 0; }
+h4 { margin: 12px 0 4px; font-family: var(--head); }
+.banner.small, .msg.small { font-size: 13px; }

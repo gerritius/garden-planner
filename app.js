@@ -91,7 +91,8 @@ function taskLi(t, showCrop = true) {
   if (t.done) meta.push('Done ' + shortDate(t.doneOn));
   return `<li class="task${t.done ? ' done' : ''}"><label class="chk"><input type="checkbox" data-task="${t.id}"${t.done ? ' checked' : ''}><span></span></label>
     <div class="tbody" data-act="editTask" data-id="${t.id}"><div class="tt">${esc(t.title)}${t.seriesId && !t.done ? ' <span class="rep">↻</span>' : ''}</div>
-    ${meta.length ? `<div class="tm">${meta.join(' · ')}</div>` : ''}</div></li>`;
+    ${meta.length ? `<div class="tm">${meta.join(' · ')}</div>` : ''}</div>
+    <button class="tmore" data-act="editTask" data-id="${t.id}" aria-label="Edit or delete">⋯</button></li>`;
 }
 function upsertAuto(p, kind, want, due, title) {
   const open = S.tasks.find(t => t.plantingId === p.id && t.kind === kind && !t.done);
@@ -746,9 +747,17 @@ async function removePlanting(p) {
   if (c) c.history = (c.history || []).filter(h => h.plantingId !== p.id);
 }
 
+function orphanTaskDialog(t) {
+  modal(`<h3>Task</h3><p class="msg">${esc(t.title)}</p><div class="btns"><button class="btn danger" data-x="del">Delete</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
+    m.querySelector('[data-x=ok]').onclick = close;
+    m.querySelector('[data-x=del]').onclick = async () => { S.tasks = S.tasks.filter(x => x !== t); await save(); close(); render(); };
+  });
+}
 // Task add/edit dialog
 function taskDialog(t, p) {
   if (t && t.kind === 'water') return waterTaskDialog(t);
+  if (t && t.kind === 'frost') return frostTaskDialog(t);
+  if (t && !t.plantingId && !t.containerId) return orphanTaskDialog(t);
   if (t && !t.plantingId && t.containerId) return container(t.containerId) && bedTaskDialog(container(t.containerId), t);
   const isNew = !t;
   p = p || planting(t.plantingId);
@@ -980,7 +989,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.6.1';
+const APP_VERSION = '1.6.2';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

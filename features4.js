@@ -78,6 +78,7 @@ function syncFrost() {
   const r = (S.weather && S.weather.lat != null) ? frostRisk().find(x => x.hit.length) : null;
   if (!r) { if (open && open.due <= td) S.tasks = S.tasks.filter(x => x !== open); return; }
   if (S.tasks.some(t => t.kind === 'frost' && t.done && t.frostDate === r.d.date)) return;
+  if ((S.frostDismissed || []).includes(r.d.date)) { if (open) S.tasks = S.tasks.filter(x => x !== open); return; }
   const names = [...new Set(r.hit.map(p => crop(p.cropId).en))];
   const due = addDays(r.d.date, -1) < td ? td : addDays(r.d.date, -1);
   const title = `Cover before frost ${dayName(r.d.date)} (${Math.round(r.d.min)}°): ${names.join(', ')}`;
@@ -128,4 +129,17 @@ function pageTotals(q) {
       : '<div class="empty-state">No amounts logged yet.<br><small>Log fertiliser or sprays with an amount (Log tab → Log something), or add a product and amount to a repeating fertiliser job.</small></div>'}
     <p class="hint">Handfuls count as ~${HANDFUL_G} g. When one entry covers several beds, the amount is counted per bed unless you chose “in total”.</p>`;
   return { html, after: () => { $('#totc').onchange = e => location.replace(url({ c: e.target.value })); } };
+}
+
+function frostTaskDialog(t) {
+  const beds = (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', ');
+  modal(`<h3>❄️ Frost warning</h3><p class="msg">${esc(t.title)}</p>${beds ? `<p class="muted small">${esc(beds)}</p>` : ''}
+    <p class="hint">Cover tender crops the evening before (fleece, a sheet or an upturned box) and uncover in the morning. Made from the weather forecast.</p>
+    <div class="btns"><button class="btn danger" data-x="del">Delete</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
+    m.querySelector('[data-x=ok]').onclick = close;
+    m.querySelector('[data-x=del]').onclick = async () => {
+      if (!t.done && t.frostDate) S.frostDismissed = [...(S.frostDismissed || []).filter(d => d >= addDays(todayStr(), -7)), t.frostDate];
+      S.tasks = S.tasks.filter(x => x !== t); await save(); close(); render();
+    };
+  });
 }

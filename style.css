@@ -426,3 +426,6 @@ table.reg tr.no td { color: #a2401c; }
 ul.bul { padding-left: 18px; margin: 6px 0; } ul.bul li { margin: 3px 0; }
 h4 { margin: 12px 0 4px; font-family: var(--head); }
 .banner.small, .msg.small { font-size: 13px; }
+
+.tmore { flex: none; background: none; border: 0; color: var(--muted); font-size: 20px; line-height: 1; padding: 2px 6px; margin: -2px -4px 0 0; cursor: pointer; border-radius: 8px; }
+.tmore:active { background: var(--line); }

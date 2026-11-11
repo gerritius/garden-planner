@@ -94,6 +94,8 @@ function syncWater() {
   let due = last ? addDays(last, iv) : td;
   if (due < td) due = td;
   let note = '';
+  const skipTo = S.water && S.water.skipTo;
+  if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped today'; }
   const rain = rainNear();
   if (due === td && rain >= 5) { due = addDays(td, 1); note = ` · skipped, ${Math.round(rain)} mm rain`; }
   if (!open) { open = { id: uid(), kind: 'water', plantingId: null, title: 'Water pots & bags', due, done: false }; S.tasks.push(open); }
@@ -127,7 +129,7 @@ function waterTaskDialog(t) {
     <p class="hint">Watering is spaced by season (daily in summer, every few days in spring/autumn, about weekly in winter) and skipped when 5 mm+ of rain fell or is forecast. Turn it off in Tools.</p>
     <div class="btns"><button class="btn" data-x="skip">Skip today</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
     m.querySelector('[data-x=ok]').onclick = close;
-    m.querySelector('[data-x=skip]').onclick = async () => { t.due = addDays(todayStr(), 1); await save(); close(); render(); };
+    m.querySelector('[data-x=skip]').onclick = async () => { S.water = Object.assign({}, S.water, { skipTo: addDays(todayStr(), 1) }); syncWater(); await save(); close(); render(); };
   });
 }
 const bedArea = c => c.type === 'round' ? Math.PI * (c.diameter / 200) ** 2 : (c.width * c.length) / 1e4;

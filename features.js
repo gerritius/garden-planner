@@ -25,8 +25,8 @@ function rotationNote(c, from, to, cropId, beforeDate, excludeId) {
   return {
     prev, same,
     html: same
-      ? `<b>Same family as the last crop here.</b> ${esc(a.en)} was here before (harvested ${shortDate(prev.harvestedOn)}) — both are ${esc(fam[0])} ${esc(fam[1])}. Consider extra compost or a different spot.`
-      : `Last crop here: ${esc(cropName(prev.cropId))} (harvested ${shortDate(prev.harvestedOn)}).`,
+      ? `<b>Same family as the last crop here.</b> ${esc(a.en)} was here before (${histWhen(prev)}) — both are ${esc(fam[0])} ${esc(fam[1])}. Consider extra compost or a different spot.`
+      : `Last crop here: ${esc(cropName(prev.cropId))} (${histWhen(prev)}).`,
   };
 }
 

@@ -233,11 +233,12 @@ function pickPhotoFor(p) {
 // ---------- quick add ----------
 function quickAdd() {
   modal(`<h3>Quick add</h3><div class="qa">
+    <button class="btn primary" data-q="log">📝 Log something</button>
     <button class="btn" data-q="harvest">🧺 Log a harvest</button><button class="btn" data-q="photo">📷 Diary photo</button>
     <button class="btn" data-q="note">🐛 Diary note / pest</button><button class="btn" data-q="job">✓ Add a job</button>
     <a class="btn primary" href="#/container/new" data-q="bed">＋ New bed or pot</a></div>`, (m, close) => {
     m.querySelector('[data-q=bed]').onclick = () => close();
-    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => pickPlanting(b.dataset.q));
+    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : pickPlanting(b.dataset.q));
   });
 }
 function pickPlanting(what) {
@@ -276,12 +277,15 @@ function pageSearch(q) {
     const di = []; S.plantings.forEach(p => (p.diary || []).forEach(d => { if (has(d.note) || (d.tags || []).some(k => has(pestName(k)))) di.push([p, d]); }));
     const bn = []; S.containers.forEach(c => { if (has(c.name) || has(c.notes)) bn.push([c, null]); (c.log || []).forEach(n => { if (has(n.text)) bn.push([c, n]); }); });
     const jb = S.tasks.filter(x => has(x.title) && taskVisible(x)).slice(0, 40);
+    const lg = (S.log || []).filter(e => has(e.product) || has(e.text) || has(logKind(e.kind)[2])).sort((x, y) => (x.date < y.date ? 1 : -1)).slice(0, 40);
+    S.containers.forEach(c => (c.history || []).forEach(h => { if (h.manual && (has(cropName(h.cropId)) || has(h.variety) || has(h.note))) bn.push([c, { text: `Past crop: ${cropName(h.cropId)}${h.variety ? ' · ' + h.variety : ''}${h.note ? ' — ' + h.note : ''}`, date: h.harvestedOn }]); }));
     const sec = (h, body) => body ? `<h3>${h}</h3>${body}` : '';
-    out.innerHTML = (pl.length + di.length + bn.length + jb.length) ? [
+    out.innerHTML = (pl.length + di.length + bn.length + jb.length + lg.length) ? [
       sec('Plantings', pl.length && `<ul class="plist">${pl.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow">${hl(cropName(p.cropId))}${p.variety ? ' · ' + hl(p.variety) : ''}<small>${esc((container(p.containerId) || {}).name || '')} · ${p.status === 'harvested' ? 'harvested ' + shortDate(p.harvestedOn) : 'sown ' + shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>`),
       sec('Diary', di.length && `<ul class="plist">${di.map(([p, d]) => `<li><a href="#/plant/${p.id}/diary/${d.id}">${ic(p.cropId)}<span class="grow">${hl(d.note || '')}${(d.tags || []).length ? ` <small>${d.tags.map(k => hl(pestName(k))).join(', ')}</small>` : ''}<small>${esc(crop(p.cropId).en)} · ${shortDate(d.date)}</small></span>›</a></li>`).join('')}</ul>`),
       sec('Beds & notes', bn.length && `<ul class="plist">${bn.map(([c, n]) => `<li><a href="#/container/${c.id}">${BED_ICON(22)}<span class="grow">${n ? hl(n.text) : hl(c.name)}<small>${esc(c.name)}${n ? ' · ' + shortDate(n.date) : ''}</small></span>›</a></li>`).join('')}</ul>`),
       sec('Jobs', jb.length && `<ul class="tasks">${jb.map(x => taskLi(x)).join('')}</ul>`),
+      sec('Running log', lg.length && `<ul class="plist log">${lg.map(e => { const k = logKind(e.kind); return `<li><a href="#/log"><span class="lic">${k[1]}</span><span class="grow">${hl(k[2] + (e.product ? ': ' + e.product : ''))}${e.text ? `<small>${hl(e.text)}</small>` : ''}<small>${shortDate(e.date)} · ${esc(logWhere(e))}</small></span>›</a></li>`; }).join('')}</ul>`),
     ].join('') : '<p class="muted center">Nothing found.</p>';
   };
   return { html, after: () => { const i = $('#sq'); i.addEventListener('input', run); run(); if (!term) i.focus(); } };

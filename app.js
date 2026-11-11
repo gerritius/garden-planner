@@ -31,12 +31,12 @@ let draft = null;    // form draft (planting / container)
 let lastRoute = '';
 
 function blank() {
-  return { format: 1, containers: [], plantings: [], tasks: [], customCrops: [], customVarieties: {}, created: todayStr(), lastBackup: null };
+  return { format: 1, containers: [], plantings: [], tasks: [], customCrops: [], customVarieties: {}, log: [], created: todayStr(), lastBackup: null };
 }
 function save() { return DB.set('state', S).catch(e => alert('Could not save: ' + e)); }
 
 const allCrops = () => CATALOG.concat(S.customCrops || []).map(dispCrop);
-const crop = id => allCrops().find(c => c.id === id) || { id, en: 'Unknown crop', ja: '', color: '#6a9' };
+const crop = id => allCrops().find(c => c.id === id) || (String(id).startsWith('x:') ? { id, en: String(id).slice(2), ja: '', color: '#8a9a7b', family: 'other' } : { id, en: 'Unknown crop', ja: '', color: '#6a9' });
 const cropName = id => { const c = crop(id); return c.ja ? `${c.en} (${c.ja})` : c.en; };
 const varieties = id => [...(crop(id).varieties || []), ...((S.customVarieties || {})[id] || [])];
 const ic = (id, size = 22) => Icons.crop(id, size, crop(id).color);
@@ -56,7 +56,7 @@ function gaps(c, excludeId) {
   return out;
 }
 function prevCrop(c, from, to) {
-  const h = (c.history || []).filter(x => x.from < to - 0.5 && x.to > from + 0.5);
+  const h = (c.history || []).filter(x => x.from < to - 0.5 && x.to > from + 0.5).sort((x, y) => ((x.harvestedOn || '') < (y.harvestedOn || '') ? -1 : 1));
   return h.length ? h[h.length - 1] : null;
 }
 function plotSVG(c, o = {}) {
@@ -247,6 +247,7 @@ function render() {
     const [a, b, c] = parts;
     if (!a) ({ html, after } = pageHome());
     else if (a === 'cal') ({ html, after } = pageCalendar());
+    else if (a === 'log') ({ html, after } = pageLog(q));
     else if (a === 'search') ({ html, after } = pageSearch(q));
     else if (a === 'map') ({ html, after } = pageMap(q));
     else if (a === 'review') ({ html, after } = pageReview(q));
@@ -344,7 +345,6 @@ function pageContainer(c) {
   setChrome(c.name, { back: true, kicker: typeLabel(c), sub: sizeLabel(c) });
   const ps = activeIn(c.id), gs = gaps(c);
   const vw = Math.min(window.innerWidth, 640) - 32;
-  const hist = (c.history || []).slice().reverse();
   A.split = () => splitDialog(c);
   A.gap = el => { const [f, t] = el.dataset.gap.split(','); go(`#/plant/new/${c.id}?from=${f}&to=${t}`); };
   A.del = async () => {
@@ -361,7 +361,8 @@ function pageContainer(c) {
       ${ps.length ? `<button class="btn wide primary" data-act="split">＋ Add another crop to this ${c.type === 'bed' ? 'bed' : 'pot'}</button>` : ''}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
-    ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}">${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${(() => { const hp = planting(h.plantingId); const n = hp ? harvestTotal(hp) : 0; return n ? ` · ${n} picked` : ''; })()}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
+    ${historySection(c)}
+    ${logSection(c)}
     ${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Adjust sections by dragging</a>` : ''}
     ${bedSection(c)}
     ${c.notes ? `<section><h3>About this ${c.type === 'bed' ? 'bed' : 'pot'}</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
@@ -714,6 +715,7 @@ function pagePlant(p) {
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
     ${harvestSection(p)}
     ${diarySection(p)}
+    ${harvested ? '' : logSection(null, p)}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : activeIn(c.id)) })}</a>
       ${harvested ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
     <section><h3>Details</h3><dl class="details">${dl.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
@@ -966,7 +968,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.3.5';
+const APP_VERSION = '1.4.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

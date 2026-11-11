@@ -384,3 +384,17 @@ mark { background: #f6e3a1; color: inherit; border-radius: 2px; }
 .plot .gap.newsec { fill: rgba(255,240,200,.35); stroke: #fff; stroke-dasharray: 5 3; }
 
 .map .mapc, .plot .handle { cursor: grab; }
+
+/* running log */
+.plist.log li { align-items: flex-start; }
+.plist.log li > a, .plist.log .lrow { display: flex; gap: 10px; align-items: flex-start; width: 100%; color: inherit; text-decoration: none; }
+.plist.log .lic { font-size: 19px; width: 26px; text-align: center; flex: none; line-height: 1.3; }
+.plist.log b { font-weight: 600; }
+.plist.log .ltext { display: block; font-size: 14px; }
+.plist.log .lph { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; flex: none; }
+.seg.small a, .seg.small button { font-size: 13px; padding: 5px 9px; }
+.seg a { text-decoration: none; }
+label.inline { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+label.inline select { flex: 1; }
+.kinds { margin-bottom: 4px; }
+.filt { margin: 10px 0 4px; } .filt .chip { text-decoration: none; padding: 4px 11px; } .filt .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }

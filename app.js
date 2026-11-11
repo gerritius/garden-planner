@@ -72,7 +72,7 @@ const effDue = t => (!t.done && t.due < todayStr()) ? todayStr() : t.due;
 const sortTasks = l => l.sort((a, b) => (effDue(a) < effDue(b) ? -1 : effDue(a) > effDue(b) ? 1 : 0));
 function seriesTitle(s) {
   if (s.customTitle) return s.customTitle;
-  const amt = s.amount ? ` ${s.amount} ${s.unit || 'g'}` : '';
+  const amt = s.amount ? ' ' + fmtAmt(s.amount, s.unit) : '';
   if (s.title) return s.title + (s.product ? ` – ${s.product}` : '') + amt;
   return 'Fertilise' + (s.product ? `: ${s.product}` : '') + amt;
 }
@@ -205,7 +205,7 @@ function setChrome(title, { back = false, tab = null, kicker = '', sub = '', sta
 function render() {
   const { parts, q } = route();
   const key = location.hash;
-  if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); }
+  if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
   A = {};
   let html = '', after = null;
   try {
@@ -218,6 +218,8 @@ function render() {
     else if (a === 'container') ({ html, after } = pageContainer(container(b)));
     else if (a === 'plant' && b === 'new') ({ html, after } = pagePlantForm(null, container(c), q));
     else if (a === 'plant' && c === 'edit') ({ html, after } = pagePlantForm(planting(b)));
+    else if (a === 'sow') ({ html, after } = pageSow());
+    else if (a === 'plant' && c === 'diary') ({ html, after } = pageDiary(planting(b), parts[3]));
     else if (a === 'plant' && c === 'photos') ({ html, after } = pagePhotos(planting(b)));
     else if (a === 'plant' && c === 'arrange') ({ html, after } = pageArrange(planting(b)));
     else if (a === 'plant') ({ html, after } = pagePlant(planting(b)));
@@ -251,15 +253,18 @@ function pageHome() {
     const n = S.lastBackup ? daysBetween(S.lastBackup, td) : null;
     if (n === null || n >= 14) backupNote = `<a class="banner" href="#/settings">💾 ${n === null ? 'No backup yet' : `Last backup ${n} days ago`} — tap to back up</a>`;
   }
+  A.sowCrop = el => sowPick(el.dataset.id);
   const html = `${backupNote}
+    ${Weather.section()}
     <section class="today"><h2>Today’s jobs</h2>
       ${today.length ? `<ul class="tasks">${today.map(t => taskLi(t)).join('')}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
       ${soon ? `<a class="more" href="#/cal">${soon} more in the next 7 days →</a>` : ''}</section>
     ${!S.containers.length ? `<div class="empty-state"><p>No beds or pots yet.</p><a class="btn primary" href="#/container/new">＋ Add a bed or pot</a></div>` : ''}
     ${beds.length ? `<h3 class="grp">Beds</h3><div class="grid">${beds.map(card).join('')}</div>` : ''}
     ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3><div class="grid">${pots.map(card).join('')}</div>` : ''}
+    ${sowNowSection()}
     <a class="fab" href="#/container/new" aria-label="Add bed or pot">＋</a>`;
-  return { html };
+  return { html, after: () => Weather.refresh().then(ch => { if (ch && !route().parts.length) render(); }) };
 }
 
 // ---------- pages: calendar ----------
@@ -300,7 +305,7 @@ function pageContainer(c) {
         <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
-    ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}">${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
+    ${hist.length ? `<section><h3>History</h3><ul class="plist">${hist.map(h => `<li><a href="#/plant/${h.plantingId}">${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}${(() => { const hp = planting(h.plantingId); const n = hp ? harvestTotal(hp) : 0; return n ? ` · ${n} picked` : ''; })()}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}</small></span>›</a></li>`).join('')}</ul></section>` : ''}
     ${c.notes ? `<section><h3>Notes</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
     <div class="btnrow"><a class="btn" href="#/container/${c.id}/edit">Edit ${typeLabel(c).toLowerCase()}</a><button class="btn danger" data-act="del">Delete</button></div>`;
   return { html, after: () => $$('.plotwrap [data-gap]').forEach(r => r.addEventListener('click', () => A.gap(r))) };
@@ -394,6 +399,7 @@ function pagePlantForm(p, c, q) {
       const g = gaps(c)[0] || [0, L];
       draft = { containerId: c.id, from: num(q.get('from')) ?? g[0], to: num(q.get('to')) ?? g[1], sowDate: todayStr(), fert: [], series: [], notes: '', photos: {}, newPhotos: {}, removePhotos: {} };
       Object.assign(draft, { cropId: '', method: 'seed', layout: c.type === 'bed' ? 'rows' : 'center', depth: '', rowSp: '', plantSp: '', rows: '', thinStage: '', thinSp: '', spread: '', variety: '' });
+      if (q.get('crop')) applyCrop(draft, crop(q.get('crop')), c);
     } else {
       draft = JSON.parse(JSON.stringify(p)); draft.newPhotos = {}; draft.removePhotos = {};
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
@@ -422,6 +428,7 @@ function pagePlantForm(p, c, q) {
       <label>Packet photos<div class="phrow">${ph('front')}${ph('back')}</div></label>
     </fieldset>
     <fieldset><legend>Where &amp; how</legend>
+      <div id="rotWarn"></div>
       ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
         `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. Split a bed into sections along its length.</small>`}
       <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
@@ -449,13 +456,14 @@ function pagePlantForm(p, c, q) {
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
       ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
-        <select name="fert.${i}.unit"><option${f.unit === 'g' ? ' selected' : ''}>g</option><option${f.unit === 'mL' ? ' selected' : ''}>mL</option></select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
+        <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
       <button type="button" class="btn small" data-act="addFert">＋ Add fertiliser</button>
+      <small class="hint">Units: g, handfuls (1 handful ≈ ${HANDFUL_G} g of granular fertiliser), mL or L.</small>
     </fieldset>
     <fieldset><legend>Extra fertiliser &amp; repeating jobs</legend>
       ${d.series.map((s, i) => `<div class="series">
         <div class="fert"><input name="series.${i}.product" value="${esc(s.product)}" placeholder="Product / job (e.g. 液肥)"><input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
-        <select name="series.${i}.unit"><option${s.unit === 'g' ? ' selected' : ''}>g</option><option${s.unit === 'mL' ? ' selected' : ''}>mL</option></select><button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
+        <select name="series.${i}.unit">${unitOpts(s.unit)}</select><button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
         <div class="rep-row"><select name="series.${i}.every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${+s.every === n ? ' selected' : ''}>${n === 0 ? 'Once' : 'Every ' + n}</option>`).join('')}</select>
         ${+s.every > 0 ? `<select name="series.${i}.per">${['day', 'week', 'month'].map(u => `<option value="${u}"${s.per === u ? ' selected' : ''}>${u}${+s.every > 1 ? 's' : ''}</option>`).join('')}</select>` : ''}
         <label class="inl">${+s.every > 0 ? 'from' : 'on'} <input type="date" name="series.${i}.start" value="${esc(s.start || '')}"></label>
@@ -478,6 +486,8 @@ function pagePlantForm(p, c, q) {
     const others = decorate(activeIn(c.id).filter(x => !p || x.id !== p.id));
     const vw = Math.min(window.innerWidth, 640) - 48;
     const ft = $('#fitTxt'); if (ft) { const n = Draw.fitRows(c, tmp); ft.textContent = n ? `${n} row${n > 1 ? 's' : ''} fit at ${tmp.rowSp} cm. ` : ''; $('#pf').rows.placeholder = n ? 'auto: ' + n : 'auto'; }
+    const rw = $('#rotWarn');
+    if (rw) { const rn = rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; }
     $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
@@ -562,12 +572,13 @@ function newCropDialog(cb) {
   modal(`<h3>New crop</h3><form id="ncf" class="form">
     <label>English name<input name="en" required></label><label>Japanese name<input name="ja"></label>
     <label>Colour<input name="color" type="color" value="#5c9e48"></label>
+    <label>Plant family<select name="family">${Object.entries(FAMILIES).map(([k, v]) => `<option value="${k}"${k === 'other' ? ' selected' : ''}>${v[0]} ${v[1]}</option>`).join('')}</select></label>
     <div class="two"><label>Days to earliest harvest<input name="daysHarvest" type="number" value="60"></label><label>Mature size (cm)<input name="spread" type="number" value="20"></label></div>
     <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Add crop</button></div></form>`, (m, close) => {
     m.querySelector('[data-x=no]').onclick = close;
     m.querySelector('#ncf').onsubmit = async e => {
       e.preventDefault(); const f = e.target;
-      const cr = { id: 'c_' + uid(), en: f.en.value.trim(), ja: f.ja.value.trim(), color: f.color.value, method: 'seed', layout: 'rows', depth: 1, rowSp: 20, sowSp: 5, thinStage: '', thinSp: null, daysThin: null, daysHarvest: num(f.daysHarvest), spread: num(f.spread), varieties: [], custom: true };
+      const cr = { id: 'c_' + uid(), en: f.en.value.trim(), ja: f.ja.value.trim(), color: f.color.value, method: 'seed', layout: 'rows', depth: 1, rowSp: 20, sowSp: 5, thinStage: '', thinSp: null, daysThin: null, daysHarvest: num(f.daysHarvest), spread: num(f.spread), varieties: [], custom: true, family: f.family.value, sow: [] };
       S.customCrops.push(cr); await save(); close(); cb(cr.id);
     };
   });
@@ -597,12 +608,14 @@ function pagePlant(p) {
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
     seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)}`}`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
-    (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + f.amount + ' ' + f.unit : ''}`).join('<br>')] : null,
+    (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + fmtAmt(f.amount, f.unit) : ''}`).join('<br>')] : null,
     (p.series || []).length ? ['Extra fertiliser / jobs', p.series.map(s => `${esc(seriesTitle(s))} · ${+s.every > 0 ? `every ${s.every} ${s.per}${s.every > 1 ? 's' : ''}${s.stopped ? ' (stopped)' : ''}` : 'once'}`).join('<br>')] : null,
-    c ? ['Previous crop here', (() => { const pc = (c.history || []).filter(h => h.plantingId !== p.id && h.from < p.to && h.to > p.from && (h.harvestedOn || '') <= (p.sowDate || '9')).pop(); return pc ? esc(cropName(pc.cropId)) : '—'; })()] : null,
+    c ? ['Previous crop here', (() => { const rn = rotationNote(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return rn ? esc(cropName(rn.prev.cropId)) + (rn.same ? ` <span class="warnchip">⚠ same family</span>` : '') : '—'; })()] : null,
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.logHarvest = () => harvestDialog(p);
+  A.editHarvest = el => harvestDialog(p, (p.harvests || []).find(h => h.id === el.dataset.id));
   A.harvest = async () => {
     if (!await confirmBox(`Mark <b>${esc(cr.en)}</b> as harvested and clear it from ${esc(c ? c.name : 'the bed')}?<br><small>It stays in the history.</small>`, 'Harvest finished')) return;
     p.status = 'harvested'; p.harvestedOn = td;
@@ -628,17 +641,19 @@ function pagePlant(p) {
       ${open.length ? `<ul class="tasks">${open.map(t => taskLi(t, false)).join('')}</ul>` : '<p class="muted">Nothing to do.</p>'}
       ${harvested ? '' : `<button class="btn small" data-act="addTask">＋ Add task</button>`}</section>
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
+    ${harvestSection(p)}
+    ${diarySection(p)}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : activeIn(c.id)) })}</a>
       ${harvested ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
     <section><h3>Details</h3><dl class="details">${dl.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
       ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section>
     <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested ? '' : `<button class="btn primary" data-act="harvest">🧺 Harvest finished</button>`}</div>
     <div class="btnrow"><button class="link danger" data-act="del">Delete planting</button></div>`;
-  return { html };
+  return { html, after: () => diaryAfter(p) };
 }
 
 async function removePlanting(p) {
-  for (const id of Object.values(p.photos || {})) { await DB.delPhoto(id); delete photoURLs[id]; }
+  for (const id of [...Object.values(p.photos || {}), ...(p.diary || []).map(d => d.photo)]) { await DB.delPhoto(id); delete photoURLs[id]; }
   S.tasks = S.tasks.filter(t => t.plantingId !== p.id);
   S.plantings = S.plantings.filter(x => x !== p);
   const c = container(p.containerId);
@@ -767,7 +782,7 @@ function pageArrange(p) {
 
 // ---------- pages: settings ----------
 function pageSettings() {
-  setChrome('Settings', { tab: 'settings', kicker: 'Backup & catalogue' });
+  setChrome('Tools', { tab: 'settings', kicker: 'Backup, weather & settings' });
   A.export = exportBackup;
   A.import = () => $('#impf').click();
   A.delCrop = async el => {
@@ -780,12 +795,13 @@ function pageSettings() {
   A.newCrop = () => newCropDialog(() => render());
   A.persist = async () => { if (navigator.storage && navigator.storage.persist) { const ok = await navigator.storage.persist(); alert(ok ? 'Storage is protected from automatic clearing.' : 'The browser declined. Installing the app to your home screen usually fixes this.'); render(); } };
   const cv = Object.entries(S.customVarieties || {}).filter(([, l]) => l.length);
-  const html = `<section><h3>Backup</h3>
+  const html = `${themeSettings()}${harvestTotalsSection()}<section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
       <p class="hint" id="persist"></p></section>
+    ${weatherSettings()}
     <section><h3>Custom crops</h3>
       ${S.customCrops.length ? `<ul class="plist">${S.customCrops.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}</span><button class="link danger" data-act="delCrop" data-id="${c.id}">delete</button></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>'}
       <button class="btn small" data-act="newCrop">＋ Add crop</button></section>
@@ -832,11 +848,12 @@ async function importBackup(file) {
   for (const k of Object.keys(photoURLs)) delete photoURLs[k];
   for (const [k, u] of Object.entries(data.photos || {})) { const b = await (await fetch(u)).blob(); await DB.putPhoto(k, b); }
   S = Object.assign(blank(), data.state);
+  applyTheme();
   await save(); alert('Backup restored.'); go('#/');
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
@@ -853,6 +870,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden && to
 (async () => {
   try { S = Object.assign(blank(), await DB.get('state') || {}); }
   catch (e) { S = blank(); alert('Storage is unavailable in this browser mode — changes will not be saved.'); }
+  applyTheme();
   render();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});

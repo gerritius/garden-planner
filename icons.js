@@ -101,5 +101,22 @@ const Icons = (() => {
     const body = draw[m[0]](...m.slice(1));
     return `<svg class="cicon" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${body}</svg>`;
   }
-  return { crop };
+  // Weather icons for WMO weather codes (Open-Meteo).
+  function weather(code, size = 28) {
+    const sun = (cx = 16, cy = 14, r = 6) => `<g stroke="#c98a12" stroke-width="1.6" stroke-linecap="round">${[0, 45, 90, 135, 180, 225, 270, 315].map(a => { const t = a * Math.PI / 180; return `<line x1="${cx + Math.cos(t) * (r + 2.5)}" y1="${cy + Math.sin(t) * (r + 2.5)}" x2="${cx + Math.cos(t) * (r + 5)}" y2="${cy + Math.sin(t) * (r + 5)}"/>`; }).join('')}</g><circle cx="${cx}" cy="${cy}" r="${r}" fill="#f2b632" ${st}/>`;
+    const cloud = (dy = 0, col = '#eef0ee') => `<path d="M8 ${25 + dy} h15 a5 5 0 0 0 0.5 -10 a7.5 7.5 0 0 0 -14 -1.5 a5.8 5.8 0 0 0 -1.5 11.5Z" fill="${col}" ${st}/>`;
+    const drops = n => `<g stroke="#3d7fb8" stroke-width="1.8" stroke-linecap="round">${[10, 15, 20, 25].slice(0, n).map((x, i) => `<line x1="${x}" y1="${26 + (i % 2) * 1.5}" x2="${x - 1.5}" y2="${30 + (i % 2) * 1.5}"/>`).join('')}</g>`;
+    let b;
+    if (code === 0) b = sun(16, 16, 7);
+    else if (code <= 2) b = sun(11, 11, 5) + cloud(2);
+    else if (code === 3) b = cloud(-1, '#dfe3df');
+    else if (code === 45 || code === 48) b = cloud(-4, '#e4e6e2') + `<path d="M6 26 h20 M9 30 h15" stroke="#8a8f88" stroke-width="1.8" stroke-linecap="round"/>`;
+    else if ((code >= 51 && code <= 57)) b = cloud(-3) + drops(2);
+    else if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) b = cloud(-3, '#d6dbd8') + drops(4);
+    else if ((code >= 71 && code <= 77) || code === 85 || code === 86) b = cloud(-3) + `<g fill="#9cc0de" ${st} stroke-width=".8">${[[10, 28], [16, 30], [22, 28]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.8"/>`).join('')}</g>`;
+    else if (code >= 95) b = cloud(-3, '#c9cfcc') + `<path d="M17 21 L13 27 L16.5 27 L14 32 L20 25 L16.5 25 L18.5 21Z" fill="#f2c230" ${st} stroke-width="1"/>`;
+    else b = cloud();
+    return `<svg class="wicon" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${b}</svg>`;
+  }
+  return { crop, weather };
 })();

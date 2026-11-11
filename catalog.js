@@ -31,7 +31,7 @@ const CATALOG = [
     ['楽天', '夏楽天', 'よかった菜', '浜美2号', 'きよすみ']),
   C('edamame', 'Edamame', '枝豆', '#6fae3f', 'seed', 'rows', 2, 40, 20, '初生葉が開いたら 2本立ち', 20, 10, 80, 40,
     ['湯あがり娘', '富貴', '天ヶ峰', 'だだちゃ豆', '丹波黒大豆']),
-  C('hakusai', 'Napa cabbage', '白菜', '#c5e1a5', 'seed', 'staggered', 1, 60, 45, '本葉5–6枚で1本立ち', 45, 25, 80, 50,
+  C('hakusai', 'Hakusai', '白菜', '#c5e1a5', 'seed', 'staggered', 1, 60, 45, '本葉5–6枚で1本立ち', 45, 25, 80, 50,
     ['無双', '黄ごころ65', '黄ごころ85', 'タイニーシュシュ', '娃々菜'], { dir: 'along' }),
   C('daikon', 'Daikon', '大根', '#e8eef0', 'seed', 'rows', 1.5, 60, 30, '本葉5–6枚で1本立ち', 30, 25, 60, 35,
     ['耐病総太り', '三浦大根', '聖護院大根', '献夏37号', '紅芯大根']),
@@ -43,7 +43,7 @@ const CATALOG = [
     ['強力オーライ', 'ブレード10', 'ミストラル', '弁天丸', '日本ほうれん草']),
   C('kabu', 'Turnip', 'カブ', '#f3f0e6', 'seed', 'continuous', 1, 20, 1, '本葉2–3枚 then 5枚', 10, 15, 50, 12,
     ['耐病ひかり', 'スワン', '金町小かぶ', 'あやめ雪', '聖護院かぶ']),
-  C('piman', 'Green pepper', 'ピーマン', '#43a047', 'seedling', 'rows', null, 60, 45, '', null, null, 60, 50,
+  C('piman', 'Capsicum', 'ピーマン', '#43a047', 'seedling', 'rows', null, 60, 45, '', null, null, 60, 50,
     ['京波', '京みどり', 'エース', 'ニューエース', 'カリフォルニアワンダー'], { pot: 'center' }),
   C('chilli', 'Hot chilli', '唐辛子', '#d84315', 'seedling', 'rows', null, 60, 45, '', null, null, 70, 50,
     ['ハラペーニョ', '鷹の爪', '八房', 'ハバネロ', '島とうがらし'], { pot: 'center' }),
@@ -89,3 +89,29 @@ const CATALOG = [
   C('nanohana', 'Nanohana', '菜の花', '#e6c619', 'seed', 'continuous', 0.5, 30, 2, '本葉3–4枚', 20, 20, 100, 35,
     ['早生菜花', 'のらぼう菜', '寒咲花菜', '花っこりー']),
 ];
+
+// Plant families (for rotation warnings).
+const FAMILIES = {
+  brassica: ['Brassica (cabbage family)', 'アブラナ科'], nightshade: ['Nightshade (tomato family)', 'ナス科'], legume: ['Legume (bean family)', 'マメ科'],
+  allium: ['Allium (onion family)', 'ヒガンバナ科'], cucurbit: ['Cucurbit (gourd family)', 'ウリ科'], umbellifer: ['Umbellifer (carrot family)', 'セリ科'],
+  aster: ['Aster (daisy family)', 'キク科'], amaranth: ['Amaranth (spinach family)', 'ヒユ科'], grass: ['Grass family', 'イネ科'],
+  morningglory: ['Morning glory family', 'ヒルガオ科'], aroid: ['Aroid (taro family)', 'サトイモ科'], rose: ['Rose family', 'バラ科'], other: ['Other', 'その他'],
+};
+// [family, months to sow/plant in central Japan (中間地), frost-tender]
+const CROP_EXTRA = {
+  nasu: ['nightshade', [4, 5], 1], celery: ['umbellifer', [4, 5, 8, 9]], potato: ['nightshade', [2, 3, 8, 9], 1], minitomato: ['nightshade', [4, 5], 1],
+  tomato: ['nightshade', [4, 5], 1], naganegi: ['allium', [4, 5, 6, 7]], hatamanegi: ['allium', [10, 11]], carrot: ['umbellifer', [3, 4, 7, 8]],
+  komatsuna: ['brassica', [3, 4, 5, 6, 9, 10]], edamame: ['legume', [4, 5, 6], 1], hakusai: ['brassica', [8, 9]], daikon: ['brassica', [3, 4, 8, 9]],
+  hatsuka: ['brassica', [3, 4, 5, 6, 9, 10]], cabbage: ['brassica', [3, 4, 8, 9]], spinach: ['amaranth', [3, 4, 9, 10, 11]], kabu: ['brassica', [3, 4, 9, 10]],
+  piman: ['nightshade', [4, 5], 1], chilli: ['nightshade', [4, 5], 1], snappea: ['legume', [10, 11]], kyuri: ['cucurbit', [4, 5, 6, 7], 1],
+  onion: ['allium', [11]], lettuce: ['aster', [3, 4, 9, 10]], broccoli: ['brassica', [3, 4, 8, 9]], satoimo: ['aroid', [4, 5], 1],
+  satsumaimo: ['morningglory', [5, 6], 1], shungiku: ['aster', [3, 4, 9, 10]], mizuna: ['brassica', [3, 4, 9, 10]], zucchini: ['cucurbit', [4, 5], 1],
+  corn: ['grass', [4, 5, 6], 1], ingen: ['legume', [4, 5, 6, 7], 1], chingensai: ['brassica', [3, 4, 5, 9, 10]], garlic: ['allium', [9, 10]],
+  shishito: ['nightshade', [4, 5], 1], sayaendo: ['legume', [10, 11]], soramame: ['legume', [10, 11]], cauliflower: ['brassica', [3, 4, 8, 9]],
+  strawberry: ['rose', [10]], nanohana: ['brassica', [9, 10]],
+};
+for (const c of CATALOG) { const x = CROP_EXTRA[c.id] || ['other', []]; c.family = x[0]; c.sow = x[1]; c.tender = !!x[2]; }
+
+// Fertiliser / amendment units. A handful (一握り) of granular fertiliser is roughly 30 g.
+const UNITS = ['g', 'handful', 'mL', 'L'];
+const HANDFUL_G = 30;

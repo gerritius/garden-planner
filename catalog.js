@@ -1,7 +1,7 @@
 // Built-in crop catalog. All sizes in cm, times in days.
 // Values are typical starting points for Japanese home gardens — always check the packet.
 // method: 'seed' | 'seedling'  (seedling = transplant / tuber / clove / set)
-// layout: default layout in beds; pot: default layout in pots (optional)
+// layout: default layout in beds; pot: default layout in pots (optional); dir: 'along' = rows run down the long side
 // depth: sowing depth · rowSp: between rows · sowSp: sowing distance (seed) or plant spacing (seedling)
 // thinStage / thinSp / daysThin: thinning info (seed crops) · daysHarvest: sow/plant → earliest harvest
 // spread: approx. mature plant diameter, used to "grow" the drawing
@@ -32,13 +32,13 @@ const CATALOG = [
   C('edamame', 'Edamame', '枝豆', '#6fae3f', 'seed', 'rows', 2, 40, 20, '初生葉が開いたら 2本立ち', 20, 10, 80, 40,
     ['湯あがり娘', '富貴', '天ヶ峰', 'だだちゃ豆', '丹波黒大豆']),
   C('hakusai', 'Napa cabbage', '白菜', '#c5e1a5', 'seed', 'staggered', 1, 60, 45, '本葉5–6枚で1本立ち', 45, 25, 80, 50,
-    ['無双', '黄ごころ65', '黄ごころ85', 'タイニーシュシュ', '娃々菜']),
+    ['無双', '黄ごころ65', '黄ごころ85', 'タイニーシュシュ', '娃々菜'], { dir: 'along' }),
   C('daikon', 'Daikon', '大根', '#e8eef0', 'seed', 'rows', 1.5, 60, 30, '本葉5–6枚で1本立ち', 30, 25, 60, 35,
     ['耐病総太り', '三浦大根', '聖護院大根', '献夏37号', '紅芯大根']),
   C('hatsuka', 'Radish', '二十日大根', '#e84d6f', 'seed', 'continuous', 1, 10, 1, '本葉2–3枚', 3, 12, 30, 4,
     ['コメット', 'レッドチャイム', '紅白', 'フレンチブレックファスト', 'カラフルファイブ']),
-  C('cabbage', 'Cabbage', 'キャベツ', '#88c057', 'seedling', 'staggered', null, 45, 40, '', null, null, 80, 45,
-    ['金系201', '初秋', '富士早生', '四季穫', 'グリーンボール']),
+  C('cabbage', 'Cabbage', 'キャベツ', '#88c057', 'seedling', 'staggered', null, 45, 45, '', null, null, 80, 45,
+    ['金系201', '初秋', '富士早生', '四季穫', 'グリーンボール'], { dir: 'along' }),
   C('spinach', 'Spinach', 'ほうれん草', '#2e7d32', 'seed', 'continuous', 1, 15, 1, '本葉2–3枚', 5, 20, 40, 15,
     ['強力オーライ', 'ブレード10', 'ミストラル', '弁天丸', '日本ほうれん草']),
   C('kabu', 'Turnip', 'カブ', '#f3f0e6', 'seed', 'continuous', 1, 20, 1, '本葉2–3枚 then 5枚', 10, 15, 50, 12,
@@ -57,7 +57,7 @@ const CATALOG = [
   C('lettuce', 'Lettuce', 'レタス', '#a5d66f', 'seedling', 'staggered', null, 30, 30, '', null, null, 40, 25,
     ['シスコ', 'レッドファイヤー', 'グリーンウェーブ', 'コスレタス', 'サラダ菜']),
   C('broccoli', 'Broccoli', 'ブロッコリー', '#2f6b3a', 'seedling', 'staggered', null, 50, 40, '', null, null, 75, 50,
-    ['緑嶺', 'ピクセル', 'おはよう', 'グランドーム', 'スティックセニョール']),
+    ['緑嶺', 'ピクセル', 'おはよう', 'グランドーム', 'スティックセニョール'], { dir: 'along' }),
   C('satoimo', 'Taro', '里芋', '#8d6e63', 'seed', 'rows', 8, 90, 40, '', null, null, 180, 70,
     ['土垂', '石川早生', '八つ頭', '海老芋', 'セレベス']),
   C('satsumaimo', 'Sweet potato', 'さつまいも', '#ad3b6b', 'seedling', 'rows', null, 90, 35, '', null, null, 120, 60,
@@ -83,7 +83,7 @@ const CATALOG = [
   C('soramame', 'Broad bean', 'そら豆', '#5d8a3a', 'seed', 'rows', 2, 60, 40, '本葉2枚で1本立ち', 40, 20, 200, 50,
     ['打越一寸', '陵西一寸', '河内一寸', '仁徳一寸']),
   C('cauliflower', 'Cauliflower', 'カリフラワー', '#efe6c8', 'seedling', 'staggered', null, 50, 45, '', null, null, 80, 50,
-    ['スノークラウン', 'バイオレットクイン', 'オレンジブーケ', 'ロマネスコ', '美星']),
+    ['スノークラウン', 'バイオレットクイン', 'オレンジブーケ', 'ロマネスコ', '美星'], { dir: 'along' }),
   C('strawberry', 'Strawberry', 'いちご', '#e53950', 'seedling', 'staggered', null, 30, 30, '', null, null, 180, 30,
     ['とちおとめ', '章姫', '紅ほっぺ', '宝交早生', 'よつぼし']),
   C('nanohana', 'Nanohana', '菜の花', '#e6c619', 'seed', 'continuous', 0.5, 30, 2, '本葉3–4枚', 20, 20, 100, 35,

@@ -351,7 +351,7 @@ function applyCrop(d, cr, c) {
   d.depth = cr.depth ?? ''; d.rowSp = cr.rowSp ?? ''; d.plantSp = cr.sowSp ?? '';
   d.thinStage = cr.thinStage || ''; d.thinSp = cr.thinSp ?? ''; d.spread = cr.spread ?? '';
   d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
-  d.rows = ''; d.variety = '';
+  d.dir = cr.dir || 'across'; d.rows = ''; d.variety = '';
   recalc(d);
 }
 function recalc(d) {
@@ -413,9 +413,10 @@ function pagePlantForm(p, c, q) {
         <label>${seed ? 'Sowing distance' : 'Spacing between plants'} (cm)<input name="plantSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.plantSp)}"></label>
         ${rowish ? `<label>Between rows (cm)<input name="rowSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.rowSp)}"></label>` : ''}
       </div>
+      ${rowish ? `<label>Row direction<select name="dir"><option value="across"${d.dir !== 'along' ? ' selected' : ''}>Across – rows stacked down the long side</option><option value="along"${d.dir === 'along' ? ' selected' : ''}>Lengthways – rows run down the long side</option></select></label>` : ''}
       ${rowish ? `<label>Number of rows<input name="rows" type="number" min="1" inputmode="numeric" value="${esc(d.rows)}" placeholder="auto">
-        <small><span id="fitTxt"></span>If you enter a number, the rows are spread evenly down the section.</small></label>` : ''}
-      <small class="hint">Rows run across the short side and are stacked down the long side. Plants start one spacing in from each row end.</small>
+        <small><span id="fitTxt"></span>If you enter a number, the rows are spread evenly between the margins.</small></label>` : ''}
+      <small class="hint">Rows and plants start at the edge margin and are spread evenly, so actual spacing is never less than what you enter.</small>
     </fieldset>
     ${seed ? `<fieldset><legend>Thinning</legend>
       <label>When to thin<input name="thinStage" value="${esc(d.thinStage)}" placeholder="e.g. at 3 true leaves"></label>
@@ -486,7 +487,7 @@ function pagePlantForm(p, c, q) {
         if (e.target.value === '__new') { e.target.value = d.cropId; return newCropDialog(id => { applyCrop(d, crop(id), c); d.method = 'seed'; render(); }); }
         const keepSow = d.sowDate; applyCrop(d, crop(e.target.value), c); d.sowDate = keepSow; recalc(d); return render();
       }
-      if (n === 'layout' || /\.every$/.test(n)) { read(); return render(); }
+      if (n === 'layout' || n === 'dir' || /\.every$/.test(n)) { read(); return render(); }
       if (e.target.dataset.slot) {
         const file = e.target.files[0]; if (!file) return;
         read(); d.newPhotos[e.target.dataset.slot] = await compress(file); delete d.removePhotos[e.target.dataset.slot]; render();
@@ -508,7 +509,7 @@ function pagePlantForm(p, c, q) {
 async function savePlanting(p, d, c) {
   const isNew = !p;
   if (isNew) { p = { id: uid(), containerId: c.id, status: 'active', created: todayStr(), thinned: false, photos: {} }; S.plantings.push(p); }
-  const fields = ['cropId', 'variety', 'method', 'layout', 'sowDate', 'thinStage', 'thinDate', 'harvestDate', 'notes'];
+  const fields = ['cropId', 'variety', 'method', 'layout', 'dir', 'sowDate', 'thinStage', 'thinDate', 'harvestDate', 'notes'];
   for (const k of fields) p[k] = d[k] || '';
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
   if (p.method !== 'seed') { p.depth = null; p.thinSp = null; p.thinDate = ''; p.thinStage = ''; }
@@ -571,7 +572,7 @@ function pagePlant(p) {
   const dl = [
     ['Planting', seed ? 'From seed' : 'Seedlings / tubers'],
     c && (p.from > 0 || p.to < L) ? ['Section', `${p.from}–${p.to} cm from top`] : null,
-    ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && p.layout !== 'continuous' ? ` · ${plantsNow} plants` : '')],
+    ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && p.layout !== 'continuous' ? ` · ${plantsNow} plants` : '')],
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,

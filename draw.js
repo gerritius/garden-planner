@@ -20,30 +20,27 @@ const Draw = (() => {
     if (c.type === 'round') { const R = W / 2; return Math.hypot(x - R, y - R) <= R - pad; }
     return x >= pad && x <= W - pad && y >= pad && y <= L - pad;
   }
-  // Positions from a+inset to b-inset at spacing s, centred.
-  function spaced(a, b, s, inset) {
-    const st = a + inset, en = b - inset;
-    if (!(s > 0) || en < st) return [(a + b) / 2];
-    const n = Math.min(400, Math.floor((en - st) / s + 1e-6) + 1);
-    const off = ((en - st) - (n - 1) * s) / 2;
+  // n positions spread evenly from a to b (endpoints included); 1 → middle.
+  function even(a, b, n) {
+    if (n <= 1 || b <= a) return [(a + b) / 2];
     const out = [];
-    for (let i = 0; i < n; i++) out.push(st + off + i * s);
+    for (let i = 0; i < n; i++) out.push(a + i * (b - a) / (n - 1));
     return out;
   }
-  // Usable band of a section (outer bed edges get the margin).
-  function band(c, p) {
+  // How many fit between a and b at spacing s (endpoints included).
+  function countFit(a, b, s) { return s > 0 && b > a ? Math.min(400, Math.floor((b - a) / s + 1e-6) + 1) : 1; }
+  // Section range down the long side. Outer bed edges use the margin; edges shared with another section use half the spacing.
+  function yRange(c, p, sp) {
     const { L } = dims(c), m = +c.margin || 0;
-    const top = +p.from + (+p.from <= 0.5 ? m : 0);
-    const bot = +p.to - (+p.to >= L - 0.5 ? m : 0);
-    return { top, bot, h: Math.max(1, bot - top) };
+    return [+p.from + (+p.from <= 0.5 ? m : sp / 2), +p.to - (+p.to >= L - 0.5 ? m : sp / 2)];
   }
-  function rowCount(c, p) {
-    const { h } = band(c, p);
-    if (+p.rows > 0) return Math.round(+p.rows);
-    if (+p.rowSp > 0) return Math.max(1, Math.floor(h / +p.rowSp));
-    return 1;
+  function band(c, p) { const [top, bot] = yRange(c, p, 0); return { top, bot, h: Math.max(1, bot - top) }; }
+  function rowAxis(c, p) {
+    const { W } = dims(c), m = +c.margin || 0;
+    return p.dir === 'along' ? [m, W - m] : yRange(c, p, +p.rowSp || 0);
   }
-  function fitRows(c, p) { const { h } = band(c, p); return +p.rowSp > 0 ? Math.max(1, Math.floor(h / +p.rowSp)) : null; }
+  function fitRows(c, p) { if (!(+p.rowSp > 0)) return null; const [a, b] = rowAxis(c, p); return countFit(a, b, +p.rowSp); }
+  function rowCount(c, p) { return +p.rows > 0 ? Math.round(+p.rows) : (fitRows(c, p) || 1); }
   function spacingNow(p) {
     if (p.method === 'seed' && p.thinned && +p.thinSp > 0) return +p.thinSp;
     return +p.plantSp || +p.thinSp || 10;
@@ -55,13 +52,13 @@ const Draw = (() => {
   }
 
   // Returns plant centres and drill lines for a planting.
+  // dir 'across' (default): rows run across the short side, stacked down the long side.
+  // dir 'along': rows run down the long side, side by side across the width.
   function layout(c, p) {
-    const { W } = dims(c);
+    const { W } = dims(c), m = +c.margin || 0;
     const s = Math.max(0.5, spacingNow(p));
-    const inset = c.type === 'bed' ? s : s / 2;
     const lines = [];
     if (p.layout === 'free') return { pts: (p.positions || []).map(q => [q[0], q[1]]), lines };
-    const { top, h } = band(c, p);
     const midY = (+p.from + +p.to) / 2;
     if (p.layout === 'center') return { pts: [[W / 2, midY]], lines };
     if (p.layout === 'diamond') {
@@ -69,27 +66,36 @@ const Draw = (() => {
       return { pts: [[W / 2, midY - d], [W / 2 + d, midY], [W / 2, midY + d], [W / 2 - d, midY]], lines };
     }
     if (p.layout === 'scatter') {
+      const { top, h } = band(c, p);
       const rnd = rng(p.id || 'x');
       const n = Math.min(300, Math.max(1, Math.round((W * h) / (s * s))));
       const pts = []; let tries = 0;
       while (pts.length < n && tries < n * 30) {
         tries++;
         const x = rnd() * W, y = top + rnd() * h;
-        if (inside(c, x, y, Math.min(2, s / 2))) pts.push([x, y]);
+        if (inside(c, x, y, Math.max(m, 1))) pts.push([x, y]);
       }
       return { pts, lines };
     }
-    const n = rowCount(c, p), pts = [];
-    for (let i = 0; i < n; i++) {
-      const y = top + (i + 0.5) * h / n;
-      const [a, b] = rowRange(c, y);
-      if (b - a < 1) continue;
-      const ins = Math.min(inset, (b - a) / 2);
-      let xs = spaced(a, b, s, ins);
-      if (p.layout === 'staggered' && i % 2 === 1 && xs.length > 1) xs = xs.slice(0, -1).map(x => x + s / 2);
-      if (p.layout === 'continuous' && !(p.thinned && p.method === 'seed')) lines.push([a + ins, y, b - ins, y]);
-      xs.forEach(x => pts.push([x, y]));
-    }
+    const [ra, rb] = rowAxis(c, p);
+    const rowsPos = even(ra, rb, rowCount(c, p));
+    const along = p.dir === 'along';
+    const drill = p.layout === 'continuous' && !(p.thinned && p.method === 'seed');
+    const pts = [];
+    rowsPos.forEach((r, i) => {
+      let a, b;
+      if (along) {
+        [a, b] = yRange(c, p, s);
+        if (c.type === 'round') { const [ca, cb] = rowRange(c, r); a = Math.max(a, ca + m); b = Math.min(b, cb - m); }
+      } else {
+        const [ca, cb] = rowRange(c, r); a = ca + m; b = cb - m;
+      }
+      if (b < a) { if (c.type === 'round') return; a = b = (a + b) / 2; }
+      let pos = even(a, b, countFit(a, b, s));
+      if (p.layout === 'staggered' && i % 2 === 1 && pos.length > 1) pos = pos.slice(1).map((v, k) => (v + pos[k]) / 2);
+      if (drill) lines.push(along ? [r, a, r, b] : [a, r, b, r]);
+      pos.forEach(v => pts.push(along ? [r, v] : [v, r]));
+    });
     return { pts, lines };
   }
 

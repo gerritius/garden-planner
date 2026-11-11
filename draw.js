@@ -106,8 +106,8 @@ const Draw = (() => {
     const hv = pd(p.harvestDate) || new Date(sow.getTime() + 60 * DAY);
     if (p.method === 'seed' && +p.thinSp > 0 && !p.thinned) {
       const th = pd(p.thinDate) || new Date(sow.getTime() + 20 * DAY);
-      const f = clamp01((t - sow) / ((th - sow) || 1));
-      return 0.3 + f * (Math.min(R, 2) - 0.3);
+      // before thinning: tiny seedlings; if thinning is overdue they keep growing anyway
+      if (t < th) { const f = clamp01((t - sow) / ((th - sow) || 1)); return 0.3 + f * (Math.min(R, 2) - 0.3); }
     }
     const st = p.method === 'seed' ? (pd(p.thinDoneOn) || pd(p.thinDate) || sow) : sow;
     const r0 = p.method === 'seed' ? Math.min(R, +p.thinSp > 0 ? 2 : 0.3) : Math.max(0.5, R * 0.2);

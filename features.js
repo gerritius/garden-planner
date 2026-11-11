@@ -12,7 +12,7 @@ const unitOpts = sel => UNITS.map(u => `<option value="${u}"${sel === u ? ' sele
 
 // ---------- rotation ----------
 function lastCropIn(c, from, to, beforeDate, excludeId) {
-  const h = (c.history || []).filter(x => x.plantingId !== excludeId && x.from < to - 0.5 && x.to > from + 0.5 && (!beforeDate || (x.harvestedOn || '') <= beforeDate));
+  const h = (c.history || []).filter(x => (!excludeId || x.plantingId !== excludeId) && x.from < to - 0.5 && x.to > from + 0.5 && (!beforeDate || (x.harvestedOn || '') <= beforeDate));
   h.sort((a, b) => ((a.harvestedOn || '') < (b.harvestedOn || '') ? -1 : 1));
   return h.length ? h[h.length - 1] : null;
 }
@@ -44,6 +44,7 @@ function harvestDialog(p, h) {
   h = h || { id: uid(), date: todayStr(), count: 1, note: '' };
   modal(`<h3>${isNew ? 'Log a harvest' : 'Edit harvest'}</h3>
     <p class="muted small">${ic(p.cropId)} ${esc(cropName(p.cropId))}${p.variety ? ' · ' + esc(p.variety) : ''}</p>
+    ${isNew ? sprayBanner(p) : ''}
     <form id="hf" class="form">
       <label>How many?<div class="stepper"><button type="button" data-s="-1">−</button><input name="count" type="number" inputmode="numeric" min="0" value="${h.count}"><button type="button" data-s="1">＋</button></div></label>
       <label>Date<input name="date" type="date" value="${h.date}"></label>
@@ -164,8 +165,8 @@ const Weather = {
     if (!active.length) return out;
     const tender = [...new Set(active.filter(p => crop(p.cropId).tender).map(p => crop(p.cropId).en))];
     const list = (arr, f) => arr.map(d => `${dayName(d.date)} ${f(d)}`).join(', ');
-    const frost = days.filter(d => d.min <= 2);
-    if (frost.length) out.push(['frost', `<b>Frost risk</b> ${list(frost, d => Math.round(d.min) + '°')}${tender.length ? ` — protect ${esc(tender.join(', '))}` : ''}`]);
+    const fr = frostRisk();
+    if (fr.length) { const names = [...new Set(fr.flatMap(x => x.hit.map(p => crop(p.cropId).en)))]; out.push(['frost', `<b>${fr.some(x => x.hard) ? 'Hard frost' : 'Frost risk'}</b> ${list(fr.map(x => x.d), d => Math.round(d.min) + '°')}${names.length ? ` — cover ${esc(names.join(', '))}` : ' — nothing tender planted'}`]); }
     const rain = days.filter(d => d.rain >= 30);
     if (rain.length) out.push(['rain', `<b>Heavy rain</b> ${list(rain, d => Math.round(d.rain) + ' mm')} — check drainage`]);
     const wind = days.filter(d => d.wind >= 40);

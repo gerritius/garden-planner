@@ -23,12 +23,13 @@ function logFeed() {
   const td = todayStr(), out = [];
   for (const e of S.log || []) {
     const k = logKind(e.kind), amt = fmtAmt(e.amount, e.unit);
-    out.push({ date: e.date, kind: e.kind, icon: k[1], title: `${k[2]}${e.product ? ': ' + e.product : ''}${amt ? ' · ' + amt : ''}`, sub: logWhere(e), text: e.text, act: 'editLog', id: e.id,
+    out.push({ date: e.date, kind: e.kind, icon: k[1], title: `${k[2]}${e.product ? ': ' + e.product : ''}${amt ? ' · ' + amt : ''}${e.per === 'total' && amt ? ' in total' : ''}${+e.phi > 0 ? ` · ${e.phi}-day wait` : ''}`, sub: logWhere(e), text: e.text, act: 'editLog', id: e.id,
       cids: [...(e.cids || []), ...(e.pids || []).map(id => (planting(id) || {}).containerId)], pids: e.pids || [], all: !(e.cids || []).length && !(e.pids || []).length });
   }
   for (const t of S.tasks) {
     if (!t.done || !t.doneOn) continue;
     const { p, c } = taskOwner(t);
+    if (t.kind === 'frost') { out.push({ date: t.doneOn, kind: 'cover', title: t.title, sub: (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '), cids: t.cids || [], pids: [] }); continue; }
     if (t.kind === 'water') { out.push({ date: t.doneOn, kind: 'water', title: t.title || 'Watered pots & bags', sub: t.note || '', all: true, cids: [] }); continue; }
     const k = t.kind === 'series' || t.kind === 'custom' || t.containerId ? kindOfTitle(t.title) : t.kind === 'germ' ? 'note' : 'job';
     out.push({ date: t.doneOn, kind: k, title: t.title, sub: p ? crop(p.cropId).en + (c ? ' · ' + c.name : '') : c ? c.name : '', href: p ? '#/plant/' + p.id : c ? '#/container/' + c.id : null, cids: c ? [c.id] : [], pids: p ? [p.id] : [] });
@@ -68,7 +69,7 @@ function pageLog(q) {
   A.newLog = () => logDialog(null, cid ? { cids: [cid] } : {});
   A.editLog = el => logDialog((S.log || []).find(e => e.id === el.dataset.id));
   A.more = () => location.replace(url({ n: lim + 200 }));
-  const html = `<button class="btn primary wide" data-act="newLog">📝 Log something</button>
+  const html = `<div class="btnrow"><button class="btn primary grow" data-act="newLog">📝 Log something</button><a class="btn" href="#/totals">📊 Totals</a></div>
     <div class="sowchips filt">${LOG_FILTERS.map(([k, l]) => `<a class="chip big${k === f ? ' on' : ''}" href="${url({ f: k, n: '' })}" onclick="location.replace(this.href);return false;">${l}</a>`).join('')}</div>
     <label class="inline">Bed / pot <select id="logc"><option value="">All</option>${S.containers.map(c => `<option value="${c.id}"${c.id === cid ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${shown.length ? logDays(shown) : '<div class="empty-state">Nothing logged yet.<br><small>Ticked jobs, harvests, sowings, notes and anything you log here all show up by day.</small></div>'}
@@ -94,7 +95,9 @@ function logDialog(e, preset = {}) {
       <label>Date<input type="date" name="date" value="${e.date}" max="${todayStr()}"></label>
       <div class="sowchips kinds">${LOG_KINDS.map(([k, i, l]) => `<label class="chip big tog"><input type="radio" name="kind" value="${k}"${k === e.kind ? ' checked' : ''}><span>${i} ${l}</span></label>`).join('')}</div>
       <div id="prodrow"><label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${prods.map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
-        <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(e.unit)}</select></label></div></div>
+        <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(e.unit)}</select></label></div>
+        <label id="perrow" hidden>The amount is<select name="per"><option value="each"${e.per !== 'total' ? ' selected' : ''}>for each bed / pot</option><option value="total"${e.per === 'total' ? ' selected' : ''}>in total, shared between them</option></select></label>
+        <label id="phirow">Wait before harvest (収穫前日数)<div class="two"><input name="phi" type="number" inputmode="numeric" min="0" value="${e.phi ?? ''}" placeholder="days, from the label"><span class="hint">Leave empty if none. Remembered for this product.</span></div></label></div>
       <label>Notes<textarea name="text" rows="2" placeholder="e.g. 1000× dilution, both sides of leaves">${esc(e.text || '')}</textarea></label>
       <label>Where <small class="muted">(nothing ticked = whole garden)</small></label>
       <div class="sowchips">${S.containers.map(c => `<label class="chip big tog"><input type="checkbox" name="cid" value="${c.id}"${(e.cids || []).includes(c.id) ? ' checked' : ''}><span>${BED_ICON(16)} ${esc(c.name)}</span></label>`).join('')}</div>
@@ -102,7 +105,14 @@ function logDialog(e, preset = {}) {
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div>
     </form>`, (m, close) => {
     const f = m.querySelector('#lf');
-    const showProd = () => { const k = f.querySelector('input[name=kind]:checked').value; m.querySelector('#prodrow').hidden = !['fert', 'spray', 'soil', 'water', 'pest', 'other'].includes(k); };
+    const showProd = () => {
+      const k = f.querySelector('input[name=kind]:checked').value;
+      m.querySelector('#prodrow').hidden = !['fert', 'spray', 'soil', 'water', 'pest', 'other'].includes(k);
+      m.querySelector('#phirow').hidden = k !== 'spray';
+      const n = new Set([...[...f.querySelectorAll('input[name=cid]:checked')].map(i => i.value), ...[...f.querySelectorAll('input[name=pid]:checked')].map(i => (planting(i.value) || {}).containerId)]).size;
+      m.querySelector('#perrow').hidden = n < 2;
+    };
+    f.product.addEventListener('change', () => { const v = (S.phi || {})[f.product.value.trim()]; if (v != null && f.phi.value === '') f.phi.value = v; });
     f.addEventListener('change', showProd); showProd();
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const del = m.querySelector('[data-x=del]');
@@ -113,7 +123,9 @@ function logDialog(e, preset = {}) {
         date: f.date.value || todayStr(), kind: f.querySelector('input[name=kind]:checked').value, product: f.product.value.trim(),
         amount: f.amount.value === '' ? null : +f.amount.value, unit: f.unit.value, text: f.text.value.trim(),
         cids: [...f.querySelectorAll('input[name=cid]:checked')].map(i => i.value), pids: [...f.querySelectorAll('input[name=pid]:checked')].map(i => i.value),
+        per: f.per.value, phi: f.querySelector('input[name=kind]:checked').value === 'spray' && f.phi.value !== '' ? +f.phi.value : null,
       });
+      if (e.phi != null && e.product) (S.phi = S.phi || {})[e.product] = e.phi;
       if (isNew) (S.log = S.log || []).push(e);
       await save(); close(); render();
     };
@@ -135,7 +147,8 @@ function pastCropDialog(c, h) {
     <p class="muted small">For crops grown in ${esc(c.name)} before you used this app. Used for the rotation check.</p>
     <form id="pcf" class="form">
       <label>Crop<select name="crop" required><option value="">Choose…</option>${opts.map(o => `<option value="${o.id}"${o.id === h.cropId ? ' selected' : ''}>${esc(o.en)}${o.ja ? ' ' + esc(o.ja) : ''}</option>`).join('')}<option value="__other"${other ? ' selected' : ''}>Something else…</option></select></label>
-      <label id="pco"${other ? '' : ' hidden'}>Name<input name="oname" value="${other ? esc(h.cropId.slice(2)) : ''}" placeholder="e.g. Okra"></label>
+      <div id="pco"${other ? '' : ' hidden'}><label>Name<input name="oname" value="${other ? esc(h.cropId.slice(2)) : ''}" placeholder="e.g. Okra"></label>
+        <label>How hungry is it?<select name="feed">${[['', 'Not sure'], ['heavy', 'Heavy feeder'], ['medium', 'Medium feeder'], ['light', 'Light feeder'], ['legume', 'Legume (beans, peas)']].map(([v, l]) => `<option value="${v}"${(h.feed || '') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
       <label>Variety <small class="muted">(optional)</small><input name="variety" value="${esc(h.variety || '')}"></label>
       <div class="two"><label>Planted <small class="muted">(optional)</small><input name="start" type="month" max="${thisM}" value="${h.sowDate ? h.sowDate.slice(0, 7) : ''}"></label>
         <label>Finished<input name="end" type="month" max="${thisM}" required value="${h.harvestedOn ? h.harvestedOn.slice(0, 7) : ''}"></label></div>
@@ -154,6 +167,7 @@ function pastCropDialog(c, h) {
       if (id === '__other') { const n = f.oname.value.trim(); if (!n) return alert('Type the crop’s name.'); id = 'x:' + n; }
       if (f.start.value && f.start.value > f.end.value) return alert('“Planted” should be before “Finished”.');
       const from = bed ? Math.max(0, Math.min(L, +f.from.value || 0)) : 0, to = bed ? Math.max(from + 1, Math.min(L, +f.to.value || L)) : L;
+      h.feed = id.startsWith('x:') ? f.feed.value : '';
       Object.assign(h, { cropId: id, variety: f.variety.value.trim(), sowDate: f.start.value ? f.start.value + '-01' : '', harvestedOn: lastDayOf(f.end.value), from, to, note: f.note.value.trim() });
       if (isNew) (c.history = c.history || []).push(h);
       await save(); close(); render();
@@ -165,7 +179,7 @@ function historySection(c) {
   A.addPast = () => pastCropDialog(c);
   A.editPast = el => pastCropDialog(c, (c.history || []).find(x => x.id === el.dataset.id));
   return `<section><h3>History</h3>${hist.length ? `<ul class="plist">${hist.map(h => {
-    const body = `${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${histSpan(h)}${(() => { const hp = !h.manual && planting(h.plantingId); const n = hp ? harvestTotal(hp) : 0; return n ? ` · ${n} picked` : ''; })()}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}${h.manual ? ' · before the app' : ''}</small>${h.note ? `<small>${esc(h.note)}</small>` : ''}</span>`;
+    const body = `${ic(h.cropId)}<span class="grow">${esc(cropName(h.cropId))}${h.variety ? ' · ' + esc(h.variety) : ''}<small>${histSpan(h)}${(() => { const hp = !h.manual && planting(h.plantingId); const n = hp ? harvestTotal(hp) : 0; return n ? ` · ${n} picked` : ''; })()}${c.type === 'bed' ? ` · ${h.from}–${h.to} cm` : ''}${h.manual ? ' · before the app' : ''}${feedOf(h.cropId, h) ? ' · ' + FEED_LABEL[feedOf(h.cropId, h)] : ''}</small>${h.note ? `<small>${esc(h.note)}</small>` : ''}</span>`;
     return h.manual ? `<li data-act="editPast" data-id="${h.id}">${body}<span class="muted">✎</span></li>` : `<li><a href="#/plant/${h.plantingId}">${body}›</a></li>`;
   }).join('')}</ul>` : '<p class="muted">Nothing recorded yet.</p>'}
     <button class="btn small" data-act="addPast">＋ Add a past crop</button></section>`;

@@ -84,6 +84,7 @@ function taskLi(t, showCrop = true) {
   const { p, c } = taskOwner(t);
   const meta = [];
   if (t.kind === 'water') meta.push(`${CAN_ICON(22)}<span>${esc(t.note || '')}</span>`);
+  else if (t.kind === 'frost') meta.push(`<span>❄️ ${esc((t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '))}</span>`);
   else if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
   else if (showCrop && c) meta.push(`${BED_ICON(20)}<b>${esc(c.name)}</b>`);
   if (!showCrop && !t.done) meta.push(dueText(t));
@@ -242,12 +243,14 @@ function render() {
   if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
   A = {};
   try { syncWater(); } catch (e) { console.warn(e); }
+  try { syncFrost(); } catch (e) { console.warn(e); }
   let html = '', after = null;
   try {
     const [a, b, c] = parts;
     if (!a) ({ html, after } = pageHome());
     else if (a === 'cal') ({ html, after } = pageCalendar());
     else if (a === 'log') ({ html, after } = pageLog(q));
+    else if (a === 'totals') ({ html, after } = pageTotals(q));
     else if (a === 'search') ({ html, after } = pageSearch(q));
     else if (a === 'map') ({ html, after } = pageMap(q));
     else if (a === 'review') ({ html, after } = pageReview(q));
@@ -305,6 +308,7 @@ function pageHome() {
   }
   A.sowCrop = el => sowPick(el.dataset.id);
   const html = `${backupNote}
+    ${sprayAlerts()}
     ${Weather.section()}
     <section class="today"><h2>Today’s jobs</h2>
       ${today.length ? `<ul class="tasks">${today.map(t => taskLi(t)).join('')}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
@@ -552,7 +556,7 @@ function pagePlantForm(p, c, q) {
     const vw = Math.min(window.innerWidth, 640) - 48;
     const ft = $('#fitTxt'); if (ft) { const n = Draw.fitRows(c, tmp); ft.textContent = n ? `${n} row${n > 1 ? 's' : ''} fit at ${tmp.rowSp} cm. ` : ''; $('#pf').rows.placeholder = n ? 'auto: ' + n : 'auto'; }
     const rw = $('#rotWarn');
-    if (rw) { const rn = rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; }
+    if (rw) { const rn = rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; const sa = soilAdvice(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); if (sa) { rw.innerHTML += `<p class="soiln">🪱 ${sa.text}</p>`; if (!rn || !rn.same) rw.className = sa.level === 'warn' ? 'warn' : 'note'; } }
     $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
@@ -678,6 +682,7 @@ function pagePlant(p) {
     (() => { const gw = germWindow(p); return gw ? ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${p.germ.result}</b> (${shortDate(p.germ.date)})` : ''}`] : null; })(),
     seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)}`}`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
+    c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
     c && !harvested ? ['Size in drawing', (() => { const now = Math.round(Draw.radius(p, td) * 2), full = Math.round(Math.max(1, +p.spread || Draw.spacingNow(p))); return `${now} cm across today (grows to ~${full} cm by ${p.harvestDate ? shortDate(p.harvestDate) : 'harvest'})${seed && +p.thinSp > 0 && !p.thinned ? ' · stays seedling-sized until thinning' : ''}`; })()] : null,
     (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + fmtAmt(f.amount, f.unit) : ''}`).join('<br>')] : null,
     (p.series || []).length ? ['Extra fertiliser / jobs', p.series.map(s => `${esc(seriesTitle(s))} · ${+s.every > 0 ? `every ${s.every} ${s.per}${s.every > 1 ? 's' : ''}${s.stopped ? ' (stopped)' : ''}` : 'once'}`).join('<br>')] : null,
@@ -708,6 +713,7 @@ function pagePlant(p) {
     ${(() => { const pb = pickBy(p); if (!pb || harvested) return ''; return `<p class="pickby${pb.date < td ? ' late' : ''}">${pb.cont ? `Picking season runs to about <b>${shortDate(pb.date)}</b>` : `Best picked by <b>${shortDate(pb.date)}</b>`} — after that ${esc(pb.late)}.</p>`; })()}
     <div class="varrow"><div class="grow"><small>Variety</small><div class="variety">${esc(p.variety || '—')}</div></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
+    ${harvested ? '' : sprayBanner(p)}
     ${harvested ? `<div class="banner">This crop was harvested on ${niceDate(p.harvestedOn)}. <button class="link" data-act="unharvest">Undo</button></div>` : ''}
     <section><h3>To do</h3>
       ${open.length ? `<ul class="tasks">${open.map(t => taskLi(t, false)).join('')}</ul>` : '<p class="muted">Nothing to do.</p>'}
@@ -968,7 +974,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.4.0';
+const APP_VERSION = '1.5.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

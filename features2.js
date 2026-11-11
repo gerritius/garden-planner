@@ -15,7 +15,7 @@ function taskOwner(t) {
   const c = p ? container(p.containerId) : (t.containerId ? container(t.containerId) : null);
   return { p, c };
 }
-const taskVisible = t => t.kind === 'water' || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
+const taskVisible = t => t.kind === 'water' || t.kind === 'frost' || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
 const BED_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="1.5" fill="#8a6a4b" stroke="#3a2a1c" stroke-width="1.3"/><path d="M12 9h8M12 15h8M12 21h8" stroke="#7fb069" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const CAN_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M8 13h13v13a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" fill="#7aa7c7" stroke="#3a2a1c" stroke-width="1.3"/><path d="M21 16l7-6" stroke="#3a2a1c" stroke-width="2.4" stroke-linecap="round"/><path d="M11 13a4 4 0 0 1 7 0" fill="none" stroke="#3a2a1c" stroke-width="1.3"/><path d="M28 13v.1M29.5 15.5v.1M27 16.5v.1" stroke="#3d7fb8" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
@@ -133,14 +133,15 @@ function waterTaskDialog(t) {
 const bedArea = c => c.type === 'round' ? Math.PI * (c.diameter / 200) ** 2 : (c.width * c.length) / 1e4;
 function prepDialog(c) {
   const a = bedArea(c), g = r => Math.round(a * r / 10) * 10 || Math.round(a * r);
+  const sa = soilAdvice(c, 0, Draw.dims(c).L, null), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
   const items = [
     ['lime', `Spread lime (苦土石灰) ~${g(100)} g`, -14, true],
-    ['compost', `Dig in compost (堆肥) ~${Math.max(1, Math.round(a * 2 * 2) / 2)} kg`, -14, true],
-    ['base', `Base fertiliser (元肥) ~${g(100)} g`, -7, true],
+    ['compost', `Dig in compost (堆肥) ~${Math.max(1, Math.round(a * 2 * cm * 2) / 2)} kg`, -14, true],
+    ['base', `Base fertiliser (元肥) ~${g(100 * bm)} g`, -7, true],
     ['ridge', 'Dig & shape the bed (畝立て)', -7, c.type === 'bed'],
     ['mulch', 'Lay mulch film (マルチ)', -3, false],
   ];
-  modal(`<h3>Prepare ${esc(c.name)}</h3><p class="muted small">${a.toFixed(2)} m² · amounts are typical per-area rates — adjust to your products.</p>
+  modal(`<h3>Prepare ${esc(c.name)}</h3><p class="muted small">${a.toFixed(2)} m² · amounts are typical per-area rates — adjust to your products.</p>${sa ? `<p class="msg small">🪱 ${sa.text}${bm !== 1 || cm !== 1 ? ' Amounts below are adjusted.' : ''}</p>` : ''}
     <form id="pf2" class="form"><label>Planting date<input type="date" name="plant" value="${addDays(todayStr(), 14)}"></label>
       ${items.map(([k, l, off, on]) => `<label class="inl chkline"><input type="checkbox" name="${k}" ${on ? 'checked' : ''}> <span>${l} <small>(${-off} days before)</small></span></label>`).join('')}
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Add jobs</button></div></form>`, (m, close) => {

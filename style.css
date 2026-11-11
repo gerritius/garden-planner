@@ -398,3 +398,12 @@ label.inline { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
 label.inline select { flex: 1; }
 .kinds { margin-bottom: 4px; }
 .filt { margin: 10px 0 4px; } .filt .chip { text-decoration: none; padding: 4px 11px; } .filt .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+
+.banner.warn { background: #fbe1d2; color: #6b2a10; border: 1px solid #e0a080; }
+:root[data-theme="dark"] .banner.warn { background: #43281c; color: #f6c9ad; border-color: #8a4f33; }
+.banner.warn a { color: inherit; font-weight: 700; }
+.soiln { margin: 6px 0 0; }
+.tot .big { font-family: var(--head); font-size: 22px; font-weight: 700; margin: 2px 0 6px; }
+.tot .big small { font-family: var(--body, inherit); font-size: 13px; font-weight: 400; color: var(--muted); }
+.plist.tight li { padding-top: 6px; padding-bottom: 6px; }
+.btn.grow { flex: 1; }

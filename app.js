@@ -115,13 +115,40 @@ function syncTasks(p) {
     else if (!doneAny && s.start) S.tasks.push({ id: uid(), plantingId: p.id, kind: 'series', seriesId: s.id, title: seriesTitle(s), due: s.start, done: false });
   }
 }
+function redate(t, p, d) {
+  if (t.kind === 'thin' && p) p.thinDoneOn = d;
+  if (t.kind === 'germ' && p && p.germ) p.germ.date = d;
+  if (t.spawned && p) {
+    const nt = S.tasks.find(x => x.id === t.spawned && !x.done), s = (p.series || []).find(x => x.id === t.seriesId);
+    if (nt && s && +s.every > 0) nt.due = addInterval(d, +s.every, s.per);
+  }
+}
 function toggleTask(id, done) {
   const t = S.tasks.find(x => x.id === id); if (!t) return;
-  const p = t.plantingId ? planting(t.plantingId) : null, td = todayStr();
+  const td = todayStr(), due = t.due;
+  // ticking something that was due before today: ask when it was really done (handy for back-filling records)
+  if (done && due && due < td && t.kind !== 'water') return whenDone(t, due, td);
+  finishToggle(t, done, td);
+}
+function whenDone(t, due, td) {
+  let picked = false;
+  const close = modal(`<h3>When did you do this?</h3><p class="muted small">${esc(t.title)}</p>
+    <div class="btns col"><button class="btn primary" data-w="${due}">On the planned day · ${shortDate(due)}</button><button class="btn" data-w="${td}">Today · ${shortDate(td)}</button></div>
+    <form id="wdf" class="form"><label>Another day<input name="d" type="date" value="${due}" max="${td}"></label><div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn">Use this date</button></div></form>`, (m, cl) => {
+    const done = d => { picked = true; cl(); finishToggle(t, true, d && d <= td ? d : td); };
+    m.querySelectorAll('[data-w]').forEach(b => b.onclick = () => done(b.dataset.w));
+    m.querySelector('#wdf').onsubmit = e => { e.preventDefault(); done(m.querySelector('#wdf').d.value); };
+    m.querySelector('[data-x=no]').onclick = () => { cl(); render(); };
+    m.onclick = e => { if (e.target === m) { cl(); if (!picked) render(); } };
+  });
+  return close;
+}
+function finishToggle(t, done, td) {
+  const p = t.plantingId ? planting(t.plantingId) : null;
   if (done) {
     t.done = true; t.doneOn = td;
     if (t.kind === 'water') { t.prevLast = S.water && S.water.lastDone; S.water = Object.assign({}, S.water, { lastDone: td }); }
-    if (t.kind === 'germ' && p) setTimeout(() => germDialog(p), 320);
+    if (t.kind === 'germ' && p) setTimeout(() => germDialog(p, td), 320);
     if (t.kind === 'thin' && p) { p.thinned = true; p.thinDoneOn = td; }
     if (t.seriesId && p) {
       const s = (p.series || []).find(x => x.id === t.seriesId);
@@ -734,7 +761,7 @@ function taskDialog(t, p) {
         if (ev > 0) { const ns = { id: uid(), title, product: '', amount: null, unit: '', every: ev, per, start: due, end: '' }; (p.series = p.series || []).push(ns); syncTasks(p); }
         else S.tasks.push({ id: uid(), plantingId: p.id, kind: 'custom', title, due, done: false });
       } else {
-        if (t.done) { t.doneOn = due; t.title = title; }
+        if (t.done) { t.doneOn = due; t.title = title; redate(t, p, due); }
         else { t.title = title; t.due = due; }
         if (s) {
           if (title !== seriesTitle(s)) s.customTitle = title;

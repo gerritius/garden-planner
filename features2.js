@@ -38,12 +38,12 @@ function syncCareTasks(p) {
   const pb = pickBy(p);
   upsertAuto(p, 'pickby', !!pb && !pb.cont && !p.no_pickby, pb && pb.date, pb ? `Pick by now – after this ${pb.late}` : '');
 }
-function germDialog(p) {
+function germDialog(p, when) {
   modal(`<h3>How did the ${esc(crop(p.cropId).en)} come up?</h3>
     <div class="btns col"><button class="btn" data-g="good">🌱 Good, even rows</button><button class="btn" data-g="patchy">🌿 Patchy</button><button class="btn" data-g="none">🚫 Nothing came up</button></div>`, (m, close) => {
     m.querySelectorAll('[data-g]').forEach(b => b.onclick = async () => {
       const g = b.dataset.g;
-      p.germ = { result: g, date: todayStr() };
+      p.germ = { result: g, date: when || todayStr() };
       await save(); close();
       if (g === 'good') return render();
       modal(`<h3>${g === 'patchy' ? 'Patchy germination' : 'Nothing came up'}</h3>

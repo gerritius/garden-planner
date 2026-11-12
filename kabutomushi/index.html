@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kabutomushi Keeper</title>
+<meta name="description" content="Look after rhinoceros beetle larvae, tanks and mat changes.">
+<meta name="theme-color" content="#3a281b">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header id="top">
+  <div class="bar">
+    <button id="back" hidden aria-label="Back"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <div class="ttl">
+      <div id="kicker"></div>
+      <h1 id="title">Kabutomushi</h1>
+      <div id="sub"></div>
+    </div>
+    <div id="hstats"></div>
+  </div>
+</header>
+<main id="view"></main>
+<button id="fab" class="fab" data-act="add" aria-label="Add to log">+</button>
+<nav id="tabs">
+  <a href="#/" data-tab="home"><svg viewBox="0 0 32 32" width="28" height="28"><rect x="5" y="9" width="22" height="18" rx="2.5"/><path d="M5 17 C 10 15, 14 19, 19 17 S 25 15, 27 17"/><path d="M8 9 V6 H24 V9"/></svg><span>Tanks</span></a>
+  <a href="#/log" data-tab="log"><svg viewBox="0 0 32 32" width="28" height="28"><path d="M7 5 H23 a2 2 0 0 1 2 2 V27 H9 a2 2 0 0 1 -2 -2Z"/><path d="M11 11 H21 M11 16 H21 M11 21 H17"/></svg><span>Log</span></a>
+  <a href="#/guide" data-tab="guide"><svg viewBox="0 0 32 32" width="28" height="28"><path d="M16 9 C 12 6, 7 6, 4 7 V26 C 7 25, 12 25, 16 28 C 20 25, 25 25, 28 26 V7 C 25 6, 20 6, 16 9Z"/><path d="M16 9 V28"/></svg><span>Guide</span></a>
+  <a href="#/tools" data-tab="tools"><svg viewBox="0 0 32 32" width="28" height="28"><path d="M6 27 L19 14"/><path d="M19 14 C 17 9, 20 4, 26 5 L 22 9 L 23 12 L 26 13 L 30 9 C 30 15, 25 18, 19 14Z"/><path d="M5 9 L9 5 L14 10 L10 14Z"/></svg><span>Tools</span></a>
+</nav>
+<div id="modal" hidden></div>
+<div id="toast" hidden></div>
+<script src="db.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

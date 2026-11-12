@@ -194,7 +194,6 @@ function chart(series) {
     const xx = X(d.getTime()).toFixed(1);
     g += `<path class="gl" d="M${xx} ${T} V${H - B}"/><text x="${xx}" y="${H - 9}" text-anchor="middle">${d.toLocaleDateString('en-GB', { month: 'short' })}${d.getMonth() === 0 ? ' ' + String(d.getFullYear()).slice(2) : ''}</text>`;
   });
-  g += `<text x="${L - 6}" y="${T - 3}" text-anchor="end">g</text>`;
   for (const s of series) {
     if (!s.pts.length) continue;
     const xy = s.pts.map(p => [X(parseD(p.date).getTime()), Y(p.weight)]);
@@ -540,7 +539,7 @@ function renderGuide(open) {
 const fmtMD = n => n >= 1232 ? 'end Dec' : new Date(2001, Math.floor(n / 100) - 1, n % 100).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 
 function renderTools() {
-  setHead({ kicker: 'Settings & backup', title: 'Tools' });
+  setHead({ kicker: 'Backup & look', title: 'Settings' });
   $('#view').innerHTML = `
   <h3>Backup</h3>
   <section class="paper"><p class="small">Everything is stored only on this phone. Export a backup now and then (it includes photos) and keep it in your cloud drive.</p>

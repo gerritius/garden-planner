@@ -1,6 +1,6 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
-const CACHE = 'kabutomushi-v1';
-const ASSETS = ['./', 'index.html', 'style.css', 'db.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', '../fonts/ZillaSlab-500.woff2', '../fonts/ZillaSlab-700.woff2', '../fonts/Caveat-600.woff2'];
+const CACHE = 'kabutomushi-v2';
+const ASSETS = ['./', 'index.html', 'style.css', 'db.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

@@ -2,38 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Kabutomushi Keeper</title>
-<meta name="description" content="Look after rhinoceros beetle larvae, tanks and mat changes.">
-<meta name="theme-color" content="#0e1411">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon-192.png">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
-<link rel="stylesheet" href="style.css">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kabutomushi Keeper has moved</title>
+<meta name="robots" content="noindex">
+<style>
+  body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px; background: #0e1411; color: #edf2e7; font: 17px/1.5 ui-rounded, system-ui, sans-serif; text-align: center; }
+  a { color: #f3aa3c; font-weight: 700; }
+</style>
 </head>
 <body>
-<header id="top">
-  <div class="bar">
-    <button id="back" hidden aria-label="Back"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M15 4 L7 12 L15 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-    <div class="ttl">
-      <div id="kicker"></div>
-      <h1 id="title">Kabutomushi</h1>
-      <div id="sub"></div>
-    </div>
-    <div id="hstats"></div>
-  </div>
-</header>
-<main id="view"></main>
-<button id="fab" class="fab" data-act="add" aria-label="Add to log">+</button>
-<nav id="tabs">
-  <a href="#/" data-tab="home"><svg viewBox="0 0 24 24"><path d="M12 9 C 17 9, 18 20, 12 21 C 6 20, 7 9, 12 9Z"/><path d="M12 10 V21"/><path d="M12 9 V4 M12 5 L10 3 M12 5 L14 3"/><path d="M7.5 13 L4 11 M7 17 L3.5 18 M16.5 13 L20 11 M17 17 L20.5 18"/></svg><span>Beetles</span></a>
-  <a href="#/log" data-tab="log"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8 V16"/><path d="M11 6 H20 M11 18 H20 M11 12 H17"/></svg><span>Log</span></a>
-  <a href="#/guide" data-tab="guide"><svg viewBox="0 0 24 24"><path d="M5 19 C 5 10, 11 4, 20 4 C 20 13, 14 19, 5 19Z"/><path d="M5 19 L13 11"/></svg><span>Guide</span></a>
-  <a href="#/tools" data-tab="tools"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3 V5.5 M12 18.5 V21 M3 12 H5.5 M18.5 12 H21 M5.6 5.6 L7.4 7.4 M16.6 16.6 L18.4 18.4 M5.6 18.4 L7.4 16.6 M16.6 7.4 L18.4 5.6"/></svg><span>Settings</span></a>
-</nav>
-<div id="modal" hidden></div>
-<div id="toast" hidden></div>
-<script src="db.js"></script>
-<script src="app.js"></script>
+<main>
+  <h1>Kabutomushi Keeper has moved</h1>
+  <p>It now has its own address:<br><a id="go" href="https://gerritius.github.io/kabutomushi/">gerritius.github.io/kabutomushi</a></p>
+  <p>Your data comes with it. Add the new address to your Home Screen.</p>
+</main>
+<script>
+  // Switch off the old offline copy that lived here, then forward to the new address.
+  (async () => {
+    try {
+      if ('serviceWorker' in navigator) for (const r of await navigator.serviceWorker.getRegistrations()) if (new URL(r.scope).pathname.startsWith('/garden-planner/kabutomushi/')) await r.unregister();
+      if ('caches' in window) for (const k of await caches.keys()) if (k.startsWith('kabutomushi-v1') || k === 'kabutomushi-v2') await caches.delete(k);
+    } catch (e) {}
+    location.replace('https://gerritius.github.io/kabutomushi/');
+  })();
+</script>
 </body>
 </html>

@@ -1,21 +1,10 @@
-// Offline support: network first (so updates arrive), cache fallback when offline.
-const CACHE = 'kabutomushi-v2';
-const ASSETS = ['./', 'index.html', 'style.css', 'db.js', 'app.js', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
-
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
-});
+// Kabutomushi Keeper moved to https://gerritius.github.io/kabutomushi/.
+// This replaces the old service worker so it removes itself and its cache, and stops serving the old app offline.
+self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('kabutomushi-') && k !== CACHE).map(k => caches.delete(k)))));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
-  e.respondWith(
-    (e.request.mode === 'navigate' ? fetch(e.request) : fetch(e.request, { cache: 'no-cache' })).then(r => {
-      if (r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); }
-      return r;
-    }).catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('index.html')))
-  );
+  e.waitUntil((async () => {
+    for (const k of await caches.keys()) if (k === 'kabutomushi-v1' || k === 'kabutomushi-v2') await caches.delete(k);
+    await self.registration.unregister();
+    for (const c of await self.clients.matchAll({ type: 'window' })) c.navigate('https://gerritius.github.io/kabutomushi/');
+  })());
 });

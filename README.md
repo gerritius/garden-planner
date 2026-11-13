@@ -9,4 +9,4 @@ Fonts: Zilla Slab and Caveat, SIL Open Font License (bundled in fonts/ for offli
 
 ## Kabutomushi Keeper
 
-`kabutomushi/` is a separate small offline app for looking after rhinoceros beetle larvae: tanks, mat changes, moisture checks, weights, stages, photos and a season guide. Open `/kabutomushi/` on the Pages site and add it to the Home Screen; it has its own data and its own backups.
+The beetle app now lives in its own repository and has its own address: https://gerritius.github.io/kabutomushi/ (so browsers treat it as a separate app). `kabutomushi/` here only forwards the old address there.

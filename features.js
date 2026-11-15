@@ -92,7 +92,7 @@ function pageDiary(p, eid) {
   A.saveDiary = async () => { const f = $('#def'); d.date = f.date.value || d.date; d.note = f.note.value.trim(); d.tags = readPests(f); await save(); history.back(); };
   A.delDiary = async () => {
     if (!await confirmBox('Delete this diary photo?', 'Delete', true)) return;
-    if (d.photo) { await DB.delPhoto(d.photo); delete photoURLs[d.photo]; }
+    if (d.photo) { const ph = d.photo; d.photo = null; await dropPhoto(ph); }
     p.diary = p.diary.filter(x => x.id !== d.id); await save(); history.back();
   };
   const nav = (j, l) => list[j] ? `<a class="btn small" href="#/plant/${p.id}/diary/${list[j].id}" onclick="location.replace(this.href);return false;">${l}</a>` : '<span></span>';

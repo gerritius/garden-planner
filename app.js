@@ -494,6 +494,7 @@ function pagePlantForm(p, c, q) {
       if (q.get('date')) { draft.sowDate = q.get('date'); recalc(draft); }
       else if (q.get('plan') && !q.get('start')) { draft.sowDate = addDays(todayStr(), 30); recalc(draft); }
       if (q.get('start')) prefillFromStart(draft, q);
+      if (q.get('usestart') && start(q.get('usestart'))) applyStart(draft, start(q.get('usestart')), c);
     } else {
       draft = JSON.parse(JSON.stringify(p)); draft.newPhotos = {}; draft.removePhotos = {};
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
@@ -514,12 +515,14 @@ function pagePlantForm(p, c, q) {
   const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${d.startN > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
     <div class="preview big" id="pprev"></div>
     <fieldset><legend>Crop</legend>
+      ${isNew && !d.startId ? startChooser(d) : ''}
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
       <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="e.g. ${esc(cr ? (cr.varieties || [])[0] || '' : '')}" autocomplete="off">
         <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
         ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}</label>
       <label>Planting type<div class="seg">${[['seed', 'From seed'], ['seedling', 'Seedlings / tubers']].map(([v, l]) => `<button type="button" data-act="method" data-v="${v}" class="${d.method === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>
       <label>Packet photos<div class="phrow">${ph('front')}${ph('back')}</div></label>
+      ${packetPicker(d)}
     </fieldset>
     <fieldset><legend>Where &amp; how</legend>
       <div id="rotWarn"></div>
@@ -528,7 +531,7 @@ function pagePlantForm(p, c, q) {
       <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
       ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
-      <div id="planBits">${planFormBits(d, c)}</div>
+      <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d)}
       ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method) : ''}
       ${seed ? `<label>Sowing depth (cm)<input name="depth" type="number" step="0.1" inputmode="decimal" value="${esc(d.depth)}"></label>` : ''}
       <div class="two">
@@ -597,6 +600,8 @@ function pagePlantForm(p, c, q) {
   A.searchVar = () => { read(); const q = `${cr ? cr.ja : ''} ${d.variety || ''} 種 まき方`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
   A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
   A.raise = el => { read(); d.raise = el.dataset.v; render(); };
+  A.useStart = el => { read(); applyStart(d, start(el.dataset.id), c); render(); };
+  A.usePacket = el => { read(); usePacket(d, el.dataset.k, c); render(); };
   A.addFert = () => { read(); d.fertAuto = false; d.fert.push({ product: '', amount: '', unit: 'g' }); render(); };
   A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
   A.addSeries = () => { read(); d.series.push({ id: uid(), product: '', amount: '', unit: 'mL', every: 2, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
@@ -669,16 +674,18 @@ async function savePlanting(p, d, c) {
   // photos
   p.photos = p.photos || {};
   for (const slot of ['front', 'back']) {
-    if (d.newPhotos[slot] || d.removePhotos[slot]) {
-      if (p.photos[slot]) { await DB.delPhoto(p.photos[slot]); delete photoURLs[p.photos[slot]]; delete p.photos[slot]; }
-    }
-    if (d.newPhotos[slot]) { const id = uid(); await DB.putPhoto(id, d.newPhotos[slot]); p.photos[slot] = id; }
+    const old = p.photos[slot];
+    let want = d.removePhotos[slot] ? null : (d.photos || {})[slot] || null;
+    if (d.newPhotos[slot]) { want = uid(); await DB.putPhoto(want, d.newPhotos[slot]); }
+    if (want) p.photos[slot] = want; else delete p.photos[slot];
+    if (old && old !== want) await dropPhoto(old);
   }
   // remember custom variety
   if (p.variety && !varieties(p.cropId).includes(p.variety)) {
     S.customVarieties = S.customVarieties || {};
     (S.customVarieties[p.cropId] = S.customVarieties[p.cropId] || []).push(p.variety);
   }
+  if (isNew) linkStartOnSave(d, p);
   if (isNew && d.startId) startPlanted(d, p);
   syncTasks(p);
   await save();
@@ -783,9 +790,9 @@ function pagePlant(p) {
 }
 
 async function removePlanting(p) {
-  for (const id of [...Object.values(p.photos || {}), ...(p.diary || []).map(d => d.photo)]) { await DB.delPhoto(id); delete photoURLs[id]; }
   S.tasks = S.tasks.filter(t => t.plantingId !== p.id);
   S.plantings = S.plantings.filter(x => x !== p);
+  for (const id of [...Object.values(p.photos || {}), ...(p.diary || []).map(d => d.photo)]) if (id) await dropPhoto(id);
   const c = container(p.containerId);
   if (c) c.history = (c.history || []).filter(h => h.plantingId !== p.id);
 }
@@ -879,8 +886,8 @@ function pagePhotos(p) {
     const f = inp.files[0]; if (!f) return;
     const blob = await compress(f), k = inp.dataset.slot;
     p.photos = p.photos || {};
-    if (p.photos[k]) { await DB.delPhoto(p.photos[k]); delete photoURLs[p.photos[k]]; }
-    const id = uid(); await DB.putPhoto(id, blob); p.photos[k] = id; await save(); render();
+    const old = p.photos[k];
+    const id = uid(); await DB.putPhoto(id, blob); p.photos[k] = id; if (old) await dropPhoto(old); await save(); render();
   }));
   return { html, after };
 }
@@ -1047,7 +1054,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.9.0';
+const APP_VERSION = '1.9.1';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

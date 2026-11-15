@@ -90,7 +90,7 @@ function planTrayPreset(p) {
 function planFormBits(d, c) {
   if (!d.sowDate || d.sowDate <= todayStr()) return '';
   const cr = d.cropId ? crop(d.cropId) : null;
-  const raise = cr && d.method === 'seedling' && raisable(cr.id);
+  const raise = cr && d.method === 'seedling' && raisable(cr.id) && !d.useStart;
   return `<div class="plannote">📅 <b>Planned</b> — saved as a plan. Prep jobs are counted back from this date${raise ? ', plus a reminder to sow seedlings' : ''}; it goes into the bed when you tick “${d.method === 'seed' ? 'Sow' : 'Plant out'}”.</div>
     ${raise ? `<label>Seedlings<div class="seg">${[['buy', 'Buy them'], ['tray', 'Raise in tray'], ['pot', 'Raise in 9 cm pots']].map(([v, l]) => `<button type="button" data-act="raise" data-v="${v}" class="${(d.raise || 'buy') === v ? 'on' : ''}">${l}</button>`).join('')}</div>
       ${d.raise === 'tray' || d.raise === 'pot' ? `<small class="hint">Sow about ${tpDays(cr.id)} days before — ${shortDate(addDays(d.sowDate, -tpDays(cr.id)))}.</small>` : ''}</label>` : ''}`;
@@ -143,7 +143,7 @@ function gapLi(c, g) {
   const days = g.e ? daysBetween(g.s, g.e) + 1 : null, sugg = gapCrops(c, g);
   const url = (id, from) => `#/plant/new/${c.id}?plan=1&from=${g.a}&to=${g.b}&date=${from || g.s}${id ? '&crop=' + id : ''}`;
   return `<li class="gap"><div><b>${part}</b> free ${g.s <= todayStr() ? 'now' : 'from ' + shortDate(g.s)}${g.e ? ` until ${shortDate(g.e)} <small>(${days} days, before ${esc(crop(g.next.cropId).en)})</small>` : ''}${g.prev ? ` <small>· after ${esc(crop(g.prev.cropId).en)}</small>` : ''}</div>
-    <div class="sowchips">${sugg.map(({ cr, from, k }) => `<a class="chip" href="${url(cr.id, from)}">${ic(cr.id, 18)}${esc(cr.en)} <small>${k ? pd(from).toLocaleDateString('en-AU', { month: 'short' }) + ' · ' : ''}${cr.daysHarvest}d</small></a>`).join('')}<a class="chip muted" href="${url('')}">＋ Other…</a></div></li>`;
+    <div class="sowchips">${gapStartChips(c, g)}${sugg.map(({ cr, from, k }) => `<a class="chip" href="${url(cr.id, from)}">${ic(cr.id, 18)}${esc(cr.en)} <small>${k ? pd(from).toLocaleDateString('en-AU', { month: 'short' }) + ' · ' : ''}${cr.daysHarvest}d</small></a>`).join('')}<a class="chip muted" href="${url('')}">＋ Other…</a></div></li>`;
 }
 
 // ---------- timeline ----------
@@ -192,7 +192,7 @@ function planBanner(p) {
     A.doPlant = () => { const t = S.tasks.find(t => t.plantingId === p.id && t.kind === 'plan_sow' && !t.done); if (t) toggleTask(t.id, true); else { activatePlan(p, todayStr()); save().then(render); } };
     const ls = linkedStart(p);
     return `<div class="banner plan">📅 Planned for <b>${niceDate(p.sowDate)}</b>${p.raise === 'tray' || p.raise === 'pot' ? ` · seedlings ${ls ? `growing in ${esc(startWhere(ls).toLowerCase())} (sown ${shortDate(ls.sowDate)})` : `to sow ${shortDate(addDays(p.sowDate, -tpDays(p.cropId)))}`}` : ''}
-      <div class="btnrow"><button class="btn small primary" data-act="doPlant">${p.method === 'seed' ? '🌱 Sown it' : '🌱 Planted it'}</button></div></div>`;
+      ${planStartLinks(p)}<div class="btnrow"><button class="btn small primary" data-act="doPlant">${p.method === 'seed' ? '🌱 Sown it' : '🌱 Planted it'}</button></div></div>`;
   }
   if (!isLive(p) || !c) return '';
   return '';

@@ -490,3 +490,15 @@ a.wxalert.quality { display: block; text-decoration: none; color: inherit; }
 .sbar { display: grid; grid-template-columns: 10.5em 1fr auto; gap: 8px; align-items: center; margin: 7px 0; font-size: 14px; }
 .sbar i { display: block; height: 14px; background: var(--green); border-radius: 4px; min-width: 3px; }
 .sbar b { font-variant-numeric: tabular-nums; }
+.usestart { margin: 2px 0 10px; }
+.usestart > small { display: block; color: var(--muted); margin-bottom: 4px; }
+.usestart .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+.usestart .chip small { opacity: .8; margin-left: 4px; }
+.chip.mine { border-color: var(--green); font-weight: 600; }
+details.pktpick { margin: 4px 0 10px; }
+details.pktpick summary { font-size: 14px; color: var(--green); cursor: pointer; }
+.pkts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; align-items: flex-start; }
+.pktsep { flex-basis: 100%; }
+button.pkt { display: flex; flex-direction: column; align-items: center; width: 84px; padding: 4px; border: 1.5px solid var(--line-2); border-radius: 8px; background: var(--card); cursor: pointer; font-size: 12px; }
+button.pkt img { width: 74px; height: 74px; object-fit: cover; border-radius: 5px; }
+button.pkt small { display: block; color: var(--muted); font-size: 11px; }

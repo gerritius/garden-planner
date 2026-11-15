@@ -84,6 +84,7 @@ function taskLi(t, showCrop = true) {
   const { p, c } = taskOwner(t);
   const meta = [];
   if (t.kind === 'water') meta.push(`${CAN_ICON(22)}<span>${esc(t.note || '')}</span>`);
+  else if (t.startId) meta.push(startTaskMeta(t));
   else if (t.kind === 'frost') meta.push(`<span>❄️ ${esc((t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '))}</span>`);
   else if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
   else if (showCrop && c) meta.push(`${BED_ICON(20)}<b>${esc(c.name)}</b>`);
@@ -120,6 +121,7 @@ function syncTasks(p) {
 function redate(t, p, d) {
   if (t.kind === 'thin' && p) p.thinDoneOn = d;
   if (t.kind === 'germ' && p && p.germ) p.germ.date = d;
+  if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = d;
   if (t.spawned && p) {
     const nt = S.tasks.find(x => x.id === t.spawned && !x.done), s = (p.series || []).find(x => x.id === t.seriesId);
     if (nt && s && +s.every > 0) nt.due = addInterval(d, +s.every, s.per);
@@ -129,6 +131,7 @@ function toggleTask(id, done) {
   const t = S.tasks.find(x => x.id === id); if (!t) return;
   const td = todayStr(), due = t.due;
   // ticking something that was due before today: ask when it was really done (handy for back-filling records)
+  if (done && t.kind === 'transplant' && t.startId && start(t.startId)) { render(); return plantOutDialog(start(t.startId)); }
   if (done && due && due < td && t.kind !== 'water') return whenDone(t, due, td);
   finishToggle(t, done, td);
 }
@@ -152,6 +155,7 @@ function finishToggle(t, done, td) {
     if (t.kind === 'water') { t.prevLast = S.water && S.water.lastDone; S.water = Object.assign({}, S.water, { lastDone: td }); }
     if (t.kind === 'germ' && p) setTimeout(() => germDialog(p, td), 320);
     if (t.kind === 'thin' && p) { p.thinned = true; p.thinDoneOn = td; }
+    if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = td;
     if (t.seriesId && p) {
       const s = (p.series || []).find(x => x.id === t.seriesId);
       if (s && !s.stopped && +s.every > 0) {
@@ -167,6 +171,7 @@ function finishToggle(t, done, td) {
     if (t.kind === 'water') { S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t)); S.water = Object.assign({}, S.water, { lastDone: t.prevLast || null }); }
     if (t.kind === 'germ' && p) p.germ = null;
     if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; }
+    if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = null;
     if (t.spawned) { S.tasks = S.tasks.filter(x => !(x.id === t.spawned && !x.done)); t.spawned = null; }
   }
   save();
@@ -266,6 +271,7 @@ function render() {
     else if (a === 'plant' && b === 'new') ({ html, after } = pagePlantForm(null, container(c), q));
     else if (a === 'plant' && c === 'edit') ({ html, after } = pagePlantForm(planting(b)));
     else if (a === 'sow') ({ html, after } = pageSow());
+    else if (a === 'seedlings') ({ html, after } = pageSeedlings());
     else if (a === 'plant' && c === 'diary') ({ html, after } = pageDiary(planting(b), parts[3]));
     else if (a === 'plant' && c === 'photos') ({ html, after } = pagePhotos(planting(b)));
     else if (a === 'plant' && c === 'arrange') ({ html, after } = pageArrange(planting(b)));
@@ -320,7 +326,8 @@ function pageHome() {
     ${S.containers.length ? `<div class="viewtog seg"><button type="button" data-act="hv" data-v="cards" class="${S.homeView !== 'map' ? 'on' : ''}">▦ Cards</button><button type="button" data-act="hv" data-v="map" class="${S.homeView === 'map' ? 'on' : ''}">🗺 Map</button></div>` : ''}
     ${S.homeView === 'map' && S.containers.length ? homeMap() : `
     ${beds.length ? `<h3 class="grp">Beds</h3><div class="grid">${beds.map(card).join('')}</div>` : ''}
-    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3><div class="grid">${pots.map(card).join('')}</div>` : ''}`}
+    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3><div class="grid">${pots.map(card).join('')}</div>` : ''}
+    ${seedlingsHomeSection()}`}
     ${sowNowSection()}
     <button class="fab" data-act="quick" aria-label="Quick add">＋</button>`;
   A.quick = () => quickAdd();
@@ -469,6 +476,7 @@ function pagePlantForm(p, c, q) {
       draft = { containerId: c.id, from: num(q.get('from')) ?? g[0], to: num(q.get('to')) ?? g[1], sowDate: todayStr(), fert: [], series: [], notes: '', photos: {}, newPhotos: {}, removePhotos: {} };
       Object.assign(draft, { cropId: '', method: 'seed', layout: c.type === 'bed' ? 'rows' : 'center', depth: '', rowSp: '', plantSp: '', rows: '', thinStage: '', thinSp: '', spread: '', variety: '' });
       if (q.get('crop')) applyCrop(draft, crop(q.get('crop')), c);
+      if (q.get('start')) prefillFromStart(draft, q);
     } else {
       draft = JSON.parse(JSON.stringify(p)); draft.newPhotos = {}; draft.removePhotos = {};
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
@@ -486,7 +494,7 @@ function pagePlantForm(p, c, q) {
     const img = nb ? `<img src="${URL.createObjectURL(nb)}">` : id && !d.removePhotos[slot] ? `<img data-photo="${id}">` : `<span>＋ ${slot === 'front' ? 'Front' : 'Back'}</span>`;
     return `<label class="phslot ph">${img}<input type="file" accept="image/*" data-slot="${slot}" hidden></label>${(nb || (id && !d.removePhotos[slot])) ? `<button type="button" class="link" data-act="rmPhoto" data-slot="${slot}">remove</button>` : ''}`;
   };
-  const html = `<form id="pf" class="form">
+  const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${d.startN > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
     <div class="preview big" id="pprev"></div>
     <fieldset><legend>Crop</legend>
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
@@ -524,7 +532,7 @@ function pagePlantForm(p, c, q) {
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
       <label>Mature size (cm across)<input name="spread" type="number" inputmode="decimal" value="${esc(d.spread)}"></label></div>
-      ${cr && cr.daysHarvest ? `<small class="hint">Catalogue estimate: about ${cr.daysHarvest} days from ${seed ? 'sowing' : 'planting'}. Change it to match the packet.</small>` : ''}
+      ${cr && cr.daysHarvest ? `<small class="hint">Catalogue estimate: about ${cr.daysHarvest} days from ${seed || (d.startId && cr.method === 'seed') ? 'sowing' : 'planting'}${d.startId && cr.method === 'seed' ? ' (counted from the tray sowing date)' : ''}. Change it to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
       ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, c))}.</p>` : ''}
@@ -641,6 +649,7 @@ async function savePlanting(p, d, c) {
     S.customVarieties = S.customVarieties || {};
     (S.customVarieties[p.cropId] = S.customVarieties[p.cropId] || []).push(p.variety);
   }
+  if (isNew && d.startId) startPlanted(d, p);
   syncTasks(p);
   await save();
   draft = null;
@@ -680,6 +689,7 @@ function pagePlant(p) {
   const plantsNow = c ? Draw.layout(c, p).pts.length : 0;
   const dl = [
     ['Planting', seed ? 'From seed' : 'Seedlings / tubers'],
+    p.startId || p.seededOn ? ['Raised from seed', `in ${p.raisedIn === 'pot' ? '9 cm pots' : 'a cell tray'}, sown ${shortDate(p.seededOn)}${p.sowDate ? ` (${daysBetween(p.seededOn, p.sowDate)} days before planting out)` : ''}`] : null,
     c && (p.from > 0 || p.to < L) ? ['Section', `${p.from}–${p.to} cm from top`] : null,
     ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && p.layout !== 'continuous' ? ` · ${plantsNow} plants` : '')],
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
@@ -747,6 +757,16 @@ async function removePlanting(p) {
   if (c) c.history = (c.history || []).filter(h => h.plantingId !== p.id);
 }
 
+function startTaskDialog(t) {
+  const s = start(t.startId); if (!s) return orphanTaskDialog(t);
+  modal(`<h3>${esc(t.title)}</h3><p class="muted small">${ic(s.cropId)} ${esc(crop(s.cropId).en)} · ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
+    ${t.done ? `<p class="small">Done ${shortDate(t.doneOn)}</p>` : `<label class="form">Date<input id="std" type="date" value="${t.due}"></label>`}
+    <div class="btns"><button class="btn danger" data-x="del">Delete</button>${t.done ? '' : '<button class="btn" data-x="save">Save date</button>'}<a class="btn primary" href="#/seedlings" data-x="go">Seedlings →</a></div>`, (m, close) => {
+    m.querySelector('[data-x=go]').onclick = () => close();
+    const sv = m.querySelector('[data-x=save]'); if (sv) sv.onclick = async () => { t.due = m.querySelector('#std').value || t.due; await save(); close(); render(); };
+    m.querySelector('[data-x=del]').onclick = async () => { S.tasks = S.tasks.filter(x => x !== t); s['no_' + t.kind] = true; await save(); close(); render(); };
+  });
+}
 function orphanTaskDialog(t) {
   modal(`<h3>Task</h3><p class="msg">${esc(t.title)}</p><div class="btns"><button class="btn danger" data-x="del">Delete</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
     m.querySelector('[data-x=ok]').onclick = close;
@@ -757,6 +777,7 @@ function orphanTaskDialog(t) {
 function taskDialog(t, p) {
   if (t && t.kind === 'water') return waterTaskDialog(t);
   if (t && t.kind === 'frost') return frostTaskDialog(t);
+  if (t && t.startId) return startTaskDialog(t);
   if (t && !t.plantingId && !t.containerId) return orphanTaskDialog(t);
   if (t && !t.plantingId && t.containerId) return container(t.containerId) && bedTaskDialog(container(t.containerId), t);
   const isNew = !t;
@@ -989,7 +1010,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.6.2';
+const APP_VERSION = '1.7.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

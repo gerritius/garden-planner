@@ -15,7 +15,7 @@ function taskOwner(t) {
   const c = p ? container(p.containerId) : (t.containerId ? container(t.containerId) : null);
   return { p, c };
 }
-const taskVisible = t => t.kind === 'water' || t.kind === 'frost' || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
+const taskVisible = t => t.kind === 'water' || t.kind === 'frost' || (t.startId ? !!start(t.startId) : false) || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
 const BED_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="1.5" fill="#8a6a4b" stroke="#3a2a1c" stroke-width="1.3"/><path d="M12 9h8M12 15h8M12 21h8" stroke="#7fb069" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const CAN_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M8 13h13v13a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" fill="#7aa7c7" stroke="#3a2a1c" stroke-width="1.3"/><path d="M21 16l7-6" stroke="#3a2a1c" stroke-width="2.4" stroke-linecap="round"/><path d="M11 13a4 4 0 0 1 7 0" fill="none" stroke="#3a2a1c" stroke-width="1.3"/><path d="M28 13v.1M29.5 15.5v.1M27 16.5v.1" stroke="#3d7fb8" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
@@ -76,31 +76,62 @@ function waterInterval(d = new Date()) {
   if (today && today.max >= 30) iv = 1;
   return iv;
 }
-function rainNear() {
-  const d = S.weather && S.weather.daily; if (!d) return 0;
-  const td = todayStr(), y = addDays(td, -1);
-  let r = 0;
-  d.time.forEach((t, i) => { if (t === td || t === y) r = Math.max(r, d.precipitation_sum[i] || 0); });
-  return r;
+// rain per day in mm: observed history + this week's forecast (forecast days need ≥50% chance to count)
+function rainByDay() {
+  const out = Object.assign({}, S.rainHist || {}), d = S.weather && S.weather.daily, td = todayStr();
+  if (!d) return out;
+  d.time.forEach((t, i) => { const mm = d.precipitation_sum[i] || 0, pop = (d.precipitation_probability_max || [])[i]; out[t] = t < td || pop == null || pop >= 50 ? mm : 0; });
+  return out;
+}
+const waterPots = () => S.containers.filter(c => c.type !== 'bed' && c.type !== 'nursery' && activeIn(c.id).length);
+// a full watering = water per 40 L bag (default 4 L ≈ 10% of the pot), so rain fills a pot when mm ≥ that share of its depth
+function potWater(pots) {
+  const perL = (S.water && +S.water.perBagL) || 4, frac = perL / 40;
+  const depths = pots.map(c => +c.depth || 30), depth = depths.reduce((a, b) => a + b, 0) / (depths.length || 1);
+  const sizes = {}; pots.forEach(c => { const k = c.type === 'round' ? c.diameter + '⌀' : c.width + '×' + c.length; sizes[k] = (sizes[k] || 0) + 1; });
+  const rep = pots.find(c => (c.type === 'round' ? c.diameter + '⌀' : c.width + '×' + c.length) === Object.entries(sizes).sort((a, b) => b[1] - a[1])[0][0]) || pots[0];
+  const area = rep.type === 'round' ? Math.PI * (rep.diameter / 200) ** 2 : (rep.width * rep.length) / 1e4;
+  const vol = area * (+rep.depth || 30) * 10;   // litres
+  return { fullMM: frac * depth * 10, perPot: frac * vol, area, rep };
+}
+// simulate how wet the pots are, day by day: watering fills them, rain tops them up, each day uses 1/interval of a watering
+function waterPlan(pots) {
+  const td = todayStr(), iv = waterInterval(), use = 1 / iv, rain = rainByDay(), pw = potWater(pots);
+  const last = S.water && S.water.lastDone;
+  let d = last && daysBetween(last, td) <= 30 ? last : addDays(td, -1), b = last && d === last ? 1 : 0;
+  const start = d, rainy = [], held = [];
+  let due = null, skipped = false;
+  for (let i = 0; i < 60 && !due; i++) {
+    d = addDays(d, 1);
+    const r = (rain[d] || 0) / pw.fullMM;
+    b = Math.min(1, b - use + r);
+    if ((rain[d] || 0) >= 2) rainy.push([d, rain[d]]);
+    if (b > 0.001) { skipped = false; continue; }
+    if (d < td) { b = 0; continue; }
+    const rNext = (rain[addDays(d, 1)] || 0) / pw.fullMM;
+    if (!skipped && rNext >= use) { b = 0; skipped = true; held.push(d); continue; }   // rain due tomorrow — don't water the day before
+    due = d;
+  }
+  if (!due) due = addDays(td, 60);
+  const noRain = addDays(start, last ? iv : 1) < td ? td : addDays(start, last ? iv : 1);
+  return { due, iv, pw, rainy: rainy.filter(([x]) => x <= due), held, noRain, rain };
 }
 function syncWater() {
   const on = !S.water || S.water.on !== false;
-  const pots = S.containers.filter(c => c.type !== 'bed' && activeIn(c.id).length);
+  const pots = waterPots();
   let open = S.tasks.find(t => t.kind === 'water' && !t.done);
   const td = todayStr();
   S.tasks = S.tasks.filter(t => !(t.kind === 'water' && t.done && daysBetween(t.doneOn, td) > 21));
   if (!on || !pots.length) { if (open) S.tasks = S.tasks.filter(x => x !== open); return; }
-  const iv = waterInterval(), last = S.water && S.water.lastDone;
-  let due = last ? addDays(last, iv) : td;
-  if (due < td) due = td;
-  let note = '';
+  const w = waterPlan(pots);
+  let due = w.due, note = '';
   const skipTo = S.water && S.water.skipTo;
-  if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped today'; }
-  const rain = rainNear();
-  if (due === td && rain >= 5) { due = addDays(td, 1); note = ` · skipped, ${Math.round(rain)} mm rain`; }
+  if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped'; }
+  else if (due > w.noRain && w.rainy.length) note = ` · rain counts: ${w.rainy.map(([d, mm]) => `${dayName(d)} ${Math.round(mm)} mm`).join(', ')}`;
+  else if (w.held.length) note = ' · held off: rain due the next day';
   if (!open) { open = { id: uid(), kind: 'water', plantingId: null, title: 'Water pots & bags', due, done: false }; S.tasks.push(open); }
   open.due = due;
-  open.note = `${pots.length} pot${pots.length > 1 ? 's' : ''} · every ${iv === 1 ? 'day' : iv + ' days'} this time of year${note}`;
+  open.note = `${pots.length} pot${pots.length > 1 ? 's' : ''} · every ${w.iv === 1 ? 'day' : w.iv + ' days'} this time of year${note}`;
 }
 
 // ---------- bed jobs, notes, prep ----------
@@ -125,10 +156,21 @@ function bedTaskDialog(c, t) {
   });
 }
 function waterTaskDialog(t) {
+  const pots = waterPots(), w = pots.length ? waterPlan(pots) : null, perL = (S.water && +S.water.perBagL) || 4;
+  const L = mm => (mm * w.pw.area).toFixed(1);
+  const rows = w ? Object.keys(w.rain).filter(d => d >= addDays(todayStr(), -3) && d <= addDays(todayStr(), 6)).sort().map(d => `<tr${d === todayStr() ? ' class="on"' : ''}><td>${dayName(d)}</td><td>${Math.round(w.rain[d] || 0)} mm</td><td>${(w.rain[d] || 0) >= 1 ? '≈ ' + L(w.rain[d]) + ' L' : '—'}</td></tr>`).join('') : '';
   modal(`<h3>${CAN_ICON(24)} Water pots &amp; bags</h3><p class="msg">${esc(t.note || '')}</p>
-    <p class="hint">Watering is spaced by season (daily in summer, every few days in spring/autumn, about weekly in winter) and skipped when 5 mm+ of rain fell or is forecast. Turn it off in Tools.</p>
+    ${w ? `<p class="small">Next watering: <b>${niceDate(t.due)}</b>${w.noRain < t.due ? ` (would be ${niceDate(w.noRain)} without rain)` : ''}.</p>
+    <p class="hint">A full watering is about <b>${perL} L per 40 L bag</b> — the same as ~${Math.round(w.pw.fullMM)} mm of rain. Rain tops the bags up in proportion (e.g. 10 mm ≈ ${L(10)} L into a ${esc(sizeLabel(w.pw.rep))} bag), each day uses about a ${w.iv === 1 ? 'full watering' : `1/${w.iv} of one`}, and if rain is due the next day the watering waits for it. Forecast rain only counts when the chance is 50% or more.</p>
+    ${rows ? `<div class="tscroll"><table class="reg rain"><tr><th>Day</th><th>Rain</th><th>Per bag</th></tr>${rows}</table></div>` : ''}` : ''}
+    ${!S.weather || S.weather.lat == null ? '<p class="hint">Set your garden’s location in Tools so rain can be counted.</p>' : ''}
+    ${S.starts && S.starts.some(x => x.status === 'growing') ? '<p class="hint">🌱 Seedling trays and small pots aren’t included — they dry out fast, so check them daily.</p>' : ''}
+    <form id="wpf" class="form"><label>Water per 40 L bag (L)<input name="perL" type="number" inputmode="decimal" step="0.5" min="0.5" value="${perL}"></label></form>
     <div class="btns"><button class="btn" data-x="skip">Skip today</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
-    m.querySelector('[data-x=ok]').onclick = close;
+    const f = m.querySelector('#wpf');
+    const keep = async () => { const v = +f.perL.value; if (v > 0 && v !== perL) { S.water = Object.assign({}, S.water, { perBagL: v }); await save(); render(); } };
+    m.querySelector('[data-x=ok]').onclick = async () => { await keep(); close(); };
+    f.onsubmit = async e => { e.preventDefault(); await keep(); close(); };
     m.querySelector('[data-x=skip]').onclick = async () => { S.water = Object.assign({}, S.water, { skipTo: addDays(todayStr(), 1) }); syncWater(); await save(); close(); render(); };
   });
 }
@@ -240,9 +282,11 @@ function quickAdd() {
     <button class="btn primary" data-q="log">📝 Log something</button>
     <button class="btn" data-q="harvest">🧺 Log a harvest</button><button class="btn" data-q="photo">📷 Diary photo</button>
     <button class="btn" data-q="note">🐛 Diary note / pest</button><button class="btn" data-q="job">✓ Add a job</button>
+    <button class="btn" data-q="start">🌱 Start seedlings</button><a class="btn" href="#/seedlings" data-q="seedlings">🪴 My seedlings</a>
     <a class="btn primary" href="#/container/new" data-q="bed">＋ New bed or pot</a></div>`, (m, close) => {
     m.querySelector('[data-q=bed]').onclick = () => close();
-    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : pickPlanting(b.dataset.q));
+    m.querySelector('[data-q=seedlings]').onclick = () => close();
+    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : b.dataset.q === 'start' ? startDialog() : pickPlanting(b.dataset.q));
   });
 }
 function pickPlanting(what) {

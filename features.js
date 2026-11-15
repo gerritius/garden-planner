@@ -147,10 +147,12 @@ const Weather = {
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7&past_days=1`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7&past_days=7`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       w.daily = (await r.json()).daily; w.fetched = Date.now();
+      const td = todayStr(), keep = addDays(td, -45); S.rainHist = Object.fromEntries(Object.entries(S.rainHist || {}).filter(([k]) => k >= keep));
+      w.daily.time.forEach((t, i) => { if (t < td) S.rainHist[t] = w.daily.precipitation_sum[i] || 0; });
       await save(); return true;
     } catch (e) { console.warn('weather', e); return false; } finally { this.busy = false; }
   },

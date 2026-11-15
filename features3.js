@@ -27,7 +27,7 @@ function logFeed() {
       cids: [...(e.cids || []), ...(e.pids || []).map(id => (planting(id) || {}).containerId)], pids: e.pids || [], all: !(e.cids || []).length && !(e.pids || []).length });
   }
   for (const t of S.tasks) {
-    if (!t.done || !t.doneOn) continue;
+    if (!t.done || !t.doneOn || t.startId) continue;
     const { p, c } = taskOwner(t);
     if (t.kind === 'frost') { out.push({ date: t.doneOn, kind: 'cover', title: t.title, sub: (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '), cids: t.cids || [], pids: [] }); continue; }
     if (t.kind === 'water') { out.push({ date: t.doneOn, kind: 'water', title: t.title || 'Watered pots & bags', sub: t.note || '', all: true, cids: [] }); continue; }
@@ -36,12 +36,13 @@ function logFeed() {
   }
   for (const p of S.plantings) {
     const c = container(p.containerId), where = c ? c.name : '', cids = c ? [c.id] : [], pids = [p.id], href = '#/plant/' + p.id, n = crop(p.cropId).en;
-    if (p.sowDate && p.sowDate <= td) out.push({ date: p.sowDate, kind: 'sow', title: `${p.method === 'seed' ? 'Sowed' : 'Planted'} ${n}${p.variety ? ' · ' + p.variety : ''}`, sub: where + (c && c.type === 'bed' ? ` · ${p.from}–${p.to} cm` : ''), href, cids, pids });
+    if (p.sowDate && p.sowDate <= td && !p.startId) out.push({ date: p.sowDate, kind: 'sow', title: `${p.method === 'seed' ? 'Sowed' : 'Planted'} ${n}${p.variety ? ' · ' + p.variety : ''}`, sub: where + (c && c.type === 'bed' ? ` · ${p.from}–${p.to} cm` : ''), href, cids, pids });
     if (p.germ && p.germ.date) out.push({ date: p.germ.date, kind: 'note', title: `${n} came up: ${p.germ.result}`, sub: where, href, cids, pids });
     for (const h of p.harvests || []) out.push({ date: h.date, kind: 'harvest', title: `Picked ${h.count} ${n}`, sub: where + (h.note ? ' · ' + h.note : ''), href, cids, pids });
     for (const d of p.diary || []) out.push({ date: d.date, kind: (d.tags || []).length ? 'pest' : d.photo ? 'diary' : 'note', title: d.note || (d.tags || []).map(pestName).join(', ') || 'Photo', sub: n + (where ? ' · ' + where : '') + ((d.tags || []).length && d.note ? ' · ' + d.tags.map(pestName).join(', ') : ''), href: `#/plant/${p.id}/diary/${d.id}`, photo: d.photo, cids, pids });
     if (p.status === 'harvested' && p.harvestedOn) out.push({ date: p.harvestedOn, kind: 'done', title: `Finished ${n}`, sub: where, href, cids, pids });
   }
+  try { out.push(...startLogItems()); } catch (e) { console.warn(e); }
   for (const c of S.containers) for (const nt of c.log || []) out.push({ date: nt.date, kind: 'note', title: nt.text, sub: c.name, href: '#/container/' + c.id, cids: [c.id], pids: [] });
   return out.filter(x => x.date).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 }

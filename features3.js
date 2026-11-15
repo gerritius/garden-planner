@@ -30,6 +30,7 @@ function logFeed() {
     if (!t.done || !t.doneOn || t.startId) continue;
     const { p, c } = taskOwner(t);
     if (t.kind === 'frost') { out.push({ date: t.doneOn, kind: 'cover', title: t.title, sub: (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '), cids: t.cids || [], pids: [] }); continue; }
+    if (t.kind === 'wx') { out.push({ date: t.doneOn, kind: t.wx === 'wind' ? 'cover' : 'job', title: t.title, sub: 'Weather', all: true, cids: [], pids: [] }); continue; }
     if (t.kind === 'water') { out.push({ date: t.doneOn, kind: 'water', title: t.title || 'Watered pots & bags', sub: t.note || '', all: true, cids: [] }); continue; }
     const k = t.kind === 'series' || t.kind === 'custom' || t.containerId ? kindOfTitle(t.title) : t.kind === 'germ' ? 'note' : 'job';
     out.push({ date: t.doneOn, kind: k, title: t.title, sub: p ? crop(p.cropId).en + (c ? ' · ' + c.name : '') : c ? c.name : '', href: p ? '#/plant/' + p.id : c ? '#/container/' + c.id : null, cids: c ? [c.id] : [], pids: p ? [p.id] : [] });
@@ -90,7 +91,7 @@ function logDialog(e, preset = {}) {
   const isNew = !e;
   e = e || Object.assign({ id: uid(), date: todayStr(), kind: 'fert', product: '', amount: null, unit: 'g', text: '', cids: [], pids: [] }, preset);
   const prods = [...new Set((S.log || []).map(x => x.product).filter(Boolean))];
-  const act = S.plantings.filter(p => p.status !== 'harvested' || (e.pids || []).includes(p.id));
+  const act = S.plantings.filter(p => isLive(p) || (e.pids || []).includes(p.id));
   modal(`<h3>${isNew ? 'Log something' : 'Edit log entry'}</h3>
     <form id="lf" class="form">
       <label>Date<input type="date" name="date" value="${e.date}" max="${todayStr()}"></label>

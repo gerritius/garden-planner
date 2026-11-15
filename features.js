@@ -147,10 +147,10 @@ const Weather = {
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=7&past_days=7`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m&timezone=auto&forecast_days=7&past_days=7`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      w.daily = (await r.json()).daily; w.fetched = Date.now();
+      const j = await r.json(); w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now();
       const td = todayStr(), keep = addDays(td, -45); S.rainHist = Object.fromEntries(Object.entries(S.rainHist || {}).filter(([k]) => k >= keep));
       w.daily.time.forEach((t, i) => { if (t < td) S.rainHist[t] = w.daily.precipitation_sum[i] || 0; });
       await save(); return true;
@@ -158,12 +158,12 @@ const Weather = {
   },
   days() {
     const d = S.weather && S.weather.daily; if (!d) return [];
-    return d.time.map((t, i) => ({ date: t, code: d.weather_code[i], max: d.temperature_2m_max[i], min: d.temperature_2m_min[i], rain: d.precipitation_sum[i] || 0, pop: (d.precipitation_probability_max || [])[i], wind: d.wind_speed_10m_max[i] }))
+    return d.time.map((t, i) => ({ date: t, code: d.weather_code[i], max: d.temperature_2m_max[i], min: d.temperature_2m_min[i], rain: d.precipitation_sum[i] || 0, pop: (d.precipitation_probability_max || [])[i], wind: d.wind_speed_10m_max[i], gust: (d.wind_gusts_10m_max || [])[i] }))
       .filter(x => x.date >= todayStr());
   },
   alerts() {
     const days = this.days().slice(0, 5), out = [];
-    const active = S.plantings.filter(p => p.status !== 'harvested');
+    const active = S.plantings.filter(isLive);
     if (!active.length) return out;
     const tender = [...new Set(active.filter(p => crop(p.cropId).tender).map(p => crop(p.cropId).en))];
     const list = (arr, f) => arr.map(d => `${dayName(d.date)} ${f(d)}`).join(', ');
@@ -171,8 +171,8 @@ const Weather = {
     if (fr.length) { const names = [...new Set(fr.flatMap(x => x.hit.map(p => crop(p.cropId).en)))]; out.push(['frost', `<b>${fr.some(x => x.hard) ? 'Hard frost' : 'Frost risk'}</b> ${list(fr.map(x => x.d), d => Math.round(d.min) + '°')}${names.length ? ` — cover ${esc(names.join(', '))}` : ' — nothing tender planted'}`]); }
     const rain = days.filter(d => d.rain >= 30);
     if (rain.length) out.push(['rain', `<b>Heavy rain</b> ${list(rain, d => Math.round(d.rain) + ' mm')} — check drainage`]);
-    const wind = days.filter(d => d.wind >= 40);
-    if (wind.length) out.push(['wind', `<b>Strong wind</b> ${list(wind, d => Math.round(d.wind) + ' km/h')} — check supports & covers`]);
+    const wind = days.filter(d => (d.gust != null ? d.gust : d.wind * 1.6) >= 50);
+    if (wind.length) out.push(['wind', `<b>Strong wind</b> ${list(wind, d => 'gusts ' + Math.round(d.gust != null ? d.gust : d.wind * 1.6) + ' km/h')} — check supports & covers`]);
     const heat = days.filter(d => d.max >= 33);
     if (heat.length) out.push(['heat', `<b>Hot</b> ${list(heat, d => Math.round(d.max) + '°')} — water pots & bags well`]);
     return out;
@@ -186,6 +186,7 @@ const Weather = {
     return `<section class="wx">
       <div class="wxdays">${days.map(d => `<div class="wxd${d.date === todayStr() ? ' now' : ''}${d.min <= 2 ? ' frost' : ''}"><span class="wn">${dayName(d.date)}</span>${Icons.weather(d.code, 30)}<b>${Math.round(d.max)}°</b><span class="lo">${Math.round(d.min)}°</span><span class="rn">${d.rain >= 0.5 ? Math.round(d.rain) + 'mm' : '&nbsp;'}</span></div>`).join('')}</div>
       ${this.alerts().map(([k, t]) => `<div class="wxalert ${k}">${t}</div>`).join('')}
+      ${S.plantings.some(isLive) ? sprayDaysHTML(true) : ''}
       <div class="wxfoot">${esc(w.name)} · ${age == null ? '' : age < 1 ? 'updated just now' : `updated ${age} h ago`}</div></section>`;
   },
 };

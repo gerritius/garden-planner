@@ -113,7 +113,7 @@ const CROP_EXTRA = {
 for (const c of CATALOG) { const x = CROP_EXTRA[c.id] || ['other', []]; c.family = x[0]; c.sow = x[1]; c.tender = !!x[2]; }
 
 // Fertiliser / amendment units. A handful (一握り) of granular fertiliser is roughly 30 g.
-const UNITS = ['g', 'handful', 'mL', 'L'];
+const UNITS = ['g', 'kg', 'handful', 'mL', 'L'];
 const HANDFUL_G = 30;
 
 // germ: days to emerge in warm soil [min, max] (slower in cold months — see germWindow)

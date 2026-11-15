@@ -52,7 +52,7 @@ function sprayBanner(p) {
   return `<div class="banner warn">💦 Sprayed <b>${esc(h.e.product || 'pesticide')}</b> on ${shortDate(h.e.date)} — <b>don’t pick until ${shortDate(h.until)}</b> (${h.e.phi}-day wait).</div>`;
 }
 function sprayAlerts() {
-  const act = S.plantings.filter(p => p.status !== 'harvested'), by = {};
+  const act = S.plantings.filter(isLive), by = {};
   for (const p of act) { const h = sprayHolds(p)[0]; if (h) (by[h.until] = by[h.until] || []).push([p, h]); }
   const ks = Object.keys(by).sort(); if (!ks.length) return '';
   return `<div class="banner warn">💦 <b>Spray waiting period</b> — don’t pick ${ks.map(u => `${by[u].map(([p]) => `<a href="#/plant/${p.id}">${esc(crop(p.cropId).en)}</a>`).join(', ')} until <b>${shortDate(u)}</b>`).join('; ')}.</div>`;
@@ -62,7 +62,7 @@ function sprayAlerts() {
 const HALF_HARDY = ['lettuce', 'celery', 'shungiku', 'strawberry'];
 function frostRisk() {
   const days = Weather.days().slice(0, 5);
-  const act = S.plantings.filter(p => p.status !== 'harvested' && (!p.sowDate || p.sowDate <= addDays(todayStr(), 4)));
+  const act = S.plantings.filter(p => isLive(p) && (!p.sowDate || p.sowDate <= addDays(todayStr(), 4)));
   const out = [];
   for (const d of days) {
     if (d.min > 2) continue;
@@ -88,7 +88,7 @@ function syncFrost() {
 }
 
 // ---------- product totals ----------
-const unitBase = u => u === 'handful' ? ['g', HANDFUL_G] : u === 'L' ? ['mL', 1000] : u === 'mL' ? ['mL', 1] : ['g', 1];
+const unitBase = u => u === 'handful' ? ['g', HANDFUL_G] : u === 'kg' ? ['g', 1000] : u === 'L' ? ['mL', 1000] : u === 'mL' ? ['mL', 1] : ['g', 1];
 const fmtTot = (v, b) => b === 'g' ? (v >= 1000 ? `${+(v / 1000).toFixed(2)} kg` : `${Math.round(v)} g`) : (v >= 1000 ? `${+(v / 1000).toFixed(2)} L` : `${Math.round(v)} mL`);
 function productUses(year) {
   const uses = [];

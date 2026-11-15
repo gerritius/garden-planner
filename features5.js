@@ -162,7 +162,7 @@ function wireLogLibrary(m, f, e) {
   const targets = () => {
     const cids = [...f.querySelectorAll('input[name=cid]:checked')].map(i => i.value), pids = [...f.querySelectorAll('input[name=pid]:checked')].map(i => i.value);
     const d = f.date.value || todayStr();
-    const act = S.plantings.filter(p => p.status !== 'harvested' && (!p.sowDate || p.sowDate <= d));
+    const act = S.plantings.filter(p => isLive(p) && (!p.sowDate || p.sowDate <= d));
     return pids.length || cids.length ? act.filter(p => pids.includes(p.id) || cids.includes(p.containerId)) : act;
   };
   const check = () => {
@@ -272,12 +272,12 @@ function pageProduct(id) {
   setChrome(p.en, { back: true, kicker: p.ja });
   const own = !S.myProducts || S.myProducts.includes(p.id);
   A.toggleOwn = () => { let l = S.myProducts || PRODUCTS.map(x => x.id); l = own ? l.filter(x => x !== id) : [...l, id]; S.myProducts = l; save().then(render); };
-  const crops = [...new Set(S.plantings.filter(x => x.status !== 'harvested').map(x => x.cropId))];
+  const crops = [...new Set(S.plantings.filter(isLive).map(x => x.cropId))];
   const allCropIds = Object.keys(CROP_REG).concat('lettuce');
   let body = '';
   if (p.reg) {
     const R = REGISTRATIONS[p.reg];
-    const mine = crops.map(cid => [cid, regSummary(id, cid, (S.plantings.find(x => x.cropId === cid && x.status !== 'harvested') || {}).variety)]);
+    const mine = crops.map(cid => [cid, regSummary(id, cid, (S.plantings.find(x => x.cropId === cid && isLive(x)) || {}).variety)]);
     const others = allCropIds.filter(cid => !crops.includes(cid)).map(cid => [cid, regSummary(id, cid)]).filter(([, s]) => s && s.ok);
     const row = ([cid, s]) => s && s.ok ? `<tr><td>${ic(cid, 18)} ${esc(crop(cid).en)}<small>${esc(s.crop)}</small></td><td>${s.pests.map(pestEn).join(', ')}</td><td>${[...new Set(s.dils.map(dilEn))].join(' or ')}</td><td>${s.when.map(whenEn).join('; ')}</td><td>${s.uses === Infinity ? 'no limit' : s.uses + '×'}</td></tr>`
       : `<tr class="no"><td>${ic(cid, 18)} ${esc(crop(cid).en)}</td><td colspan="4">Not registered — not allowed</td></tr>`;

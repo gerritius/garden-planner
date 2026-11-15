@@ -444,3 +444,30 @@ table.reg.rain { min-width: 0; width: 100%; }
 table.reg.rain td, table.reg.rain th { padding: 5px 6px; }
 .start .btnrow { margin-left: 0; flex-wrap: wrap; gap: 6px; }
 .start .btnrow .btn { white-space: nowrap; flex: 0 1 auto; }
+/* season plan */
+.plannote { background: var(--card, #fffdf6); border: 1px dashed var(--line); border-radius: 10px; padding: 8px 10px; font-size: 14px; margin: 4px 0 8px; }
+.banner.plan { display: block; }
+.banner.plan .btnrow { margin-top: 8px; }
+.planchip { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #e8eef7; color: #3a5a8a; }
+section.plan h3 small { font-weight: 400; font-size: 12px; }
+.tl, .tlmonths { margin: 2px 0; }
+.tlrow, .tlmonths { display: flex; align-items: center; gap: 6px; min-height: 26px; }
+.tll { flex: 0 0 64px; font-size: 11px; color: var(--muted); text-align: right; }
+.tlbar { position: relative; flex: 1; height: 24px; background: repeating-linear-gradient(90deg, transparent 0 calc(100%/9 - 1px), var(--line) calc(100%/9 - 1px) calc(100%/9)); border-radius: 6px; }
+.tlmonths .tlbar { background: none; height: 16px; }
+.tlmonths .tlbar span { position: absolute; top: 0; font-size: 10px; color: var(--muted); padding-left: 2px; }
+.tlb { position: absolute; top: 2px; bottom: 2px; border-radius: 6px; background: var(--c); color: #1f1a16; font-size: 11px; line-height: 20px; padding: 0 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-decoration: none; border: 1px solid rgba(0,0,0,.25); }
+.tlb.planned { background: repeating-linear-gradient(135deg, var(--c) 0 6px, color-mix(in srgb, var(--c) 45%, white) 6px 12px); border-style: dashed; }
+.tlb.done { opacity: .45; }
+.tlnow { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #c0502c; }
+.tlkey.planned { padding: 0 6px; border-radius: 4px; background: repeating-linear-gradient(135deg, #b5cf8f 0 5px, #e3eed3 5px 10px); }
+ul.gaps { list-style: none; padding: 0; margin: 8px 0 0; }
+li.gap { padding: 8px 0; border-top: 1px dashed var(--line); font-size: 14px; }
+li.gap .sowchips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+li.gap .chip { text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+/* spray days */
+.wxspray { font-size: 13px; margin-top: 6px; }
+.spdays { display: grid; gap: 6px; margin: 4px 0 12px; }
+.spd { display: flex; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f3ece4; font-size: 14px; }
+.spd b { flex: 0 0 52px; }
+.spd.ok { background: #e4efd8; }

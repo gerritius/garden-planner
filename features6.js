@@ -39,7 +39,8 @@ function syncStartTasks(s) {
   const gw = germWindow({ cropId: s.cropId, method: 'seed', sowDate: s.sowDate });
   upsert('sgerm', !!gw && !s.upOn && !s.no_sgerm, gw && gw[1], gw ? `Check seedlings are up (expected ${shortDate(gw[0])}–${shortDate(gw[1])})` : '');
   const tp = TRANSPLANT[s.cropId];
-  upsert('transplant', !s.no_transplant, addDays(s.sowDate, tpDays(s.cropId)), `Plant out seedlings${tp && tp[1] ? ` (${tp[1]})` : ''}`);
+  const pp = s.planId && planting(s.planId);
+  upsert('transplant', !s.no_transplant && !(pp && isPlanned(pp)), addDays(s.sowDate, tpDays(s.cropId)), `Plant out seedlings${tp && tp[1] ? ` (${tp[1]})` : ''}`);
 }
 function startTaskMeta(t) {
   const s = start(t.startId); if (!s) return '';
@@ -105,11 +106,13 @@ function seedlingsHomeSection() {
 }
 
 // ---------- dialogs ----------
-function startDialog(s) {
+function startDialog(s, preset) {
   const isNew = !s, td = todayStr();
-  const d = s ? Object.assign({}, s) : { cropId: '', variety: '', kind: 'tray', tray: trayNos().find(n => trayFree(n) > 0) || (trayNos().length ? Math.max(...trayNos()) + 1 : 1), count: '', seeds: '', sowDate: td, notes: '' };
+  const d = s ? Object.assign({}, s) : Object.assign({ cropId: '', variety: '', kind: 'tray', tray: trayNos().find(n => trayFree(n) > 0) || (trayNos().length ? Math.max(...trayNos()) + 1 : 1), count: '', seeds: '', sowDate: td, notes: '' }, preset || {});
+  const plan = d.planId && planting(d.planId);
   const trayOpts = () => { const nos = trayNos(), extra = nos.length ? Math.max(...nos) + 1 : 1; return [...new Set([...nos, d.tray || extra, extra])].sort((a, b) => a - b).map(n => `<option value="${n}"${n === (d.tray || 1) ? ' selected' : ''}>Tray ${n}${nos.includes(n) ? ` · ${trayFree(n, s && s.id)} free` : ' (new)'}</option>`).join(''); };
   modal(`<h3>${isNew ? 'Start seedlings' : 'Edit seedlings'}</h3>
+    ${plan ? `<p class="msg small">📅 For the planned ${esc(crop(plan.cropId).en)} in ${esc((container(plan.containerId) || {}).name || '')} on ${shortDate(plan.sowDate)}.</p>` : ''}
     <form id="sdf" class="form">
       <label>Crop<select name="cropId" required><option value="">Choose a crop…</option>${allCrops().map(x => `<option value="${x.id}"${x.id === d.cropId ? ' selected' : ''}>${esc(x.en)}${x.ja ? ' ' + esc(x.ja) : ''}</option>`).join('')}</select></label>
       <label>Variety<input name="variety" list="svars" value="${esc(d.variety || '')}" autocomplete="off"><datalist id="svars"></datalist></label>
@@ -139,7 +142,10 @@ function startDialog(s) {
       e.preventDefault();
       const o = { cropId: f.cropId.value, variety: f.variety.value.trim(), kind: d.kind, tray: d.kind === 'tray' ? +f.tray.value || 1 : null, count: +f.count.value || 1, seeds: num(f.seeds.value), sowDate: f.sowDate.value || td, notes: f.notes.value.trim() };
       if (o.kind === 'tray') { const free = trayFree(o.tray, s && s.id), need = o.count - (s ? s.count - startLeft(s) : 0); if (need > free && !confirm(`Tray ${o.tray} only has ${free} free cells. Save anyway?`)) return; }
-      if (isNew) { s = Object.assign({ id: uid(), status: 'growing', created: new Date().toISOString(), events: [] }, o); (S.starts = S.starts || []).push(s); }
+      if (isNew) {
+        s = Object.assign({ id: uid(), status: 'growing', created: new Date().toISOString(), events: [] }, o, plan ? { planId: plan.id } : {}); (S.starts = S.starts || []).push(s);
+        if (plan) { const t = S.tasks.find(t => t.plantingId === plan.id && t.kind === 'plan_tray' && !t.done); if (t) { t.done = true; t.doneOn = o.sowDate; } }
+      }
       else { if (o.sowDate !== s.sowDate) s.no_transplant = false; Object.assign(s, o); }
       if (startLeft(s) <= 0 && s.status === 'growing') s.status = 'done';
       syncStartTasks(s); await save(); close(); render();
@@ -151,10 +157,14 @@ function plantOutDialog(s) {
   const left = startLeft(s), spots = S.containers.filter(c => c.type !== 'nursery');
   modal(`<h3>Plant out ${esc(crop(s.cropId).en)}</h3><p class="muted small">${left} ${NURSERY[s.kind].unit}${left === 1 ? '' : 's'} in ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
     <form id="pof" class="form"><label>How many are you planting?<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label></form>
-    <p class="small">Where to?</p><ul class="plist pick">${spots.map(c => `<li><a href="#" data-c="${c.id}">${c.type === 'bed' ? BED_ICON(22) : '🪴'} <span class="grow"><b>${esc(c.name)}</b><small>${activeIn(c.id).map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small></span>›</a></li>`).join('') || '<li class="muted">Add a bed or bag first.</li>'}</ul>
+    ${(() => { const pp = s.planId && planting(s.planId); return pp && isPlanned(pp) ? `<p class="small">Planned spot</p><ul class="plist pick"><li><a href="#" data-plan="${pp.id}">📅 <span class="grow"><b>${esc((container(pp.containerId) || {}).name || '')}${sectionOf(pp) ? ' · ' + sectionOf(pp) : ''}</b><small>planned for ${shortDate(pp.sowDate)}</small></span>›</a></li></ul><p class="small">Somewhere else?</p>` : '<p class="small">Where to?</p>'; })()}<ul class="plist pick">${spots.map(c => `<li><a href="#" data-c="${c.id}">${c.type === 'bed' ? BED_ICON(22) : '🪴'} <span class="grow"><b>${esc(c.name)}</b><small>${activeIn(c.id).map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small></span>›</a></li>`).join('') || '<li class="muted">Add a bed or bag first.</li>'}</ul>
     <p class="hint">Next you’ll mark where they go in the bed, like any new planting. Any you don’t plant stay here.</p>
     <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button></div>`, (m, close) => {
     m.querySelector('[data-x=no]').onclick = close;
+    const pl = m.querySelector('[data-plan]');
+    if (pl) pl.onclick = async e => { e.preventDefault(); const n = Math.max(1, Math.min(left, +m.querySelector('#pof').n.value || left)), pp = planting(pl.dataset.plan);
+      const t = S.tasks.find(t => t.plantingId === pp.id && t.kind === 'plan_sow' && !t.done); if (t) { t.done = true; t.doneOn = todayStr(); }
+      activatePlan(pp, todayStr(), n); await save(); close(); location.hash = '#/plant/' + pp.id; };
     m.querySelectorAll('[data-c]').forEach(a => a.onclick = e => {
       e.preventDefault(); const n = Math.max(1, Math.min(left, +m.querySelector('#pof').n.value || left));
       close(); location.hash = `#/plant/new/${a.dataset.c}?crop=${encodeURIComponent(s.cropId)}&start=${s.id}&n=${n}`;

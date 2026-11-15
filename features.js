@@ -143,7 +143,7 @@ const Weather = {
   async refresh(force) {
     const w = S.weather;
     if (!w || w.lat == null || this.busy) return false;
-    if (!force && w.fetched && Date.now() - w.fetched < 2 * 3600e3) return false;
+    if (!force && w.fetched && w.hourly && Date.now() - w.fetched < 2 * 3600e3) return false;
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
@@ -186,7 +186,7 @@ const Weather = {
     return `<section class="wx">
       <div class="wxdays">${days.map(d => `<div class="wxd${d.date === todayStr() ? ' now' : ''}${d.min <= 2 ? ' frost' : ''}"><span class="wn">${dayName(d.date)}</span>${Icons.weather(d.code, 30)}<b>${Math.round(d.max)}°</b><span class="lo">${Math.round(d.min)}°</span><span class="rn">${d.rain >= 0.5 ? Math.round(d.rain) + 'mm' : '&nbsp;'}</span></div>`).join('')}</div>
       ${this.alerts().map(([k, t]) => `<div class="wxalert ${k}">${t}</div>`).join('')}
-      ${S.plantings.some(isLive) ? sprayDaysHTML(true) : ''}
+      ${sprayDaysHTML(true)}
       <div class="wxfoot">${esc(w.name)} · ${age == null ? '' : age < 1 ? 'updated just now' : `updated ${age} h ago`}</div></section>`;
   },
 };

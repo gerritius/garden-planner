@@ -226,7 +226,8 @@ function sprayDays() {
 const hh = h => `${h}:00`;
 const WHY = { rain: '🌧 rain', wind: '💨 wind', heat: '🥵 too hot', cold: '🥶 too cold' };
 function sprayDaysHTML(compact) {
-  const ds = sprayDays(); if (!ds.length) return '';
+  const ds = sprayDays();
+  if (!ds.length) return compact ? `<div class="wxspray">💦 <b>Spray days:</b> ${navigator.onLine ? 'getting the hourly forecast…' : 'appear when you’re online'} <a href="#/sprayday">details ›</a></div>` : '';
   const best = ds.find(x => x.wins.length);
   const row = x => `<span class="spd${x.wins.length ? ' ok' : ''}"><b>${dayName(x.d)}</b>${x.wins.length ? x.wins.map(w => `${hh(w[0])}–${hh(w[1])}`).join(', ') : `✗ ${WHY[x.why] || ''}`}</span>`;
   if (compact) return `<div class="wxspray">💦 <b>Spray:</b> ${best ? `best ${dayName(best.d) === 'Today' ? 'today' : dayName(best.d)} ${best.wins.map(w => `${hh(w[0])}–${hh(w[1])}`).join(', ')}` : 'no good window in the next few days'} <a href="#/sprayday">details ›</a></div>`;
@@ -243,7 +244,7 @@ function pageSprayDay() {
   if (!S.weather || S.weather.lat == null) return { html: `<div class="empty-state">Set your garden’s location in Tools to see spray days.<br><a class="btn" href="#/settings">Tools</a></div>` };
   const html = `${sprayDaysHTML(false) || '<p class="muted">Hourly weather will appear when you’re online.</p>'}${sprayDayInfo()}
     ${sprayAlerts()}<div class="btnrow"><a class="btn" href="#/products">🧴 Products &amp; sprays</a><a class="btn" href="#/log">📝 Log a spray</a></div>`;
-  return { html };
+  return { html, after: () => Weather.refresh().then(ch => { if (ch && route().parts[0] === 'sprayday') render(); }) };
 }
 
 // ---------- weather alert jobs ----------

@@ -112,7 +112,7 @@ function sowNowSection() {
   const list = allCrops().filter(c => (c.sow || []).includes(m));
   const mn = new Date().toLocaleDateString('en-GB', { month: 'long' });
   return `<section><h3>Sow &amp; plant in ${mn}</h3>
-    ${list.length ? `<div class="sowchips">${list.map(c => `<button class="chip big" data-act="sowCrop" data-id="${c.id}">${ic(c.id, 26)}${esc(c.en)}</button>`).join('')}</div>` : '<p class="muted">Nothing in the catalogue for this month.</p>'}
+    ${list.length ? `<div class="sowchips">${list.map(c => `<button class="chip big" data-act="sowCrop" data-id="${c.id}">${ic(c.id, 26)}${esc(c.en)}${c.method === 'seed' ? soilBadge(c.id) : ''}</button>`).join('')}</div>` : '<p class="muted">Nothing in the catalogue for this month.</p>'}
     <a class="more" href="#/sow">Full sowing calendar →</a></section>`;
 }
 function sowPick(id) {
@@ -130,9 +130,10 @@ function pageSow() {
   const m = new Date().getMonth() + 1;
   const list = allCrops().filter(c => (c.sow || []).length).slice().sort((a, b) => a.en.localeCompare(b.en));
   A.sowCrop = el => sowPick(el.dataset.id);
-  const html = `<p class="hint">Typical months to sow or plant out in central Japan. Shaded = sow/plant. Tap a crop to plant it.</p>
+  const st = soilTemps();
+  const html = `<p class="hint">Typical months to sow or plant out in central Japan. Shaded = sow/plant. Tap a crop to plant it.${st ? ` Soil this week ~${Math.round(st.week ?? st.now)}° at 6 cm: ✓ good for sowing · ◐ slow · ❄ too cold.` : ''}</p>
     <div class="sowtable"><div class="sowrow head"><span></span>${MONTHS.map((x, i) => `<i class="${i + 1 === m ? 'now' : ''}">${x[0]}</i>`).join('')}</div>
-    ${list.map(c => `<div class="sowrow" data-act="sowCrop" data-id="${c.id}"><span>${ic(c.id, 20)}${esc(c.en)}</span>${MONTHS.map((x, i) => `<i class="${c.sow.includes(i + 1) ? 'on' : ''}${i + 1 === m ? ' now' : ''}"></i>`).join('')}</div>`).join('')}</div>`;
+    ${list.map(c => `<div class="sowrow" data-act="sowCrop" data-id="${c.id}"><span>${ic(c.id, 20)}${esc(c.en)}${c.method === 'seed' ? soilBadge(c.id) : ''}</span>${MONTHS.map((x, i) => `<i class="${c.sow.includes(i + 1) ? 'on' : ''}${i + 1 === m ? ' now' : ''}"></i>`).join('')}</div>`).join('')}</div>`;
   return { html };
 }
 
@@ -143,11 +144,11 @@ const Weather = {
   async refresh(force) {
     const w = S.weather;
     if (!w || w.lat == null || this.busy) return false;
-    if (!force && w.fetched && w.hourly && Date.now() - w.fetched < 2 * 3600e3) return false;
+    if (!force && w.fetched && w.hourly && w.hourly.soil_temperature_6cm && Date.now() - w.fetched < 2 * 3600e3) return false;
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m&timezone=auto&forecast_days=7&past_days=7`;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,soil_temperature_6cm&timezone=auto&forecast_days=7&past_days=7`;
       const r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json(); w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now();
@@ -187,6 +188,7 @@ const Weather = {
       <div class="wxdays">${days.map(d => `<div class="wxd${d.date === todayStr() ? ' now' : ''}${d.min <= 2 ? ' frost' : ''}"><span class="wn">${dayName(d.date)}</span>${Icons.weather(d.code, 30)}<b>${Math.round(d.max)}°</b><span class="lo">${Math.round(d.min)}°</span><span class="rn">${d.rain >= 0.5 ? Math.round(d.rain) + 'mm' : '&nbsp;'}</span></div>`).join('')}</div>
       ${this.alerts().map(([k, t]) => `<div class="wxalert ${k}">${t}</div>`).join('')}
       ${sprayDaysHTML(true)}
+      ${qualityWarnings().map(([p, k, t]) => `<a class="wxalert quality" href="#/plant/${p.id}">${k === 'bolt' ? '🌼' : k === 'split' ? '💧' : '❄️'} ${esc(t)}</a>`).join('')}
       <div class="wxfoot">${esc(w.name)} · ${age == null ? '' : age < 1 ? 'updated just now' : `updated ${age} h ago`}</div></section>`;
   },
 };

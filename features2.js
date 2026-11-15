@@ -282,11 +282,12 @@ function quickAdd() {
     <button class="btn primary" data-q="log">📝 Log something</button>
     <button class="btn" data-q="harvest">🧺 Log a harvest</button><button class="btn" data-q="photo">📷 Diary photo</button>
     <button class="btn" data-q="note">🐛 Diary note / pest</button><button class="btn" data-q="job">✓ Add a job</button>
-    <button class="btn" data-q="start">🌱 Start seedlings</button><a class="btn" href="#/seedlings" data-q="seedlings">🪴 My seedlings</a>
+    <button class="btn" data-q="start">🌱 Start seedlings</button><button class="btn" data-q="buy">💴 Record a purchase</button><a class="btn" href="#/doctor" data-q="doctor">🩺 Something wrong?</a><a class="btn" href="#/seedlings" data-q="seedlings">🪴 My seedlings</a>
     <a class="btn primary" href="#/container/new" data-q="bed">＋ New bed or pot</a></div>`, (m, close) => {
     m.querySelector('[data-q=bed]').onclick = () => close();
     m.querySelector('[data-q=seedlings]').onclick = () => close();
-    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : b.dataset.q === 'start' ? startDialog() : pickPlanting(b.dataset.q));
+    m.querySelector('[data-q=doctor]').onclick = () => close();
+    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : b.dataset.q === 'start' ? startDialog() : b.dataset.q === 'buy' ? purchaseDialog() : pickPlanting(b.dataset.q));
   });
 }
 function pickPlanting(what) {

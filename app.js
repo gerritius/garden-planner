@@ -33,7 +33,7 @@ let lastRoute = '';
 function blank() {
   return { format: 1, containers: [], plantings: [], tasks: [], customCrops: [], customVarieties: {}, log: [], created: todayStr(), lastBackup: null };
 }
-function save() { return DB.set('state', S).catch(e => alert('Could not save: ' + e)); }
+function save() { S.lastEdit = todayStr(); return DB.set('state', S).catch(e => alert('Could not save: ' + e)); }
 
 const allCrops = () => CATALOG.concat(S.customCrops || []).map(dispCrop);
 const crop = id => allCrops().find(c => c.id === id) || (String(id).startsWith('x:') ? { id, en: String(id).slice(2), ja: '', color: '#8a9a7b', family: 'other' } : { id, en: 'Unknown crop', ja: '', color: '#6a9' });
@@ -258,6 +258,7 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
+  if (!window._snapDone) { window._snapDone = true; setTimeout(snapshotDaily, 3000); }
   let html = '', after = null;
   try {
     const [a, b, c] = parts;
@@ -281,6 +282,9 @@ function render() {
     else if (a === 'sow') ({ html, after } = pageSow());
     else if (a === 'seedlings') ({ html, after } = pageSeedlings());
     else if (a === 'plan') ({ html, after } = pagePlan());
+    else if (a === 'doctor') ({ html, after } = pageDoctor(q));
+    else if (a === 'shop') ({ html, after } = pageShop(q));
+    else if (a === 'spend') ({ html, after } = pageSpend(q));
     else if (a === 'sprayday') ({ html, after } = pageSprayDay());
     else if (a === 'plant' && c === 'diary') ({ html, after } = pageDiary(planting(b), parts[3]));
     else if (a === 'plant' && c === 'photos') ({ html, after } = pagePhotos(planting(b)));
@@ -323,7 +327,7 @@ function pageHome() {
   let backupNote = '';
   if (S.plantings.length) {
     const n = S.lastBackup ? daysBetween(S.lastBackup, td) : null;
-    if (n === null || n >= 14) backupNote = `<a class="banner" href="#/settings">💾 ${n === null ? 'No backup yet' : `Last backup ${n} days ago`} — tap to back up</a>`;
+    if (n === null || (n >= 7 && (S.lastEdit || '9') > S.lastBackup)) backupNote = `<a class="banner" href="#/settings">💾 ${n === null ? 'No backup yet' : `Last backup ${n} days ago`} — tap to back up</a>`;
   }
   A.sowCrop = el => sowPick(el.dataset.id);
   const html = `${backupNote}
@@ -525,6 +529,7 @@ function pagePlantForm(p, c, q) {
       ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>
+      ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method) : ''}
       ${seed ? `<label>Sowing depth (cm)<input name="depth" type="number" step="0.1" inputmode="decimal" value="${esc(d.depth)}"></label>` : ''}
       <div class="two">
         <label>${seed ? 'Sowing distance' : 'Spacing between plants'} (cm)<input name="plantSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.plantSp)}"></label>
@@ -755,6 +760,7 @@ function pagePlant(p) {
     <div class="varrow"><div class="grow"><small>Variety</small><div class="variety">${esc(p.variety || '—')}</div></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
     ${planBanner(p)}
+    ${isLive(p) ? qualityWarnings(p).map(([, , t]) => `<div class="banner warn">${esc(t)}</div>`).join('') : ''}
     ${harvested || isPlanned(p) ? '' : sprayBanner(p)}
     ${harvested ? `<div class="banner">This crop was harvested on ${niceDate(p.harvestedOn)}. <button class="link" data-act="unharvest">Undo</button></div>` : ''}
     <section><h3>To do</h3>
@@ -763,6 +769,7 @@ function pagePlant(p) {
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
     ${isPlanned(p) ? '' : harvestSection(p)}
     ${diarySection(p)}
+    ${isLive(p) ? `<a class="btn small" href="#/doctor?p=${p.id}">🩺 Something wrong? Find the cause</a>` : ''}
     ${harvested || isPlanned(p) ? '' : spraySection(p)}
     ${harvested || isPlanned(p) ? '' : logSection(null, p)}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id)), today: isPlanned(p) ? p.sowDate : undefined })}</a>
@@ -969,13 +976,14 @@ function pageSettings() {
     <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section>
     <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section>
-    <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a><a class="btn" href="#/products">🧴 Products &amp; sprays</a></div><div class="btnrow"><a class="btn" href="#/plan">📅 Season plan</a><a class="btn" href="#/seedlings">🌱 Seedlings</a><a class="btn" href="#/sprayday">💦 Spray days</a></div></section>
+    <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a><a class="btn" href="#/products">🧴 Products &amp; sprays</a></div><div class="btnrow"><a class="btn" href="#/plan">📅 Season plan</a><a class="btn" href="#/seedlings">🌱 Seedlings</a><a class="btn" href="#/sprayday">💦 Spray days</a></div>
+      <div class="btnrow"><a class="btn" href="#/shop">🛒 What to buy</a><a class="btn" href="#/spend">💴 Spending</a><a class="btn" href="#/doctor">🩺 What’s wrong?</a></div></section>
     ${harvestTotalsSection()}<section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
-      <p class="hint" id="persist"></p></section>
+      <p class="hint" id="persist"></p><div id="snaps"></div></section>
     ${weatherSettings()}
     <section><h3>Custom crops</h3>
       ${S.customCrops.length ? `<ul class="plist">${S.customCrops.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}</span><button class="link danger" data-act="delCrop" data-id="${c.id}">delete</button></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>'}
@@ -988,6 +996,7 @@ function pageSettings() {
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));
     storageNote();
+    snapshotSection();
   };
   return { html, after };
 }
@@ -1038,7 +1047,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.8.1';
+const APP_VERSION = '1.9.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

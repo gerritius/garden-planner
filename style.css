@@ -471,3 +471,22 @@ li.gap .chip { text-decoration: none; display: inline-flex; align-items: center;
 .spd { display: flex; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f3ece4; font-size: 14px; }
 .spd b { flex: 0 0 52px; }
 .spd.ok { background: #e4efd8; }
+/* problem finder */
+.signs .chip { font-size: 13px; text-align: left; }
+.signs .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+section.dx { border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; margin: 12px 0; background: var(--card); }
+section.dx.top { border-color: var(--green); border-width: 2px; }
+section.dx h3 { margin-top: 0; }
+a.wxalert.quality { display: block; text-decoration: none; color: inherit; }
+.soilb { margin-left: 4px; font-size: 11px; }
+.soilb.s0 { color: #3d7fb8; } .soilb.s1 { color: #b0832a; } .soilb.s2 { color: #3f7a34; }
+.hint.soil.s0 { color: #3d7fb8; }
+/* shopping & spending */
+.plist.shop li { display: flex; align-items: center; gap: 10px; }
+.plist.shop li.got .grow b { text-decoration: line-through; color: var(--muted); }
+.spendtot { text-align: center; margin: 8px 0 14px; }
+.spendtot b { display: block; font-family: var(--head); font-size: 40px; }
+.spendtot span { color: var(--muted); }
+.sbar { display: grid; grid-template-columns: 10.5em 1fr auto; gap: 8px; align-items: center; margin: 7px 0; font-size: 14px; }
+.sbar i { display: block; height: 14px; background: var(--green); border-radius: 4px; min-width: 3px; }
+.sbar b { font-variant-numeric: tabular-nums; }

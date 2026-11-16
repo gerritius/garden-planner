@@ -399,6 +399,7 @@ function pageContainer(c) {
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
     ${coverSection(c)}
+    ${soilSection(c)}
     ${planSection(c)}
     ${historySection(c)}
     ${logSection(c)}
@@ -605,7 +606,8 @@ function pagePlantForm(p, c, q) {
     const vw = Math.min(window.innerWidth, 640) - 48;
     const ft = $('#fitTxt'); if (ft) { const n = Draw.fitRows(c, tmp); ft.textContent = n ? `${n} row${n > 1 ? 's' : ''} fit at ${tmp.rowSp} cm. ` : ''; $('#pf').rows.placeholder = n ? 'auto: ' + n : 'auto'; }
     const rw = $('#rotWarn');
-    if (rw) { const rn = planMode ? planRotation(c, d.from, d.to, d.cropId, d.sowDate, p && p.id) : rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; const sa = soilAdvice(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); if (sa) { rw.innerHTML += `<p class="soiln">🪱 ${sa.text}</p>`; if (!rn || !rn.same) rw.className = sa.level === 'warn' ? 'warn' : 'note'; } }
+    if (rw) { const rn = planMode ? planRotation(c, d.from, d.to, d.cropId, d.sowDate, p && p.id) : rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; const sr = d.cropId ? soilReadingAdvice(c, d.from, d.to, d.cropId) : null; if (sr) { rw.innerHTML += `<p class="soiln">🧪 ${sr.bits.map(esc).join(' ')}</p>`; if (!rw.className) rw.className = 'note'; }
+    const sa = soilAdvice(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); if (sa) { rw.innerHTML += `<p class="soiln">🪱 ${sa.text}</p>`; if (!rn || !rn.same) rw.className = sa.level === 'warn' ? 'warn' : 'note'; } }
     $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
@@ -754,6 +756,8 @@ function pagePlant(p) {
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
     c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
     c && !harvested && !isPlanned(p) ? ['Size in drawing', (() => { const now = Math.round(Draw.radius(p, td) * 2), full = Math.round(Math.max(1, +p.spread || Draw.spacingNow(p))); return `${now} cm across today (grows to ~${full} cm by ${p.harvestDate ? shortDate(p.harvestDate) : 'harvest'})${seed && +p.thinSp > 0 && !p.thinned ? ' · stays seedling-sized until thinning' : ''}`; })()] : null,
+    c && !harvested ? (() => { const a = soilReadingAdvice(c, p.from, p.to, p.cropId); return a ? ['Soil test', `${esc(readingText(a.r))} <small class="muted">(${shortDate(a.r.date)})</small><br>${a.bits.map(esc).join(' ')}`] : null; })() : null,
+    !harvested && !isPlanned(p) ? feedingRow(p) : null,
     (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + fmtAmt(f.amount, f.unit) : ''}`).join('<br>')] : null,
     (p.series || []).length ? ['Extra fertiliser / jobs', p.series.map(s => `${esc(seriesTitle(s))} · ${+s.every > 0 ? `every ${s.every} ${s.per}${s.every > 1 ? 's' : ''}${s.stopped ? ' (stopped)' : ''}` : 'once'}`).join('<br>')] : null,
     c ? ['Previous crop here', (() => { const rn = isPlanned(p) ? planRotation(c, p.from, p.to, p.cropId, p.sowDate, p.id) : rotationNote(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return rn ? esc(cropName(rn.prev.cropId)) + (rn.same ? ` <span class="warnchip">⚠ same family</span>` : '') : '—'; })()] : null,

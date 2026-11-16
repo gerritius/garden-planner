@@ -217,9 +217,10 @@ function baseFertPlan(cropId, c, from, to) {
   const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
   if (comp) out.push({ product: comp.en, amount: bag ? Math.round(4 * cm) : Math.round(area * 2 * cm * 10) / 10, unit: bag ? 'L' : 'kg' });
   const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? (crop(cropId).family === 'brassica' || crop(cropId).family === 'legume' ? 150 : 100);
-  if (lime && lr) out.push({ product: lime.en, amount: bag ? Math.round(lr * 0.3 / 5) * 5 : Math.round(area * lr / 10) * 10, unit: 'g' });
+  const sr = soilReadingAdvice(c, from, to, cropId), lf = sr ? sr.lime : 1, ff = sr ? sr.feed : 1;
+  if (lime && lr && lf > 0) out.push({ product: lime.en, amount: bag ? Math.round(lr * lf * 0.3 / 5) * 5 : Math.round(area * lr * lf / 10) * 10, unit: 'g' });
   const fert = pick(['bokashi', 'toshoAburakasu', 'neem']);
-  const g = cropId === 'satsumaimo' ? 0 : (bag ? FEED_BAG[feed] : FEED_BASE_M2[feed] * area) * bm;
+  const g = cropId === 'satsumaimo' ? 0 : (bag ? FEED_BAG[feed] : FEED_BASE_M2[feed] * area) * bm * ff;
   if (fert && g) out.push({ product: fert.en, amount: Math.round(g / 10) * 10, unit: 'g' });
   return out.filter(x => x.amount > 0);
 }

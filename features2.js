@@ -164,6 +164,7 @@ function waterTaskDialog(t) {
     <p class="hint">A full watering is about <b>${perL} L per 40 L bag</b> — the same as ~${Math.round(w.pw.fullMM)} mm of rain. Rain tops the bags up in proportion (e.g. 10 mm ≈ ${L(10)} L into a ${esc(sizeLabel(w.pw.rep))} bag), each day uses about a ${w.iv === 1 ? 'full watering' : `1/${w.iv} of one`}, and if rain is due the next day the watering waits for it. Forecast rain only counts when the chance is 50% or more.</p>
     ${rows ? `<div class="tscroll"><table class="reg rain"><tr><th>Day</th><th>Rain</th><th>Per bag</th></tr>${rows}</table></div>` : ''}` : ''}
     ${!S.weather || S.weather.lat == null ? '<p class="hint">Set your garden’s location in Tools so rain can be counted.</p>' : ''}
+    ${moistureToday().length ? `<p class="hint">🧪 Meter today: ${esc(moistureToday().join(', '))}. Trust the meter (and your finger) over the schedule.</p>` : ''}
     ${S.containers.some(c => c.indoor && activeIn(c.id).length) ? '<p class="hint">🏠 Indoor pots aren’t included — rain doesn’t reach them, so water them as they need it.</p>' : ''}
     ${S.starts && S.starts.some(x => x.status === 'growing') ? '<p class="hint">🌱 Seedling trays and small pots aren’t included — they dry out fast, so check them daily.</p>' : ''}
     <form id="wpf" class="form"><label>Water per 40 L bag (L)<input name="perL" type="number" inputmode="decimal" step="0.5" min="0.5" value="${perL}"></label></form>

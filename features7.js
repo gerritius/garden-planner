@@ -180,8 +180,8 @@ function pagePlan() {
 function planSection(c) {
   const planned = S.plantings.filter(p => p.containerId === c.id && isPlanned(p)).sort((a, b) => (a.sowDate < b.sowDate ? -1 : 1));
   const gs = freeGaps(c).filter(g => g.s > todayStr()).slice(0, 3);
-  return `<section><h3>Planned</h3>
-    ${planned.length ? `<ul class="plist">${planned.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${sectionOf(p) ? sectionOf(p) + ' · ' : ''}${p.method === 'seed' ? 'sow' : 'plant'} ${shortDate(p.sowDate)}${p.raise === 'tray' || p.raise === 'pot' ? ` · raise seedlings from ${shortDate(traySowFor(p.cropId, p.sowDate))}` : ''}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planned yet.</p>'}
+  return `<section><h3>${planned.length ? 'Planned' : 'Free space coming up'}</h3>
+    ${planned.length ? `<ul class="plist">${planned.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${sectionOf(p) ? sectionOf(p) + ' · ' : ''}${p.method === 'seed' ? 'sow' : 'plant'} ${shortDate(p.sowDate)}${p.raise === 'tray' || p.raise === 'pot' ? ` · raise seedlings from ${shortDate(traySowFor(p.cropId, p.sowDate))}` : ''}</small></span>›</a></li>`).join('')}</ul>` : (gs.length ? '' : '<p class="muted">Nothing planned yet.</p>')}
     ${gs.length ? `<ul class="gaps">${gs.map(g => gapLi(c, g)).join('')}</ul>` : ''}
     <div class="btnrow"><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan a crop</a><a class="btn small" href="#/plan">Season plan →</a></div></section>`;
 }

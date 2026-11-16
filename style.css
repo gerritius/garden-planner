@@ -518,3 +518,50 @@ li.rot .sowchips { margin: 6px 0 2px; }
 .tlgrid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; display: block; }
 .plist.pick li.hold { background: #fbeee9; }
 a.banner { display: block; text-decoration: none; color: inherit; }
+/* tools tiles & folded settings */
+.tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 14px; }
+.tile { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; text-align: center; padding: 10px 4px; border: 1.5px solid var(--line-2); border-radius: 10px; background: var(--card); color: var(--ink); text-decoration: none; font-size: 12px; line-height: 1.2; font-weight: 600; min-height: 74px; }
+.tile span { font-size: 24px; line-height: 1; }
+details.set { border: 1.5px solid var(--line-2); border-radius: 10px; background: var(--card); margin: 8px 0; }
+details.set > summary { padding: 12px; font-weight: 700; cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 8px; }
+details.set > summary::-webkit-details-marker { display: none; }
+details.set > summary::after { content: '›'; margin-left: auto; transition: transform .2s; color: var(--muted); }
+details.set[open] > summary::after { transform: rotate(90deg); }
+details.set > summary small { font-weight: 400; color: var(--muted); font-size: 12px; }
+details.set > section { margin: 0 12px 12px; padding: 0; border: 0; background: none; box-shadow: none; }
+details.set > section > h3 { font-size: 15px; margin-top: 6px; }
+@media (max-width: 360px) { .tiles { grid-template-columns: repeat(3, 1fr); } }
+/* heads-up card */
+section.heads { background: var(--card); border: 1.5px solid var(--line-2); border-radius: 12px; padding: 4px 10px; margin: 8px 0 12px; }
+section.heads ul { list-style: none; margin: 0; padding: 0; }
+section.heads li > a, section.heads li > div { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; color: inherit; text-decoration: none; font-size: 14px; line-height: 1.35; border-top: 1px dashed var(--line); }
+section.heads ul:first-child > li:first-child > a, section.heads ul:first-child > li:first-child > div { border-top: 0; }
+section.heads .hi { flex: none; width: 1.4em; text-align: center; }
+section.heads details > summary { font-size: 13px; color: var(--green); padding: 6px 0 8px; cursor: pointer; border-top: 1px dashed var(--line); }
+/* grouped jobs */
+li.tgrp { display: block; }
+li.tgrp > details > summary { display: flex; align-items: center; gap: 11px; cursor: pointer; list-style: none; }
+li.tgrp > details > summary::-webkit-details-marker { display: none; }
+li.tgrp .gcount { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--green); color: var(--green-ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
+li.tgrp small { display: block; color: var(--muted); }
+li.tgrp > details > ul { margin: 6px 0 0 14px; }
+li.morejobs { display: block; list-style: none; padding: 8px 2px; }
+li.morejobs > details > summary { color: var(--green); cursor: pointer; font-size: 14px; }
+.grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ptile { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 8px 4px; border: 1.5px solid var(--line-2); border-radius: 10px; background: var(--card); color: var(--ink); text-decoration: none; }
+.ptile .thumb { display: flex; justify-content: center; margin-bottom: 4px; }
+.ptile b { font-size: 14px; }
+.ptile small { font-size: 12px; color: var(--muted); line-height: 1.25; }
+.ptile .covchips { justify-content: center; }
+/* folded sections on crop/bed pages */
+details.fold { border-top: 1px dashed var(--line); margin: 10px 0; }
+details.fold > summary { padding: 12px 2px; font-family: var(--head); font-weight: 700; font-size: 17px; cursor: pointer; list-style: none; display: flex; align-items: baseline; gap: 8px; }
+details.fold > summary::-webkit-details-marker { display: none; }
+details.fold > summary::after { content: '›'; margin-left: auto; color: var(--muted); transition: transform .2s; }
+details.fold[open] > summary::after { transform: rotate(90deg); }
+details.fold > summary small { font-family: var(--body, inherit); font-weight: 400; font-size: 12px; color: var(--muted); }
+details.fold > section > h3:first-child { display: none; }
+.actbar { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.carebar { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+.tiles.qa3 { grid-template-columns: repeat(3, 1fr); }
+button.tile { font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; }

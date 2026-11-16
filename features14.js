@@ -36,3 +36,44 @@ function morningSection() {
     <div class="btnrow"><button class="btn small${on ? '' : ' primary'}" data-act="morningTog">${on ? 'Turn off' : 'Turn on'}</button>${on ? '<button class="btn small" data-act="morningTest">Send a test</button>' : ''}</div>
     <p class="hint" id="morningMsg"></p></section>`;
 }
+
+// ---------- home: one compact "heads-up" card instead of a stack of banners ----------
+function headsItems() {
+  const out = [];
+  try {   // spray waiting periods
+    const by = {}; for (const p of S.plantings.filter(isLive)) { const h = sprayHolds(p)[0]; if (h) (by[h.until] = by[h.until] || []).push(crop(p.cropId).en); }
+    for (const u of Object.keys(by).sort()) out.push({ k: 'spray', i: '⛔', t: `Don’t pick <b>${esc(by[u].join(', '))}</b> until ${shortDate(u)} (spray wait)`, h: '#/picksafe' });
+  } catch (e) { console.warn(e); }
+  if (S.weather && S.weather.lat != null) {
+    const ico = { frost: '❄️', rain: '🌧️', wind: '💨', heat: '🥵' };
+    for (const [k, t] of Weather.alerts()) out.push({ k, i: ico[k] || '⚠️', t, h: null });
+    try { const ds = sprayDays(), best = ds.find(x => x.wins.length); if (ds.length) out.push({ k: 'sprayday', i: '💦', t: best ? `Best spray window: ${dayName(best.d) === 'Today' ? 'today' : dayName(best.d)} ${best.wins.map(w => `${w[0]}:00–${w[1]}:00`).join(', ')}` : 'No good spray window in the next few days', h: '#/sprayday', low: true }); } catch (e) { console.warn(e); }
+    try { for (const [p, k, t] of qualityWarnings()) out.push({ k, i: k === 'bolt' ? '🌼' : k === 'split' ? '💧' : '❄️', t: esc(t), h: '#/plant/' + p.id }); } catch (e) { console.warn(e); }
+  }
+  try { for (const n of coverNotes()) out.push({ k: 'cover', i: coverType(n.x.type)[1], t: esc(n.text), h: '#/container/' + n.c.id }); } catch (e) { console.warn(e); }
+  return out.sort((a, b) => !!a.low - !!b.low);
+}
+function headsCard() {
+  const items = headsItems(); if (!items.length) return '';
+  const li = x => `<li>${x.h ? `<a href="${x.h}">` : '<div>'}<span class="hi">${x.i}</span><span class="grow">${x.t}</span>${x.h ? '<span class="muted">›</span></a>' : '</div>'}</li>`;
+  const top = items.slice(0, 3), rest = items.slice(3);
+  return `<section class="heads"><ul>${top.map(li).join('')}</ul>${rest.length ? `<details><summary>${rest.length} more</summary><ul>${rest.map(li).join('')}</ul></details>` : ''}</section>`;
+}
+
+// ---------- home: group repetitive jobs ----------
+const JOB_GROUPS = { germ: 'Check seedlings are up', sgerm: 'Check seedlings are up', harvest: 'Earliest harvest — check crops', pickby: 'Pick soon', thin: 'Thinning', plan_prep: 'Bed prep for planned crops' };
+function jobsList(tasks, max = 7) {
+  const groups = {}, rows = [];
+  for (const t of tasks) { const g = JOB_GROUPS[t.kind]; if (g) (groups[g] = groups[g] || []).push(t); }
+  const done = new Set();
+  for (const t of tasks) {
+    if (done.has(t)) continue;
+    const g = JOB_GROUPS[t.kind], list = g && groups[g];
+    if (list && list.length >= 3) {
+      list.forEach(x => done.add(x));
+      const names = list.map(x => { const o = taskOwner(x); return o.p ? crop(o.p.cropId).en : x.startId && start(x.startId) ? crop(start(x.startId).cropId).en : ''; }).filter(Boolean);
+      rows.push(`<li class="task tgrp"><details><summary><span class="gcount">${list.length}</span><span class="grow"><b>${g}</b><small>${esc([...new Set(names)].join(', '))}</small></span></summary><ul class="tasks">${list.map(x => taskLi(x)).join('')}</ul></details></li>`);
+    } else { done.add(t); rows.push(taskLi(t)); }
+  }
+  return rows.length > max ? `${rows.slice(0, max).join('')}<li class="morejobs"><details><summary>Show ${rows.length - max} more</summary><ul class="tasks">${rows.slice(max).join('')}</ul></details></li>` : rows.join('');
+}

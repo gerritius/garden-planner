@@ -280,12 +280,12 @@ function pickPhotoFor(p) {
 
 // ---------- quick add ----------
 function quickAdd() {
-  modal(`<h3>Quick add</h3><div class="qa">
-    <button class="btn primary" data-q="log">📝 Log something</button>
-    <button class="btn" data-q="harvest">🧺 Log a harvest</button><button class="btn" data-q="photo">📷 Diary photo</button>
-    <button class="btn" data-q="note">🐛 Diary note / pest</button><button class="btn" data-q="job">✓ Add a job</button>
-    <button class="btn" data-q="start">🌱 Start seedlings</button><button class="btn" data-q="buy">💴 Record a purchase</button><a class="btn" href="#/doctor" data-q="doctor">🩺 Something wrong?</a><a class="btn" href="#/seedlings" data-q="seedlings">🪴 My seedlings</a>
-    <a class="btn primary" href="#/container/new" data-q="bed">＋ New bed or pot</a></div>`, (m, close) => {
+  const q = (k, i, l, href) => href ? `<a class="tile" href="${href}" data-q="${k}"><span>${i}</span>${l}</a>` : `<button class="tile" data-q="${k}"><span>${i}</span>${l}</button>`;
+  modal(`<h3>Quick add</h3><div class="tiles qa3">
+    ${q('log', '📝', 'Log something')}${q('harvest', '🧺', 'Harvest')}${q('photo', '📷', 'Diary photo')}
+    ${q('note', '🐛', 'Note / pest')}${q('job', '✓', 'Add a job')}${q('start', '🌱', 'Start seedlings')}
+    ${q('buy', '💴', 'Purchase')}${q('doctor', '🩺', 'Something wrong?', '#/doctor')}${q('seedlings', '🪴', 'My seedlings', '#/seedlings')}
+    ${q('bed', '＋', 'New bed or pot', '#/container/new')}</div>`, (m, close) => {
     m.querySelector('[data-q=bed]').onclick = () => close();
     m.querySelector('[data-q=seedlings]').onclick = () => close();
     m.querySelector('[data-q=doctor]').onclick = () => close();

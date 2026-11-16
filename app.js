@@ -327,6 +327,8 @@ function pageHome() {
     return `<a class="card" href="#/container/${c.id}"><div class="thumb">${plotSVG(c, { px: Math.min(150 / L, 150 / W), minPx: 1.2 })}</div>
       <div class="cname">${esc(c.name)}</div><div class="csize">${sizeLabel(c)}</div><div class="chips">${chips}</div>${coverChips(c)}</a>`;
   };
+  const potTile = c => { const ps = activeIn(c.id), { W, L } = Draw.dims(c);
+    return `<a class="ptile" href="#/container/${c.id}"><div class="thumb">${plotSVG(c, { px: Math.min(84 / L, 84 / W), minPx: 1.2 })}</div><b>${esc(c.name)}</b><small>${ps.map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small>${coverChips(c)}</a>`; };
   const growing = S.plantings.filter(isLive).length;
   setChrome('My Garden', { tab: 'home', big: true, kicker: pd(td).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), sub: sekki(),
     stats: `<div><b>${today.length}</b><span>job${today.length === 1 ? '' : 's'} today</span></div><div><b>${growing}</b><span>growing</span></div>` });
@@ -338,16 +340,16 @@ function pageHome() {
   }
   A.sowCrop = el => sowPick(el.dataset.id);
   const html = `${backupNote}
-    ${sprayAlerts()}
     ${Weather.section()}
+    ${headsCard()}
     <section class="today"><h2>Today’s jobs</h2>
-      ${today.length ? `<ul class="tasks">${today.map(t => taskLi(t)).join('')}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
+      ${today.length ? `<ul class="tasks">${jobsList(today)}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
       ${soon ? `<a class="more" href="#/cal">${soon} more in the next 7 days →</a>` : ''}</section>
     ${!S.containers.length ? `<div class="empty-state"><p>No beds or pots yet.</p><a class="btn primary" href="#/container/new">＋ Add a bed or pot</a></div>` : ''}
     ${S.containers.length ? `<div class="viewtog seg"><button type="button" data-act="hv" data-v="cards" class="${S.homeView !== 'map' ? 'on' : ''}">▦ Cards</button><button type="button" data-act="hv" data-v="map" class="${S.homeView === 'map' ? 'on' : ''}">🗺 Map</button></div>` : ''}
     ${S.homeView === 'map' && S.containers.length ? homeMap() : `
     ${beds.length ? `<h3 class="grp">Beds</h3><div class="grid">${beds.map(card).join('')}</div>` : ''}
-    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3><div class="grid">${pots.map(card).join('')}</div>` : ''}
+    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3>${pots.length > 4 ? `<div class="grid3">${pots.map(potTile).join('')}</div>` : `<div class="grid">${pots.map(card).join('')}</div>`}` : ''}
     ${seedlingsHomeSection()}`}
     ${sowNowSection()}
     <button class="fab" data-act="quick" aria-label="Quick add">＋</button>`;
@@ -398,13 +400,17 @@ function pageContainer(c) {
       ${ps.length ? `<button class="btn wide primary" data-act="split">＋ Add another crop to this ${c.type === 'bed' ? 'bed' : 'pot'}</button>` : ''}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
-    ${coverSection(c)}
-    ${soilSection(c)}
-    ${planSection(c)}
-    ${historySection(c)}
-    ${logSection(c)}
-    <div class="btnrow">${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Adjust sections</a>` : ''}${bedPhotos(c.id).length ? `<a class="btn small" href="#/timeline?c=${c.id}">📷 Photo timeline (${bedPhotos(c.id).length})</a>` : ''}<a class="btn small" href="#/rotation">🔄 Rotation</a></div>
-    ${bedSection(c)}
+    ${(() => {
+      const cov = coverSection(c), soil = soilSection(c), bed = bedSection(c), plan = planSection(c), nPh = bedPhotos(c.id).length;
+      const hasCov = (c.covers || []).length, hasSoil = (c.soil || []).length, hasBed = S.tasks.some(t => t.containerId === c.id) || (c.log || []).length;
+      const hasPlan = S.plantings.some(p => p.containerId === c.id && isPlanned(p)) || freeGaps(c).some(g => g.s > todayStr());
+      return `<div class="carebar"><button class="btn small" data-act="addCover">🕸️ Cover</button><button class="btn small" data-act="addReading">🧪 Soil reading</button><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan</a>
+          <button class="btn small" data-act="prep">🪏 Prepare</button><button class="btn small" data-act="bedJob">＋ Job</button><button class="btn small" data-act="bedNote">📝 Note</button>
+          ${nPh ? `<a class="btn small" href="#/timeline?c=${c.id}">📷 Photos (${nPh})</a>` : ''}${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Sections</a>` : ''}<a class="btn small" href="#/rotation">🔄 Rotation</a></div>
+        ${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
+        <details class="fold"><summary>🕰️ History <small>${(c.history || []).length} past crop${(c.history || []).length === 1 ? '' : 's'}</small></summary>${historySection(c)}</details>
+        <details class="fold"><summary>📝 Running log</summary>${logSection(c)}</details>`;
+    })()}
     ${c.notes ? `<section><h3>About this ${c.type === 'bed' ? 'bed' : 'pot'}</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
     <div class="btnrow"><a class="btn" href="#/container/${c.id}/edit">Edit ${typeLabel(c).toLowerCase()}</a><button class="btn danger" data-act="del">Delete</button></div>`;
   return { html, after: () => $$('.plotwrap [data-gap]').forEach(r => r.addEventListener('click', () => A.gap(r))) };
@@ -794,17 +800,18 @@ function pagePlant(p) {
     ${harvested ? `<div class="banner">This crop was harvested on ${niceDate(p.harvestedOn)}. <button class="link" data-act="unharvest">Undo</button></div>` : ''}
     <section><h3>To do</h3>
       ${open.length ? `<ul class="tasks">${open.map(t => taskLi(t, false)).join('')}</ul>` : '<p class="muted">Nothing to do.</p>'}
-      ${harvested ? '' : `<button class="btn small" data-act="addTask">＋ Add task</button>`}</section>
+      ${harvested ? '' : `<div class="actbar"><button class="btn small" data-act="addTask">＋ Task</button>${isLive(p) ? `<button class="btn small" data-act="logHarvest">🧺 Harvest</button><a class="btn small" href="#/doctor?p=${p.id}">🩺 Problem?</a>${seed && p.thinSp && !p.thinned ? '<button class="btn small" data-act="leaves">🌿 Leaves</button>' : ''}` : ''}</div>`}</section>
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
-    ${isPlanned(p) ? '' : harvestSection(p)}
+    ${isPlanned(p) || !((p.harvests || []).length || harvested || (p.harvestDate && p.harvestDate <= addDays(td, 7))) ? '' : harvestSection(p)}
     ${diarySection(p)}
-    ${isLive(p) ? `<a class="btn small" href="#/doctor?p=${p.id}">🩺 Something wrong? Find the cause</a>` : ''}
-    ${harvested || isPlanned(p) ? '' : spraySection(p)}
-    ${harvested || isPlanned(p) ? '' : logSection(null, p)}
+    ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = myProducts(['spray']).filter(pr => { const r = regSummary(pr.id, p.cropId, p.variety); return r && r.ok; }).length; return `<details class="fold"><summary>💦 Sprays you can use <small>${n} allowed</small></summary>${sp}</details>`; })()}
+    ${harvested || isPlanned(p) ? '' : `<details class="fold"><summary>📝 Running log <small>${logFeed().filter(x => (x.pids || []).includes(p.id)).length} entries</small></summary>${logSection(null, p)}</details>`}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id)), today: isPlanned(p) ? p.sowDate : undefined })}</a>
       ${harvested || isPlanned(p) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
-    <section><h3>Details</h3><dl class="details">${dl.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>
-      ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section>
+    ${(() => { const KEY = ['Germination', 'Thinning', 'Harvest estimate', 'Soil test', 'Fed so far', 'Soil'], key = dl.filter(r => KEY.includes(r[0])), rest = dl.filter(r => !KEY.includes(r[0]));
+      const t = rows => `<dl class="details">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
+      return `<section><h3>How it’s going</h3>${key.length ? t(key) : '<p class="muted">Nothing to report yet.</p>'}</section><details class="fold"><summary>🌱 Planting details</summary><section>${t(rest)}`; })()}
+      ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section></details>
     ${S.plantings.filter(x => x.cropId === p.cropId).length > 1 ? `<a class="btn small" href="#/compare?crop=${p.cropId}">📊 Compare with other years</a>` : ''}
     <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested || isPlanned(p) ? '' : `<button class="btn primary" data-act="harvest">🧺 Harvest finished</button>`}${planNextButton(p)}</div>
     <div class="btnrow"><button class="link danger" data-act="del">Delete planting</button></div>`;
@@ -1001,27 +1008,36 @@ function pageSettings() {
   const cv = Object.entries(S.customVarieties || {}).filter(([, l]) => l.length);
   A.lang = async el => { S.lang = el.dataset.v; await save(); render(); };
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
-  const html = `${themeSettings()}
-    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section>
-    ${morningSection()}
-    <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
-      <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section>
-    <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a><a class="btn" href="#/products">🧴 Products &amp; sprays</a></div><div class="btnrow"><a class="btn" href="#/plan">📅 Season plan</a><a class="btn" href="#/seedlings">🌱 Seedlings</a><a class="btn" href="#/sprayday">💦 Spray days</a></div>
-      <div class="btnrow"><a class="btn" href="#/shop">🛒 What to buy</a><a class="btn" href="#/spend">💴 Spending</a><a class="btn" href="#/doctor">🩺 What’s wrong?</a></div></section>
-    ${harvestTotalsSection()}${learnSection()}<section><h3>Backup</h3>
+  const tile = (h, i, l) => `<a class="tile" href="${h}"><span>${i}</span>${l}</a>`;
+  const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
+  const html = `<h3 class="grp">Plan &amp; grow</h3><div class="tiles">
+      ${tile('#/plan', '📅', 'Season plan')}${tile('#/rotation', '🔄', 'Rotation')}${tile('#/seedlings', '🌱', 'Seedlings')}${tile('#/sow', '🗓️', 'Sowing calendar')}
+      ${tile('#/shop', '🛒', 'What to buy')}${tile('#/sprayday', '💦', 'Spray days')}${tile('#/picksafe', '✅', 'OK to pick?')}${tile('#/doctor', '🩺', 'What’s wrong?')}
+      ${tile('#/products', '🧴', 'Products & sprays')}${tile('#/map', '🗺️', 'Garden map')}</div>
+    <h3 class="grp">Records</h3><div class="tiles">
+      ${tile('#/review', '📒', 'Season review')}${tile('#/compare', '📊', 'Compare years')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}
+      ${tile('#/totals', '🧮', 'Product totals')}${tile('#/spend', '💴', 'Spending')}</div>
+    <h3 class="grp">Settings</h3>
+    <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
-      <p class="hint" id="persist"></p><div id="snaps"></div></section>
-    ${weatherSettings()}
-    <section><h3>Custom crops</h3>
+      <p class="hint" id="persist"></p><div id="snaps"></div></section></details>
+    <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
+      <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
+    <details class="set"><summary>🌤️ Weather location <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}</details>
+    <details class="set"><summary>🎨 Appearance &amp; crop names</summary>${themeSettings()}    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section></details>
+    <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
+    <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
+    <details class="set"><summary>🌾 Crops, varieties &amp; catalogue</summary>    <section><h3>Custom crops</h3>
       ${S.customCrops.length ? `<ul class="plist">${S.customCrops.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}</span><button class="link danger" data-act="delCrop" data-id="${c.id}">delete</button></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>'}
       <button class="btn small" data-act="newCrop">＋ Add crop</button></section>
     <section><h3>Your varieties</h3>
       ${cv.length ? `<ul class="plist">${cv.flatMap(([id, l]) => l.map(v => `<li>${ic(id)}<span class="grow">${esc(v)} <small>${esc(crop(id).en)}</small></span><button class="link danger" data-act="delVar" data-id="${id}" data-v="${esc(v)}">delete</button></li>`)).join('')}</ul>` : '<p class="muted">Varieties you type in that aren’t in the catalogue are remembered here.</p>'}</section>
     <section><h3>Catalogue</h3><p class="muted">${CATALOG.length} built-in crops with about 5 varieties each. Values are typical starting points — always check the packet.</p>
       <details><summary>Show crops</summary><ul class="plist">${CATALOG.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}<small>${c.varieties.map(esc).join('、')}</small></span></li>`).join('')}</ul></details></section>
+</details>
     <p class="hint center">Garden Planner · v${APP_VERSION}</p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));
@@ -1077,7 +1093,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.10.0';
+const APP_VERSION = '1.11.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

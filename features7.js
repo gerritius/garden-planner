@@ -45,7 +45,7 @@ function planItems(p) {
     else dayOf.push(`${f.product}${amt ? ' ' + amt : ''}`);
   }
   if ((p.raise === 'tray' || p.raise === 'pot') && raisable(p.cropId) && !linkedStart(p))
-    items.push({ key: 'tray', kind: 'plan_tray', due: addDays(sd, -tpDays(p.cropId)), title: `Sow ${cr.en}${p.variety ? ' · ' + p.variety : ''} in ${p.raise === 'tray' ? 'a cell tray' : '9 cm pots'} (to plant out ${shortDate(sd)})` });
+    items.push({ key: 'tray', kind: 'plan_tray', due: traySowFor(p.cropId, sd), title: `Sow ${cr.en}${p.variety ? ' · ' + p.variety : ''} in ${p.raise === 'tray' ? 'a cell tray' : '9 cm pots'} (to plant out ${shortDate(sd)})` });
   items.push({ key: 'sow', kind: 'plan_sow', due: sd, title: `${p.method === 'seed' ? 'Sow' : 'Plant out'} ${cr.en}${p.variety ? ' · ' + p.variety : ''}${dayOf.length ? ` — mix in ${dayOf.join(' + ')} first` : ''}` });
   return items;
 }
@@ -65,7 +65,7 @@ function activatePlan(p, date, n) {
   p.status = 'active'; p.plannedFor = p.sowDate;
   if (delta) {
     p.sowDate = date;
-    if (p.harvestDate) p.harvestDate = addDays(p.harvestDate, delta);
+    if (p.harvestDate) p.harvestDate = p.harvestFixed ? addDays(p.harvestDate, delta) : harvestEstimate(p);
     if (p.thinDate) p.thinDate = addDays(p.thinDate, delta);
     for (const s of p.series || []) if (s.start) s.start = addDays(s.start, delta);
   }
@@ -93,7 +93,7 @@ function planFormBits(d, c) {
   const raise = cr && d.method === 'seedling' && raisable(cr.id) && !d.useStart;
   return `<div class="plannote">📅 <b>Planned</b> — saved as a plan. Prep jobs are counted back from this date${raise ? ', plus a reminder to sow seedlings' : ''}; it goes into the bed when you tick “${d.method === 'seed' ? 'Sow' : 'Plant out'}”.</div>
     ${raise ? `<label>Seedlings<div class="seg">${[['buy', 'Buy them'], ['tray', 'Raise in tray'], ['pot', 'Raise in 9 cm pots']].map(([v, l]) => `<button type="button" data-act="raise" data-v="${v}" class="${(d.raise || 'buy') === v ? 'on' : ''}">${l}</button>`).join('')}</div>
-      ${d.raise === 'tray' || d.raise === 'pot' ? `<small class="hint">Sow about ${tpDays(cr.id)} days before — ${shortDate(addDays(d.sowDate, -tpDays(cr.id)))}.</small>` : ''}</label>` : ''}`;
+      ${d.raise === 'tray' || d.raise === 'pot' ? `<small class="hint">Sow them around ${shortDate(traySowFor(cr.id, d.sowDate))} (about ${daysBetween(traySowFor(cr.id, d.sowDate), d.sowDate)} days before at that time of year).</small>` : ''}</label>` : ''}`;
 }
 
 // ---------- gaps & suggestions ----------
@@ -181,7 +181,7 @@ function planSection(c) {
   const planned = S.plantings.filter(p => p.containerId === c.id && isPlanned(p)).sort((a, b) => (a.sowDate < b.sowDate ? -1 : 1));
   const gs = freeGaps(c).filter(g => g.s > todayStr()).slice(0, 3);
   return `<section><h3>Planned</h3>
-    ${planned.length ? `<ul class="plist">${planned.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${sectionOf(p) ? sectionOf(p) + ' · ' : ''}${p.method === 'seed' ? 'sow' : 'plant'} ${shortDate(p.sowDate)}${p.raise === 'tray' || p.raise === 'pot' ? ` · raise seedlings from ${shortDate(addDays(p.sowDate, -tpDays(p.cropId)))}` : ''}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planned yet.</p>'}
+    ${planned.length ? `<ul class="plist">${planned.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${sectionOf(p) ? sectionOf(p) + ' · ' : ''}${p.method === 'seed' ? 'sow' : 'plant'} ${shortDate(p.sowDate)}${p.raise === 'tray' || p.raise === 'pot' ? ` · raise seedlings from ${shortDate(traySowFor(p.cropId, p.sowDate))}` : ''}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planned yet.</p>'}
     ${gs.length ? `<ul class="gaps">${gs.map(g => gapLi(c, g)).join('')}</ul>` : ''}
     <div class="btnrow"><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan a crop</a><a class="btn small" href="#/plan">Season plan →</a></div></section>`;
 }
@@ -191,7 +191,7 @@ function planBanner(p) {
   if (isPlanned(p)) {
     A.doPlant = () => { const t = S.tasks.find(t => t.plantingId === p.id && t.kind === 'plan_sow' && !t.done); if (t) toggleTask(t.id, true); else { activatePlan(p, todayStr()); save().then(render); } };
     const ls = linkedStart(p);
-    return `<div class="banner plan">📅 Planned for <b>${niceDate(p.sowDate)}</b>${p.raise === 'tray' || p.raise === 'pot' ? ` · seedlings ${ls ? `growing in ${esc(startWhere(ls).toLowerCase())} (sown ${shortDate(ls.sowDate)})` : `to sow ${shortDate(addDays(p.sowDate, -tpDays(p.cropId)))}`}` : ''}
+    return `<div class="banner plan">📅 Planned for <b>${niceDate(p.sowDate)}</b>${p.raise === 'tray' || p.raise === 'pot' ? ` · seedlings ${ls ? `growing in ${esc(startWhere(ls).toLowerCase())} (sown ${shortDate(ls.sowDate)})` : `to sow ${shortDate(traySowFor(p.cropId, p.sowDate))}`}` : ''}
       ${planStartLinks(p)}<div class="btnrow"><button class="btn small primary" data-act="doPlant">${p.method === 'seed' ? '🌱 Sown it' : '🌱 Planted it'}</button></div></div>`;
   }
   if (!isLive(p) || !c) return '';

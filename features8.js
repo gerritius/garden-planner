@@ -228,7 +228,7 @@ function shopItems(weeks) {
   for (const p of plans) {
     const c = container(p.containerId), cr = crop(p.cropId), where = (c ? c.name : '') + (sectionOf(p) ? ' ' + sectionOf(p) : ''), n = count(p);
     if (p.method === 'seedling' && (p.raise || 'buy') === 'buy') items.push({ key: 'sl:' + p.id, cat: 'seedlings', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seedlings${n ? ' × ' + n : ''}`, sub: `for ${where} · plant ${shortDate(p.sowDate)}`, by: addDays(p.sowDate, -1) });
-    else { const sowBy = p.raise === 'tray' || p.raise === 'pot' ? addDays(p.sowDate, -tpDays(p.cropId)) : p.sowDate; items.push({ key: 'sd:' + p.id, cat: 'seeds', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seed`, sub: `have enough? sow ${shortDate(sowBy)} · ${where}`, by: sowBy }); }
+    else { const sowBy = p.raise === 'tray' || p.raise === 'pot' ? traySowFor(p.cropId, p.sowDate) : p.sowDate; items.push({ key: 'sd:' + p.id, cat: 'seeds', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seed`, sub: `have enough? sow ${shortDate(sowBy)} · ${where}`, by: sowBy }); }
     if (NETTED.includes(p.cropId) && c) { const w = c.type === 'bed' ? c.width : c.diameter || c.width, l = c.type === 'bed' ? p.to - p.from : c.diameter || c.length;
       items.push({ key: 'net:' + p.id, cat: 'netting', title: `Insect netting for ${cr.en}`, sub: `${where} · about ${((w + 90) / 100).toFixed(1)} × ${((l + 90) / 100).toFixed(1)} m with hoops (0.8 mm mesh or finer)`, by: p.sowDate }); }
     if (TALL.includes(p.cropId)) items.push({ key: 'sup:' + p.id, cat: 'supports', title: `Supports for ${cr.en}`, sub: `${where} · ${['snappea', 'sayaendo', 'kyuri', 'ingen'].includes(p.cropId) ? 'poles + climbing net (きゅうりネット)' : 'stakes (支柱) and ties'}`, by: p.sowDate });

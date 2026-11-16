@@ -259,6 +259,7 @@ function render() {
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
   try { syncThin(); } catch (e) { console.warn(e); }
+  try { syncHarvest(); } catch (e) { console.warn(e); }
   if (!window._snapDone) { window._snapDone = true; setTimeout(snapshotDaily, 3000); }
   let html = '', after = null;
   try {
@@ -472,7 +473,7 @@ function applyCrop(d, cr, c) {
 }
 function recalc(d) {
   if (!d.sowDate) return;
-  if (!d.harvestManual && d.daysHarvest) d.harvestDate = addDays(d.sowDate, Math.max(14, +d.daysHarvest - (d.method === 'seedling' && crop(d.cropId).method === 'seed' && raisable(d.cropId) ? tpDays(d.cropId) : 0)));
+  if (!d.harvestManual && d.daysHarvest) d.harvestDate = harvestEstimate({ id: d.id, cropId: d.cropId, sowDate: d.sowDate, method: d.method, germ: d.germ, seededOn: d.seededOn || (d.useStart && start(d.useStart) ? start(d.useStart).sowDate : null) });
   if (!d.thinManual && d.daysThin && d.method === 'seed' && d.thinSp) d.thinDate = thinEstimate({ cropId: d.cropId, sowDate: d.sowDate, method: 'seed', germ: d.germ });
 }
 function setPath(o, path, v) {
@@ -555,7 +556,7 @@ function pagePlantForm(p, c, q) {
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
       <label>Mature size (cm across)<input name="spread" type="number" inputmode="decimal" value="${esc(d.spread)}"></label></div>
-      ${cr && cr.daysHarvest ? `<small class="hint">Catalogue estimate: about ${cr.daysHarvest} days from ${seed || (d.startId && cr.method === 'seed') ? 'sowing' : 'planting'}${d.startId && cr.method === 'seed' ? ' (counted from the tray sowing date)' : ''}. Change it to match the packet.</small>` : ''}
+      ${cr && cr.daysHarvest ? `<small class="hint">Estimated from the catalogue (about ${cr.daysHarvest} days from ${seed || (cr.method === 'seed' && (d.startId || d.useStart)) ? 'sowing' : 'planting'} at the usual time of year${cr.method === 'seed' && (d.startId || d.useStart) ? ', counted from the tray sowing' : ''}) and the temperatures — colder weather pushes it later. It updates by itself unless you change it here to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
       ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, c))}.</p>` : ''}
@@ -616,6 +617,7 @@ function pagePlantForm(p, c, q) {
       const n = e.target.name || '';
       if (e.target.dataset.manual) d[e.target.dataset.manual] = true;
       if (n === 'thinDate') d.thinUser = true;
+      if (n === 'harvestDate') d.hvUser = true;
       read();
       if (n === 'sowDate' || n === 'thinSp') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
       if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); }
@@ -659,6 +661,7 @@ async function savePlanting(p, d, c) {
   const fields = ['cropId', 'variety', 'method', 'layout', 'dir', 'sowDate', 'thinStage', 'thinDate', 'harvestDate', 'notes'];
   for (const k of fields) p[k] = d[k] || '';
   if (d.thinUser) p.thinFixed = !!d.thinDate;
+  if (d.hvUser) p.harvestFixed = !!d.harvestDate;
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
   p.raise = p.status === 'planned' && p.method === 'seedling' ? (d.raise || 'buy') : (p.raise || '');
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
@@ -737,6 +740,7 @@ function pagePlant(p) {
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
     (() => { const gw = germWindow(p); return gw ? ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${p.germ.result}</b> (${shortDate(p.germ.date)})` : ''}`] : null; })(),
     seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)} <small class="muted">(${thinNote(p)})</small>`}`] : null,
+    p.harvestDate && !harvested ? ['Harvest estimate', `from ${shortDate(p.harvestDate)} <small class="muted">(${harvestNote(p)})</small>`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
     c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
     c && !harvested && !isPlanned(p) ? ['Size in drawing', (() => { const now = Math.round(Draw.radius(p, td) * 2), full = Math.round(Math.max(1, +p.spread || Draw.spacingNow(p))); return `${now} cm across today (grows to ~${full} cm by ${p.harvestDate ? shortDate(p.harvestDate) : 'harvest'})${seed && +p.thinSp > 0 && !p.thinned ? ' · stays seedling-sized until thinning' : ''}`; })()] : null,
@@ -1057,7 +1061,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.9.2';
+const APP_VERSION = '1.9.3';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

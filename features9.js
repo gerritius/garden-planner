@@ -43,7 +43,7 @@ const freeStarts = exceptPid => startsGrowing().filter(s => { const pp = s.planI
 function startChooser(d) {
   const list = freeStarts(); if (!list.length) return '';
   const td = todayStr();
-  return `<div class="usestart"><small>Use seedlings you’ve started</small><div class="sowchips">${list.map(s => { const ready = addDays(s.sowDate, tpDays(s.cropId));
+  return `<div class="usestart"><small>Use seedlings you’ve started</small><div class="sowchips">${list.map(s => { const ready = startReady(s);
     return `<button type="button" class="chip${d.useStart === s.id ? ' on' : ''}" data-act="useStart" data-id="${s.id}">${ic(s.cropId, 20)}${esc(crop(s.cropId).en)}${s.variety ? ' · ' + esc(s.variety) : ''} <small>×${startLeft(s)} · ${esc(startWhere(s))} · ${ready <= td ? 'ready' : 'ready ~' + shortDate(ready)}</small></button>`; }).join('')}</div></div>`;
 }
 function applyStart(d, s, c) {
@@ -52,8 +52,7 @@ function applyStart(d, s, c) {
   if (d.cropId !== s.cropId) applyCrop(d, cr, c);
   d.sowDate = keepSow; d.variety = s.variety || d.variety; d.method = 'seedling'; d.useStart = s.id; d.raise = s.kind;
   if (cr.method === 'seed' && cr.thinSp) d.plantSp = Math.max(+cr.sowSp || 0, +cr.thinSp);
-  d.harvestManual = false; recalc(d);
-  if (cr.method === 'seed' && cr.daysHarvest) { d.harvestDate = addDays(s.sowDate, +cr.daysHarvest); if (d.harvestDate < addDays(d.sowDate, 14)) d.harvestDate = addDays(d.sowDate, 14); d.harvestManual = true; }
+  d.seededOn = s.sowDate; d.harvestManual = false; recalc(d);
   if (!d.notes) d.notes = `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
 }
 // on save of a new planting that uses started seedlings
@@ -64,7 +63,7 @@ function linkStartOnSave(d, p) {
 }
 function startReadyNote(d) {
   const s = d.useStart && start(d.useStart); if (!s) return '';
-  const ready = addDays(s.sowDate, tpDays(s.cropId));
+  const ready = startReady(s);
   return `<p class="hint">🌱 Using ${startLeft(s)} ${esc(crop(s.cropId).en)} seedlings from ${esc(startWhere(s).toLowerCase())}, ready about ${shortDate(ready)}${d.sowDate && ready > d.sowDate ? ` — <b>after</b> this date; they may need longer` : ''}.</p>`;
 }
 // planned crop page: link seedlings started separately
@@ -90,20 +89,97 @@ function dayTemp(d, daily) {
   if (S.tempHist && S.tempHist[d] != null) return S.tempHist[d];
   const i = daily && daily.time ? daily.time.indexOf(d) : -1;
   if (i >= 0 && daily.temperature_2m_max[i] != null) return (daily.temperature_2m_max[i] + daily.temperature_2m_min[i]) / 2;
-  return NORMAL_T[pd(d).getMonth()];
+  return normalT(d);
 }
 function emergeDate(p) {
   if (p.germ && p.germ.date && p.germ.result !== 'none') return { d: p.germ.date, known: true };
   const gw = germWindow(Object.assign({}, p, { method: 'seed' }));
   return { d: gw ? addDays(gw[0], Math.round(daysBetween(gw[0], gw[1]) / 2)) : addDays(p.sowDate, 7), known: false };
 }
+// growth rate per day in "good-weather days": 0 below the base temperature, 1 at the reference temperature
+// hardy winter crops (brassicas, spinach, peas & beans, alliums, shungiku) keep growing slowly just above freezing
+const HARDY_FAM = ['brassica', 'allium', 'legume'], HARDY_IDS = ['spinach', 'shungiku', 'strawberry'];
+const growParams = id => WARM_LEAF.includes(id) ? { tb: 10, tref: 24, tcap: 28 }
+  : HARDY_IDS.includes(id) || HARDY_FAM.includes(crop(id).family) ? { tb: 0, tref: 16, tcap: 20 } : { tb: 3, tref: 18, tcap: 22 };
+function normalT(d) {   // smooth daily normal from monthly means
+  const x = pd(d), m = x.getMonth(), f = (x.getDate() - 15) / 30, n = f >= 0 ? (m + 1) % 12 : (m + 11) % 12;
+  return NORMAL_T[m] + (NORMAL_T[n] - NORMAL_T[m]) * Math.abs(f);
+}
+function ddUntil(from, need, id, tempFn) {
+  const { tb, tcap } = growParams(id), daily = S.weather && S.weather.daily;
+  let d = from, acc = 0;
+  for (let i = 0; i < 400 && acc < need; i++) { d = addDays(d, 1); acc += Math.max(0, Math.min((tempFn || (x => dayTemp(x, daily)))(d), tcap) - tb); }
+  return d;
+}
+// leaf-stage milestones (thinning, ready to plant out): catalogue days are warm-weather numbers, so use a fixed reference temperature
+function leafDate(id, emerge, leafDays, boost) { const g = growParams(id), daily = S.weather && S.weather.daily; return ddUntil(emerge, Math.max(3, leafDays) * (g.tref - g.tb), id, boost ? (x => dayTemp(x, daily) + boost) : null); }
+const germAvg = id => { const g = crop(id).germ || [5, 10]; return (g[0] + g[1]) / 2; };
 function thinEstimate(p) {
   const cr = crop(p.cropId); if (!cr.daysThin || !p.sowDate) return p.thinDate || '';
-  const g = cr.germ || [5, 10], leaf = Math.max(5, cr.daysThin - (g[0] + g[1]) / 2);
-  const warm = WARM_LEAF.includes(p.cropId), tb = warm ? 10 : p.cropId === 'spinach' ? 2 : 4, tref = warm ? 24 : 18, need = leaf * (tref - tb), daily = S.weather && S.weather.daily;
-  let d = emergeDate(p).d, acc = 0;
-  for (let i = 0; i < 180 && acc < need; i++) { d = addDays(d, 1); acc += Math.max(0, Math.min(dayTemp(d, daily), tref) - tb); }   // warm weather never beats the catalogue pace
-  return d;
+  return leafDate(p.cropId, emergeDate(p).d, Math.max(5, cr.daysThin - germAvg(p.cropId)));
+}
+// seedlings in trays/pots: ready to plant out
+function startEmerge(s) { return s.upOn || emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d; }
+const KEPT = [['out', 'Outside', 0], ['cover', 'Under cover / cold frame', 3], ['in', 'Indoors / heated', 8]];
+const keptBoost = s => (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[2];
+function startReady(s) { return leafDate(s.cropId, startEmerge(s), Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)), keptBoost(s)); }
+// when to sow in a tray to be ready by a planting date
+function traySowFor(id, plantDate) {
+  let sow = addDays(plantDate, -tpDays(id));
+  const kept = ((S.starts || []).slice(-1)[0] || {}).kept || 'out';   // assume trays are kept where you usually keep them
+  for (let i = 0; i < 8; i++) { const r = startReady({ cropId: id, sowDate: sow, kept }), diff = daysBetween(plantDate, r); if (Math.abs(diff) <= 1) break; sow = addDays(sow, -diff); }
+  return sow;
+}
+// harvest: catalogue days hold for sowing at the crop's usual (best) time; colder sowings stretch out
+const _need = {};
+// growth the catalogue days represent: normal temperatures from the usual sowing month nearest to this sowing
+function refMonth(id, effSow) {
+  const months = crop(id).sow || [], m = pd(effSow).getMonth() + 1;
+  if (!months.length || months.includes(m)) return m;
+  const dist = x => { const a = Math.abs(x - m); return Math.min(a, 12 - a); };
+  return months.slice().sort((a, b) => dist(a) - dist(b) || ((m - b + 12) % 12) - ((m - a + 12) % 12))[0];
+}
+function calibratedNeed(id, days, offset, month) {
+  const k = [id, days, offset, month].join('|'); if (_need[k] != null) return _need[k];
+  const { tb, tcap } = growParams(id), from = addDays(`2026-${String(month).padStart(2, '0')}-15`, offset), end = addDays(from, days);
+  let acc = 0; for (let d = from; d < end; d = addDays(d, 1)) acc += Math.max(0, Math.min(normalT(d), tcap) - tb);
+  return (_need[k] = acc || days * 8);
+}
+function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
+function harvestEstimate(p) {
+  const cr = crop(p.cropId); if (!cr.daysHarvest || !p.sowDate) return p.harvestDate || '';
+  const g = germAvg(p.cropId);
+  let from, days, offset, eff;
+  if (p.method === 'seed') { from = emergeDate(p).d; days = cr.daysHarvest - g; offset = g; eff = p.sowDate; }
+  else if (cr.method === 'seed' && trayDateOf(p)) { const t = trayDateOf(p); from = t.up || emergeDate({ cropId: p.cropId, sowDate: t.d, method: 'seed' }).d; days = cr.daysHarvest - g; offset = g; eff = t.d; }
+  else if (cr.method === 'seed' && raisable(p.cropId)) { from = p.sowDate; days = Math.max(14, cr.daysHarvest - tpDays(p.cropId)); offset = tpDays(p.cropId); eff = addDays(p.sowDate, -offset); }
+  else { from = p.sowDate; days = cr.daysHarvest; offset = 0; eff = p.sowDate; }
+  const d = ddUntil(from, calibratedNeed(p.cropId, Math.max(7, Math.round(days)), Math.round(offset), refMonth(p.cropId, eff)), p.cropId);
+  return d < addDays(p.sowDate, 14) ? addDays(p.sowDate, 14) : d;
+}
+// keep harvest dates current unless set by hand or picking has started
+function syncHarvest() {
+  if (!S.hvMig) {   // older plantings: keep dates that were clearly typed in by hand
+    for (const p of S.plantings) {
+      if (p.status === 'harvested' || !p.harvestDate || !p.sowDate) continue;
+      const cr = crop(p.cropId), dh = +cr.daysHarvest || 0, tp = raisable(p.cropId) ? tpDays(p.cropId) : 0;
+      const old = [addDays(p.sowDate, dh), addDays(p.sowDate, Math.max(14, dh - tp)), p.seededOn ? addDays(p.seededOn, dh) : null].filter(Boolean);
+      if (!old.some(o => Math.abs(daysBetween(o, p.harvestDate)) <= 1)) p.harvestFixed = true;
+    }
+    S.hvMig = true;
+  }
+  for (const p of S.plantings) {
+    if (p.status === 'harvested' || p.harvestFixed || (p.harvests || []).length || !crop(p.cropId).daysHarvest) continue;
+    if (S.tasks.some(t => t.plantingId === p.id && t.kind === 'harvest' && t.done)) continue;
+    const nd = harvestEstimate(p);
+    if (nd && nd !== p.harvestDate) { p.harvestDate = nd; syncTasks(p); }
+  }
+  for (const p of S.plantings) if (isPlanned(p)) syncPlanTasks(p);   // tray-sowing reminders follow the weather too
+  for (const s of startsGrowing()) syncStartTasks(s);                 // and plant-out dates of seedlings in trays
+}
+function harvestNote(p) {
+  if (p.harvestFixed) return 'date set by you';
+  return 'estimated from the catalogue and the temperatures';
 }
 // keep thinning dates up to date as germination is recorded and the weather comes in
 function syncThin() {

@@ -40,7 +40,7 @@ function syncStartTasks(s) {
   upsert('sgerm', !!gw && !s.upOn && !s.no_sgerm, gw && gw[1], gw ? `Check seedlings are up (expected ${shortDate(gw[0])}–${shortDate(gw[1])})` : '');
   const tp = TRANSPLANT[s.cropId];
   const pp = s.planId && planting(s.planId);
-  upsert('transplant', !s.no_transplant && !(pp && isPlanned(pp)), addDays(s.sowDate, tpDays(s.cropId)), `Plant out seedlings${tp && tp[1] ? ` (${tp[1]})` : ''}`);
+  upsert('transplant', !s.no_transplant && !(pp && isPlanned(pp)), startReady(s), `Plant out seedlings${tp && tp[1] ? ` (${tp[1]})` : ''}`);
 }
 function startTaskMeta(t) {
   const s = start(t.startId); if (!s) return '';
@@ -74,9 +74,9 @@ function pageSeedlings() {
   setChrome('Seedlings', { back: true, kicker: 'Trays & small pots' });
   const td = todayStr(), grow = startsGrowing();
   const card = s => {
-    const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = addDays(s.sowDate, tpDays(s.cropId)), n = daysBetween(td, ready), tp = TRANSPLANT[s.cropId];
+    const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = startReady(s), n = daysBetween(td, ready), tp = TRANSPLANT[s.cropId];
     return `<li class="start"><div class="srow"><span class="lic">${ic(s.cropId, 28)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}
-      <small>${left} ${NURSERY[s.kind].unit}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}</small>
+      <small>${left} ${NURSERY[s.kind].unit}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${s.kept && s.kept !== 'out' ? ' · ' + (KEPT.find(k => k[0] === s.kept) || [, ''])[1].toLowerCase() : ''}</small>
       <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
       ${s.notes ? `<small>${esc(s.notes)}</small>` : ''}</span><button class="tmore" data-act="editStart" data-id="${s.id}" aria-label="Edit">⋯</button></div>
       <div class="btnrow"><button class="btn small primary" data-act="plantOut" data-id="${s.id}">🌱 Plant out</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn ? `<button class="btn small" data-act="upStart" data-id="${s.id}">They’re up</button>` : ''}</div></li>`;
@@ -101,7 +101,7 @@ function pageSeedlings() {
 function seedlingsHomeSection() {
   const grow = startsGrowing(); if (!grow.length) return '';
   const td = todayStr();
-  return `<h3 class="grp">Seedlings</h3><a class="card wide" href="#/seedlings"><div class="chips">${grow.map(s => { const n = daysBetween(td, addDays(s.sowDate, tpDays(s.cropId)));
+  return `<h3 class="grp">Seedlings</h3><a class="card wide" href="#/seedlings"><div class="chips">${grow.map(s => { const n = daysBetween(td, startReady(s));
     return `<span class="chip">${ic(s.cropId)}${esc(crop(s.cropId).en)} ×${startLeft(s)}${n <= 0 ? ' · ready' : ''}</span>`; }).join('')}</div><div class="csize">${trayNos().map(n => 'Tray ' + n).concat(grow.some(s => s.kind === 'pot') ? ['9 cm pots'] : []).join(' · ')} ›</div></a>`;
 }
 
@@ -121,6 +121,7 @@ function startDialog(s, preset) {
         <label><span id="cntL">${d.kind === 'tray' ? 'Cells used' : 'Number of pots'}</span><input name="count" type="number" inputmode="numeric" min="1" value="${d.count || ''}" required></label></div>
       <div class="two"><label>Seeds per ${d.kind === 'tray' ? 'cell' : 'pot'}<input name="seeds" type="number" inputmode="numeric" min="1" value="${d.seeds || ''}" placeholder="optional"></label>
         <label>Sown on<input name="sowDate" type="date" value="${d.sowDate}" max="${td}"></label></div>
+      <label>Kept<div class="seg wrap">${KEPT.map(([k, l]) => `<button type="button" data-kept="${k}" class="${(d.kept || 'out') === k ? 'on' : ''}">${l}</button>`).join('')}</div></label>
       <p class="hint" id="tpHint"></p>
       <label>Notes<input name="notes" value="${esc(d.notes || '')}" placeholder="e.g. heat mat, under cover"></label>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
@@ -128,9 +129,10 @@ function startDialog(s, preset) {
     const hint = () => {
       const id = f.cropId.value; m.querySelector('#svars').innerHTML = id ? varieties(id).map(v => `<option value="${esc(v)}">`).join('') : '';
       const tp = TRANSPLANT[id];
-      m.querySelector('#tpHint').innerHTML = !id ? '' : tp && !tp[0] ? `⚠ ${esc(crop(id).en)}: ${esc(tp[1])}.` : `Plant out in about <b>${tpDays(id)} days</b>${tp && tp[1] ? ` — at ${esc(tp[1])}` : ''}.`;
+      m.querySelector('#tpHint').innerHTML = !id ? '' : tp && !tp[0] ? `⚠ ${esc(crop(id).en)}: ${esc(tp[1])}.` : `Plant out in about <b>${daysBetween(f.sowDate.value || todayStr(), startReady({ cropId: id, sowDate: f.sowDate.value || todayStr(), kept: d.kept }))} days</b> at this time of year${tp && tp[1] ? ` — at ${esc(tp[1])}` : ''}.`;
     };
-    f.cropId.onchange = hint; hint();
+    f.cropId.onchange = hint; f.sowDate.onchange = hint; hint();
+    m.querySelectorAll('[data-kept]').forEach(b => b.onclick = () => { d.kept = b.dataset.kept; m.querySelectorAll('[data-kept]').forEach(x => x.classList.toggle('on', x === b)); hint(); });
     m.querySelectorAll('[data-k]').forEach(b => b.onclick = () => {
       d.kind = b.dataset.k; m.querySelectorAll('[data-k]').forEach(x => x.classList.toggle('on', x === b));
       m.querySelector('#trayL').hidden = d.kind !== 'tray'; m.querySelector('#cntL').textContent = d.kind === 'tray' ? 'Cells used' : 'Number of pots';
@@ -140,7 +142,7 @@ function startDialog(s, preset) {
     if (del) del.onclick = async () => { close(); if (!await confirmBox('Delete these seedlings and their history?', 'Delete', true)) return; S.starts = S.starts.filter(x => x !== s); S.tasks = S.tasks.filter(t => t.startId !== s.id); await save(); render(); };
     f.onsubmit = async e => {
       e.preventDefault();
-      const o = { cropId: f.cropId.value, variety: f.variety.value.trim(), kind: d.kind, tray: d.kind === 'tray' ? +f.tray.value || 1 : null, count: +f.count.value || 1, seeds: num(f.seeds.value), sowDate: f.sowDate.value || td, notes: f.notes.value.trim() };
+      const o = { cropId: f.cropId.value, variety: f.variety.value.trim(), kind: d.kind, tray: d.kind === 'tray' ? +f.tray.value || 1 : null, count: +f.count.value || 1, seeds: num(f.seeds.value), sowDate: f.sowDate.value || td, notes: f.notes.value.trim(), kept: d.kept || 'out' };
       if (o.kind === 'tray') { const free = trayFree(o.tray, s && s.id), need = o.count - (s ? s.count - startLeft(s) : 0); if (need > free && !confirm(`Tray ${o.tray} only has ${free} free cells. Save anyway?`)) return; }
       if (isNew) {
         s = Object.assign({ id: uid(), status: 'growing', created: new Date().toISOString(), events: [] }, o, plan ? { planId: plan.id } : {}); (S.starts = S.starts || []).push(s);
@@ -197,7 +199,7 @@ function prefillFromStart(d, q) {
   d.method = 'seedling'; d.variety = s.variety || d.variety;
   if (cr.method === 'seed') {   // seed crops raised in a tray: final spacing, and harvest still counts from sowing
     if (cr.thinSp) d.plantSp = Math.max(+cr.sowSp || 0, +cr.thinSp);
-    if (cr.daysHarvest) { d.harvestDate = addDays(s.sowDate, +cr.daysHarvest); if (d.harvestDate < addDays(d.sowDate, 14)) d.harvestDate = addDays(d.sowDate, 14); d.harvestManual = true; }
+    d.seededOn = s.sowDate; d.harvestManual = false; recalc(d);
   }
   d.notes = d.notes || `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
 }

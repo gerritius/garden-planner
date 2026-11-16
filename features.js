@@ -190,6 +190,7 @@ const Weather = {
       <div class="wxdays">${days.map(d => `<div class="wxd${d.date === todayStr() ? ' now' : ''}${d.min <= 2 ? ' frost' : ''}"><span class="wn">${dayName(d.date)}</span>${Icons.weather(d.code, 30)}<b>${Math.round(d.max)}°</b><span class="lo">${Math.round(d.min)}°</span><span class="rn">${d.rain >= 0.5 ? Math.round(d.rain) + 'mm' : '&nbsp;'}</span></div>`).join('')}</div>
       ${this.alerts().map(([k, t]) => `<div class="wxalert ${k}">${t}</div>`).join('')}
       ${sprayDaysHTML(true)}
+      ${coverNotes().map(n => `<a class="wxalert quality" href="#/container/${n.c.id}">${coverType(n.x.type)[1]} ${esc(n.text)}</a>`).join('')}
       ${qualityWarnings().map(([p, k, t]) => `<a class="wxalert quality" href="#/plant/${p.id}">${k === 'bolt' ? '🌼' : k === 'split' ? '💧' : '❄️'} ${esc(t)}</a>`).join('')}
       <div class="wxfoot">${esc(w.name)} · ${age == null ? '' : age < 1 ? 'updated just now' : `updated ${age} h ago`}</div></section>`;
   },

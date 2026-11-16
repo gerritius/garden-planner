@@ -502,3 +502,9 @@ details.pktpick summary { font-size: 14px; color: var(--green); cursor: pointer;
 button.pkt { display: flex; flex-direction: column; align-items: center; width: 84px; padding: 4px; border: 1.5px solid var(--line-2); border-radius: 8px; background: var(--card); cursor: pointer; font-size: 12px; }
 button.pkt img { width: 74px; height: 74px; object-fit: cover; border-radius: 5px; }
 button.pkt small { display: block; color: var(--muted); font-size: 11px; }
+/* covers */
+.plot .coveredge { fill: none; stroke: #eef3f8; stroke-width: 2; stroke-dasharray: 5 3; opacity: .9; }
+.plot .cover.shade .coveredge { stroke: #2b302b; }
+.covchips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+.covchip { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #e7eef5; color: #2f4f6f; }
+.plist.covers li { display: flex; align-items: center; gap: 10px; }

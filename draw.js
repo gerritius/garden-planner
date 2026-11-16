@@ -171,6 +171,18 @@ const Draw = (() => {
     const cuts = new Set();
     for (const p of plantings) { if (p.from > 0.5) cuts.add(+p.from); if (p.to < L - 0.5) cuts.add(+p.to); }
     for (const y of cuts) s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" class="cut" ${ns}/>`;
+    // covers: nets, fleece, cloches, shade cloth over a section
+    const covs = o.covers || (typeof activeCovers === 'function' ? activeCovers(c) : []);
+    if (covs.length) {
+      const mc = Math.max(W, L) / 30;
+      s += `<defs><pattern id="${key}net" width="${mc}" height="${mc}" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><path d="M0 0H${mc}M0 0V${mc}" stroke="#f4f7fb" stroke-width="${mc * 0.09}" opacity=".85"/></pattern>
+        <pattern id="${key}sh" width="${mc * .6}" height="${mc * .6}" patternUnits="userSpaceOnUse"><rect width="${mc * .6}" height="${mc * .6}" fill="rgba(25,30,25,.28)"/><circle cx="${mc * .3}" cy="${mc * .3}" r="${mc * .12}" fill="rgba(25,30,25,.35)"/></pattern></defs>`;
+      for (const cv of covs) {
+        const y = Math.max(0, cv.from), h = Math.min(L, cv.to) - y; if (h <= 0) continue;
+        const fill = cv.type === 'fleece' ? 'rgba(255,255,255,.55)' : cv.type === 'cloche' ? 'rgba(220,240,255,.45)' : cv.type === 'shade' ? `url(#${key}sh)` : `url(#${key}net)`;
+        s += `<g class="cover ${cv.type}"><rect x="0" y="${y}" width="${W}" height="${h}" fill="${fill}"/><rect x="0" y="${y}" width="${W}" height="${h}" class="coveredge" ${ns}/></g>`;
+      }
+    }
     s += `</g>`;
     s += shape(c, `class="rim" ${ns}`);
     if (o.grid) {

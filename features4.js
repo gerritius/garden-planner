@@ -66,7 +66,7 @@ function frostRisk() {
   const out = [];
   for (const d of days) {
     if (d.min > 2) continue;
-    const hit = act.filter(p => crop(p.cropId).tender || (d.min <= -1 && HALF_HARDY.includes(p.cropId)));
+    const hit = act.filter(p => (crop(p.cropId).tender || (d.min <= -1 && HALF_HARDY.includes(p.cropId))) && !(d.min > -2 && plantingCover(p, ['fleece', 'cloche'])));
     out.push({ d, hit, hard: d.min <= -2 });
   }
   return out;

@@ -44,6 +44,7 @@ function logFeed() {
     if (p.status === 'harvested' && p.harvestedOn) out.push({ date: p.harvestedOn, kind: 'done', title: `Finished ${n}`, sub: where, href, cids, pids });
   }
   try { out.push(...startLogItems()); } catch (e) { console.warn(e); }
+  try { out.push(...coverLogItems()); } catch (e) { console.warn(e); }
   for (const c of S.containers) for (const nt of c.log || []) out.push({ date: nt.date, kind: 'note', title: nt.text, sub: c.name, href: '#/container/' + c.id, cids: [c.id], pids: [] });
   return out.filter(x => x.date).sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 }

@@ -320,7 +320,7 @@ function pageHome() {
     const chips = ps.map(p => `<span class="chip">${ic(p.cropId)}${esc(crop(p.cropId).en)}</span>`).join('') || '<span class="chip muted">empty</span>';
     const { W, L } = Draw.dims(c);
     return `<a class="card" href="#/container/${c.id}"><div class="thumb">${plotSVG(c, { px: Math.min(150 / L, 150 / W), minPx: 1.2 })}</div>
-      <div class="cname">${esc(c.name)}</div><div class="csize">${sizeLabel(c)}</div><div class="chips">${chips}</div></a>`;
+      <div class="cname">${esc(c.name)}</div><div class="csize">${sizeLabel(c)}</div><div class="chips">${chips}</div>${coverChips(c)}</a>`;
   };
   const growing = S.plantings.filter(isLive).length;
   setChrome('My Garden', { tab: 'home', big: true, kicker: pd(td).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), sub: sekki(),
@@ -393,6 +393,7 @@ function pageContainer(c) {
       ${ps.length ? `<button class="btn wide primary" data-act="split">＋ Add another crop to this ${c.type === 'bed' ? 'bed' : 'pot'}</button>` : ''}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
     </section>
+    ${coverSection(c)}
     ${planSection(c)}
     ${historySection(c)}
     ${logSection(c)}

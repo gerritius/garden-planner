@@ -1003,6 +1003,7 @@ function pageSettings() {
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
   const html = `${themeSettings()}
     <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section>
+    ${morningSection()}
     <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section>
     <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a><a class="btn" href="#/products">🧴 Products &amp; sprays</a></div><div class="btnrow"><a class="btn" href="#/plan">📅 Season plan</a><a class="btn" href="#/seedlings">🌱 Seedlings</a><a class="btn" href="#/sprayday">💦 Spray days</a></div>

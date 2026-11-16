@@ -170,7 +170,7 @@ function planRange() { const now = new Date(); const t0 = ymd(new Date(now.getFu
 function pagePlan() {
   setChrome('Season plan', { back: true, kicker: 'What’s growing when — and what could go in the gaps' });
   const [t0, t1] = planRange(), cs = S.containers.filter(c => c.type !== 'nursery').sort((a, b) => (a.type === 'bed') === (b.type === 'bed') ? 0 : a.type === 'bed' ? -1 : 1);
-  const html = `<p class="hint">Bars run from sowing/planting to the end of picking. <span class="tlkey planned">Striped</span> = planned. Tap a free gap’s crop to plan it — prep jobs are added counting back from the planting date.</p>
+  const html = `<div class="btnrow"><a class="btn small" href="#/rotation">🔄 Rotation for next year</a><a class="btn small" href="#/shop">🛒 What to buy</a></div><p class="hint">Bars run from sowing/planting to the end of picking. <span class="tlkey planned">Striped</span> = planned. Tap a free gap’s crop to plan it — prep jobs are added counting back from the planting date.</p>
     ${cs.map(c => { const gs = freeGaps(c).slice(0, 4); return `<section class="plan"><h3><a href="#/container/${c.id}">${esc(c.name)}</a> <small class="muted">${esc(sizeLabel(c))}</small></h3>
       ${monthTicks(t0, t1)}${planTimeline(c, t0, t1)}
       ${gs.length ? `<ul class="gaps">${gs.map(g => gapLi(c, g)).join('')}</ul>` : '<p class="muted small">No gaps longer than 3 weeks.</p>'}</section>`; }).join('') || '<div class="empty-state">Add a bed or pot first.</div>'}`;

@@ -55,7 +55,7 @@ function sprayAlerts() {
   const act = S.plantings.filter(isLive), by = {};
   for (const p of act) { const h = sprayHolds(p)[0]; if (h) (by[h.until] = by[h.until] || []).push([p, h]); }
   const ks = Object.keys(by).sort(); if (!ks.length) return '';
-  return `<div class="banner warn">💦 <b>Spray waiting period</b> — don’t pick ${ks.map(u => `${by[u].map(([p]) => `<a href="#/plant/${p.id}">${esc(crop(p.cropId).en)}</a>`).join(', ')} until <b>${shortDate(u)}</b>`).join('; ')}.</div>`;
+  return `<a class="banner warn" href="#/picksafe">💦 <b>Spray waiting period</b> — don’t pick ${ks.map(u => `${by[u].map(([p]) => esc(crop(p.cropId).en)).join(', ')} until <b>${shortDate(u)}</b>`).join('; ')}.</a>`;
 }
 
 // ---------- frost ----------

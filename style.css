@@ -508,3 +508,13 @@ button.pkt small { display: block; color: var(--muted); font-size: 11px; }
 .covchips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .covchip { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #e7eef5; color: #2f4f6f; }
 .plist.covers li { display: flex; align-items: center; gap: 10px; }
+a.variety { display: block; color: inherit; text-decoration: none; }
+a.variety small { color: var(--green); font-size: 12px; }
+li.rot { display: block; padding: 10px 2px; border-top: 1px dashed var(--line); }
+li.rot .sowchips { margin: 6px 0 2px; }
+.chip.ok { text-decoration: none; }
+.tlgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.tlgrid a { text-decoration: none; color: var(--muted); font-size: 11px; }
+.tlgrid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; display: block; }
+.plist.pick li.hold { background: #fbeee9; }
+a.banner { display: block; text-decoration: none; color: inherit; }

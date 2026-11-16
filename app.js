@@ -285,6 +285,11 @@ function render() {
     else if (a === 'seedlings') ({ html, after } = pageSeedlings());
     else if (a === 'plan') ({ html, after } = pagePlan());
     else if (a === 'doctor') ({ html, after } = pageDoctor(q));
+    else if (a === 'rotation') ({ html, after } = pageRotation());
+    else if (a === 'variety') ({ html, after } = pageVariety(q));
+    else if (a === 'varieties') ({ html, after } = pageVarieties());
+    else if (a === 'timeline') ({ html, after } = pageTimeline(q));
+    else if (a === 'picksafe') ({ html, after } = pagePickSafe());
     else if (a === 'shop') ({ html, after } = pageShop(q));
     else if (a === 'spend') ({ html, after } = pageSpend(q));
     else if (a === 'sprayday') ({ html, after } = pageSprayDay());
@@ -397,7 +402,7 @@ function pageContainer(c) {
     ${planSection(c)}
     ${historySection(c)}
     ${logSection(c)}
-    ${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Adjust sections by dragging</a>` : ''}
+    <div class="btnrow">${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Adjust sections</a>` : ''}${bedPhotos(c.id).length ? `<a class="btn small" href="#/timeline?c=${c.id}">📷 Photo timeline (${bedPhotos(c.id).length})</a>` : ''}<a class="btn small" href="#/rotation">🔄 Rotation</a></div>
     ${bedSection(c)}
     ${c.notes ? `<section><h3>About this ${c.type === 'bed' ? 'bed' : 'pot'}</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
     <div class="btnrow"><a class="btn" href="#/container/${c.id}/edit">Edit ${typeLabel(c).toLowerCase()}</a><button class="btn danger" data-act="del">Delete</button></div>`;
@@ -777,7 +782,7 @@ function pagePlant(p) {
         <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : '🧺 ready now'}</small></div>
       </div></div>
     ${(() => { const pb = pickBy(p); if (!pb || harvested) return ''; return `<p class="pickby${pb.date < td ? ' late' : ''}">${pb.cont ? `Picking season runs to about <b>${shortDate(pb.date)}</b>` : `Best picked by <b>${shortDate(pb.date)}</b>`} — after that ${esc(pb.late)}.</p>`; })()}
-    <div class="varrow"><div class="grow"><small>Variety</small><div class="variety">${esc(p.variety || '—')}</div></div>
+    <div class="varrow"><div class="grow"><small>Variety</small><a class="variety" href="#/variety?c=${encodeURIComponent(p.cropId)}&v=${encodeURIComponent(p.variety || '')}">${esc(p.variety || '—')} <small>notes ›</small></a></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
     ${planBanner(p)}
     ${isLive(p) ? qualityWarnings(p).map(([, , t]) => `<div class="banner warn">${esc(t)}</div>`).join('') : ''}

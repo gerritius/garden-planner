@@ -62,7 +62,7 @@ function sprayAlerts() {
 const HALF_HARDY = ['lettuce', 'celery', 'shungiku', 'strawberry'];
 function frostRisk() {
   const days = Weather.days().slice(0, 5);
-  const act = S.plantings.filter(p => isLive(p) && (!p.sowDate || p.sowDate <= addDays(todayStr(), 4)));
+  const act = S.plantings.filter(p => isLive(p) && !(container(p.containerId) || {}).indoor && (!p.sowDate || p.sowDate <= addDays(todayStr(), 4)));
   const out = [];
   for (const d of days) {
     if (d.min > 2) continue;

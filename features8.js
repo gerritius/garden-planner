@@ -137,6 +137,7 @@ function qualityWarnings(only) {
   const td = todayStr(), days = Weather.days().slice(0, 5), m = new Date().getMonth() + 1, out = [];
   const near = p => p.harvestDate && p.harvestDate <= addDays(td, 10);
   const live = S.plantings.filter(isLive).filter(p => !only || p.id === only.id);
+  const outdoors = p => !(container(p.containerId) || {}).indoor;
   const hot = days.filter(d => d.max >= 28), cold = days.find(d => d.min <= -2);
   const rainy = days.find(d => d.rain >= 20), dryBefore = Object.entries(S.rainHist || {}).filter(([k]) => k >= addDays(td, -6) && k < td).every(([, v]) => v < 2);
   for (const p of live) {
@@ -145,9 +146,9 @@ function qualityWarnings(only) {
       out.push([p, 'bolt', `${n}: ${hot.length > 1 ? 'warm days' : 'a warm day'} ahead (${Math.round(Math.max(...hot.map(d => d.max)))}°) — ${near(p) ? 'pick soon, it may bolt or turn bitter' : 'keep it watered; it may bolt early'}.`]);
     else if (DAY_BOLT.includes(p.cropId) && m >= 3 && m <= 5 && p.harvestDate && p.harvestDate <= td)
       out.push([p, 'bolt', `${n}: lengthening days make it flower now — pick ${p.cropId === 'naganegi' ? 'before the flower buds (ネギ坊主) open' : 'before it bolts'}.`]);
-    if (SPLITTERS.includes(p.cropId) && rainy && dryBefore && near(p))
+    if (SPLITTERS.includes(p.cropId) && rainy && dryBefore && near(p) && outdoors(p))
       out.push([p, 'split', `${n}: ${Math.round(rainy.rain)} mm of rain ${dayName(rainy.date) === 'Today' ? 'today' : 'on ' + dayName(rainy.date)} after a dry week — pick what’s ready first, it may split.`]);
-    if (FROST_HEADS.includes(p.cropId) && cold && near(p))
+    if (FROST_HEADS.includes(p.cropId) && cold && near(p) && outdoors(p))
       out.push([p, 'frost', `${n}: hard frost ${dayName(cold.date)} (${Math.round(cold.min)}°) can blacken the ${p.cropId === 'lettuce' ? 'outer leaves' : 'heads'} — pick or cover.`]);
   }
   return out;

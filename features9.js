@@ -94,7 +94,8 @@ function dayTemp(d, daily) {
 function emergeDate(p) {
   if (p.germ && p.germ.date && p.germ.result !== 'none') return { d: p.germ.date, known: true };
   const gw = germWindow(Object.assign({}, p, { method: 'seed' }));
-  return { d: gw ? addDays(gw[0], Math.round(daysBetween(gw[0], gw[1]) / 2)) : addDays(p.sowDate, 7), known: false };
+  const mid = gw ? daysBetween(p.sowDate, gw[0]) + daysBetween(gw[0], gw[1]) / 2 : 7;
+  return { d: addDays(p.sowDate, Math.round(mid * (p.cropId ? learnedFactor(p.cropId, 'germ') : 1))), known: false };
 }
 // growth rate per day in "good-weather days": 0 below the base temperature, 1 at the reference temperature
 // hardy winter crops (brassicas, spinach, peas & beans, alliums, shungiku) keep growing slowly just above freezing
@@ -112,17 +113,21 @@ function ddUntil(from, need, id, tempFn) {
   return d;
 }
 // leaf-stage milestones (thinning, ready to plant out): catalogue days are warm-weather numbers, so use a fixed reference temperature
-function leafDate(id, emerge, leafDays, boost) { const g = growParams(id), daily = S.weather && S.weather.daily; return ddUntil(emerge, Math.max(3, leafDays) * (g.tref - g.tb), id, boost ? (x => dayTemp(x, daily) + boost) : null); }
+function leafDate(id, emerge, leafDays, tempFn, factor) { const g = growParams(id); return ddUntil(emerge, Math.max(3, leafDays) * (g.tref - g.tb) * (factor || 1), id, tempFn); }
 const germAvg = id => { const g = crop(id).germ || [5, 10]; return (g[0] + g[1]) / 2; };
 function thinEstimate(p) {
   const cr = crop(p.cropId); if (!cr.daysThin || !p.sowDate) return p.thinDate || '';
-  return leafDate(p.cropId, emergeDate(p).d, Math.max(5, cr.daysThin - germAvg(p.cropId)));
+  const tf = tempFor(p.containerId), e = emergeDate(p).d;
+  return leafAnchored(p, p.cropId, e, leafTarget(p.thinStage || cr.thinStage), tf) || leafDate(p.cropId, e, Math.max(5, cr.daysThin - germAvg(p.cropId)), tf, learnedFactor(p.cropId, 'thin'));
 }
 // seedlings in trays/pots: ready to plant out
 function startEmerge(s) { return s.upOn || emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d; }
 const KEPT = [['out', 'Outside', 0], ['cover', 'Under cover / cold frame', 3], ['in', 'Indoors / heated', 8]];
 const keptBoost = s => (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[2];
-function startReady(s) { return leafDate(s.cropId, startEmerge(s), Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)), keptBoost(s)); }
+function startReady(s) {
+  const boost = keptBoost(s), daily = S.weather && S.weather.daily, tf = boost ? (x => dayTemp(x, daily) + boost) : null, e = startEmerge(s);
+  return leafAnchored(s, s.cropId, e, leafTarget((TRANSPLANT[s.cropId] || [])[1]), tf) || leafDate(s.cropId, e, Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)), tf, learnedFactor(s.cropId, 'out'));
+}
 // when to sow in a tray to be ready by a planting date
 function traySowFor(id, plantDate) {
   let sow = addDays(plantDate, -tpDays(id));
@@ -146,15 +151,19 @@ function calibratedNeed(id, days, offset, month) {
   return (_need[k] = acc || days * 8);
 }
 function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
-function harvestEstimate(p) {
-  const cr = crop(p.cropId); if (!cr.daysHarvest || !p.sowDate) return p.harvestDate || '';
+function harvestModel(p, raw) {
+  const cr = crop(p.cropId); if (!cr.daysHarvest || !p.sowDate) return null;
   const g = germAvg(p.cropId);
   let from, days, offset, eff;
   if (p.method === 'seed') { from = emergeDate(p).d; days = cr.daysHarvest - g; offset = g; eff = p.sowDate; }
   else if (cr.method === 'seed' && trayDateOf(p)) { const t = trayDateOf(p); from = t.up || emergeDate({ cropId: p.cropId, sowDate: t.d, method: 'seed' }).d; days = cr.daysHarvest - g; offset = g; eff = t.d; }
   else if (cr.method === 'seed' && raisable(p.cropId)) { from = p.sowDate; days = Math.max(14, cr.daysHarvest - tpDays(p.cropId)); offset = tpDays(p.cropId); eff = addDays(p.sowDate, -offset); }
   else { from = p.sowDate; days = cr.daysHarvest; offset = 0; eff = p.sowDate; }
-  const d = ddUntil(from, calibratedNeed(p.cropId, Math.max(7, Math.round(days)), Math.round(offset), refMonth(p.cropId, eff)), p.cropId);
+  return { from, need: calibratedNeed(p.cropId, Math.max(7, Math.round(days)), Math.round(offset), refMonth(p.cropId, eff)) * (raw ? 1 : learnedFactor(p.cropId, 'harvest')) };
+}
+function harvestEstimate(p) {
+  const m = harvestModel(p); if (!m) return p.harvestDate || '';
+  const d = ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId));
   return d < addDays(p.sowDate, 14) ? addDays(p.sowDate, 14) : d;
 }
 // keep harvest dates current unless set by hand or picking has started
@@ -179,7 +188,10 @@ function syncHarvest() {
 }
 function harvestNote(p) {
   if (p.harvestFixed) return 'date set by you';
-  return 'estimated from the catalogue and the temperatures';
+  const c = container(p.containerId), bits = ['estimated from the catalogue and the temperatures'];
+  if (c && (c.indoor || (c.sun || 'full') !== 'full')) bits.push(c.indoor ? 'indoors' : (c.sun === 'part' ? 'part sun' : 'shade'));
+  const l = learnedText(p.cropId, 'harvest'); if (l) bits.push('your ' + crop(p.cropId).en.toLowerCase() + ' has been ' + l);
+  return bits.join('; ');
 }
 // keep thinning dates up to date as germination is recorded and the weather comes in
 function syncThin() {
@@ -191,6 +203,7 @@ function syncThin() {
 }
 function thinNote(p) {
   if (p.thinFixed) return 'date set by you';
-  const e = emergeDate(p);
-  return `from ${e.known ? 'when they came up (' + shortDate(e.d) + ')' : 'expected germination'} and the temperatures`;
+  const e = emergeDate(p), L = lastLeaves(p), l = learnedText(p.cropId, 'thin');
+  const anch = L && leafAnchored(p, p.cropId, e.d, leafTarget(p.thinStage || crop(p.cropId).thinStage), tempFor(p.containerId));
+  return anch ? `from your leaf count on ${shortDate(L.date)}` : `from ${e.known ? 'when they came up (' + shortDate(e.d) + ')' : 'expected germination'} and the temperatures${l ? '; ' + l : ''}`;
 }

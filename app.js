@@ -376,6 +376,7 @@ function pageContainer(c) {
   const ps = activeIn(c.id), gs = gaps(c);
   const vw = Math.min(window.innerWidth, 640) - 32;
   A.split = () => splitDialog(c);
+  A.climate = () => climateDialog(c);
   A.gap = el => { const [f, t] = el.dataset.gap.split(','); go(`#/plant/new/${c.id}?from=${f}&to=${t}`); };
   A.del = async () => {
     if (!await confirmBox(`Delete <b>${esc(c.name)}</b> and everything planted in it (including history)?`, 'Delete', true)) return;
@@ -385,6 +386,7 @@ function pageContainer(c) {
   };
   const html = `<div class="plotwrap">${plotSVG(c, { width: vw, maxH: window.innerHeight * 0.62, labels: true, gaps: true, showMargin: true, grid: true })}</div>
     <p class="hint center">${typeLabel(c)} · ${sizeLabel(c)}${c.margin ? ` · ${c.margin} cm edge margin` : ''}${c.type !== 'round' ? ' · top → bottom = long side' : ''}</p>
+    <div class="center"><button class="chip big" data-act="climate">${climateLabel(c)} ✎</button></div>
     <section><h3>Growing now</h3>
       ${ps.length ? `<ul class="plist">${ps.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}
         <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
@@ -416,6 +418,7 @@ function pageContainerForm(c) {
     <label>Margin from edges (cm)<input name="margin" type="number" inputmode="decimal" value="${esc(d.margin)}"><small>First and last rows start this far in from the edge.</small></label>
     ${isNew ? `<label>How many?<input name="count" type="number" min="1" max="50" value="${esc(d.count)}"><small>More than 1 numbers them, e.g. “Bag 1”, “Bag 2”…</small></label>` : ''}
     ${(ensureAreas(), S.areas.length > 1) ? `<label>Area<select name="area">${S.areas.map(x => `<option value="${x.id}"${(d.area || S.areas[0].id) === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
+    <label>Where<div class="seg wrap">${[['full', '☀️ Full sun'], ['part', '⛅ Part sun'], ['shade', '☁️ Shade'], ['in', '🏠 Indoors']].map(([v, l]) => `<button type="button" data-act="where" data-v="${v}" class="${(d.indoor ? 'in' : d.sun || 'full') === v ? 'on' : ''}">${l}</button>`).join('')}</div><small>Used for growth estimates. You can switch it any time from the ${d.type === 'bed' ? 'bed' : 'pot'}’s page.</small></label>
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
     <div class="preview" id="cprev"></div>
     <button class="btn primary wide" type="submit">${isNew ? 'Add' : 'Save'}</button></form>`;
@@ -424,13 +427,14 @@ function pageContainerForm(c) {
     if (t.type !== 'round' && t.width > t.length) [t.width, t.length] = [t.length, t.width];
     $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true, grid: true }); };
   A.type = el => { read(); d.type = el.dataset.v; if (d.type !== 'bed' && +d.margin === 10) d.margin = 2; if (d.type === 'bed' && +d.margin === 2) d.margin = 10; render(); };
+  A.where = el => { read(); if (el.dataset.v === 'in') d.indoor = true; else { d.indoor = false; d.sun = el.dataset.v; } render(); };
   A.preset = () => { Object.assign(d, { type: 'round', name: d.name || 'Bag', diameter: 40, depth: 35, margin: 2, count: 12 }); render(); };
   const after = () => {
     prev();
     $('#cf').addEventListener('input', prev);
     $('#cf').addEventListener('submit', async e => {
       e.preventDefault(); read();
-      const base = { type: d.type, margin: num(d.margin) ?? 0, notes: d.notes || '', area: d.area || (S.areas && S.areas[0] ? S.areas[0].id : null) };
+      const base = { type: d.type, margin: num(d.margin) ?? 0, notes: d.notes || '', sun: d.sun || 'full', indoor: !!d.indoor, area: d.area || (S.areas && S.areas[0] ? S.areas[0].id : null) };
       if (!isNew && c.area !== base.area) c.pos = null;
       if (d.type === 'round') { if (!(num(d.diameter) > 0)) return alert('Enter a diameter.'); Object.assign(base, { diameter: num(d.diameter), depth: num(d.depth) }); }
       else {
@@ -739,7 +743,7 @@ function pagePlant(p) {
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
     (() => { const gw = germWindow(p); return gw ? ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${p.germ.result}</b> (${shortDate(p.germ.date)})` : ''}`] : null; })(),
-    seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)} <small class="muted">(${thinNote(p)})</small>`}`] : null,
+    seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)} <small class="muted">(${thinNote(p)})</small> <button class="link" data-act="leaves">🌿 ${lastLeaves(p) ? `${lastLeaves(p).n} true leaves on ${shortDate(lastLeaves(p).date)} — update` : 'Count true leaves'}</button>`}`] : null,
     p.harvestDate && !harvested ? ['Harvest estimate', `from ${shortDate(p.harvestDate)} <small class="muted">(${harvestNote(p)})</small>`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
     c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
@@ -750,6 +754,7 @@ function pagePlant(p) {
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.leaves = () => leafDialog(p, cropName(p.cropId), () => { p.thinFixed = false; });
   A.logHarvest = () => harvestDialog(p);
   A.editHarvest = el => harvestDialog(p, (p.harvests || []).find(h => h.id === el.dataset.id));
   A.harvest = async () => {
@@ -992,7 +997,7 @@ function pageSettings() {
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section>
     <section><h3>Records</h3><div class="btnrow"><a class="btn" href="#/review">📒 Season review</a><a class="btn" href="#/compare">📊 Compare years</a></div><div class="btnrow"><a class="btn" href="#/map">🗺 Garden map</a><a class="btn" href="#/products">🧴 Products &amp; sprays</a></div><div class="btnrow"><a class="btn" href="#/plan">📅 Season plan</a><a class="btn" href="#/seedlings">🌱 Seedlings</a><a class="btn" href="#/sprayday">💦 Spray days</a></div>
       <div class="btnrow"><a class="btn" href="#/shop">🛒 What to buy</a><a class="btn" href="#/spend">💴 Spending</a><a class="btn" href="#/doctor">🩺 What’s wrong?</a></div></section>
-    ${harvestTotalsSection()}<section><h3>Backup</h3>
+    ${harvestTotalsSection()}${learnSection()}<section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
@@ -1061,7 +1066,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.9.3';
+const APP_VERSION = '1.10.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

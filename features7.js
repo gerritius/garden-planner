@@ -274,7 +274,7 @@ function syncWx() {
   }
 }
 function wxAdvice(t) {
-  const live = S.plantings.filter(isLive), td = todayStr();
+  const live = S.plantings.filter(p => isLive(p) && !(container(p.containerId) || {}).indoor), td = todayStr();
   const names = f => [...new Set(live.filter(f).map(p => crop(p.cropId).en))].join(', ');
   const tall = names(p => TALL.includes(p.cropId)), net = names(p => NETTED.includes(p.cropId)), young = names(p => p.sowDate && daysBetween(p.sowDate, td) <= 21);
   const ready = names(p => p.harvestDate && p.harvestDate <= addDays(td, 7)), trays = startsGrowing().length > 0;

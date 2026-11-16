@@ -79,7 +79,7 @@ function pageSeedlings() {
       <small>${left} ${NURSERY[s.kind].unit}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${s.kept && s.kept !== 'out' ? ' · ' + (KEPT.find(k => k[0] === s.kept) || [, ''])[1].toLowerCase() : ''}</small>
       <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
       ${s.notes ? `<small>${esc(s.notes)}</small>` : ''}</span><button class="tmore" data-act="editStart" data-id="${s.id}" aria-label="Edit">⋯</button></div>
-      <div class="btnrow"><button class="btn small primary" data-act="plantOut" data-id="${s.id}">🌱 Plant out</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn ? `<button class="btn small" data-act="upStart" data-id="${s.id}">They’re up</button>` : ''}</div></li>`;
+      <div class="btnrow"><button class="btn small primary" data-act="plantOut" data-id="${s.id}">🌱 Plant out</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn ? `<button class="btn small" data-act="upStart" data-id="${s.id}">They’re up</button>` : `<button class="btn small" data-act="leafStart" data-id="${s.id}">🌿 ${lastLeaves(s) ? lastLeaves(s).n + ' leaves' : 'Leaves'}</button>`}</div></li>`;
   };
   const trays = trayNos(), pots = grow.filter(s => s.kind === 'pot');
   const past = (S.starts || []).filter(s => s.status !== 'growing').sort((a, b) => (a.sowDate < b.sowDate ? 1 : -1)).slice(0, 30);
@@ -87,6 +87,7 @@ function pageSeedlings() {
   A.editStart = el => startDialog(start(el.dataset.id));
   A.plantOut = el => plantOutDialog(start(el.dataset.id));
   A.binStart = el => discardDialog(start(el.dataset.id));
+  A.leafStart = el => { const s = start(el.dataset.id); leafDialog(s, crop(s.cropId).en + ' seedlings'); };
   A.upStart = async el => { const s = start(el.dataset.id); s.upOn = td; syncStartTasks(s); await save(); render(); };
   const html = `
     ${!grow.length ? `<div class="empty-state"><p>No seedlings on the go.</p></div>` : ''}

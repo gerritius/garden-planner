@@ -83,7 +83,7 @@ function rainByDay() {
   d.time.forEach((t, i) => { const mm = d.precipitation_sum[i] || 0, pop = (d.precipitation_probability_max || [])[i]; out[t] = t < td || pop == null || pop >= 50 ? mm : 0; });
   return out;
 }
-const waterPots = () => S.containers.filter(c => c.type !== 'bed' && c.type !== 'nursery' && activeIn(c.id).length);
+const waterPots = () => S.containers.filter(c => c.type !== 'bed' && c.type !== 'nursery' && !c.indoor && activeIn(c.id).length);
 // a full watering = water per 40 L bag (default 4 L ≈ 10% of the pot), so rain fills a pot when mm ≥ that share of its depth
 function potWater(pots) {
   const perL = (S.water && +S.water.perBagL) || 4, frac = perL / 40;
@@ -164,6 +164,7 @@ function waterTaskDialog(t) {
     <p class="hint">A full watering is about <b>${perL} L per 40 L bag</b> — the same as ~${Math.round(w.pw.fullMM)} mm of rain. Rain tops the bags up in proportion (e.g. 10 mm ≈ ${L(10)} L into a ${esc(sizeLabel(w.pw.rep))} bag), each day uses about a ${w.iv === 1 ? 'full watering' : `1/${w.iv} of one`}, and if rain is due the next day the watering waits for it. Forecast rain only counts when the chance is 50% or more.</p>
     ${rows ? `<div class="tscroll"><table class="reg rain"><tr><th>Day</th><th>Rain</th><th>Per bag</th></tr>${rows}</table></div>` : ''}` : ''}
     ${!S.weather || S.weather.lat == null ? '<p class="hint">Set your garden’s location in Tools so rain can be counted.</p>' : ''}
+    ${S.containers.some(c => c.indoor && activeIn(c.id).length) ? '<p class="hint">🏠 Indoor pots aren’t included — rain doesn’t reach them, so water them as they need it.</p>' : ''}
     ${S.starts && S.starts.some(x => x.status === 'growing') ? '<p class="hint">🌱 Seedling trays and small pots aren’t included — they dry out fast, so check them daily.</p>' : ''}
     <form id="wpf" class="form"><label>Water per 40 L bag (L)<input name="perL" type="number" inputmode="decimal" step="0.5" min="0.5" value="${perL}"></label></form>
     <div class="btns"><button class="btn" data-x="skip">Skip today</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {

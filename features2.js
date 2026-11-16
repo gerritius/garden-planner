@@ -57,7 +57,7 @@ function germDialog(p, when) {
             S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && ['germ', 'thin', 'harvest', 'pickby'].includes(t.kind)));
             S.tasks.push({ id: uid(), plantingId: p.id, kind: 'custom', title: `Re-sown (was sown ${shortDate(p.sowDate)})`, due: td, done: true, doneOn: td });
             p.sowDate = td; p.thinned = false; p.thinDoneOn = null; p.germ = null;
-            if (cr.daysThin && p.thinSp) p.thinDate = addDays(td, cr.daysThin);
+            if (cr.daysThin && p.thinSp) p.thinDate = thinEstimate(p);
             if (cr.daysHarvest) p.harvestDate = addDays(td, cr.daysHarvest);
             syncTasks(p);
           }

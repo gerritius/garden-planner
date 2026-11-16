@@ -258,6 +258,7 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
+  try { syncThin(); } catch (e) { console.warn(e); }
   if (!window._snapDone) { window._snapDone = true; setTimeout(snapshotDaily, 3000); }
   let html = '', after = null;
   try {
@@ -472,7 +473,7 @@ function applyCrop(d, cr, c) {
 function recalc(d) {
   if (!d.sowDate) return;
   if (!d.harvestManual && d.daysHarvest) d.harvestDate = addDays(d.sowDate, Math.max(14, +d.daysHarvest - (d.method === 'seedling' && crop(d.cropId).method === 'seed' && raisable(d.cropId) ? tpDays(d.cropId) : 0)));
-  if (!d.thinManual && d.daysThin && d.method === 'seed' && d.thinSp) d.thinDate = addDays(d.sowDate, +d.daysThin);
+  if (!d.thinManual && d.daysThin && d.method === 'seed' && d.thinSp) d.thinDate = thinEstimate({ cropId: d.cropId, sowDate: d.sowDate, method: 'seed', germ: d.germ });
 }
 function setPath(o, path, v) {
   const ks = path.split('.'); let cur = o;
@@ -547,7 +548,7 @@ function pagePlantForm(p, c, q) {
       <label>When to thin<input name="thinStage" value="${esc(d.thinStage)}" placeholder="e.g. at 3 true leaves"></label>
       <div class="two"><label>Thin to (cm)<input name="thinSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.thinSp)}"></label>
       <label>Approx. date<input name="thinDate" type="date" value="${esc(d.thinDate || '')}" data-manual="thinManual"></label></div>
-      <small class="hint">Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
+      <small class="hint">The date is estimated from when they come up and the temperatures, and updates by itself — unless you change it here. Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
     ${isNew && cr && careJobs(cr.id).length ? `<fieldset><legend>Suggested jobs</legend>
       ${careJobs(cr.id).map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `day ${j[1]}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}${esc(jobAmountText(j))}</small></span></label>`).join('')}
       <small class="hint">Untick any you don’t do. They become jobs on this crop’s page and the calendar.</small></fieldset>` : ''}
@@ -614,6 +615,7 @@ function pagePlantForm(p, c, q) {
     f.addEventListener('input', e => {
       const n = e.target.name || '';
       if (e.target.dataset.manual) d[e.target.dataset.manual] = true;
+      if (n === 'thinDate') d.thinUser = true;
       read();
       if (n === 'sowDate' || n === 'thinSp') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
       if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); }
@@ -656,6 +658,7 @@ async function savePlanting(p, d, c) {
   if (isNew) { p = { id: uid(), containerId: c.id, status: 'active', created: todayStr(), thinned: false, photos: {} }; S.plantings.push(p); }
   const fields = ['cropId', 'variety', 'method', 'layout', 'dir', 'sowDate', 'thinStage', 'thinDate', 'harvestDate', 'notes'];
   for (const k of fields) p[k] = d[k] || '';
+  if (d.thinUser) p.thinFixed = !!d.thinDate;
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
   p.raise = p.status === 'planned' && p.method === 'seedling' ? (d.raise || 'buy') : (p.raise || '');
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
@@ -733,7 +736,7 @@ function pagePlant(p) {
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
     (() => { const gw = germWindow(p); return gw ? ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${p.germ.result}</b> (${shortDate(p.germ.date)})` : ''}`] : null; })(),
-    seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)}`}`] : null,
+    seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)} <small class="muted">(${thinNote(p)})</small>`}`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
     c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
     c && !harvested && !isPlanned(p) ? ['Size in drawing', (() => { const now = Math.round(Draw.radius(p, td) * 2), full = Math.round(Math.max(1, +p.spread || Draw.spacingNow(p))); return `${now} cm across today (grows to ~${full} cm by ${p.harvestDate ? shortDate(p.harvestDate) : 'harvest'})${seed && +p.thinSp > 0 && !p.thinned ? ' · stays seedling-sized until thinning' : ''}`; })()] : null,
@@ -1054,7 +1057,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.9.1';
+const APP_VERSION = '1.9.2';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

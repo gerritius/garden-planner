@@ -80,3 +80,41 @@ function gapStartChips(c, g) {
   return freeStarts().filter(s => !(prevFam && prevFam !== 'other' && crop(s.cropId).family === prevFam))
     .map(s => `<a class="chip mine" href="#/plant/new/${c.id}?plan=1&from=${g.a}&to=${g.b}&date=${g.s}&usestart=${s.id}">🌱 ${esc(crop(s.cropId).en)} <small>your seedlings ×${startLeft(s)}</small></a>`).join('');
 }
+
+// ---------- thinning: counted from when seedlings came up, at the speed the temperature allows ----------
+// Catalogue "days to thin" assume good growing weather (~18 °C for cool-season crops, ~24 °C for warm-season).
+// Growth is counted in degree-days above a base temperature, so cold weeks add very little.
+const NORMAL_T = [5.2, 5.7, 8.7, 13.9, 18.2, 21.4, 25.0, 26.4, 22.8, 17.5, 12.1, 7.6];   // monthly mean, western Tokyo (approx.)
+const WARM_LEAF = ['corn', 'edamame', 'ingen', 'kyuri', 'zucchini', 'nasu', 'piman', 'tomato', 'minitomato', 'shishito', 'chilli', 'satoimo', 'satsumaimo'];
+function dayTemp(d, daily) {
+  if (S.tempHist && S.tempHist[d] != null) return S.tempHist[d];
+  const i = daily && daily.time ? daily.time.indexOf(d) : -1;
+  if (i >= 0 && daily.temperature_2m_max[i] != null) return (daily.temperature_2m_max[i] + daily.temperature_2m_min[i]) / 2;
+  return NORMAL_T[pd(d).getMonth()];
+}
+function emergeDate(p) {
+  if (p.germ && p.germ.date && p.germ.result !== 'none') return { d: p.germ.date, known: true };
+  const gw = germWindow(Object.assign({}, p, { method: 'seed' }));
+  return { d: gw ? addDays(gw[0], Math.round(daysBetween(gw[0], gw[1]) / 2)) : addDays(p.sowDate, 7), known: false };
+}
+function thinEstimate(p) {
+  const cr = crop(p.cropId); if (!cr.daysThin || !p.sowDate) return p.thinDate || '';
+  const g = cr.germ || [5, 10], leaf = Math.max(5, cr.daysThin - (g[0] + g[1]) / 2);
+  const warm = WARM_LEAF.includes(p.cropId), tb = warm ? 10 : p.cropId === 'spinach' ? 2 : 4, tref = warm ? 24 : 18, need = leaf * (tref - tb), daily = S.weather && S.weather.daily;
+  let d = emergeDate(p).d, acc = 0;
+  for (let i = 0; i < 180 && acc < need; i++) { d = addDays(d, 1); acc += Math.max(0, Math.min(dayTemp(d, daily), tref) - tb); }   // warm weather never beats the catalogue pace
+  return d;
+}
+// keep thinning dates up to date as germination is recorded and the weather comes in
+function syncThin() {
+  for (const p of S.plantings) {
+    if (!isLive(p) || p.method !== 'seed' || p.thinned || p.thinFixed || !(+p.thinSp > 0) || !crop(p.cropId).daysThin) continue;
+    const nd = thinEstimate(p);
+    if (nd && nd !== p.thinDate) { p.thinDate = nd; syncTasks(p); }
+  }
+}
+function thinNote(p) {
+  if (p.thinFixed) return 'date set by you';
+  const e = emergeDate(p);
+  return `from ${e.known ? 'when they came up (' + shortDate(e.d) + ')' : 'expected germination'} and the temperatures`;
+}

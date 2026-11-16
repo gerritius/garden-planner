@@ -152,7 +152,9 @@ const Weather = {
       const r = await fetch(url);
       if (!r.ok) throw new Error('HTTP ' + r.status);
       const j = await r.json(); w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now();
-      const td = todayStr(), keep = addDays(td, -45); S.rainHist = Object.fromEntries(Object.entries(S.rainHist || {}).filter(([k]) => k >= keep));
+      const td = todayStr(), keep = addDays(td, -45);
+      S.tempHist = Object.fromEntries(Object.entries(S.tempHist || {}).filter(([k]) => k >= addDays(td, -120)));
+      w.daily.time.forEach((t, i) => { if (t < td && w.daily.temperature_2m_max[i] != null) S.tempHist[t] = (w.daily.temperature_2m_max[i] + w.daily.temperature_2m_min[i]) / 2; }); S.rainHist = Object.fromEntries(Object.entries(S.rainHist || {}).filter(([k]) => k >= keep));
       w.daily.time.forEach((t, i) => { if (t < td) S.rainHist[t] = w.daily.precipitation_sum[i] || 0; });
       await save(); return true;
     } catch (e) { console.warn('weather', e); return false; } finally { this.busy = false; }

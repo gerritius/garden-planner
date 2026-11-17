@@ -606,7 +606,7 @@ function pagePlantForm(p, c, q) {
       ${cr && cr.daysHarvest ? `<small class="hint">Estimated from the catalogue (about ${cr.daysHarvest} days from ${seed || (cr.method === 'seed' && (d.startId || d.useStart)) ? 'sowing' : 'planting'} at the usual time of year${cr.method === 'seed' && (d.startId || d.useStart) ? ', counted from the tray sowing' : ''}) and the temperatures — colder weather pushes it later. It updates by itself unless you change it here to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
-      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d)))}.</p>` : ''}
+      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d), d.sowDate))}.</p>` : ''}
       ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
         <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
       <datalist id="fertNames">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist>
@@ -1136,7 +1136,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.16.2';
+const APP_VERSION = '1.16.3';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

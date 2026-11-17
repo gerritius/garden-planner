@@ -209,6 +209,8 @@ const LIME_M2 = { potato: 0, satsumaimo: 50, strawberry: 50, spinach: 200, garli
 const sectionArea = (c, from, to) => c.type === 'bed' ? Draw.dims(c).W * (to - from) / 1e4 : null;
 const pick = ids => ids.map(product).find(p => p && myProducts().includes(p));
 // recommended starting (base) fertiliser for a crop in this bed section or bag
+// planting the first crop into fresh mix while its own fertiliser is still working (Touikawa ~a year, others ~2 months)
+const freshMixFed = (ms, sowDate) => !!(ms && ms.fresh && ms.firstCrop && (sowDate || todayStr()) < addDays(ms.date, ms.kind === 'touikawa' ? 365 : 60));
 function baseFertPlan(cropId, c, from, to, sowDate) {
   if (!c) return [];
   const feed = feedOf(cropId) || 'medium', area = sectionArea(c, from, to), bag = c.type !== 'bed';
@@ -218,6 +220,7 @@ function baseFertPlan(cropId, c, from, to, sowDate) {
   if (bag) {
     // bags: fresh 元肥入り potting mix needs nothing for its first crop; re-used mix gets compost + 8-8-8
     const ms = typeof mixState === 'function' ? mixState(c, sowDate || todayStr()) : null;
+    if (freshMixFed(ms, sowDate)) return [];   // first crop in fresh mix: its fertiliser is already in it
     // fresh mix carries some fertiliser (Touikawa ~a year, mostly phosphate; Iris ~a month), so the 8-8-8 base is halved
     const slowMix = ms && ms.fresh && (sowDate || todayStr()) < addDays(ms.date, ms.kind === 'touikawa' ? 365 : 30);
     const vol = (typeof potVolume === 'function' && potVolume(c)) || 40, k = vol / 40;
@@ -240,8 +243,9 @@ function baseFertPlan(cropId, c, from, to, sowDate) {
   if (fert && g) out.push({ product: fert.en, amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful' });
   return out.filter(x => x.amount > 0);
 }
-function baseFertNote(cropId, c) {
-  if (c && c.type !== 'bed') { const ms = typeof mixState === 'function' ? mixState(c) : null;
+function baseFertNote(cropId, c, sowDate) {
+  if (c && c.type !== 'bed') { const ms = typeof mixState === 'function' ? mixState(c, sowDate || todayStr()) : null;
+    if (freshMixFed(ms, sowDate)) return 'fresh potting mix: no fertiliser needed — it’s already in the mix';
     if (ms && ms.fresh && ms.kind === 'touikawa' && todayStr() < addDays(ms.date, 365)) return 'fresh Touikawa mix: its slow-release fertiliser (mostly phosphate) feeds lightly for a year — add half the usual 8-8-8 for nitrogen; no lime needed';
     if (ms && ms.fresh && todayStr() < addDays(ms.date, 30)) return 'fresh potting mix: its starter fertiliser only lasts about a month — half the usual 8-8-8 mixed through; no lime needed';
     return 're-used potting mix: compost plus 8-8-8 mixed through before planting'; }

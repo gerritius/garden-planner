@@ -1,5 +1,5 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
-const CACHE = 'garden-planner-v46';
+const CACHE = 'garden-planner-v47';
 const ASSETS = ['./', 'index.html', 'style.css', 'catalog.js', 'db.js', 'draw.js', 'app.js', 'icons.js', 'features.js', 'features2.js', 'features3.js', 'features4.js', 'registrations.js', 'features5.js', 'features6.js', 'features7.js', 'features8.js', 'features9.js', 'features10.js', 'features11.js', 'features12.js', 'features13.js', 'features14.js', 'features15.js', 'features16.js', 'features17.js', 'features18.js', 'features19.js', 'features20.js', 'features21.js', 'features22.js', 'fonts/ZillaSlab-500.woff2', 'fonts/ZillaSlab-700.woff2', 'fonts/Caveat-600.woff2', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
 
 self.addEventListener('install', e => {

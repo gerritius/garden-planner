@@ -109,7 +109,7 @@ function planFormBits(d, c) {
   const raise = cr && d.method === 'seedling' && raisable(cr.id) && !d.useStart;
   return `<div class="plannote">📅 <b>Planned</b> — saved as a plan. Prep jobs are counted back from this date${raise ? ', plus a reminder to sow seedlings' : ''}; it goes into the bed when you tick “${d.method === 'seed' ? 'Sow' : 'Plant out'}”.</div>
     ${raise ? `<label>Seedlings<div class="seg">${[['buy', 'Buy them'], ['tray', 'Raise in tray'], ['pot', 'Raise in 9 cm pots']].map(([v, l]) => `<button type="button" data-act="raise" data-v="${v}" class="${(d.raise || 'buy') === v ? 'on' : ''}">${l}</button>`).join('')}</div>
-      ${d.raise === 'tray' || d.raise === 'pot' ? `<small class="hint">Sow them around ${shortDate(traySowFor(cr.id, d.sowDate))} (about ${daysBetween(traySowFor(cr.id, d.sowDate), d.sowDate)} days before at that time of year).</small>` : ''}</label>` : ''}`;
+      ${d.raise === 'tray' || d.raise === 'pot' ? `<small class="hint">${(() => { const tp = traySowPlan(cr.id, d.sowDate), where = (KEPT.find(k => k[0] === tp.kept) || KEPT[0])[1].toLowerCase(); return `Sow them around <b>${shortDate(tp.sow)}</b> (about ${daysBetween(tp.sow, d.sowDate)} days before at that time of year)${tp.kept !== 'out' ? `, kept <b>${esc(where)}</b> — outside it’s too cold for them to be ready in time` : ''}${tp.late ? '. Even then they may be a little small — buying seedlings is the easy option' : ''}.`; })()}</small>` : ''}</label>` : ''}`;
 }
 
 // ---------- gaps & suggestions ----------

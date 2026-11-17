@@ -125,19 +125,41 @@ function thinEstimate(p) {
   return leafAnchored(p, p.cropId, e, leafTarget(p.thinStage || cr.thinStage), tf) || leafDate(p.cropId, e, Math.max(5, cr.daysThin - germAvg(p.cropId)), tf, learnedFactor(p.cropId, 'thin'));
 }
 // seedlings in trays/pots: ready to plant out
-function startEmerge(s) { return s.upOn || emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d; }
+function startEmerge(s) {
+  if (s.upOn) return s.upOn;
+  if ((s.kept || 'out') === 'in') { return addDays(s.sowDate, Math.round(germAvg(s.cropId))); }   // a warm room: warm-soil speed
+  return emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d;
+}
 const KEPT = [['out', 'Outside', 0], ['cover', 'Under cover / cold frame', 3], ['in', 'Indoors / heated', 8]];
 const keptBoost = s => (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[2];
+// temperature the seedlings see: outside, under cover (a few degrees warmer), or indoors (heated room — at least ~18 °C)
+const keptTemp = s => { const b = keptBoost(s), daily = S.weather && S.weather.daily; return !b ? null : (s.kept === 'in' ? (x => Math.max(dayTemp(x, daily) + b, 18)) : (x => dayTemp(x, daily) + b)); };
 function startReady(s) {
-  const boost = keptBoost(s), daily = S.weather && S.weather.daily, tf = boost ? (x => dayTemp(x, daily) + boost) : null, e = startEmerge(s);
+  const tf = keptTemp(s), e = startEmerge(s);
   return leafAnchored(s, s.cropId, e, leafTarget((TRANSPLANT[s.cropId] || [])[1]), tf) || leafDate(s.cropId, e, Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)), tf, learnedFactor(s.cropId, 'out'));
 }
 // when to sow in a tray to be ready by a planting date
-function traySowFor(id, plantDate) {
-  let sow = addDays(plantDate, -tpDays(id));
-  const kept = ((S.starts || []).slice(-1)[0] || {}).kept || 'out';   // assume trays are kept where you usually keep them
-  for (let i = 0; i < 8; i++) { const r = startReady({ cropId: id, sowDate: sow, kept }), diff = daysBetween(plantDate, r); if (Math.abs(diff) <= 1) break; sow = addDays(sow, -diff); }
-  return sow;
+function traySowFor(id, plantDate) { return traySowPlan(id, plantDate).sow; }
+// when to sow, and where the tray needs to be kept for that to work: where you usually keep trays, or somewhere
+// warmer if seedlings would barely grow there (e.g. tomatoes for Golden Week need to start indoors in late winter)
+function traySowPlan(id, plantDate) {
+  const usual = ((S.starts || []).slice(-1)[0] || {}).kept || 'out', tp = tpDays(id);
+  const order = KEPT.map(k => k[0]).slice(Math.max(0, KEPT.findIndex(k => k[0] === usual)));
+  const lo = addDays(plantDate, -Math.round(tp * 2)), hi = addDays(plantDate, -7);
+  let last = null;
+  for (const kept of order) {
+    let sow = addDays(plantDate, -tp), best = null;
+    for (let i = 0; i < 12; i++) {
+      const r = startReady({ cropId: id, sowDate: sow, kept }), diff = daysBetween(plantDate, r);
+      if (!best || Math.abs(diff) < Math.abs(best.diff)) best = { sow, diff };
+      if (Math.abs(diff) <= 2) break;
+      let next = addDays(sow, -Math.round(diff * 0.7)); if (next < lo) next = lo; if (next > hi) next = hi;
+      if (next === sow) break; sow = next;
+    }
+    last = { sow: best.sow, kept, late: best.diff < -3 };
+    if (Math.abs(best.diff) <= 5 && daysBetween(best.sow, plantDate) <= tp * 1.4) return last;   // ready in time without crawling along
+  }
+  return last;   // even the warmest spot is slow: the earliest sensible date, kept as warm as possible
 }
 // harvest: catalogue days hold for sowing at the crop's usual (best) time; colder sowings stretch out
 const _need = {};

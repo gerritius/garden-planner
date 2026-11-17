@@ -30,7 +30,8 @@ function germWindow(p) {
 function pickBy(p) {
   const cr = crop(p.cropId);
   if (!p.harvestDate || !cr.win) return null;
-  return { date: addDays(p.harvestDate, cr.win), late: cr.late, cont: !!cr.cont };
+  const w = harvestWindow(p);
+  return { date: w.keep, mature: w.mature, late: cr.late, cont: !!cr.cont };
 }
 function syncCareTasks(p) {
   const gw = germWindow(p);
@@ -129,6 +130,9 @@ function syncWater() {
   if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped'; }
   else if (due > w.noRain && w.rainy.length) note = ` · rain counts: ${w.rainy.map(([d, mm]) => `${dayName(d)} ${Math.round(mm)} mm`).join(', ')}`;
   else if (w.held.length) note = ' · held off: rain due the next day';
+  const mt = typeof bagMoistureToday === 'function' ? bagMoistureToday(pots) : { any: 0 };
+  if (mt.dry) { due = td; note = ` · meter: ${mt.dry} pot${mt.dry > 1 ? 's' : ''} DRY today`; }
+  else if (mt.any && mt.wet === mt.any && mt.all && due <= td) { due = addDays(td, 1); note = ' · meter says still wet'; }
   if (!open) { open = { id: uid(), kind: 'water', plantingId: null, title: 'Water pots & bags', due, done: false }; S.tasks.push(open); }
   open.due = due;
   open.note = `${pots.length} pot${pots.length > 1 ? 's' : ''} · every ${w.iv === 1 ? 'day' : w.iv + ' days'} this time of year${note}`;
@@ -136,21 +140,37 @@ function syncWater() {
 
 // ---------- bed jobs, notes, prep ----------
 function bedTaskDialog(c, t) {
-  const isNew = !t;
+  const isNew = !t, td = todayStr(), log = t && t.logId ? (S.log || []).find(e => e.id === t.logId) : null;
+  const fp = log ? { product: log.product, amount: log.amount, unit: log.unit } : t ? { product: t.product || '', amount: t.amount ?? '', unit: t.unit || 'handful' } : { product: '', amount: '', unit: 'handful' };
+  const date0 = t ? (t.done ? t.doneOn : t.due) : td;
   modal(`<h3>${isNew ? 'Add bed job' : 'Edit job'}</h3><p class="muted small">${BED_ICON(20)} ${esc(c.name)}</p>
     <form id="btf" class="form">${isNew ? templatePicker() : ''}
-      <label>Job<input name="title" value="${esc(t ? t.title : '')}" required></label>
-      <label>${t && t.done ? 'Done on' : 'Date'}<input name="due" type="date" value="${t ? (t.done ? t.doneOn : effDue(t)) : todayStr()}"></label>
+      <label>Job<input name="title" value="${esc(t ? t.title : '')}" required placeholder="e.g. Side-dress (追肥)"></label>
+      <div class="two"><label>Date<input name="due" type="date" value="${date0}"></label><label class="inl chkline"><input type="checkbox" name="done"${t ? (t.done ? ' checked' : '') : ''}> <span>Already done</span></label></div>
+      <details class="pktpick"${fp.product ? ' open' : ''}><summary>Fertiliser / compost used (counts towards feeding)</summary>
+        <label>Product<input name="product" list="bfl" value="${esc(fp.product || '')}" placeholder="e.g. Bokashi"><datalist id="bfl">${myProducts(['fert', 'compost', 'lime']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist></label>
+        <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${fp.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(fp.unit || 'handful')}</select></label></div></details>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div>
       ${!isNew ? `<a class="link" href="#/container/${c.id}" data-x="open">Open ${esc(c.name)} →</a>` : ''}</form>`, (m, close) => {
     const f = m.querySelector('#btf'); wireTemplates(m, f);
+    const sync = () => { if (f.due.value && f.due.value < td && isNew) f.done.checked = true; }; f.due.addEventListener('change', sync);
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const op = m.querySelector('[data-x=open]'); if (op) op.onclick = close;
-    const del = m.querySelector('[data-x=del]'); if (del) del.onclick = async () => { S.tasks = S.tasks.filter(x => x !== t); await save(); close(); render(); };
+    const del = m.querySelector('[data-x=del]'); if (del) del.onclick = async () => { S.tasks = S.tasks.filter(x => x !== t); if (t.logId) S.log = (S.log || []).filter(e => e.id !== t.logId); await save(); close(); render(); };
     f.onsubmit = async e => {
       e.preventDefault();
-      if (isNew) S.tasks.push({ id: uid(), containerId: c.id, plantingId: null, kind: 'bed', title: f.title.value.trim(), due: f.due.value || todayStr(), done: false });
-      else if (t.done) { t.title = f.title.value.trim(); t.doneOn = f.due.value || t.doneOn; } else { t.title = f.title.value.trim(); t.due = f.due.value || t.due; }
+      const date = f.due.value || td, done = f.done.checked, product = f.product.value.trim(), amount = num(f.amount.value), unit = f.unit.value;
+      if (isNew) { t = { id: uid(), containerId: c.id, plantingId: null, kind: 'bed', title: f.title.value.trim(), due: date, done: false }; S.tasks.push(t); }
+      t.title = f.title.value.trim();
+      if (done) { t.done = true; t.doneOn = date; if (!t.due) t.due = date; } else { t.done = false; t.doneOn = null; t.due = date; }
+      t.product = product || null; t.amount = product ? amount : null; t.unit = product ? unit : null;
+      // the fertiliser goes into the feeding record once the job is done
+      let lg = t.logId && (S.log || []).find(x => x.id === t.logId);
+      if (done && product && amount) {
+        const pr = productByName(product);
+        if (!lg) { lg = { id: uid(), kind: 'fert', cids: [c.id], pids: [], per: 'each' }; (S.log = S.log || []).push(lg); t.logId = lg.id; }
+        Object.assign(lg, { date, product, productId: pr ? pr.id : null, amount, unit, text: t.title });
+      } else if (lg && (!done || !product)) { S.log = S.log.filter(x => x !== lg); t.logId = null; }
       await save(); close(); render();
     };
   });
@@ -284,18 +304,18 @@ function quickAdd() {
   modal(`<h3>Quick add</h3><div class="tiles qa3">
     ${q('log', '📝', 'Log something')}${q('harvest', '🧺', 'Harvest')}${q('photo', '📷', 'Diary photo')}
     ${q('note', '🐛', 'Note / pest')}${q('job', '✓', 'Add a job')}${q('start', '🌱', 'Start seedlings')}
-    ${q('buy', '💴', 'Purchase')}${q('doctor', '🩺', 'Something wrong?', '#/doctor')}${q('seedlings', '🪴', 'My seedlings', '#/seedlings')}
+    ${q('feed', '🌿', 'Feeding')}${q('buy', '💴', 'Purchase')}${q('doctor', '🩺', 'Something wrong?', '#/doctor')}${q('seedlings', '🪴', 'My seedlings', '#/seedlings')}
     ${q('bed', '＋', 'New bed or pot', '#/container/new')}</div>`, (m, close) => {
     m.querySelector('[data-q=bed]').onclick = () => close();
     m.querySelector('[data-q=seedlings]').onclick = () => close();
     m.querySelector('[data-q=doctor]').onclick = () => close();
-    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : b.dataset.q === 'start' ? startDialog() : b.dataset.q === 'buy' ? purchaseDialog() : pickPlanting(b.dataset.q));
+    m.querySelectorAll('button[data-q]').forEach(b => b.onclick = () => b.dataset.q === 'log' ? logDialog() : b.dataset.q === 'start' ? startDialog() : b.dataset.q === 'buy' ? purchaseDialog() : b.dataset.q === 'feed' ? pickPlanting('feed') : pickPlanting(b.dataset.q));
   });
 }
 function pickPlanting(what) {
   const act = S.plantings.filter(isLive);
-  const label = { harvest: 'Log a harvest for…', photo: 'Diary photo for…', note: 'Diary note for…', job: 'Add a job for…' }[what];
-  const beds = what === 'job' ? S.containers : [];
+  const label = { harvest: 'Log a harvest for…', photo: 'Diary photo for…', note: 'Diary note for…', job: 'Add a job for…', feed: 'Record feeding for…' }[what];
+  const beds = what === 'job' || what === 'feed' ? S.containers : [];
   modal(`<h3>${label}</h3>${act.length ? `<ul class="plist">${act.map(p => `<li data-p="${p.id}">${ic(p.cropId)}<span class="grow">${esc(cropName(p.cropId))}<small>${esc((container(p.containerId) || {}).name || '')}${p.variety ? ' · ' + esc(p.variety) : ''}</small></span>›</li>`).join('')}</ul>` : '<p class="muted">Nothing growing yet.</p>'}
     ${beds.length ? `<h3>…or a bed / pot</h3><ul class="plist">${beds.map(c => `<li data-c="${c.id}">${BED_ICON(22)}<span class="grow">${esc(c.name)}</span>›</li>`).join('')}</ul>` : ''}
     <div class="btns"><button class="btn" data-x="no">Cancel</button></div>`, (m, close) => {
@@ -306,8 +326,9 @@ function pickPlanting(what) {
       if (what === 'harvest') return harvestDialog(p);
       if (what === 'note') return diaryEntryDialog(p, null);
       if (what === 'job') return taskDialog(null, p);
+      if (what === 'feed') return feedDialog({ pids: [p.id] });
     });
-    m.querySelectorAll('[data-c]').forEach(li => li.onclick = () => bedTaskDialog(container(li.dataset.c)));
+    m.querySelectorAll('[data-c]').forEach(li => li.onclick = () => what === 'feed' ? feedDialog({ cids: [li.dataset.c] }) : bedTaskDialog(container(li.dataset.c)));
   });
 }
 
@@ -479,7 +500,7 @@ function pageSections(c) {
     $('#secinfo').innerHTML = list.map(p => `<li>${ic(p.cropId)}<span class="grow">${esc(crop(p.cropId).en)}</span><b>${Math.round(p.from)}–${Math.round(p.to)} cm</b></li>`).join('');
   };
   A.saveSec = async () => {
-    for (const x of d.ps) { const p = planting(x.id); p.from = Math.round(x.from); p.to = Math.round(x.to); if (p.layout === 'free') p.positions = (p.positions || []).filter(q => q[1] >= p.from && q[1] <= p.to); }
+    for (const x of d.ps) { const p = planting(x.id), of = p.from, ot = p.to; p.from = Math.round(x.from); p.to = Math.round(x.to); noteVacated(p, of, ot); if (p.layout === 'free') p.positions = (p.positions || []).filter(q => q[1] >= p.from && q[1] <= p.to); }
     await save(); draft = null; history.back();
   };
   const html = `<p class="hint">Drag the orange tabs to move where a crop starts and ends — including the top and bottom of the bed, to free up space for another crop. Moves in 1 cm steps.</p>

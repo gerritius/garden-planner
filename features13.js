@@ -72,35 +72,39 @@ function readingsOf(c, from, to) {
   return (c.soil || []).filter(r => from == null || (r.from < to - 0.5 && r.to > from + 0.5)).sort((a, b) => (a.date < b.date ? 1 : -1));
 }
 function latestReading(c, from, to, maxAge = 150) { const r = readingsOf(c, from, to)[0]; return r && daysBetween(r.date, todayStr()) <= maxAge ? r : null; }
+const MOIST = ['DRY+', 'DRY', 'NOR', 'WET', 'WET+'];
 function readingDialog(c, r) {
-  const isNew = !r, td = todayStr(), L = Draw.dims(c).L, mu = S.meter || { sal: 'us', moist: 'pct' };
-  r = r || { id: uid(), date: td, from: 0, to: L, ph: '', sal: '', moist: '', note: '' };
+  const isNew = !r, td = todayStr(), L = Draw.dims(c).L;
+  r = r || { id: uid(), date: td, from: 0, to: L, ph: null, temp: null, salt: '', moistLvl: '', note: '' };
   const secs = activeIn(c.id).map(p => [p.from, p.to, crop(p.cropId).en]);
+  const phs = []; for (let v = 4; v <= 8.01; v += 0.5) phs.push(v.toFixed(1));
+  const seg = (name, opts, cur) => `<div class="seg wrap" data-seg="${name}">${opts.map(o => `<button type="button" data-v="${o}" class="${cur === o ? 'on' : ''}">${o}</button>`).join('')}</div>`;
   modal(`<h3>${isNew ? 'Soil reading' : 'Edit reading'} — ${esc(c.name)}</h3><form id="srf" class="form">
       ${c.type !== 'round' && secs.length ? `<div class="sowchips">${[[0, L, 'Whole bed'], ...secs].map(([a, b, l]) => `<button type="button" class="chip${r.from === a && r.to === b ? ' on' : ''}" data-sec="${a},${b}">${esc(l)}</button>`).join('')}</div>` : ''}
-      <div class="two"><label>pH<input name="ph" type="number" inputmode="decimal" step="0.1" min="3" max="9" value="${r.ph ?? ''}"></label><label>Date<input name="date" type="date" value="${r.date}" max="${td}"></label></div>
-      <div class="two"><label>Salinity<input name="sal" type="number" inputmode="decimal" step="any" value="${r.sal ?? ''}"></label><label>Unit<select name="salu">${SAL_UNITS.map(([k, l]) => `<option value="${k}"${(r.salu || mu.sal) === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
-      <div class="two"><label>Moisture<input name="moist" type="number" inputmode="decimal" step="any" value="${r.moist ?? ''}"></label><label>Unit<select name="moistu">${MOIST_UNITS.map(([k, l]) => `<option value="${k}"${(r.moistu || mu.moist) === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
+      <label>pH</label>${seg('ph', phs, r.ph != null ? (+r.ph).toFixed(1) : '')}
+      <label>Moisture</label>${seg('moistLvl', MOIST, r.moistLvl || '')}
+      <label>Salt</label>${seg('salt', ['NOR', 'DANGER'], r.salt || '')}
+      <div class="two"><label>Soil temperature (°C)<input name="temp" type="number" inputmode="decimal" min="0" max="45" value="${r.temp ?? ''}"></label><label>Date<input name="date" type="date" value="${r.date}" max="${td}"></label></div>
       <label>Note<input name="note" value="${esc(r.note || '')}"></label>
-      <p class="hint">Push the probe 5–10 cm into moist (not bone-dry) soil and wait for it to settle; take 2–3 readings and use the middle one. Cheap meters drift — trends matter more than exact numbers.</p>
+      <p class="hint">Push the probe 5–10 cm into the soil and let it settle; take 2–3 readings and use the middle one. Tap a value again to clear it. (Light isn’t worth recording — it changes minute to minute.)</p>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
-    const f = m.querySelector('#srf');
+    const f = m.querySelector('#srf'), v = { ph: r.ph != null ? (+r.ph).toFixed(1) : '', moistLvl: r.moistLvl || '', salt: r.salt || '' };
+    m.querySelectorAll('[data-seg]').forEach(g => g.querySelectorAll('button').forEach(b => b.onclick = () => { const k = g.dataset.seg; v[k] = v[k] === b.dataset.v ? '' : b.dataset.v; g.querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.v === v[k])); }));
     m.querySelectorAll('[data-sec]').forEach(b => b.onclick = () => { const [a, z] = b.dataset.sec.split(',').map(Number); r.from = a; r.to = z; m.querySelectorAll('[data-sec]').forEach(x => x.classList.toggle('on', x === b)); });
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const del = m.querySelector('[data-x=del]'); if (del) del.onclick = async () => { c.soil = c.soil.filter(x => x.id !== r.id); await save(); close(); render(); };
     f.onsubmit = async e => {
       e.preventDefault();
-      Object.assign(r, { date: f.date.value || td, ph: num(f.ph.value), sal: num(f.sal.value), salu: f.salu.value, moist: num(f.moist.value), moistu: f.moistu.value, note: f.note.value.trim() });
+      Object.assign(r, { date: f.date.value || td, ph: v.ph ? +v.ph : null, moistLvl: v.moistLvl, salt: v.salt, temp: num(f.temp.value), note: f.note.value.trim() });
+      delete r.sal; delete r.moist;
       if (c.type === 'round') { r.from = 0; r.to = L; }
-      S.meter = { sal: f.salu.value, moist: f.moistu.value };
       if (isNew) (c.soil = c.soil || []).push(r);
       await save(); close(); render();
     };
   });
 }
 function readingText(r) {
-  const su = (SAL_UNITS.find(x => x[0] === r.salu) || SAL_UNITS[0])[1], mu = r.moistu === 'lvl' ? '/10' : '%';
-  return [r.ph != null ? `pH ${r.ph}` : '', r.sal != null ? `salinity ${r.sal} ${su}` : '', r.moist != null ? `moisture ${r.moist}${mu}` : ''].filter(Boolean).join(' · ');
+  return [r.ph != null ? `pH ${(+r.ph).toFixed(1)}` : '', r.moistLvl ? `moisture ${r.moistLvl}` : r.moist != null ? `moisture ${r.moist}` : '', r.salt ? `salt ${r.salt}` : r.sal != null ? `salinity ${r.sal}` : '', r.temp != null ? `${r.temp}°C` : ''].filter(Boolean).join(' · ');
 }
 // advice from the latest reading for a crop
 function soilReadingAdvice(c, from, to, cropId) {
@@ -108,16 +112,12 @@ function soilReadingAdvice(c, from, to, cropId) {
   const out = { r, lime: 1, feed: 1, bits: [] };
   if (r.ph != null && cropId) {
     const [lo, hi] = phRange(cropId), n = crop(cropId).en;
-    if (r.ph < lo - 0.05) { const g = Math.round(Math.min(300, (lo + 0.2 - r.ph) * 200) / 10) * 10; out.lime = 1 + (lo - r.ph) * 1.5; out.bits.push(`pH ${r.ph} is acid for ${n} (best ${lo}–${hi}): mix in about ${g} g/m² oyster shell lime${cropId === 'hakusai' || crop(cropId).family === 'brassica' ? ' — acid soil also encourages clubroot' : ''}.`); }
-    else if (r.ph > hi + 0.05) { out.lime = 0; out.bits.push(`pH ${r.ph} is already above ${n}’s range (${lo}–${hi}): skip the lime${r.ph > 7.2 ? '; compost and sulphur-free organic feeds will bring it down slowly' : ''}.`); }
+    if (r.ph < lo - 0.25) { const g = Math.round(Math.min(300, (lo + 0.2 - r.ph) * 200) / 10) * 10; out.lime = 1 + (lo - r.ph) * 1.5; out.bits.push(`pH ${r.ph} is acid for ${n} (best ${lo}–${hi}): mix in about ${g} g/m² oyster shell lime${cropId === 'hakusai' || crop(cropId).family === 'brassica' ? ' — acid soil also encourages clubroot' : ''}.`); }
+    else if (r.ph > hi + 0.25) { out.lime = 0; out.bits.push(`pH ${r.ph} is already above ${n}’s range (${lo}–${hi}): skip the lime${r.ph > 7.2 ? '; compost and sulphur-free organic feeds will bring it down slowly' : ''}.`); }
     else out.bits.push(`pH ${r.ph} suits ${n} (${lo}–${hi}).`);
   }
-  const us = salToUS(r.sal, r.salu);
-  if (us != null) {
-    if (us > 1500) { out.feed = 0.5; out.bits.push(`Salinity is high (${r.sal} ${(SAL_UNITS.find(x => x[0] === r.salu) || SAL_UNITS[0])[1]}): too much fertiliser in the soil — halve the base feed and water through well. Roots and seedlings scorch in salty soil.`); }
-    else if (us > 900) { out.feed = 0.8; out.bits.push('Salinity is on the high side — go a bit lighter on fertiliser.'); }
-    else if (us < 150) out.bits.push('Salinity is very low — the soil may be short of nutrients.');
-  }
+  if (r.salt === 'DANGER') { out.feed = 0.5; out.bits.push('Salt reads DANGER: there’s too much fertiliser in the soil — hold off feeding, halve any base fertiliser, and water through well. Salty soil scorches roots and seedlings.'); }
+  else if (r.salt == null && r.sal != null) { const us = salToUS(r.sal, r.salu); if (us != null && us > 1500) { out.feed = 0.5; out.bits.push('Salinity is high — hold off feeding and water through.'); } }
   return out.bits.length ? out : null;
 }
 function soilSection(c) {
@@ -132,6 +132,12 @@ function soilSection(c) {
 // today's moisture readings for the watering dialog
 function moistureToday() {
   const td = todayStr(), out = [];
-  for (const c of S.containers) { const r = (c.soil || []).find(x => x.date === td && x.moist != null); if (r) out.push(`${c.name} ${r.moist}${r.moistu === 'lvl' ? '/10' : '%'}`); }
+  for (const c of S.containers) { const r = (c.soil || []).find(x => x.date === td && (x.moistLvl || x.moist != null)); if (r) out.push(`${c.name} ${r.moistLvl || r.moist}`); }
   return out;
 }
+// today's meter moisture for the bags (used by the watering reminder)
+function bagMoistureToday(pots) {
+  const td = todayStr(), lv = pots.map(c => { const r = (c.soil || []).filter(x => x.date === td && x.moistLvl).pop(); return r ? r.moistLvl : null; }).filter(Boolean);
+  return { any: lv.length, dry: lv.filter(x => x.startsWith('DRY')).length, wet: lv.filter(x => x.startsWith('WET')).length, all: lv.length === pots.length };
+}
+

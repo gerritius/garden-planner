@@ -136,6 +136,7 @@ function toggleTask(id, done) {
   const td = todayStr(), due = t.due;
   // ticking something that was due before today: ask when it was really done (handy for back-filling records)
   if (done && t.kind === 'transplant' && t.startId && start(t.startId)) { render(); return plantOutDialog(start(t.startId)); }
+  if (done && feedTaskProduct(t)) { render(); return tickFeedTask(t); }
   if (done && t.kind === 'plan_tray' && planting(t.plantingId)) { render(); return startDialog(null, planTrayPreset(planting(t.plantingId))); }
   if (done && due && due < td && t.kind !== 'water') return whenDone(t, due, td);
   finishToggle(t, done, td);
@@ -258,6 +259,7 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
+  try { migrateFeed(); migrateCovers(); } catch (e) { console.warn(e); }
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
   if (!window._snapDone) { window._snapDone = true; setTimeout(snapshotDaily, 3000); }
@@ -407,7 +409,7 @@ function pageContainer(c) {
       return `<div class="carebar"><button class="btn small" data-act="addCover">🕸️ Cover</button><button class="btn small" data-act="addReading">🧪 Soil reading</button><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan</a>
           <button class="btn small" data-act="prep">🪏 Prepare</button><button class="btn small" data-act="bedJob">＋ Job</button><button class="btn small" data-act="bedNote">📝 Note</button>
           ${nPh ? `<a class="btn small" href="#/timeline?c=${c.id}">📷 Photos (${nPh})</a>` : ''}${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Sections</a>` : ''}<a class="btn small" href="#/rotation">🔄 Rotation</a></div>
-        ${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
+        ${bedFeedingSection(c)}${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
         <details class="fold"><summary>🕰️ History <small>${(c.history || []).length} past crop${(c.history || []).length === 1 ? '' : 's'}</small></summary>${historySection(c)}</details>
         <details class="fold"><summary>📝 Running log</summary>${logSection(c)}</details>`;
     })()}
@@ -432,10 +434,12 @@ function pageContainerForm(c) {
     ${isNew ? `<label>How many?<input name="count" type="number" min="1" max="50" value="${esc(d.count)}"><small>More than 1 numbers them, e.g. “Bag 1”, “Bag 2”…</small></label>` : ''}
     ${(ensureAreas(), S.areas.length > 1) ? `<label>Area<select name="area">${S.areas.map(x => `<option value="${x.id}"${(d.area || S.areas[0].id) === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
     <label>Where<div class="seg wrap">${[['full', '☀️ Full sun'], ['part', '⛅ Part sun'], ['shade', '☁️ Shade'], ['in', '🏠 Indoors']].map(([v, l]) => `<button type="button" data-act="where" data-v="${v}" class="${(d.indoor ? 'in' : d.sun || 'full') === v ? 'on' : ''}">${l}</button>`).join('')}</div><small>Used for growth estimates. You can switch it any time from the ${d.type === 'bed' ? 'bed' : 'pot'}’s page.</small></label>
+    ${isNew && d.type !== 'bed' ? `<label>Potting mix<select name="mixKind"><option value="">— not recorded —</option>${MIXES.map(([k, en, ja]) => `<option value="${k}"${d.mixKind === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
+      <label class="inl chkline"><input type="checkbox" name="mixFresh"${d.mixFresh === false ? '' : ' checked'}> <span>Fresh mix (not re-used)</span></label>` : ''}
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
     <div class="preview" id="cprev"></div>
     <button class="btn primary wide" type="submit">${isNew ? 'Add' : 'Save'}</button></form>`;
-  const read = () => { const f = $('#cf'); for (const el of f.elements) if (el.name) d[el.name] = el.value; };
+  const read = () => { const f = $('#cf'); for (const el of f.elements) if (el.name) d[el.name] = el.type === 'checkbox' ? el.checked : el.value; };
   const prev = () => { read(); const t = { id: 'prev', type: d.type, width: num(d.width) || 1, length: num(d.length) || 1, diameter: num(d.diameter) || 1, margin: num(d.margin) || 0 };
     if (t.type !== 'round' && t.width > t.length) [t.width, t.length] = [t.length, t.width];
     $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true, grid: true }); };
@@ -459,7 +463,8 @@ function pageContainerForm(c) {
       const name = (d.name || '').trim() || (d.type === 'bed' ? 'Bed' : 'Pot');
       if (isNew) {
         const n = Math.max(1, Math.min(50, parseInt(d.count) || 1));
-        for (let i = 0; i < n; i++) S.containers.push(Object.assign({ id: uid(), name: n > 1 ? `${name} ${i + 1}` : name, history: [], created: todayStr() }, base));
+        for (let i = 0; i < n; i++) S.containers.push(Object.assign({ id: uid(), name: n > 1 ? `${name} ${i + 1}` : name, history: [], created: todayStr() }, base,
+          d.type !== 'bed' && d.mixKind ? { mixLog: [{ id: uid(), date: todayStr(), kind: d.mixKind, fresh: d.mixFresh !== false }] } : {}));
         await save(); draft = null; go(n > 1 ? '#/' : '#/container/' + S.containers[S.containers.length - 1].id);
       } else {
         const L = base.type === 'round' ? base.diameter : base.length;
@@ -484,13 +489,14 @@ function applyCrop(d, cr, c) {
   d.depth = cr.depth ?? ''; d.rowSp = cr.rowSp ?? ''; d.plantSp = cr.sowSp ?? '';
   d.thinStage = cr.thinStage || ''; d.thinSp = cr.thinSp ?? ''; d.spread = cr.spread ?? '';
   d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
+  d.daysFrom = cr.daysHarvest || ''; d.daysTo = cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''; d.keepUntil = '';
   d.dir = cr.dir || 'across'; d.rows = ''; d.variety = ''; d.sj = {};
-  if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, c, d.from, d.to); d.fertAuto = true; } catch (e) { console.warn(e); } }
+  if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, c, d.from, d.to, d.sowDate); d.fertAuto = true; } catch (e) { console.warn(e); } }
   recalc(d);
 }
 function recalc(d) {
   if (!d.sowDate) return;
-  if (!d.harvestManual && d.daysHarvest) d.harvestDate = harvestEstimate({ id: d.id, cropId: d.cropId, sowDate: d.sowDate, method: d.method, germ: d.germ, seededOn: d.seededOn || (d.useStart && start(d.useStart) ? start(d.useStart).sowDate : null) });
+  if (!d.harvestManual && d.daysHarvest) d.harvestDate = harvestEstimate({ id: d.id, cropId: d.cropId, sowDate: d.sowDate, method: d.method, germ: d.germ, daysFrom: num(d.daysFrom), containerId: d.containerId, seededOn: d.seededOn || (d.useStart && start(d.useStart) ? start(d.useStart).sowDate : null) });
   if (!d.thinManual && d.daysThin && d.method === 'seed' && d.thinSp) d.thinDate = thinEstimate({ cropId: d.cropId, sowDate: d.sowDate, method: 'seed', germ: d.germ });
 }
 function setPath(o, path, v) {
@@ -573,6 +579,8 @@ function pagePlantForm(p, c, q) {
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
       <label>Mature size (cm across)<input name="spread" type="number" inputmode="decimal" value="${esc(d.spread)}"></label></div>
+      <div class="two"><label>Packet: days to harvest, from<input name="daysFrom" type="number" inputmode="numeric" value="${esc(d.daysFrom ?? (cr ? cr.daysHarvest : ''))}"></label><label>to<input name="daysTo" type="number" inputmode="numeric" value="${esc(d.daysTo ?? (cr && cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''))}"></label></div>
+      <label>Keeps until (optional)<input name="keepUntil" type="date" value="${esc(d.keepUntil || '')}"><small>Leave empty and the app works it out from the crop and the temperatures — cold weather lets roots and brassicas hold much longer.</small></label>
       ${cr && cr.daysHarvest ? `<small class="hint">Estimated from the catalogue (about ${cr.daysHarvest} days from ${seed || (cr.method === 'seed' && (d.startId || d.useStart)) ? 'sowing' : 'planting'} at the usual time of year${cr.method === 'seed' && (d.startId || d.useStart) ? ', counted from the tray sowing' : ''}) and the temperatures — colder weather pushes it later. It updates by itself unless you change it here to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
@@ -637,7 +645,7 @@ function pagePlantForm(p, c, q) {
       if (n === 'thinDate') d.thinUser = true;
       if (n === 'harvestDate') d.hvUser = true;
       read();
-      if (n === 'sowDate' || n === 'thinSp') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
+      if (n === 'sowDate' || n === 'thinSp' || n === 'daysFrom') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
       if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); }
       preview();
     });
@@ -680,9 +688,12 @@ async function savePlanting(p, d, c) {
   for (const k of fields) p[k] = d[k] || '';
   if (d.thinUser) p.thinFixed = !!d.thinDate;
   if (d.hvUser) p.harvestFixed = !!d.harvestDate;
+  p.daysFrom = num(d.daysFrom); p.daysTo = num(d.daysTo); p.keepUntil = d.keepUntil || '';
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
   p.raise = p.status === 'planned' && p.method === 'seedling' ? (d.raise || 'buy') : (p.raise || '');
+  const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
+  if (!isNew && p.status === 'active') noteVacated(p, oldFrom, oldTo);
   if (p.method !== 'seed') { p.depth = null; p.thinSp = null; p.thinDate = ''; p.thinStage = ''; }
   p.fert = (d.fert || []).filter(f => f.product || f.amount).map(f => ({ product: f.product, amount: num(f.amount), unit: f.unit || 'g' }));
   const oldSeries = p.series || [];
@@ -763,13 +774,13 @@ function pagePlant(p) {
     c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
     c && !harvested && !isPlanned(p) ? ['Size in drawing', (() => { const now = Math.round(Draw.radius(p, td) * 2), full = Math.round(Math.max(1, +p.spread || Draw.spacingNow(p))); return `${now} cm across today (grows to ~${full} cm by ${p.harvestDate ? shortDate(p.harvestDate) : 'harvest'})${seed && +p.thinSp > 0 && !p.thinned ? ' · stays seedling-sized until thinning' : ''}`; })()] : null,
     c && !harvested ? (() => { const a = soilReadingAdvice(c, p.from, p.to, p.cropId); return a ? ['Soil test', `${esc(readingText(a.r))} <small class="muted">(${shortDate(a.r.date)})</small><br>${a.bits.map(esc).join(' ')}`] : null; })() : null,
-    !harvested && !isPlanned(p) ? feedingRow(p) : null,
     (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + fmtAmt(f.amount, f.unit) : ''}`).join('<br>')] : null,
     (p.series || []).length ? ['Extra fertiliser / jobs', p.series.map(s => `${esc(seriesTitle(s))} · ${+s.every > 0 ? `every ${s.every} ${s.per}${s.every > 1 ? 's' : ''}${s.stopped ? ' (stopped)' : ''}` : 'once'}`).join('<br>')] : null,
-    c ? ['Previous crop here', (() => { const rn = isPlanned(p) ? planRotation(c, p.from, p.to, p.cropId, p.sowDate, p.id) : rotationNote(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return rn ? esc(cropName(rn.prev.cropId)) + (rn.same ? ` <span class="warnchip">⚠ same family</span>` : '') : '—'; })()] : null,
+    c ? ['Previous crop here', (() => { const rn = isPlanned(p) ? planRotation(c, p.from, p.to, p.cropId, p.sowDate, p.id) : rotationNote(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return rn ? esc(cropName(rn.prev.cropId)) + (rn.same ? ` <span class="warnchip">⚠ same family</span>` : '') : '— <button class="link" data-act="addPrev">add what grew here before</button>'; })()] : null,
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.addPrev = () => pastCropDialog(c, null, { from: p.from, to: p.to });
   A.leaves = () => leafDialog(p, cropName(p.cropId), () => { p.thinFixed = false; });
   A.logHarvest = () => harvestDialog(p);
   A.editHarvest = el => harvestDialog(p, (p.harvests || []).find(h => h.id === el.dataset.id));
@@ -791,7 +802,7 @@ function pagePlant(p) {
         <div><small>${isPlanned(p) ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown' : 'Planted'}</small><b>${shortDate(p.sowDate)}</b><small>${sowN == null ? '' : sowN === 0 ? 'today' : sowN > 0 ? sowN + ' days ago' : 'in ' + -sowN + ' days'}</small></div>
         <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : '🧺 ready now'}</small></div>
       </div></div>
-    ${(() => { const pb = pickBy(p); if (!pb || harvested) return ''; return `<p class="pickby${pb.date < td ? ' late' : ''}">${pb.cont ? `Picking season runs to about <b>${shortDate(pb.date)}</b>` : `Best picked by <b>${shortDate(pb.date)}</b>`} — after that ${esc(pb.late)}.</p>`; })()}
+    ${harvested ? '' : harvestWindowText(p)}
     <div class="varrow"><div class="grow"><small>Variety</small><a class="variety" href="#/variety?c=${encodeURIComponent(p.cropId)}&v=${encodeURIComponent(p.variety || '')}">${esc(p.variety || '—')} <small>notes ›</small></a></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
     ${planBanner(p)}
@@ -810,7 +821,7 @@ function pagePlant(p) {
       ${harvested || isPlanned(p) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
     ${(() => { const KEY = ['Germination', 'Thinning', 'Harvest estimate', 'Soil test', 'Fed so far', 'Soil'], key = dl.filter(r => KEY.includes(r[0])), rest = dl.filter(r => !KEY.includes(r[0]));
       const t = rows => `<dl class="details">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
-      return `<section><h3>How it’s going</h3>${key.length ? t(key) : '<p class="muted">Nothing to report yet.</p>'}</section><details class="fold"><summary>🌱 Planting details</summary><section>${t(rest)}`; })()}
+      return `${!harvested && !isPlanned(p) ? feedingSection(p) : ''}<section><h3>How it’s going</h3>${key.length ? t(key) : '<p class="muted">Nothing to report yet.</p>'}</section><details class="fold"><summary>🌱 Planting details</summary><section>${t(rest)}`; })()}
       ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section></details>
     ${S.plantings.filter(x => x.cropId === p.cropId).length > 1 ? `<a class="btn small" href="#/compare?crop=${p.cropId}">📊 Compare with other years</a>` : ''}
     <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested || isPlanned(p) ? '' : `<button class="btn primary" data-act="harvest">🧺 Harvest finished</button>`}${planNextButton(p)}</div>
@@ -1093,7 +1104,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.11.0';
+const APP_VERSION = '1.12.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

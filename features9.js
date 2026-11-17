@@ -152,14 +152,15 @@ function calibratedNeed(id, days, offset, month) {
 }
 function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
 function harvestModel(p, raw) {
-  const cr = crop(p.cropId); if (!cr.daysHarvest || !p.sowDate) return null;
+  const cr = crop(p.cropId), dh = +p.daysFrom || cr.daysHarvest; if (!dh || !p.sowDate) return null;
   const g = germAvg(p.cropId);
   let from, days, offset, eff;
-  if (p.method === 'seed') { from = emergeDate(p).d; days = cr.daysHarvest - g; offset = g; eff = p.sowDate; }
-  else if (cr.method === 'seed' && trayDateOf(p)) { const t = trayDateOf(p); from = t.up || emergeDate({ cropId: p.cropId, sowDate: t.d, method: 'seed' }).d; days = cr.daysHarvest - g; offset = g; eff = t.d; }
-  else if (cr.method === 'seed' && raisable(p.cropId)) { from = p.sowDate; days = Math.max(14, cr.daysHarvest - tpDays(p.cropId)); offset = tpDays(p.cropId); eff = addDays(p.sowDate, -offset); }
-  else { from = p.sowDate; days = cr.daysHarvest; offset = 0; eff = p.sowDate; }
-  return { from, need: calibratedNeed(p.cropId, Math.max(7, Math.round(days)), Math.round(offset), refMonth(p.cropId, eff)) * (raw ? 1 : learnedFactor(p.cropId, 'harvest')) };
+  if (p.method === 'seed') { from = emergeDate(p).d; days = dh - g; offset = g; eff = p.sowDate; }
+  else if (cr.method === 'seed' && trayDateOf(p)) { const t = trayDateOf(p); from = t.up || emergeDate({ cropId: p.cropId, sowDate: t.d, method: 'seed' }).d; days = dh - g; offset = g; eff = t.d; }
+  else if (cr.method === 'seed' && raisable(p.cropId)) { from = p.sowDate; days = Math.max(14, dh - tpDays(p.cropId)); offset = tpDays(p.cropId); eff = addDays(p.sowDate, -offset); }
+  else { from = p.sowDate; days = dh; offset = 0; eff = p.sowDate; }
+  const dd = Math.max(7, Math.round(days));
+  return { from, days: dd, need: calibratedNeed(p.cropId, dd, Math.round(offset), refMonth(p.cropId, eff)) * (raw ? 1 : learnedFactor(p.cropId, 'harvest')) };
 }
 function harvestEstimate(p) {
   const m = harvestModel(p); if (!m) return p.harvestDate || '';

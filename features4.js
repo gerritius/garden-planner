@@ -66,7 +66,7 @@ function frostRisk() {
   const out = [];
   for (const d of days) {
     if (d.min > 2) continue;
-    const hit = act.filter(p => (crop(p.cropId).tender || (d.min <= -1 && HALF_HARDY.includes(p.cropId))) && !(d.min > -2 && plantingCover(p, ['fleece', 'cloche'])));
+    const hit = act.filter(p => (crop(p.cropId).tender || (d.min <= -1 && HALF_HARDY.includes(p.cropId))) && !(d.min > -2 && plantingCover(p, ['fushokufu'])));
     out.push({ d, hit, hard: d.min <= -2 });
   }
   return out;
@@ -134,7 +134,7 @@ function pageTotals(q) {
 function frostTaskDialog(t) {
   const beds = (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', ');
   modal(`<h3>❄️ Frost warning</h3><p class="msg">${esc(t.title)}</p>${beds ? `<p class="muted small">${esc(beds)}</p>` : ''}
-    <p class="hint">Cover tender crops the evening before (fleece, a sheet or an upturned box) and uncover in the morning. Made from the weather forecast.</p>
+    <p class="hint">Cover tender crops the evening before (a fushokufu tunnel, a sheet or an upturned box) and uncover in the morning. Made from the weather forecast.</p>
     <div class="btns"><button class="btn danger" data-x="del">Delete</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
     m.querySelector('[data-x=ok]').onclick = close;
     m.querySelector('[data-x=del]').onclick = async () => {

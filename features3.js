@@ -142,9 +142,9 @@ const ymLabel = d => d ? new Date(d.slice(0, 7) + '-01T00:00').toLocaleDateStrin
 const histWhen = h => h.manual ? `finished ${ymLabel(h.harvestedOn)}` : `harvested ${shortDate(h.harvestedOn)}`;
 const histSpan = h => h.manual ? `${h.sowDate ? ymLabel(h.sowDate) + ' → ' : ''}${ymLabel(h.harvestedOn)}` : `${shortDate(h.sowDate)} → ${shortDate(h.harvestedOn)}`;
 function lastDayOf(ym) { const [y, m] = ym.split('-').map(Number); return iso(new Date(y, m, 0)); }
-function pastCropDialog(c, h) {
+function pastCropDialog(c, h, preset) {
   const isNew = !h, L = Draw.dims(c).L, bed = c.type === 'bed';
-  h = h || { id: 'h_' + uid(), manual: true, cropId: '', variety: '', from: 0, to: L, sowDate: '', harvestedOn: '', note: '' };
+  h = h || Object.assign({ id: 'h_' + uid(), manual: true, cropId: '', variety: '', from: 0, to: L, sowDate: '', harvestedOn: '', note: '' }, preset || {});
   const other = h.cropId && h.cropId.startsWith('x:');
   const opts = allCrops().slice().sort((a, b) => a.en.localeCompare(b.en));
   const thisM = todayStr().slice(0, 7);

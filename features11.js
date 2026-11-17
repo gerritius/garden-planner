@@ -1,12 +1,13 @@
-/* Covers on beds and pots: insect & bird netting, fleece, cloches/tunnels, shade cloth — drawn on the plot, used by alerts. */
+/* Covers on beds and pots (put on as tunnels over hoops): insect net, fushokufu (不織布), shade cloth — drawn on the plot, used by alerts. */
 'use strict';
 
 const COVER_TYPES = [
-  ['insect', '🕸️', 'Insect net', '防虫ネット'], ['bird', '🐦', 'Bird net', '防鳥ネット'], ['fleece', '🧣', 'Fleece', '不織布'],
-  ['cloche', '⛺', 'Cloche / tunnel', 'トンネル'], ['shade', '🕶️', 'Shade cloth', '寒冷紗・遮光'],
+  ['insect', '🕸️', 'Insect net tunnel', '防虫ネット'], ['fushokufu', '🧣', 'Fushokufu tunnel', '不織布'], ['shade', '🕶️', 'Shade cloth', '寒冷紗・遮光'],
 ];
-const coverType = t => COVER_TYPES.find(x => x[0] === t) || COVER_TYPES[0];
-const drawType = t => t === 'insect' || t === 'bird' ? 'net' : t;   // how it's drawn
+const COVER_OLD = { fleece: 'fushokufu', cloche: 'fushokufu', bird: 'insect' };
+const coverType = t => COVER_TYPES.find(x => x[0] === (COVER_OLD[t] || t)) || COVER_TYPES[0];
+function migrateCovers() { for (const c of S.containers) for (const x of c.covers || []) if (COVER_OLD[x.type]) x.type = COVER_OLD[x.type]; }
+const drawType = t => t === 'insect' ? 'net' : t === 'fushokufu' ? 'fleece' : t;   // how it's drawn
 function activeCovers(c) { return (c.covers || []).filter(x => !x.off).map(x => Object.assign({}, x, { type: drawType(x.type), kind: x.type })); }
 const coversOn = c => (c.covers || []).filter(x => !x.off);
 const coverWhere = (c, x) => { const L = Draw.dims(c).L; return x.from > 0 || x.to < L ? `${x.from}–${x.to} cm` : c.type === 'bed' ? 'whole bed' : 'whole pot'; };
@@ -54,11 +55,11 @@ function coverSection(c) {
   return `<section><h3>Covers</h3>
     ${notes.map(n => `<div class="banner warn">${esc(n.text)}</div>`).join('')}
     ${on.length ? `<ul class="plist covers">${on.map(x => `<li><span class="lic">${coverType(x.type)[1]}</span><span class="grow" data-act="editCover" data-id="${x.id}"><b>${coverType(x.type)[2]}</b> <small class="ja">${coverType(x.type)[3]}</small><small>${coverWhere(c, x)} · on since ${shortDate(x.on)}</small></span><button class="btn small" data-act="liftCover" data-id="${x.id}">Take off</button></li>`).join('')}</ul>` : '<p class="muted">Nothing covered.</p>'}
-    <button class="btn small" data-act="addCover">＋ Add net / fleece / cover</button>
+    <button class="btn small" data-act="addCover">＋ Add insect net / fushokufu</button>
     ${past.length ? `<details class="donelog"><summary>Taken off (${past.length})</summary><ul class="plist">${past.map(x => `<li data-act="editCover" data-id="${x.id}"><span class="lic">${coverType(x.type)[1]}</span><span class="grow">${coverType(x.type)[2]}<small>${coverWhere(c, x)} · ${shortDate(x.on)} – ${shortDate(x.off)}</small></span></li>`).join('')}</ul></details>` : ''}</section>`;
 }
 
-// reminders: lift fleece when frosts are over or it's warm, nets on crops that need pollinating, covers over nothing
+// reminders: lift fushokufu when frosts are over or it's warm, nets on crops that need pollinating, covers over nothing
 const NEEDS_BEES = ['kyuri', 'zucchini', 'strawberry', 'nasu', 'piman', 'shishito', 'chilli', 'tomato', 'minitomato', 'ingen', 'snappea', 'sayaendo', 'soramame', 'edamame'];
 function coverNotes() {
   const td = todayStr(), days = Weather.days().slice(0, 7), out = [];
@@ -66,10 +67,10 @@ function coverNotes() {
   for (const c of S.containers) for (const x of coversOn(c)) {
     const under = activeIn(c.id).filter(p => p.from < x.to - 0.5 && p.to > x.from + 0.5), names = [...new Set(under.map(p => crop(p.cropId).en))].join(', '), where = `${c.name} (${coverWhere(c, x)})`;
     if (!under.length && daysBetween(x.on, td) > 1) { out.push({ c, x, text: `${coverType(x.type)[2]} still on ${where} — nothing is growing under it.` }); continue; }
-    if ((x.type === 'fleece' || x.type === 'cloche') && warm) out.push({ c, x, text: `${dayName(warm.date) === 'Today' ? 'Today' : dayName(warm.date)} reaches ${Math.round(warm.max)}° — vent or lift the ${coverType(x.type)[2].toLowerCase()} on ${where} so ${names || 'the crop'} doesn’t cook.` });
-    else if (x.type === 'fleece' && noFrost && [3, 4, 5].includes(pd(td).getMonth() + 1)) out.push({ c, x, text: `No frost in the forecast — the fleece on ${where} can probably come off.` });
+    if (x.type === 'fushokufu' && warm) out.push({ c, x, text: `${dayName(warm.date) === 'Today' ? 'Today' : dayName(warm.date)} reaches ${Math.round(warm.max)}° — open up the ends of the ${coverType(x.type)[2].toLowerCase()} on ${where} so ${names || 'the crop'} doesn’t cook.` });
+    else if (x.type === 'fushokufu' && noFrost && [3, 4, 5].includes(pd(td).getMonth() + 1)) out.push({ c, x, text: `No frost in the forecast — the fushokufu on ${where} can probably come off.` });
     const flowering = under.filter(p => NEEDS_BEES.includes(p.cropId) && p.harvestDate && td >= addDays(p.harvestDate, -21));
-    if ((x.type === 'insect' || x.type === 'bird') && flowering.length) out.push({ c, x, text: `${[...new Set(flowering.map(p => crop(p.cropId).en))].join(', ')} under the net on ${where} should be flowering — lift it in the mornings for bees, or hand-pollinate.` });
+    if (x.type === 'insect' && flowering.length) out.push({ c, x, text: `${[...new Set(flowering.map(p => crop(p.cropId).en))].join(', ')} under the net on ${where} should be flowering — lift it in the mornings for bees, or hand-pollinate.` });
   }
   return out;
 }

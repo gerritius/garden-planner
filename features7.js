@@ -9,7 +9,8 @@ const isPlanned = p => p.status === 'planned';
 function endOf(p) {
   if (p.status === 'harvested') return p.harvestedOn || p.harvestDate || p.sowDate;
   const cr = crop(p.cropId);
-  let e = p.harvestDate ? addDays(p.harvestDate, cr.cont ? Math.min(cr.win || 45, 90) : Math.min(cr.win || 14, 21)) : addDays(p.sowDate || todayStr(), 120);
+  const w = p.harvestDate ? harvestWindow(p) : null;
+  let e = w ? (w.cont ? w.keep : (addDays(w.mature, 14) < w.keep ? addDays(w.mature, 14) : w.keep)) : addDays(p.sowDate || todayStr(), 120);
   if (isLive(p) && e < todayStr()) e = todayStr();
   return e;
 }
@@ -279,7 +280,7 @@ function wxAdvice(t) {
   const tall = names(p => TALL.includes(p.cropId)), net = names(p => NETTED.includes(p.cropId)), young = names(p => p.sowDate && daysBetween(p.sowDate, td) <= 21);
   const ready = names(p => p.harvestDate && p.harvestDate <= addDays(td, 7)), trays = startsGrowing().length > 0;
   const L = {
-    wind: [tall && `Tie in stems and check stakes are firm: ${tall}`, coveredText() ? `Re-peg and weigh down covers: ${coveredText()}` : net && `Netted crops — check pegs and edges: ${net}`, `Move light pots${trays ? ', seedling trays' : ''} and anything loose somewhere sheltered`, ready && `Pick what’s ready first: ${ready}`,
+    wind: [tall && `Tie in stems and check stakes are firm: ${tall}`, coveredText() ? `Check tunnel hoops, pegs and the edges of: ${coveredText()}` : net && `Netted crops — check pegs and edges: ${net}`, `Move light pots${trays ? ', seedling trays' : ''} and anything loose somewhere sheltered`, ready && `Pick what’s ready first: ${ready}`,
       t.severe && 'Storm-force (typhoon): take off covers that act as sails, lay down supports you can’t secure, and push fabric bags together against a wall', 'Afterwards: check for snapped stems and earth up anything rocked loose (土寄せ)'],
     rain: ['Clear drainage around the beds and make sure bags aren’t standing in water', trays && 'Move seedling trays under cover', young && `Young plants can be flattened or splashed with soil — mulch or cover: ${young}`,
       'Hold off fertiliser and sprays until it’s passed — they’ll wash off', ready && `Pick what’s ready — heavy rain can split or rot it: ${ready}`, 'Afterwards: earth up anything washed out and watch for slugs and rot'],

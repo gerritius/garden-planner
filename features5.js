@@ -209,22 +209,39 @@ const LIME_M2 = { potato: 0, satsumaimo: 50, strawberry: 50, spinach: 200, garli
 const sectionArea = (c, from, to) => c.type === 'bed' ? Draw.dims(c).W * (to - from) / 1e4 : null;
 const pick = ids => ids.map(product).find(p => p && myProducts().includes(p));
 // recommended starting (base) fertiliser for a crop in this bed section or bag
-function baseFertPlan(cropId, c, from, to) {
+function baseFertPlan(cropId, c, from, to, sowDate) {
   if (!c) return [];
   const feed = feedOf(cropId) || 'medium', area = sectionArea(c, from, to), bag = c.type !== 'bed';
   const sa = soilAdvice(c, from, to, cropId), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
-  const out = [];
-  const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
-  if (comp) out.push({ product: comp.en, amount: bag ? Math.round(4 * cm) : Math.round(area * 2 * cm * 10) / 10, unit: bag ? 'L' : 'kg' });
-  const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? (crop(cropId).family === 'brassica' || crop(cropId).family === 'legume' ? 150 : 100);
   const sr = soilReadingAdvice(c, from, to, cropId), lf = sr ? sr.lime : 1, ff = sr ? sr.feed : 1;
-  if (lime && lr && lf > 0) out.push({ product: lime.en, amount: bag ? Math.round(lr * lf * 0.3 / 5) * 5 : Math.round(area * lr * lf / 10) * 10, unit: 'g' });
-  const fert = pick(['bokashi', 'toshoAburakasu', 'neem']);
-  const g = cropId === 'satsumaimo' ? 0 : (bag ? FEED_BAG[feed] : FEED_BASE_M2[feed] * area) * bm * ff;
-  if (fert && g) out.push({ product: fert.en, amount: Math.round(g / 10) * 10, unit: 'g' });
+  const out = [];
+  if (bag) {
+    // bags: fresh 元肥入り potting mix needs nothing for its first crop; re-used mix gets compost + 8-8-8
+    const ms = typeof mixState === 'function' ? mixState(c, sowDate || todayStr()) : null;
+    if (ms && ms.firstCrop) return [];
+    const vol = (typeof potVolume === 'function' && potVolume(c)) || 40, k = vol / 40;
+    const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
+    if (comp) out.push({ product: comp.en, amount: Math.round(4 * cm * k), unit: 'L' });
+    const kasei = pick(['kasei888']), g888 = { heavy: 50, medium: 40, light: 20, legume: 10 }[feed] * k * bm * ff;
+    const fert = kasei || pick(['bokashi', 'toshoAburakasu']);
+    if (fert && cropId !== 'satsumaimo') out.push({ product: fert.en, amount: Math.round((kasei ? g888 : FEED_BAG[feed] * bm * ff) / 5) * 5, unit: 'g' });
+    const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? 100;
+    if (lime && lr && lf > 0 && (!ms || !ms.firstCrop)) out.push({ product: lime.en, amount: Math.round(lr * lf * 0.3 * k / 5) * 5, unit: 'g' });
+    return out.filter(x => x.amount > 0);
+  }
+  // beds: compost, lime, and organic fertiliser in handfuls
+  const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
+  if (comp) out.push({ product: comp.en, amount: Math.round(area * 2 * cm * 10) / 10, unit: 'kg' });
+  const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? (crop(cropId).family === 'brassica' || crop(cropId).family === 'legume' ? 150 : 100);
+  if (lime && lr && lf > 0) out.push({ product: lime.en, amount: Math.round(area * lr * lf / 10) * 10, unit: 'g' });
+  const fert = pick(['bokashi', 'toshoAburakasu', 'chickenManure', 'neem']);
+  const g = cropId === 'satsumaimo' ? 0 : FEED_BASE_M2[feed] * area * bm * ff;
+  if (fert && g) out.push({ product: fert.en, amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful' });
   return out.filter(x => x.amount > 0);
 }
 function baseFertNote(cropId, c) {
+  if (c && c.type !== 'bed') { const ms = typeof mixState === 'function' ? mixState(c) : null;
+    return ms && ms.firstCrop ? 'fresh potting mix already contains starter fertiliser for the first crop — no base fertiliser needed' : 're-used potting mix: compost plus a little 8-8-8, mixed through before planting'; }
   const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
   const bits = [];
   if (comp) bits.push(`${comp.en}: dig in ${comp.wait >= 14 ? '2–3 weeks' : 'about a week'} before planting`);

@@ -12,7 +12,7 @@ const unitOpts = sel => UNITS.map(u => `<option value="${u}"${sel === u ? ' sele
 
 // ---------- rotation ----------
 function lastCropIn(c, from, to, beforeDate, excludeId) {
-  const h = (c.history || []).filter(x => (!excludeId || x.plantingId !== excludeId) && x.from < to - 0.5 && x.to > from + 0.5 && (!beforeDate || (x.harvestedOn || '') <= beforeDate));
+  const h = [...(c.history || []), ...(typeof spanTraces === 'function' ? spanTraces(c) : [])].filter(x => (!excludeId || x.plantingId !== excludeId) && x.from < to - 0.5 && x.to > from + 0.5 && (!beforeDate || (x.harvestedOn || '') <= beforeDate));
   h.sort((a, b) => ((a.harvestedOn || '') < (b.harvestedOn || '') ? -1 : 1));
   return h.length ? h[h.length - 1] : null;
 }
@@ -25,8 +25,8 @@ function rotationNote(c, from, to, cropId, beforeDate, excludeId) {
   return {
     prev, same,
     html: same
-      ? `<b>Same family as the last crop here.</b> ${esc(a.en)} was here before (${histWhen(prev)}) — both are ${esc(fam[0])} ${esc(fam[1])}. Consider extra compost or a different spot.`
-      : `Last crop here: ${esc(cropName(prev.cropId))} (${histWhen(prev)}).`,
+      ? `<b>Same family as the last crop here.</b> ${esc(a.en)} was here before (${prev.trace ? 'until ' + shortDate(prev.harvestedOn) : histWhen(prev)}) — both are ${esc(fam[0])} ${esc(fam[1])}. Consider extra compost or a different spot.`
+      : `Last crop here: ${esc(cropName(prev.cropId))} (${prev.trace ? 'grew here until ' + shortDate(prev.harvestedOn) : histWhen(prev)}).`,
   };
 }
 

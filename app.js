@@ -208,11 +208,19 @@ async function compress(file) {
 const blobToDataURL = b => new Promise(r => { const f = new FileReader(); f.onload = () => r(f.result); f.readAsDataURL(b); });
 
 // ---------- modal ----------
+// each pop-up gets its own step in the back history, so the phone's Back button closes it instead of leaving the page
 function modal(html, mount) {
-  const m = $('#modal');
+  const m = $('#modal'), openedHash = location.hash;
   m.innerHTML = `<div class="sheet">${html}</div>`;
   m.hidden = false;
-  const close = () => { m.hidden = true; m.innerHTML = ''; };
+  if (!(history.state && history.state.gpModal)) history.pushState({ gpModal: true }, '');
+  const close = arg => {
+    const fromBack = arg === true;   // buttons pass their click event here — only the Back button passes true
+    m.hidden = true; m.innerHTML = ''; m._close = null;
+    // closed with its own buttons: drop the extra history step — unless another pop-up opened or the page changed meanwhile
+    if (!fromBack) setTimeout(() => { if (m.hidden && history.state && history.state.gpModal && location.hash === openedHash) history.back(); }, 0);
+  };
+  m._close = close;
   m.onclick = e => { if (e.target === m) close(); };
   mount && mount(m, close);
   return close;
@@ -1107,7 +1115,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.15.2';
+const APP_VERSION = '1.15.3';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;
@@ -1117,6 +1125,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => { if (e.target.matches('input[data-task]')) toggleTask(e.target.dataset.task, e.target.checked); });
 $('#back').addEventListener('click', () => { if (history.length > 1) history.back(); else go('#/'); });
 window.addEventListener('hashchange', render);
+window.addEventListener('popstate', () => { const m = $('#modal'); if (!m.hidden && m._close) m._close(true); });
 // re-render on a new day (tasks roll forward)
 let lastDay = todayStr();
 document.addEventListener('visibilitychange', () => { if (!document.hidden && todayStr() !== lastDay) { lastDay = todayStr(); render(); } });

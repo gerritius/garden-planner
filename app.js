@@ -585,8 +585,9 @@ function pagePlantForm(p, c, q) {
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
       ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, c))}.</p>` : ''}
-      ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
+      ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
         <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
+      <datalist id="fertNames">${myProducts(['fert', 'compost', 'lime']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist>
       <button type="button" class="btn small" data-act="addFert">＋ Add fertiliser</button>
       <small class="hint">Units: g, handfuls (1 handful ≈ ${HANDFUL_G} g of granular fertiliser), mL or L.</small>
     </fieldset>
@@ -1104,7 +1105,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.12.0';
+const APP_VERSION = '1.12.1';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

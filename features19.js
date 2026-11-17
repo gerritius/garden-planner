@@ -18,7 +18,23 @@ function relOf(name) {
   }
   const npk = npkOf(name); return npk && npk[3] >= 1 ? [0, 30] : [7, 55];
 }
-const LEACH = { pot: 0.02, bed: 0.006 };   // share of unused nitrogen lost per day (pots drain much more)
+// unused nitrogen washes out with water passing through: pots with each watering (and rain if outdoors), beds mostly with rain
+const RAIN_MONTH = [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51];   // normal mm per month, western Tokyo (approx.)
+const normalRain = d => { const x = pd(d); return RAIN_MONTH[x.getMonth()] / new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate(); };
+const LEACH_PER_WATERING = 0.06;
+function leachFn(L) {
+  const c = L.c, td = todayStr(), rain = rainByDay(), indoor = !!c.indoor;
+  if (!L.bag) return d => Math.min(0.2, 0.002 + (d < td ? (S.rainHist && S.rainHist[d] != null ? S.rainHist[d] : normalRain(d)) : (rain[d] != null ? rain[d] : normalRain(d))) * 0.0015);
+  const fullMM = potWater([c]).fullMM;
+  const done = new Set(S.tasks.filter(t => t.kind === 'water' && t.done && t.doneOn).map(t => t.doneOn).concat(S.water && S.water.lastDone ? [S.water.lastDone] : []));
+  const since = [...done].sort()[0] || td;   // before the oldest watering on record, assume the usual interval
+  return d => {
+    const mm = indoor ? 0 : d < td ? (S.rainHist && S.rainHist[d] != null ? S.rainHist[d] : normalRain(d)) : (rain[d] != null ? rain[d] : normalRain(d));
+    const fromRain = mm / fullMM;
+    const watered = d >= since && d < td ? (done.has(d) ? 1 : 0) : Math.max(0, 1 / waterInterval(pd(d)) - fromRain);   // rain stands in for some watering
+    return Math.min(0.25, 0.002 + LEACH_PER_WATERING * (watered + fromRain));
+  };
+}
 const maxPoolOf = L => L.need ? L.need * (L.bag ? 0.4 : 0.35) : Infinity;   // more than this sitting in the soil at once = overfeeding
 
 function feedSim(p, L, extra = [], skip) {
@@ -38,7 +54,7 @@ function feedSim(p, L, extra = [], skip) {
   const tf = tempFor(p.containerId), daily = S.weather && S.weather.daily, T = tf || (d => dayTemp(d, daily));
   const days = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push([d, Math.max(0.05, growUnits(p.cropId, T(d)))]);
   const W = days.reduce((a, x) => a + x[1], 0) || 1, wOf = {}; days.forEach(([d, w]) => { wOf[d] = w / W * L.need; });
-  const first = inputs.reduce((a, x) => (x.from < a ? x.from : a), start), leach = L.bag ? LEACH.pot : LEACH.bed, avgDem = L.need / Math.max(1, days.length);
+  const first = inputs.reduce((a, x) => (x.from < a ? x.from : a), start), leachOn = leachFn(L), avgDem = L.need / Math.max(1, days.length);
   let pool = 0, taken = 0, unmetAll = 0, unmetFuture = 0, shortFrom = null, peak = 0, peakDate = null, lost = 0;
   const poolAt = {};
   for (let d = first; d <= end; d = addDays(d, 1)) {
@@ -48,7 +64,7 @@ function feedSim(p, L, extra = [], skip) {
     const dem = wOf[d] || 0, take = Math.min(pool, dem);
     pool -= take; taken += take; unmetAll += dem - take;
     if (d >= td) { unmetFuture += dem - take; if (!shortFrom && dem > avgDem * 0.3 && take < dem * 0.6) shortFrom = d; }   // a shortfall only matters while it's growing
-    const l = pool * leach; pool -= l; lost += l;
+    const l = pool * leachOn(d); pool -= l; lost += l;
   }
   return { start, end, shortFrom, unmetFuture, unmetAll, taken, peak, peakDate, lost, poolAt, maxPool: maxPoolOf(L), left: pool };
 }

@@ -589,3 +589,13 @@ details.fold.inner > summary { font-size: 14px; padding: 6px 0; }
 .fbar i.have.p { background: #c08a3e; } .fbar i.have.k { background: #7a6bb0; }
 table.ledger tr.hd th { font-size: 11px; color: var(--muted); text-align: right; padding: 2px 4px; }
 table.ledger td:nth-child(n+2) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; width: 3.4em; }
+.sdopt, .sdwhen { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border: 1.5px solid var(--line-2); border-radius: 10px; margin: 6px 0; background: var(--card); }
+.sdopt.on { border-color: var(--green); }
+.sdopt small, .sdwhen small { display: block; color: var(--muted); }
+.sdwhen input[type=date] { font-size: 13px; padding: 2px 4px; }
+.sdopt [data-star] { font-size: 20px; text-decoration: none; }
+.sdopt input[type=radio], .sdwhen input[type=checkbox] { width: 20px; height: 20px; min-height: 0; flex: none; margin: 2px 0 0; padding: 0; display: inline-block; appearance: auto; -webkit-appearance: auto; }
+.sdwhen input[type=date] { width: auto; min-height: 0; display: inline-block; margin-top: 4px; }
+.sdopt .grow, .sdwhen .grow { flex: 1; min-width: 0; }
+label.sdopt, label.sdwhen { display: flex !important; flex-direction: row !important; align-items: flex-start; }
+.sdopt [data-star] { flex: none; align-self: center; }

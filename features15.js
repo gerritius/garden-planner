@@ -181,13 +181,7 @@ function feedingSection(p) {
   const L = feedLedger(p); if (!L) return '';
   A.feedNow = () => feedDialog({ pids: [p.id] });
   A.editFeed = el => feedDialog((S.log || []).find(e => e.id === el.dataset.id));
-  A.addSideDress = async () => {
-    const top = pick(L.bag ? ['kasei888', 'bokashi', 'toshoAburakasu'] : ['bokashi', 'toshoAburakasu', 'chickenManure', 'aburakasu']) || PRODUCTS.find(x => x.id === 'bokashi');
-    const short = Math.min(L.need * 0.3, Math.max(0.3, L.need - L.total - L.plannedN)), g = short / ((NPK[top.id] || [4])[0] / 100 * ((NPK[top.id] || [0, 0, 0, 0.7])[3] || 0.7));
-    const amt = L.bag ? Math.max(5, Math.round(g / 5) * 5) : Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit = L.bag ? 'g' : 'handful';
-    S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress (追肥): ${top.en} ${fmtAmt(amt, unit)}`, product: top.en, amount: amt, unit, due: addDays(todayStr(), 3), done: false });
-    await save(); render();
-  };
+  A.addSideDress = () => sideDressDialog(p);
   const grp = { soil: 'Starting soil', prev: 'Left from before', base: 'At planting', fed: 'Fed since' };
   const cell = v => `<td>${v == null ? '—' : v < 0.05 ? '·' : gN(v)}</td>`;
   const rows = `<tr class="hd"><th></th><th>N</th><th>P</th><th>K</th></tr>` + Object.keys(grp).map(k => { const ls = L.lines.filter(l => l.g === k); return ls.length ? `<tr class="fg"><th colspan="4">${grp[k]}</th></tr>${ls.map(l => `<tr${l.logId ? ` data-act="editFeed" data-id="${l.logId}"` : ''}><td>${l.date ? `<small>${shortDate(l.date)}</small> ` : ''}${esc(l.label)}${l.note ? `<small>${esc(l.note)}</small>` : ''}</td>${cell(l.n)}${cell(l.p)}${cell(l.k)}</tr>`).join('')}` : ''; }).join('');
@@ -197,7 +191,7 @@ function feedingSection(p) {
     ${npkBars(L)}<p class="small">${feedVerdict(L, p)} ${pkNote(L, p)}${nextUp ? ` Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}</p>
     <details class="fold inner"><summary>What’s been counted</summary><table class="ledger">${rows}</table>
       <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use this season, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). Compost and manure release most of theirs over later seasons, so only part counts now. All rough — trust how the plants look.</p></details>
-    <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${L.need && L.total + L.plannedN < L.need * 0.9 && isLive(p) && !(p.harvestDate && todayStr() > addDays(p.sowDate, Math.round(daysBetween(p.sowDate, p.harvestDate) * 0.75))) ? '<button class="btn small" data-act="addSideDress">＋ Plan a side-dressing</button>' : ''}</div></section>`;
+    <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Plan side-dressing…</button>' : ''}</div></section>`;
 }
 function bedFeedingSection(c) {
   const ps = activeIn(c.id); if (!ps.length) return '';

@@ -26,7 +26,7 @@ const MIX_FERT = {
 };
 const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
-const isLiquid = n => /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || '');
+const isLiquid = n => /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || '') || !!(typeof customByName === 'function' && (customByName(n) || {}).form === 'liquid');
 if (!PRODUCTS.some(p => p.id === 'woodAsh')) PRODUCTS.push({ id: 'woodAsh', kind: 'lime', en: 'Wood ash', ja: '草木灰', maker: 'generic', organic: true, wait: 7, top: true, npk: 'about 0-3-7',
   what: 'Potash (K) and a little phosphate; alkaline like lime', notes: ['Mostly potash — good before fruiting crops, potatoes and onions.', 'Alkaline: it raises pH like lime, so count it as part of your liming.', 'Don’t mix it with nitrogen manures (chicken manure, aburakasu) at the same time — it drives off ammonia. Keep a week apart.'] });
 if (!PRODUCTS.some(p => p.id === 'kuntan')) PRODUCTS.push({ id: 'kuntan', kind: 'amend', en: 'Kuntan (smoked rice husk charcoal)', ja: 'もみ殻くん炭', maker: 'generic', organic: true, wait: 0, top: true, npk: 'about 0-0.2-0.5',
@@ -137,7 +137,7 @@ function feedLedger(p) {
   // 3. base fertiliser at planting
   for (const f of p.fert || []) {
     if (!f.product) continue; const pr = productByName(f.product), u = usable3(feedGrams(f.amount, f.unit, f.product), f.product);
-    lines.push(L3({ g: 'base', name: f.product, label: `${f.product} ${fmtAmt(f.amount, f.unit)}`, date: p.sowDate, note: !u ? 'unknown analysis — not counted' : pr && pr.kind === 'compost' ? 'compost: only ~10% of its nitrogen this season' : '' }, u));
+    lines.push(L3({ g: 'base', name: f.product, label: `${f.product} ${amtFor(f.product, f.amount, f.unit)}`, date: p.sowDate, note: !u ? 'unknown analysis — not counted' : pr && pr.kind === 'compost' ? 'compost: only ~10% of its nitrogen this season' : '' }, u));
   }
   // 4. every feeding since (log), shared feedings split by area
   const from = addDays(p.sowDate, -21), end = p.status === 'harvested' ? (p.harvestedOn || td) : td;
@@ -148,18 +148,18 @@ function feedLedger(p) {
     if (pids.includes(p.id)) share = 1; else if (cids.includes(c.id)) share = A2 / bedA; else if (!pids.length && !cids.length) share = A2 / bedA;
     if (!share) continue;
     const u = usable3(g * share, e.product);
-    lines.push(L3({ g: 'fed', name: e.product, label: `${e.product} ${fmtAmt(e.amount, e.unit)}${share < 0.999 ? ` (whole ${bag ? 'pot' : 'bed'} — ${Math.round(share * 100)}% here)` : ''}`, date: e.date, logId: e.id, note: u ? '' : 'unknown analysis — not counted' }, u));
+    lines.push(L3({ g: 'fed', name: e.product, label: `${e.product} ${amtFor(e.product, e.amount, e.unit)}${share < 0.999 ? ` (whole ${bag ? 'pot' : 'bed'} — ${Math.round(share * 100)}% here)` : ''}`, date: e.date, logId: e.id, note: u ? '' : 'unknown analysis — not counted' }, u));
   }
   // older records: ticked fertiliser jobs that weren't logged separately
   for (const s of p.series || []) {
     if (!s.product || s.amount == null) continue;
-    for (const t of S.tasks) if (t.seriesId === s.id && t.done && t.doneOn && !t.logId) lines.push(L3({ g: 'fed', name: s.product, label: `${s.product} ${fmtAmt(s.amount, s.unit)}`, date: t.doneOn }, usable3(feedGrams(s.amount, s.unit, s.product), s.product)));
+    for (const t of S.tasks) if (t.seriesId === s.id && t.done && t.doneOn && !t.logId) lines.push(L3({ g: 'fed', name: s.product, label: `${s.product} ${amtFor(s.product, s.amount, s.unit)}`, date: t.doneOn }, usable3(feedGrams(s.amount, s.unit, s.product), s.product)));
   }
   const sum = (gs, k) => lines.filter(l => gs.includes(l.g)).reduce((a, l) => a + (l[k] || 0), 0), ALL = ['soil', 'prev', 'base', 'fed'];
   // planned feedings still to come
   const planned = S.tasks.filter(t => t.plantingId === p.id && !t.done && (t.product || (t.seriesId && ((p.series || []).find(s => s.id === t.seriesId) || {}).product))).map(t => {
     const s = (p.series || []).find(x => x.id === t.seriesId) || t, u = usable3(feedGrams(s.amount, s.unit, s.product), s.product) || { n: 0, p: 0, k: 0 };
-    return { t, n: u.n, p: u.p, k: u.k, name: s.product, text: `${s.product} ${fmtAmt(s.amount, s.unit)}` };
+    return { t, n: u.n, p: u.p, k: u.k, name: s.product, text: `${s.product} ${amtFor(s.product, s.amount, s.unit)}` };
   });
   if (typeof schedPlanned === 'function') planned.push(...schedPlanned(p));
   return { c, bag, area: A2, need, needP, needK, lines, planned,
@@ -206,7 +206,7 @@ function feedingSection(p) {
   const cell = v => `<td>${v == null ? '—' : v < 0.05 ? '·' : gN(v)}</td>`;
   const rows = `<tr class="hd"><th></th><th>N</th><th>P</th><th>K</th></tr>` + Object.keys(grp).map(k => { const ls = L.lines.filter(l => l.g === k); return ls.length ? `<tr class="fg"><th colspan="4">${grp[k]}</th></tr>${ls.map(l => `<tr${l.logId ? ` data-act="editFeed" data-id="${l.logId}"` : ''}><td>${l.date ? `<small>${shortDate(l.date)}</small> ` : ''}${esc(l.label)}${l.note ? `<small>${esc(l.note)}</small>` : ''}</td>${cell(l.n)}${cell(l.p)}${cell(l.k)}</tr>`).join('')}` : ''; }).join('');
   const nextUp = L.planned.slice().sort((a, b) => (a.t.due < b.t.due ? -1 : 1))[0];
-  const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `🔁 Every ${s.every} days: ${esc(s.product)} ${fmtAmt(s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
+  const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `🔁 Every ${s.every} days: ${esc(s.product)} ${amtFor(s.product, s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
   const sim = feedSim(p, L);
   return `<section class="feeding"><h3>Feeding</h3>
     ${sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : `<p class="small">${feedVerdict(L, p)}</p>`}
@@ -240,12 +240,16 @@ function feedDialog(e, onSave, onCancel) {
   modal(`<h3>🌿 ${isNew ? 'Record feeding' : 'Edit feeding'}</h3><p class="muted small">${esc(targets)}</p><form id="fdf" class="form">
       <div class="sowchips">${prods.map(x => `<button type="button" class="chip${e.product === x.en ? ' on' : ''}" data-p="${esc(x.en)}">${esc(x.en)}</button>`).join('')}</div>
       <label>Product<input name="product" list="fdl" value="${esc(e.product || '')}" required placeholder="e.g. Bokashi, 化成肥料 8-8-8"><datalist id="fdl">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
+      <div id="fdd"></div>
       <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}" required></label><label>Unit<select name="unit">${unitOpts(e.unit || 'handful')}</select></label></div>
       <label>Date<input name="date" type="date" value="${e.date}" max="${td}"></label>
       <p class="hint" id="fdn"></p>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#fdf');
-    const calc = () => { const g = feedGrams(f.amount.value, f.unit.value, f.product.value), u = usable3(g, f.product.value), liq = isLiquid(f.product.value);
+    const calc = () => { const g = feedGrams(f.amount.value, f.unit.value, f.product.value), u = usable3(g, f.product.value), liq = isLiquid(f.product.value), lm = liqMeasure(f.product.value);
+      const dd = m.querySelector('#fdd'); dd.innerHTML = lm && (lm.doses || []).length ? `<div class="sowchips">${lm.doses.map((v, i) => `<button type="button" class="chip${+f.amount.value === v && f.unit.value === 'mL' ? ' on' : ''}" data-dose="${v}">${lm.doses.length > 1 ? (i === 0 ? 'Weak' : i === lm.doses.length - 1 ? 'Strong' : 'Medium') + ': ' : ''}${v} mL per ${lm.per} L</button>`).join('')}</div>` : '';
+      dd.querySelectorAll('[data-dose]').forEach(b => b.onclick = () => { f.amount.value = b.dataset.dose; f.unit.value = 'mL'; calc(); });
+      if (lm && g && u) { m.querySelector('#fdn').innerHTML = `Amount = mL mixed into ${lm.per} L of water. Each pot gets about ${potLitres()} L of it ≈ ${(g / 1.2).toFixed(1)} mL of concentrate → <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)} per pot.`; return; }
       m.querySelector('#fdn').innerHTML = !g ? (liq ? 'For liquid feeds, enter the amount of concentrate you measured out (not the diluted water).' : '') : !u ? `≈ ${Math.round(g)} g — analysis unknown, so it isn’t counted (put the N-P-K in the name, e.g. “Hyponex 6-10-5”).`
         : `≈ ${g < 10 ? g.toFixed(1) : Math.round(g)} g${liq ? ' of concentrate' : ''} → usable this season: <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)}.${liq ? ' (Liquid: enter the concentrate measured out, not the diluted water.)' : ''}`; };
     m.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { f.product.value = b.dataset.p; m.querySelectorAll('[data-p]').forEach(x => x.classList.toggle('on', x === b)); const pr = productByName(b.dataset.p); if (pr && pr.kind === 'compost' && f.unit.value === 'handful') f.unit.value = 'L'; calc(); });

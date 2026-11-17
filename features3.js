@@ -22,7 +22,7 @@ function logWhere(e) {
 function logFeed() {
   const td = todayStr(), out = [];
   for (const e of S.log || []) {
-    const k = logKind(e.kind), amt = fmtAmt(e.amount, e.unit);
+    const k = logKind(e.kind), amt = amtFor(e.product, e.amount, e.unit);
     out.push({ date: e.date, kind: e.kind, icon: k[1], title: `${k[2]}${e.product ? ': ' + e.product : ''}${amt ? ' · ' + amt : ''}${e.per === 'total' && amt ? ' in total' : ''}${+e.phi > 0 ? ` · ${e.phi}-day wait` : ''}`, sub: logWhere(e), text: e.text, act: 'editLog', id: e.id,
       cids: [...(e.cids || []), ...(e.pids || []).map(id => (planting(id) || {}).containerId)], pids: e.pids || [], all: !(e.cids || []).length && !(e.pids || []).length });
   }

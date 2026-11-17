@@ -45,6 +45,7 @@ const productByName = n => {
   const t = String(n).trim(), lo = t.toLowerCase();
   const exact = PRODUCTS.find(x => x.en === t || x.ja === t || x.id === t || x.en.toLowerCase() === lo);
   if (exact) return exact;
+  const own = typeof customByName === 'function' && customByName(t); if (own) return own;
   const a = PROD_ALIASES.find(([, re]) => re.test(t));
   return a ? PRODUCTS.find(x => x.id === a[0]) : undefined;
 };
@@ -55,7 +56,7 @@ function planItems(p) {
   const where = c ? c.name + (sectionOf(p) ? ' ' + sectionOf(p) : '') : '';
   for (const f of p.fert || []) {
     if (!f.product) continue;
-    const pr = productByName(f.product), wait = pr ? +pr.wait || 0 : 14, amt = fmtAmt(f.amount, f.unit), due = addDays(sd, -wait);
+    const pr = productByName(f.product), wait = pr ? +pr.wait || 0 : 14, amt = amtFor(f.product, f.amount, f.unit), due = addDays(sd, -wait);
     if (wait > 0) items.push({ key: 'prep:' + f.product, kind: 'plan_prep', due, title: `Dig in ${f.product}${amt ? ' ' + amt : ''} — for ${cr.en} (${where})${due < td ? ` · short notice: best ${wait} days before planting` : ''}` });
     else dayOf.push(`${f.product}${amt ? ' ' + amt : ''}`);
   }

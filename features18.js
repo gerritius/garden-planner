@@ -31,7 +31,7 @@ function schedPlanned(p) {
     if (s.stopped || s.paused) continue;
     const open = S.tasks.find(t => t.schedId === s.id && !t.done), e = effOf(s.product, s.amount, s.unit);
     const ds = schedOccurrences(p, s).filter(d => !open || d > open.due);
-    for (const d of ds) out.push({ t: { due: d, schedId: s.id }, sid: s.id, name: s.product, n: e.n, p: e.p, k: e.k, text: `${s.product} ${fmtAmt(s.amount, s.unit)} (every ${s.every} days)` });
+    for (const d of ds) out.push({ t: { due: d, schedId: s.id }, sid: s.id, name: s.product, n: e.n, p: e.p, k: e.k, text: `${s.product} ${amtFor(s.product, s.amount, s.unit)} (every ${s.every} days)` });
   }
   return out;
 }
@@ -56,7 +56,7 @@ function syncFeedPlans() {
         if (next > end || (!sim.shortFrom && poolOn(sim, next) + e.n > sim.maxPool * 0.5 && sim.left > sim.maxPool * 0.2)) { s.paused = 'enough'; if (open) S.tasks = S.tasks.filter(x => x !== open); continue; }
       }
       s.paused = null;
-      const title = `${isLiquid(s.product) ? 'Liquid feed' : 'Feed'}: ${s.product} ${fmtAmt(s.amount, s.unit)}`;
+      const title = `${isLiquid(s.product) ? 'Liquid feed' : 'Feed'}: ${s.product} ${amtFor(s.product, s.amount, s.unit)}`;
       const withWater = isLiquid(s.product) && isPotOutdoor(c);
       if (open) Object.assign(open, { due: next, title, withWater });
       else S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', schedId: s.id, title, product: s.product, amount: s.amount, unit: s.unit, due: next, withWater, done: false });
@@ -130,7 +130,7 @@ function feedPlanner(p) {
   // what's already planned (editable here)
   const existing = () => [
     ...S.tasks.filter(t => t.plantingId === p.id && !t.done && !t.schedId && feedTaskProduct(t)).map(t => ({ kind: 'task', id: t.id, text: `${shortDate(t.due)} · ${t.title}` })),
-    ...(p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => ({ kind: 'sched', id: s.id, text: `Every ${s.every} days: ${s.product} ${fmtAmt(s.amount, s.unit)} (until ${shortDate(s.end || end)})${s.paused ? ` — paused: ${s.paused === 'salt' ? 'salt DANGER' : 'enough nitrogen for the season'}` : ''}` })),
+    ...(p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => ({ kind: 'sched', id: s.id, text: `Every ${s.every} days: ${s.product} ${amtFor(s.product, s.amount, s.unit)} (until ${shortDate(s.end || end)})${s.paused ? ` — paused: ${s.paused === 'salt' ? 'salt DANGER' : 'enough nitrogen for the season'}` : ''}` })),
   ];
   // run the plan forward in date order: a dose is left out if it's too big on its own, or the soil already holds plenty then
   const planDoses = (quick) => {
@@ -166,7 +166,7 @@ function feedPlanner(p) {
     const warn = r.big ? 'too much in one go — split it' : r.type === 'once' && r.over ? 'left out: the soil still holds plenty then' : r.type === 'every' && r.over ? `${r.over} skipped while the soil holds plenty` : '';
     const when = r.type === 'every' ? `Every ${r.every || 7} days · ${shortDate(r.date)}–${shortDate(r.until || end)}${r.on ? ` (${r.count} dose${r.count === 1 ? '' : 's'})` : ''}` : shortDate(r.due || r.date);
     return `<div class="frow line${r.on ? '' : ' off'}${r.over && !r.count ? ' over' : ''}" data-r="${r.id}">
-      <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <span class="grow"><b>${when}</b> · ${esc(r.product || '?')} ${r.amount ? fmtAmt(+r.amount, r.unit) : ''}
+      <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <span class="grow"><b>${when}</b> · ${esc(r.product || '?')} ${r.amount ? amtFor(r.product, +r.amount, r.unit) : ''}
         ${r.t && r.type === 'once' && r.src !== 'custom' ? `<small>${esc(r.t)}</small>` : ''}${warn ? `<small class="warnline">${warn}</small>` : ''}${r.why ? `<small>⏸ ${esc(r.why)}</small>` : ''}</span></label>
       <button type="button" class="link" data-open="${r.id}">✎</button></div>`;
   };
@@ -222,7 +222,7 @@ function feedPlanner(p) {
       for (const r of rows) {
         if (!r.on || !r.product || !r.amount) continue;
         if (r.type === 'once') { if (r.big || (r.over && !r.count)) continue;
-          S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress (追肥): ${r.product} ${fmtAmt(+r.amount, r.unit)}${r.t && r.src !== 'custom' ? ' — ' + r.t : ''}`, product: r.product, amount: +r.amount, unit: r.unit, due: r.due || r.date, done: false }); }
+          S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress (追肥): ${r.product} ${amtFor(r.product, +r.amount, r.unit)}${r.t && r.src !== 'custom' ? ' — ' + r.t : ''}`, product: r.product, amount: +r.amount, unit: r.unit, due: r.due || r.date, done: false }); }
         else if (r.count && !r.big) (p.feedPlan = p.feedPlan || []).push({ id: uid(), product: r.product, amount: +r.amount, unit: r.unit, every: +r.every || 7, start: r.date, end: r.over ? r.lastOk : (r.until || end) });
       }
       syncFeedPlans(); await save(); close(); render();

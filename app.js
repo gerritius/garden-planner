@@ -72,7 +72,7 @@ const effDue = t => (!t.done && t.due < todayStr()) ? todayStr() : t.due;
 const sortTasks = l => l.sort((a, b) => (effDue(a) < effDue(b) ? -1 : effDue(a) > effDue(b) ? 1 : 0));
 function seriesTitle(s) {
   if (s.customTitle) return s.customTitle;
-  const amt = s.amount ? ' ' + fmtAmt(s.amount, s.unit) : '';
+  const amt = s.amount ? ' ' + amtFor(s.product, s.amount, s.unit) : '';
   if (s.title) return s.title + (s.product ? ` – ${s.product}` : '') + amt;
   return 'Fertilise' + (s.product ? `: ${s.product}` : '') + amt;
 }
@@ -267,7 +267,7 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
-  try { migrateFeed(); migrateCovers(); } catch (e) { console.warn(e); }
+  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); } catch (e) { console.warn(e); }
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
   try { syncFeedPlans(); syncWater(); } catch (e) { console.warn(e); }
@@ -807,7 +807,7 @@ function pagePlant(p) {
     c && !harvested ? (() => { const sa = soilAdvice(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return sa ? ['Soil', sa.text] : null; })() : null,
     c && !harvested && !isPlanned(p) ? ['Size in drawing', (() => { const now = Math.round(Draw.radius(p, td) * 2), full = Math.round(Math.max(1, +p.spread || Draw.spacingNow(p))); return `${now} cm across today (grows to ~${full} cm by ${p.harvestDate ? shortDate(p.harvestDate) : 'harvest'})${seed && +p.thinSp > 0 && !p.thinned ? ' · stays seedling-sized until thinning' : ''}`; })()] : null,
     c && !harvested ? (() => { const a = soilReadingAdvice(c, p.from, p.to, p.cropId); return a ? ['Soil test', `${esc(readingText(a.r))} <small class="muted">(${shortDate(a.r.date)})</small><br>${a.bits.map(esc).join(' ')}`] : null; })() : null,
-    (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + fmtAmt(f.amount, f.unit) : ''}`).join('<br>')] : null,
+    (p.fert || []).length ? ['Starting fertiliser', p.fert.map(f => `${esc(f.product || 'fertiliser')}${f.amount != null ? ' ' + amtFor(f.product, f.amount, f.unit) : ''}`).join('<br>')] : null,
     (p.series || []).length ? ['Extra fertiliser / jobs', p.series.map(s => `${esc(seriesTitle(s))} · ${+s.every > 0 ? `every ${s.every} ${s.per}${s.every > 1 ? 's' : ''}${s.stopped ? ' (stopped)' : ''}` : 'once'}`).join('<br>')] : null,
     c ? ['Previous crop here', (() => { const rn = isPlanned(p) ? planRotation(c, p.from, p.to, p.cropId, p.sowDate, p.id) : rotationNote(c, p.from, p.to, p.cropId, p.sowDate || '9', p.id); return rn ? esc(cropName(rn.prev.cropId)) + (rn.same ? ` <span class="warnchip">⚠ same family</span>` : '') : '— <button class="link" data-act="addPrev">add what grew here before</button>'; })()] : null,
   ].filter(Boolean);
@@ -1136,7 +1136,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.16.3';
+const APP_VERSION = '1.17.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

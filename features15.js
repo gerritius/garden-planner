@@ -58,7 +58,7 @@ const gN = v => v >= 10 ? Math.round(v) + ' g' : (Math.round(v * 10) / 10) + ' g
 // ---------- potting mix in bags ----------
 function mixState(c, beforeDate) {
   if (c.type === 'bed') return null;
-  const ev = (c.mixLog || []).filter(e => !beforeDate || e.date <= beforeDate).sort((a, b) => (a.date < b.date ? -1 : 1)).pop();
+  const ev = (c.mixLog || []).filter(e => !beforeDate || e.date <= beforeDate).sort(mixSort).pop();
   if (!ev) return null;
   const cropsSince = [...S.plantings.filter(p => p.containerId === c.id && p.sowDate && p.sowDate >= ev.date && (!beforeDate || p.sowDate < beforeDate)), ...(c.history || []).filter(h => h.sowDate && h.sowDate >= ev.date && (!beforeDate || h.sowDate < beforeDate) && !S.plantings.some(p => p.id === h.plantingId))];
   return Object.assign({}, ev, { firstCrop: ev.fresh && !cropsSince.length, mix: MIXES.find(m => m[0] === ev.kind) || MIXES[2] });
@@ -68,11 +68,11 @@ function mixDialog(c) {
   modal(`<h3>Potting mix — ${esc(c.name)}</h3><form id="mxf" class="form">
       <label>Mix<select name="kind">${MIXES.map(([k, en, ja]) => `<option value="${k}"${(cur ? cur.kind : 'iris') === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <div class="seg"><button type="button" data-f="1" class="on">Fresh mix</button><button type="button" data-f="0">Re-used (roots sieved out)</button></div>
-      <p class="hint">Add an entry each time you fill or refresh the pot: e.g. fresh Touikawa when you first filled it, then “Re-used” on the day you sieved out the old roots and replanted. Use the date it happened.</p>
+      <p class="hint">For fills before you started using the app. New plantings record this themselves — choose Fresh mix or Re-used in the planting form.</p>
       <label>Filled on<input name="date" type="date" value="${td}" max="${td}"></label>
       <p class="hint">Fertiliser built into the mix is counted from the fill date: Touikawa as slow-release 6-36-6 + magnesium for about a year, Iris Ohyama as about a month of starter feed. Amounts are estimates — the bags don’t print them. Any 8-8-8 you mix in when refreshing is counted separately (record it as the crop’s starting fertiliser).</p>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>
-    ${(c.mixLog || []).length ? `<ul class="plist">${c.mixLog.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map(e => `<li><span class="grow">${shortDate(e.date)} ${yearOfD(e.date)} · ${e.fresh ? 'fresh' : 're-used'} ${esc((MIXES.find(m => m[0] === e.kind) || MIXES[2])[1])}</span><button class="link danger" data-delmix="${e.id}">remove</button></li>`).join('')}</ul>` : ''}`, (m, close) => {
+    ${(c.mixLog || []).length ? `<ul class="plist">${c.mixLog.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map(e => `<li><span class="grow">${shortDate(e.date)} ${yearOfD(e.date)} · ${e.fresh ? 'fresh' : 're-used'} ${esc((MIXES.find(m => m[0] === e.kind) || MIXES[2])[1])}${e.pid && planting(e.pid) ? ` <small>with ${esc(crop(planting(e.pid).cropId).en)}</small>` : ''}</span><button class="link danger" data-delmix="${e.id}">remove</button></li>`).join('')}</ul>` : ''}`, (m, close) => {
     const f = m.querySelector('#mxf'); let fresh = true;
     m.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { fresh = b.dataset.f === '1'; m.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b)); });
     m.querySelector('[data-x=no]').onclick = close;
@@ -104,7 +104,7 @@ function feedLedger(p) {
     const ms = mixState(c, p.sowDate), v = potVolume(c) || 40;
     // the fertiliser in fresh mix releases from the fill date for its own period; this crop gets the part that overlaps its season
     // fertiliser built into the last FRESH fill keeps releasing for its period — sieving out roots and re-using the mix doesn't remove it
-    const fresh = (c.mixLog || []).filter(e => e.fresh && e.date <= p.sowDate).sort((x, y) => (x.date < y.date ? -1 : 1)).pop();
+    const fresh = (c.mixLog || []).filter(e => e.fresh && e.date <= p.sowDate).sort(mixSort).pop();
     const mf = fresh ? (MIX_FERT[fresh.kind] || MIX_FERT.other) : null, fmix = fresh ? (MIXES.find(m => m[0] === fresh.kind) || MIXES[2]) : null;
     const reworked = ms && !ms.fresh && fresh && ms.date > fresh.date;
     let mixed = false;
@@ -211,7 +211,7 @@ function feedingSection(p) {
   return `<section class="feeding"><h3>Feeding</h3>
     ${sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : `<p class="small">${feedVerdict(L, p)}</p>`}
     ${nextUp || scheds ? `<p class="small">${nextUp ? `Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}${scheds ? `<br>${scheds}` : ''}</p>` : ''}
-    ${L.bag && !mixState(L.c) ? `<div class="banner warn">🪴 This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <button class="btn small" data-act="setMix">Set potting mix</button></div>` : ''}
+    ${L.bag && !mixState(L.c) ? `<div class="banner warn">🪴 This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <a class="btn small" href="#/plant/${p.id}/edit">Set it in Edit planting</a></div>` : ''}
     <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div>
     <details class="fold inner"><summary>What’s been counted</summary>
       ${L.need ? `<p class="small">${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.</p>` : ''}

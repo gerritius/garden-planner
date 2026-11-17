@@ -215,8 +215,8 @@ function planBanner(p) {
 function planNextButton(p) {
   const c = container(p.containerId); if (!c || !isLive(p)) return '';
   const next = S.plantings.find(x => isPlanned(x) && x.containerId === c.id && x.from < p.to - 0.5 && x.to > p.from + 0.5);
-  return next ? `<a class="btn small" href="#/plant/${next.id}">📅 Next here: ${esc(crop(next.cropId).en)} (${shortDate(next.sowDate)})</a>`
-    : `<a class="btn small" href="#/plant/new/${c.id}?plan=1&from=${p.from}&to=${p.to}&date=${addDays(endOf(p), 1)}">📅 Plan what’s next here</a>`;
+  return next ? `<a class="btn" href="#/plant/${next.id}">📅 Next: ${esc(crop(next.cropId).en)} ${shortDate(next.sowDate)}</a>`
+    : `<a class="btn" href="#/plant/new/${c.id}?plan=1&from=${p.from}&to=${p.to}&date=${addDays(endOf(p), 1)}">📅 Plan next here</a>`;
 }
 
 // ---------- spray-day forecast ----------

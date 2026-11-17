@@ -56,7 +56,7 @@ function bedMoreMenu(c) {
     nPh && ['photos', '📷', `Photos (${nPh})`, `#/timeline?c=${c.id}`],
     ps && ['sections', '↕', 'Sections', `#/container/${c.id}/sections`],
     ['rotation', '🔄', 'Rotation', '#/rotation'],
-    ['climate', '☀️', 'Where it sits (sun, indoors…)', () => climateDialog(c)],
+    c.type !== 'bed' && ['mix', '🪴', 'Potting mix history', () => mixDialog(c)],
   ].filter(Boolean);
   modal(`<h3>${esc(c.name)}</h3><div class="tiles qa3">${items.map(([k, i, l]) => `<button class="tile" data-m="${k}"><span>${i}</span>${l}</button>`).join('')}</div>
     <div class="btns"><button class="btn" data-x="no">Close</button></div>`, (m, close) => {
@@ -118,4 +118,52 @@ function groupTabs(route) {
   const g = TOOL_GROUPS.find(x => x.some(([r]) => r === route)); if (!g) return '';
   A.tabGo = el => location.replace('#/' + el.dataset.r);
   return `<div class="seg tabs">${g.map(([r, l]) => `<button type="button" data-act="tabGo" data-r="${r}" class="${r === route ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+
+// ---------- potting mix, chosen when planting a pot or bag ----------
+// Each planting can carry its own mix event (pid = the planting) — fresh fill or re-used — dated on its sow/plant date.
+// Older entries you added by hand (no pid) stay as the pot's history and are still counted.
+const mixSort = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.pid ? 1 : 0) - (b.pid ? 1 : 0));
+function mixBefore(c, date, pid, freshOnly) { return (c.mixLog || []).filter(e => e.pid !== (pid || '__new') && e.date <= date && (!freshOnly || e.fresh)).sort(mixSort).pop() || null; }
+function lastMixKind() { const all = S.containers.flatMap(x => x.mixLog || []).sort(mixSort); return all.length ? all[all.length - 1].kind : 'touikawa'; }
+function mixDefaults(d, c) {
+  if (!c || c.type === 'bed' || d.mixFresh !== undefined) return;
+  const own = (c.mixLog || []).find(e => e.pid && e.pid === d._pid);
+  if (own) { d.mixFresh = own.fresh; d.mixKind = own.kind; return; }
+  const date = d.sowDate || todayStr(), prior = mixBefore(c, date, d._pid);
+  if (prior && prior.date === date) { d.mixFresh = !!prior.fresh; d.mixKind = prior.kind; return; }   // already recorded for that day
+  const hadCrop = (c.history || []).length || S.plantings.some(q => q.id !== d._pid && q.containerId === c.id && q.sowDate && q.sowDate < date);
+  d.mixFresh = !(prior || hadCrop);
+  d.mixKind = prior ? prior.kind : d.mixFresh ? lastMixKind() : '';
+}
+// the event this planting would add (null = nothing new to record)
+function mixEventFor(d, c) {
+  if (!c || c.type === 'bed' || d.mixFresh === undefined) return null;
+  const date = d.sowDate || todayStr(), prior = mixBefore(c, date, d._pid);
+  if (prior && prior.date === date && !!prior.fresh === !!d.mixFresh && (!d.mixFresh || prior.kind === d.mixKind)) return null;
+  return { date, kind: d.mixFresh ? (d.mixKind || 'other') : (prior ? prior.kind : d.mixKind || 'other'), fresh: !!d.mixFresh };
+}
+// the pot as it would be with this choice — for the starting-fertiliser suggestion
+function mixDraftC(c, d) {
+  if (!c || c.type === 'bed') return c;
+  mixDefaults(d, c);
+  const ev = mixEventFor(d, c), log = (c.mixLog || []).filter(e => e.pid !== d._pid);
+  return Object.assign({}, c, { mixLog: ev ? [...log, Object.assign({ id: 'draft', pid: d._pid || '__new' }, ev)] : log });
+}
+function saveMixChoice(p, d, c) {
+  if (!c || c.type === 'bed') return;
+  const ev = mixEventFor(Object.assign({}, d, { _pid: p.id }), c);
+  c.mixLog = (c.mixLog || []).filter(e => e.pid !== p.id);
+  if (ev) c.mixLog.push(Object.assign({ id: uid(), pid: p.id }, ev));
+}
+function mixFormBits(d, c) {
+  if (!c || c.type === 'bed') return '';
+  mixDefaults(d, c);
+  const prior = mixBefore(c, d.sowDate || todayStr(), d._pid), fresh = prior && (prior.fresh ? prior : mixBefore(c, d.sowDate || todayStr(), d._pid, true));
+  const nm = k => esc((MIXES.find(m => m[0] === k) || MIXES[2])[1]);
+  const opts = (sel, unsure) => `${unsure ? `<option value=""${!sel ? ' selected' : ''}>Not sure</option>` : ''}${MIXES.map(([k, en, ja]) => `<option value="${k}"${sel === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}`;
+  return `<label>Potting mix<div class="seg"><button type="button" data-act="mixF" data-v="0" class="${d.mixFresh ? '' : 'on'}">Re-used</button><button type="button" data-act="mixF" data-v="1" class="${d.mixFresh ? 'on' : ''}">Fresh mix</button></div></label>
+    ${d.mixFresh ? `<label>Which mix<select name="mixKind">${opts(d.mixKind)}</select></label>`
+      : prior ? `<small class="hint">${nm(prior.kind)}${fresh ? `, filled fresh ${shortDate(fresh.date)} ${yearOfD(fresh.date)}` : ''}. Sieve out the old roots; the compost and 8-8-8 you mix in go under Starting fertiliser.</small>`
+      : `<label>Which mix is in it?<select name="mixKind">${opts(d.mixKind, true)}</select></label>`}`;
 }

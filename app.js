@@ -418,7 +418,7 @@ function pageContainer(c) {
       const hasPlan = S.plantings.some(p => p.containerId === c.id && isPlanned(p)) || freeGaps(c).some(g => g.s > todayStr());
       A.feedBed = () => feedDialog({ cids: [c.id] }); A.bedMore = () => bedMoreMenu(c); A.bedNote = () => noteEntryDialog({ c });
       return `<div class="carebar four"><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan</a><button class="btn small" data-act="feedBed">🌿 Feed</button><button class="btn small" data-act="addCover">🕸️ Cover</button><button class="btn small" data-act="bedNote">📝 Note</button><button class="btn small" data-act="bedMore">⋯ More</button></div>
-        ${bedFeedingSection(c)}${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
+        ${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
         <details class="fold"><summary>🕰️ History <small>${(c.history || []).length} past crop${(c.history || []).length === 1 ? '' : 's'}</small></summary>${historySection(c)}</details>
         <details class="fold"><summary>📝 Running log</summary>${logSection(c)}</details>`;
     })()}
@@ -500,7 +500,7 @@ function applyCrop(d, cr, c) {
   d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
   d.daysFrom = cr.daysHarvest || ''; d.daysTo = cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''; d.keepUntil = '';
   d.dir = cr.dir || 'across'; d.rows = ''; d.variety = ''; d.sj = {};
-  if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, c, d.from, d.to, d.sowDate); d.fertAuto = true; } catch (e) { console.warn(e); } }
+  if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, typeof mixDraftC === 'function' ? mixDraftC(c, d) : c, d.from, d.to, d.sowDate); d.fertAuto = true; } catch (e) { console.warn(e); } }
   recalc(d);
 }
 function recalc(d) {
@@ -532,8 +532,9 @@ function pagePlantForm(p, c, q) {
     } else {
       draft = JSON.parse(JSON.stringify(p)); draft.newPhotos = {}; draft.removePhotos = {};
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
-      draft.harvestManual = true; draft.thinManual = true;
+      draft.harvestManual = true; draft.thinManual = true; draft._pid = p.id;
     }
+    if (c.type !== 'bed') { if (isNew) delete draft.mixFresh; mixDefaults(draft, c); if (draft.fertAuto && draft.cropId) try { draft.fert = baseFertPlan(draft.cropId, mixDraftC(c, draft), draft.from, draft.to, draft.sowDate); } catch (e) { console.warn(e); } }
   }
   const d = draft;
   setChrome(isNew ? 'New planting' : 'Edit planting', { back: true, kicker: c.name });
@@ -572,6 +573,7 @@ function pagePlantForm(p, c, q) {
         `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d)}
+      <div id="mixBits">${mixFormBits(d, c)}</div>
       ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method) : ''}
     </fieldset>
     <details class="fold more" id="pfMore"${d._more ? ' open' : ''}><summary>More options <small>${esc(moreSummary())}</small></summary>
@@ -604,7 +606,7 @@ function pagePlantForm(p, c, q) {
       ${cr && cr.daysHarvest ? `<small class="hint">Estimated from the catalogue (about ${cr.daysHarvest} days from ${seed || (cr.method === 'seed' && (d.startId || d.useStart)) ? 'sowing' : 'planting'} at the usual time of year${cr.method === 'seed' && (d.startId || d.useStart) ? ', counted from the tray sowing' : ''}) and the temperatures — colder weather pushes it later. It updates by itself unless you change it here to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
-      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, c))}.</p>` : ''}
+      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d)))}.</p>` : ''}
       ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
         <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
       <datalist id="fertNames">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist>
@@ -661,6 +663,7 @@ function pagePlantForm(p, c, q) {
   A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
   A.addSeries = () => { read(); d.series.push({ id: uid(), title: '', every: 1, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
   A.rmSeries = el => { read(); d.series.splice(+el.dataset.i, 1); render(); };
+  A.mixF = el => { read(); d.mixUser = true; d.mixFresh = el.dataset.v === '1'; if (d.mixFresh && !d.mixKind) d.mixKind = lastMixKind(); if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); render(); };
   A.rmPhoto = el => { read(); const s = el.dataset.slot; if (d.newPhotos[s]) delete d.newPhotos[s]; else d.removePhotos[s] = true; render(); };
 
   const after = () => {
@@ -674,7 +677,7 @@ function pagePlantForm(p, c, q) {
       if (n === 'harvestDate') d.hvUser = true;
       read();
       if (n === 'sowDate' || n === 'thinSp' || n === 'daysFrom') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
-      if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); }
+      if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); const mb = $('#mixBits'); if (mb && !d.mixUser) { delete d.mixFresh; mb.innerHTML = mixFormBits(d, c); } }
       preview();
     });
     f.addEventListener('change', async e => {
@@ -685,6 +688,7 @@ function pagePlantForm(p, c, q) {
         const keepSow = d.sowDate; applyCrop(d, crop(e.target.value), c); d.sowDate = keepSow; recalc(d); return render();
       }
       if (n === 'layout' || n === 'dir' || /\.every$/.test(n)) { read(); return render(); }
+      if (n === 'mixKind') { read(); d.mixUser = true; if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); return render(); }
       if (e.target.dataset.slot) {
         const file = e.target.files[0]; if (!file) return;
         read(); d.newPhotos[e.target.dataset.slot] = await compress(file); delete d.removePhotos[e.target.dataset.slot]; render();
@@ -717,6 +721,7 @@ async function savePlanting(p, d, c) {
   if (d.thinUser) p.thinFixed = !!d.thinDate;
   if (d.hvUser) p.harvestFixed = !!d.harvestDate;
   p.daysFrom = num(d.daysFrom); p.daysTo = num(d.daysTo); p.keepUntil = d.keepUntil || '';
+  saveMixChoice(p, d, c);
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
   p.raise = p.status === 'planned' && p.method === 'seedling' ? (d.raise || 'buy') : (p.raise || '');
   const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
@@ -860,6 +865,7 @@ function pagePlant(p) {
 async function removePlanting(p) {
   S.tasks = S.tasks.filter(t => t.plantingId !== p.id);
   S.plantings = S.plantings.filter(x => x !== p);
+  { const mc = container(p.containerId); if (mc && mc.mixLog) mc.mixLog = mc.mixLog.filter(e => e.pid !== p.id); }
   for (const id of [...Object.values(p.photos || {}), ...(p.diary || []).map(d => d.photo)]) if (id) await dropPhoto(id);
   const c = container(p.containerId);
   if (c) c.history = (c.history || []).filter(h => h.plantingId !== p.id);
@@ -1130,7 +1136,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.16.1';
+const APP_VERSION = '1.16.2';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

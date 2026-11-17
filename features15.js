@@ -68,6 +68,7 @@ function mixDialog(c) {
   modal(`<h3>Potting mix — ${esc(c.name)}</h3><form id="mxf" class="form">
       <label>Mix<select name="kind">${MIXES.map(([k, en, ja]) => `<option value="${k}"${(cur ? cur.kind : 'iris') === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <div class="seg"><button type="button" data-f="1" class="on">Fresh mix</button><button type="button" data-f="0">Re-used (roots sieved out)</button></div>
+      <p class="hint">Add an entry each time you fill or refresh the pot: e.g. fresh Touikawa when you first filled it, then “Re-used” on the day you sieved out the old roots and replanted. Use the date it happened.</p>
       <label>Filled on<input name="date" type="date" value="${td}" max="${td}"></label>
       <p class="hint">Fertiliser built into the mix is counted from the fill date: Touikawa as slow-release 6-36-6 + magnesium for about a year, Iris Ohyama as about a month of starter feed. Amounts are estimates — the bags don’t print them. Any 8-8-8 you mix in when refreshing is counted separately (record it as the crop’s starting fertiliser).</p>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>
@@ -102,15 +103,18 @@ function feedLedger(p) {
   if (bag) {
     const ms = mixState(c, p.sowDate), v = potVolume(c) || 40;
     // the fertiliser in fresh mix releases from the fill date for its own period; this crop gets the part that overlaps its season
-    const mf = ms && ms.fresh ? (MIX_FERT[ms.kind] || MIX_FERT.other) : null;
+    // fertiliser built into the last FRESH fill keeps releasing for its period — sieving out roots and re-using the mix doesn't remove it
+    const fresh = (c.mixLog || []).filter(e => e.fresh && e.date <= p.sowDate).sort((x, y) => (x.date < y.date ? -1 : 1)).pop();
+    const mf = fresh ? (MIX_FERT[fresh.kind] || MIX_FERT.other) : null, fmix = fresh ? (MIXES.find(m => m[0] === fresh.kind) || MIXES[2]) : null;
+    const reworked = ms && !ms.fresh && fresh && ms.date > fresh.date;
     let mixed = false;
     if (mf) {
-      const endD = feedEnd(p), a = p.sowDate > ms.date ? p.sowDate : ms.date, rEnd = addDays(ms.date, mf.days), z = rEnd < endD ? rEnd : endD;
-      const share = Math.max(0, daysBetween(a, z)) / mf.days, g = mf.gPerL * v;
-      if (share > 0.02) { mixed = true; lines.push({ g: 'soil', name: 'mix:slow', from: a, to: z, label: `Fertiliser in the potting mix (${ms.mix[1]}, filled ${shortDate(ms.date)})`,
-        n: g * mf.npk[0] / 100 * share, p: g * mf.npk[1] / 100 * share, k: g * mf.npk[2] / 100 * share, note: `${mf.what} — ${Math.round(share * 100)}% of it falls in this crop’s time (amount estimated)` }); }
+      const endD = feedEnd(p), a = p.sowDate > fresh.date ? p.sowDate : fresh.date, rEnd = addDays(fresh.date, mf.days), z = rEnd < endD ? rEnd : endD;
+      const share = Math.max(0, daysBetween(a, z)) / mf.days * (reworked ? 0.85 : 1), g = mf.gPerL * v;
+      if (share > 0.02) { mixed = true; lines.push({ g: 'soil', name: 'mix:slow', from: a, to: z, label: `Fertiliser in the potting mix (${fmix[1]}, filled fresh ${shortDate(fresh.date)}${reworked ? `, re-used ${shortDate(ms.date)}` : ''})`,
+        n: g * mf.npk[0] / 100 * share, p: g * mf.npk[1] / 100 * share, k: g * mf.npk[2] / 100 * share, note: `${mf.what} — ${Math.round(share * 100)}% of it falls in this crop’s time${reworked ? ' (a little lost when the mix was reworked)' : ''} (amount estimated)` }); }
     }
-    if (!mixed) lines.push({ g: 'soil', name: 'mix:reused', label: ms ? (ms.fresh ? `Potting mix (${ms.mix[1]}) — its built-in fertiliser is used up` : `Re-used potting mix (${ms.mix[1]})`) : 'Potting mix (no fill date recorded)', n: 0.3, p: 0.3, k: 0.3, note: ms ? 'little left' : 'add the mix and fill date for a better estimate' });
+    if (!mixed) lines.push({ g: 'soil', name: 'mix:reused', label: ms ? (ms.fresh ? `Potting mix (${ms.mix[1]}) — its built-in fertiliser is used up` : `Re-used potting mix (${ms.mix[1]})`) : 'Potting mix (no fill date recorded)', n: 0.3, p: 0.3, k: 0.3, note: ms ? 'little left' : 'tap “Set potting mix” on the Feeding card' });
   } else lines.push({ g: 'soil', name: 'soil', label: 'The bed’s own soil', n: 6 * A2, p: 4 * A2, k: 8 * A2, note: 'slow release from the soil’s reserves over a season (rough)' });
   // 2. what the previous crop left
   const prev = lastCropIn(c, p.from, p.to, p.sowDate, p.id);
@@ -197,6 +201,7 @@ function feedingSection(p) {
   A.feedNow = () => feedDialog({ pids: [p.id] });
   A.editFeed = el => feedDialog((S.log || []).find(e => e.id === el.dataset.id));
   A.addSideDress = () => feedPlanner(p);
+  A.setMix = () => mixDialog(L.c);
   const grp = { soil: 'Starting soil', prev: 'Left from before', base: 'At planting', fed: 'Fed since' };
   const cell = v => `<td>${v == null ? '—' : v < 0.05 ? '·' : gN(v)}</td>`;
   const rows = `<tr class="hd"><th></th><th>N</th><th>P</th><th>K</th></tr>` + Object.keys(grp).map(k => { const ls = L.lines.filter(l => l.g === k); return ls.length ? `<tr class="fg"><th colspan="4">${grp[k]}</th></tr>${ls.map(l => `<tr${l.logId ? ` data-act="editFeed" data-id="${l.logId}"` : ''}><td>${l.date ? `<small>${shortDate(l.date)}</small> ` : ''}${esc(l.label)}${l.note ? `<small>${esc(l.note)}</small>` : ''}</td>${cell(l.n)}${cell(l.p)}${cell(l.k)}</tr>`).join('')}` : ''; }).join('');
@@ -206,6 +211,7 @@ function feedingSection(p) {
     <p class="small">${L.need ? `${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted so far: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.` : `Counted so far: <b>${gN(L.total)}</b> of ${NAME_N}.`}</p>
     ${(() => { const sim = feedSim(p, L); return sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : ''; })()}
     <p class="small muted">Season totals (rough):</p>${npkBars(L)}<p class="small">${L.need ? '' : feedVerdict(L, p)} ${pkNote(L, p)}${nextUp ? ` Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}</p>${scheds ? `<p class="small">${scheds}</p>` : ''}
+    ${L.bag && !mixState(L.c) ? `<div class="banner warn">🪴 This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <button class="btn small" data-act="setMix">Set potting mix</button></div>` : ''}
     <details class="fold inner"><summary>What’s been counted</summary><table class="ledger">${rows}</table>
       <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use this season, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). Compost and manure release most of theirs over later seasons, so only part counts now. All rough — trust how the plants look.</p></details>
     <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div></section>`;
@@ -216,7 +222,7 @@ function bedFeedingSection(c) {
   A.mix = () => mixDialog(c);
   const ms = c.type !== 'bed' ? mixState(c) : null;
   return `<section class="feeding"><h3>Feeding</h3>
-    ${c.type !== 'bed' ? `<p class="small">🪴 ${ms ? `${ms.fresh ? 'Fresh' : 'Re-used'} ${esc(ms.mix[1])} since ${shortDate(ms.date)}` : 'Potting mix not recorded'} <button class="link" data-act="mix">${ms ? 'refilled?' : 'add'}</button></p>` : ''}
+    ${c.type !== 'bed' ? `<p class="small">🪴 ${ms ? `${ms.fresh ? 'Fresh' : 'Re-used'} ${esc(ms.mix[1])} since ${shortDate(ms.date)}` : 'Potting mix not recorded'} <button class="btn small" data-act="mix">🪴 ${ms ? 'Refilled / re-used? Update mix' : 'Set potting mix'}</button></p>` : ''}
     ${ps.map(p => { const L = feedLedger(p); return L ? `<a class="feedrow" href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(crop(p.cropId).en)}</b>${feedBar(L)}<small>${(() => { const sim = feedSim(p, L); return sim ? (sim.shortFrom ? `fed until ~${shortDate(sim.shortFrom)}` : `fed to ${shortDate(sim.end)}`) + ' · ' : ''; })()}${gN(L.total)}${L.need ? ` of ~${gN(L.need)}` : ''} ${NAME_N} this season</small></span>›</a>` : ''; }).join('')}
     <div class="btnrow"><button class="btn small primary" data-act="feedBed">🌿 Record feeding (whole ${c.type === 'bed' ? 'bed' : 'pot'})</button></div></section>`;
 }

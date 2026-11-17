@@ -40,10 +40,11 @@ function sideStages(p) {
   const out = [];
   for (const r of raw) {
     let { date, t } = r, why = '';
-    if (date < td) { if (daysBetween(date, td) > 10) continue; date = td; }
+    const orig = date;
+    if (!FRUIT_EVERY.includes(p.cropId) && orig > addDays(hv, -14)) continue;   // too close to harvest to help
+    if (date < td) { if (daysBetween(date, td) > 21) continue; why = `was due around ${shortDate(date)} — still worth doing now`; date = td; }
     const g = nextGrowing(p.cropId, date);
-    if (g > date) { why = `moved from ${shortDate(date)}: it’s too cold for roots to take feed up — growth restarts around ${shortDate(g)}`; date = g; }
-    if (!FRUIT_EVERY.includes(p.cropId) && date > addDays(hv, -14)) continue;   // too close to harvest to help
+    if (g > date) { why = `moved from ${shortDate(date)}: too cold for roots to take feed up — growth restarts around ${shortDate(g)}${g > addDays(hv, -14) ? ` (after your harvest estimate of ${shortDate(hv)} — over winter the heads mostly wait for spring, so this still counts)` : ''}`; date = g; }
     const dup = out.find(o => Math.abs(daysBetween(o.date, date)) < 14); if (dup) { if (!dup.t.includes(t)) dup.t += ' / ' + t; continue; }
     out.push({ date, t, why });
   }
@@ -57,39 +58,53 @@ function doseFor(pr, nPerDose, bag) {
   if (bag) return { amount: Math.max(2, Math.round(g)), unit: 'g', g };
   return g >= 15 ? { amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful', g } : { amount: Math.max(5, Math.round(g / 5) * 5), unit: 'g', g };
 }
+// N-P-K bars with what's already counted, planned, and what this plan would add
+function previewBars(L, add) {
+  const row = (k, l, have, plan, extra, need) => { if (!need) return ''; const pc = x => Math.min(100, x / need * 100);
+    return `<div class="npkrow"><span class="nl">${l}</span><div class="fbar"><i class="have${k === 'n' ? '' : ' ' + k}" style="width:${pc(have)}%"></i><i class="plan" style="left:${pc(have)}%;width:${Math.max(0, pc(have + plan) - pc(have))}%"></i><i class="add" style="left:${pc(have + plan)}%;width:${Math.max(0, pc(have + plan + extra) - pc(have + plan))}%"></i></div><span class="nv">${gN(have + plan + extra)} / ${gN(need)}${extra ? ` <b>+${gN(extra)}</b>` : ''}</span></div>`; };
+  return `<div class="npk">${row('n', 'N', L.total, L.plannedN, add.n, L.need)}${row('p', 'P', L.totalP, L.plannedP, add.p, L.needP)}${row('k', 'K', L.totalK, L.plannedK, add.k, L.needK)}</div>
+    <p class="hint">Solid: counted so far · striped: jobs already planned · bright: this plan.</p>`;
+}
 function sideDressDialog(p) {
   const L = feedLedger(p); if (!L) return;
   const stages = sideStages(p), short = Math.max(0, (L.need || 0) - L.total - L.plannedN), nDoses = Math.max(1, stages.length);
   // a normal side-dressing is ~10–15% of the season's nitrogen — enough to keep growth going without scorching or soft growth
   const perDose = Math.min((L.need || 4) * 0.15, Math.max(short / nDoses, (L.need || 4) * 0.06)), covers = perDose * nDoses;
-  const prods = myProducts(['fert']).filter(x => (NPK[x.id] || [0])[0] > 0)
-    .sort((a, b) => (isPlenty(b.id) - isPlenty(a.id)) || (leadOf(a)[0] - leadOf(b)[0]));
+  const prods = myProducts(['fert']).filter(x => (NPK[x.id] || [0])[0] > 0).sort((a, b) => (isPlenty(b.id) - isPlenty(a.id)) || (leadOf(a)[0] - leadOf(b)[0]));
   let sel = prods[0] ? prods[0].id : null;
-  const draw = m => {
-    const pr = PRODUCTS.find(x => x.id === sel), dose = pr && doseFor(pr, perDose, L.bag), lead = leadOf(pr);
-    const eff = dose ? usable3(feedGrams(dose.amount, dose.unit, pr.en), pr.en) : null;
-    m.querySelector('#sdOpts').innerHTML = prods.map(x => { const d = doseFor(x, perDose, L.bag), u = d && usable3(feedGrams(d.amount, d.unit, x.en), x.en);
-      return `<label class="sdopt${x.id === sel ? ' on' : ''}"><input type="radio" name="sdp" value="${x.id}"${x.id === sel ? ' checked' : ''}><span class="grow"><b>${esc(x.en)}</b>${isPlenty(x.id) ? ' <span class="orgchip">plenty</span>' : ''}${x.organic ? '' : ' <span class="warnchip">not organic</span>'}
-        <small>${d ? `${fmtAmt(d.amount, d.unit)} per dose → N ${gN(u.n)} · P ${gN(u.p)} · K ${gN(u.k)}` : ''}</small><small>${esc(leadOf(x)[1])}</small></span>
-        <button type="button" class="link" data-star="${x.id}">${isPlenty(x.id) ? '★' : '☆'}</button></label>`; }).join('') || '<p class="muted">No fertilisers in your products — add one under Products.</p>';
-    m.querySelector('#sdWhen').innerHTML = stages.length ? stages.map((s, i) => { const due = lead[0] && addDays(s.date, -lead[0]) > todayStr() ? addDays(s.date, -lead[0]) : s.date;
-      return `<label class="sdwhen"><input type="checkbox" name="w${i}" checked><span class="grow"><b>${s.t}</b><small>Feed on <input type="date" name="d${i}" value="${due}">${lead[0] && due !== s.date ? ` (${lead[0]} days early, as ${esc(pr ? pr.en : '')} is slow to work)` : ''}</small>${s.why ? `<small>⏸ ${esc(s.why)}</small>` : ''}</span></label>`; }).join('')
-      : `<p class="muted">No side-dressing stage left before harvest${p.harvestDate ? ` (${shortDate(p.harvestDate)})` : ''} — feeding now won’t make much difference.</p>`;
-    m.querySelector('#sdSum').innerHTML = dose ? `Each dose: <b>${fmtAmt(dose.amount, dose.unit)} ${esc(pr.en)}</b> → N ${gN(eff.n)} · P ${gN(eff.p)} · K ${gN(eff.k)}.` : '';
-    m.querySelectorAll('input[name=sdp]').forEach(r => r.onchange = () => { sel = r.value; draw(m); });
-    m.querySelectorAll('[data-star]').forEach(b => b.onclick = async e => { e.preventDefault(); const id = b.dataset.star; S.plenty = isPlenty(id) ? S.plenty.filter(x => x !== id) : [...(S.plenty || []), id]; await save(); draw(m); });
-  };
+  const dueFor = (s, pr) => { const lead = leadOf(pr)[0]; return lead && addDays(s.date, -lead) > todayStr() ? addDays(s.date, -lead) : s.date; };
   modal(`<h3>Plan side-dressing — ${esc(crop(p.cropId).en)}</h3>
-    <p class="small">${L.need ? (short > 0.05 ? `Short by about <b>${gN(short)}</b> nitrogen over the season — suggesting <b>${nDoses} dose${nDoses > 1 ? 's' : ''}</b> of about ${gN(perDose)} nitrogen each${covers < short * 0.9 ? `. That covers ${gN(covers)}; doses are kept to a normal size, as one big feed scorches roots and gives soft, pest-prone growth — the soil supplies more as it warms up` : ''}.` : `Already about right — these are light top-ups only if leaves look pale.`) : ''}</p>
-    <form id="sdf" class="form"><p class="small"><b>When</b></p><div id="sdWhen"></div>
-      <p class="small"><b>With</b> <span class="muted">— ☆ marks what you have plenty of, so it’s suggested first</span></p><div id="sdOpts"></div>
+    <p class="small">${L.need ? (short > 0.05 ? `Short by about <b>${gN(short)}</b> nitrogen over the season — suggesting <b>${nDoses} dose${nDoses > 1 ? 's' : ''}</b> of about ${gN(perDose)} nitrogen each${covers < short * 0.9 ? `. Doses are kept to a normal size — one big feed scorches roots and gives soft, pest-prone growth; the soil supplies more as it warms up` : ''}.` : 'Already about right — these are light top-ups only if leaves look pale.') : ''}</p>
+    <div id="sdBars"></div>
+    <form id="sdf" class="form"><p class="small"><b>When</b></p><div id="sdWhen">${stages.length ? stages.map((s, i) => `<label class="sdwhen"><input type="checkbox" name="w${i}" checked><span class="grow"><b>${esc(s.t)}</b>
+        <small>Feed on <input type="date" name="d${i}" value="${dueFor(s, PRODUCTS.find(x => x.id === sel))}"> <span class="leadnote" data-i="${i}"></span></small>${s.why ? `<small>⏸ ${esc(s.why)}</small>` : ''}</span></label>`).join('')
+      : `<p class="muted">No side-dressing stage left before harvest${p.harvestDate ? ` (${shortDate(p.harvestDate)})` : ''} — feeding now won’t make much difference.</p>`}</div>
+      <p class="small"><b>With</b> <span class="muted">— tap ☆ for what you have plenty of, so it’s suggested first</span></p><div id="sdOpts"></div>
       <p class="msg small" id="sdSum"></p>
-      <p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} — your bag’s instructions win. Scatter it along the row or around the plant, a few cm from the stems, mix it into the surface, and water it in.</p>
+      <p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} — your bag’s instructions win. Scatter it along the row or around the plant, a few cm from the stems, work it into the surface and water it in.</p>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary"${stages.length ? '' : ' disabled'}>Add these jobs</button></div></form>`, (m, close) => {
-    draw(m);
+    const f = m.querySelector('#sdf'), edited = new Set();
+    stages.forEach((s, i) => { f['d' + i].addEventListener('input', () => edited.add(i)); f['w' + i].addEventListener('change', () => update()); });
+    const update = () => {
+      const pr = PRODUCTS.find(x => x.id === sel), dose = pr && doseFor(pr, perDose, L.bag), lead = leadOf(pr);
+      const eff = dose ? usable3(feedGrams(dose.amount, dose.unit, pr.en), pr.en) : { n: 0, p: 0, k: 0 }, k = stages.filter((s, i) => f['w' + i].checked).length;
+      stages.forEach((s, i) => { if (!edited.has(i)) f['d' + i].value = dueFor(s, pr); m.querySelector(`.leadnote[data-i="${i}"]`).textContent = lead[0] && f['d' + i].value !== s.date && !edited.has(i) ? `(${lead[0]} days early — ${pr.en} is slow to work)` : ''; });
+      m.querySelector('#sdBars').innerHTML = previewBars(L, { n: eff.n * k, p: eff.p * k, k: eff.k * k });
+      m.querySelector('#sdSum').innerHTML = dose ? `${k} × <b>${fmtAmt(dose.amount, dose.unit)} ${esc(pr.en)}</b> → adds N ${gN(eff.n * k)} · P ${gN(eff.p * k)} · K ${gN(eff.k * k)} in total.` : '';
+      m.querySelectorAll('.sdopt').forEach(o => o.classList.toggle('on', o.dataset.id === sel));
+    };
+    const drawOpts = () => {
+      m.querySelector('#sdOpts').innerHTML = prods.map(x => { const d = doseFor(x, perDose, L.bag), u = d && usable3(feedGrams(d.amount, d.unit, x.en), x.en);
+        return `<label class="sdopt" data-id="${x.id}"><input type="radio" name="sdp" value="${x.id}"${x.id === sel ? ' checked' : ''}><span class="grow"><b>${esc(x.en)}</b>${isPlenty(x.id) ? ' <span class="orgchip">plenty</span>' : ''}${x.organic ? '' : ' <span class="warnchip">not organic</span>'}
+          <small>${d ? `${fmtAmt(d.amount, d.unit)} per dose → N ${gN(u.n)} · P ${gN(u.p)} · K ${gN(u.k)}` : ''}</small><small>${esc(leadOf(x)[1])}</small></span>
+          <button type="button" class="link" data-star="${x.id}">${isPlenty(x.id) ? '★' : '☆'}</button></label>`; }).join('') || '<p class="muted">No fertilisers in your products — add one under Products.</p>';
+      m.querySelectorAll('input[name=sdp]').forEach(r => r.onchange = () => { sel = r.value; update(); });
+      m.querySelectorAll('[data-star]').forEach(b => b.onclick = async e => { e.preventDefault(); const id = b.dataset.star; S.plenty = isPlenty(id) ? S.plenty.filter(x => x !== id) : [...(S.plenty || []), id]; await save(); drawOpts(); update(); });
+    };
+    drawOpts(); update();
     m.querySelector('[data-x=no]').onclick = close;
-    m.querySelector('#sdf').onsubmit = async e => {
-      e.preventDefault(); const f = e.target, pr = PRODUCTS.find(x => x.id === sel); if (!pr) return;
+    f.onsubmit = async e => {
+      e.preventDefault(); const pr = PRODUCTS.find(x => x.id === sel); if (!pr) return;
       const dose = doseFor(pr, perDose, L.bag);
       stages.forEach((s, i) => { if (!f['w' + i].checked) return;
         S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress (追肥): ${pr.en} ${fmtAmt(dose.amount, dose.unit)} — ${s.t}`, product: pr.en, amount: dose.amount, unit: dose.unit, due: f['d' + i].value || s.date, done: false }); });

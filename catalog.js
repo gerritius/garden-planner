@@ -167,7 +167,7 @@ const JOB_TEMPLATES = [
   ['Protect', ['Cover with insect netting (防虫ネット)', 'Cover with fleece / row cover (不織布)', 'Frost cover tonight', 'Bird netting', 'Remove covers']],
   ['Support', ['Put in stake / support (支柱)', 'Tie stems to support (誘引)', 'Put up net / trellis (ネット)']],
   ['Soil', ['Earth up (土寄せ)', 'Lay mulch film (マルチ)', 'Straw mulch (敷きわら)', 'Weed', 'Loosen soil (中耕)']],
-  ['Feed & water', ['Side-dress (追肥)', 'Liquid feed (液肥)', 'Deep water']],
+  ['Water', ['Deep water']],
   ['Plant care', ['Remove side shoots (わき芽かき)', 'Pinch out tip (摘心)', 'Remove lower / yellow leaves', 'Hand-pollinate (人工授粉)', 'Remove flowers / runners', 'Thin seedlings (間引き)']],
   ['Check', ['Check for pests', 'Check for disease', 'Check soil moisture']],
 ];

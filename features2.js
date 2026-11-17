@@ -15,7 +15,7 @@ function taskOwner(t) {
   const c = p ? container(p.containerId) : (t.containerId ? container(t.containerId) : null);
   return { p, c };
 }
-const taskVisible = t => t.kind === 'water' || t.kind === 'frost' || t.kind === 'wx' || (t.startId ? !!start(t.startId) : false) || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
+const taskVisible = t => (t.withWater && !t.done && (!S.water || S.water.on !== false)) ? false : t.kind === 'water' || t.kind === 'frost' || t.kind === 'wx' || (t.startId ? !!start(t.startId) : false) || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
 const BED_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="1.5" fill="#8a6a4b" stroke="#3a2a1c" stroke-width="1.3"/><path d="M12 9h8M12 15h8M12 21h8" stroke="#7fb069" stroke-width="2.2" stroke-linecap="round"/></svg>`;
 const CAN_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M8 13h13v13a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" fill="#7aa7c7" stroke="#3a2a1c" stroke-width="1.3"/><path d="M21 16l7-6" stroke="#3a2a1c" stroke-width="2.4" stroke-linecap="round"/><path d="M11 13a4 4 0 0 1 7 0" fill="none" stroke="#3a2a1c" stroke-width="1.3"/><path d="M28 13v.1M29.5 15.5v.1M27 16.5v.1" stroke="#3d7fb8" stroke-width="1.8" stroke-linecap="round"/></svg>`;
 
@@ -133,8 +133,13 @@ function syncWater() {
   const mt = typeof bagMoistureToday === 'function' ? bagMoistureToday(pots) : { any: 0 };
   if (mt.dry) { due = td; note = ` · meter: ${mt.dry} pot${mt.dry > 1 ? 's' : ''} DRY today`; }
   else if (mt.any && mt.wet === mt.any && mt.all && due <= td) { due = addDays(td, 1); note = ' · meter says still wet'; }
+  // liquid feeds for the bags ride along with the watering: a feed day is a watering day
+  const ef = typeof earliestWaterFeed === 'function' ? earliestWaterFeed() : null;
+  if (ef) { const d = ef < td ? td : ef; if (d < due) { due = d; note = ' · liquid feed due'; } }
+  const feeds = typeof waterFeedsDue === 'function' ? waterFeedsDue(due < td ? td : due) : [];
   if (!open) { open = { id: uid(), kind: 'water', plantingId: null, title: 'Water pots & bags', due, done: false }; S.tasks.push(open); }
-  open.due = due;
+  open.due = due; open.feeds = feeds.map(t => t.id);
+  open.title = feeds.length ? `Water + liquid feed: ${[...new Set(feeds.map(t => (container((planting(t.plantingId) || {}).containerId) || {}).name))].join(', ')}` : 'Water pots & bags';
   open.note = `${pots.length} pot${pots.length > 1 ? 's' : ''} · every ${w.iv === 1 ? 'day' : w.iv + ' days'} this time of year${note}`;
 }
 

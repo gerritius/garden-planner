@@ -158,7 +158,7 @@ function finishToggle(t, done, td) {
   const p = t.plantingId ? planting(t.plantingId) : null;
   if (done) {
     t.done = true; t.doneOn = td;
-    if (t.kind === 'water') { t.prevLast = S.water && S.water.lastDone; S.water = Object.assign({}, S.water, { lastDone: td }); }
+    if (t.kind === 'water') { t.prevLast = S.water && S.water.lastDone; S.water = Object.assign({}, S.water, { lastDone: td }); if (t.feeds && t.feeds.length && typeof completeWaterFeeds === 'function') completeWaterFeeds(t, td); }
     if (t.kind === 'germ' && p) setTimeout(() => germDialog(p, td), 320);
     if (t.kind === 'thin' && p) { p.thinned = true; p.thinDoneOn = td; }
     if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = td;
@@ -262,6 +262,7 @@ function render() {
   try { migrateFeed(); migrateCovers(); } catch (e) { console.warn(e); }
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
+  try { syncFeedPlans(); syncWater(); } catch (e) { console.warn(e); }
   if (!window._snapDone) { window._snapDone = true; setTimeout(snapshotDaily, 3000); }
   let html = '', after = null;
   try {
@@ -591,15 +592,16 @@ function pagePlantForm(p, c, q) {
       <button type="button" class="btn small" data-act="addFert">＋ Add fertiliser</button>
       <small class="hint">Units: g, handfuls (1 handful ≈ ${HANDFUL_G} g of granular fertiliser), mL or L.</small>
     </fieldset>
-    <fieldset><legend>Extra fertiliser &amp; repeating jobs</legend>
+    <fieldset><legend>Repeating jobs</legend>
       ${d.series.map((s, i) => `<div class="series">
-        <div class="fert">${s.title && !s.product ? `<input name="series.${i}.title" value="${esc(s.title)}">` : `<input name="series.${i}.product" value="${esc(s.product)}" placeholder="Product / job (e.g. 液肥)">`}<input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
-        <select name="series.${i}.unit">${unitOpts(s.unit)}</select><button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
+        <div class="fert">${!s.product ? `<input name="series.${i}.title" value="${esc(s.title || '')}" placeholder="Job (e.g. Earth up 土寄せ)">` : `<input name="series.${i}.product" value="${esc(s.product)}"><input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
+        <select name="series.${i}.unit">${unitOpts(s.unit)}</select>`}<button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
         <div class="rep-row"><select name="series.${i}.every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${+s.every === n ? ' selected' : ''}>${n === 0 ? 'Once' : 'Every ' + n}</option>`).join('')}</select>
         ${+s.every > 0 ? `<select name="series.${i}.per">${['day', 'week', 'month'].map(u => `<option value="${u}"${s.per === u ? ' selected' : ''}>${u}${+s.every > 1 ? 's' : ''}</option>`).join('')}</select>` : ''}
         <label class="inl">${+s.every > 0 ? 'from' : 'on'} <input type="date" name="series.${i}.start" value="${esc(s.start || '')}"></label>
         ${+s.every > 0 ? `<label class="inl">until <input type="date" name="series.${i}.end" value="${esc(s.end || '')}"></label>` : ''}</div></div>`).join('')}
-      <button type="button" class="btn small" data-act="addSeries">＋ Add fertiliser / job</button>
+      <button type="button" class="btn small" data-act="addSeries">＋ Add repeating job</button>
+      <small class="hint">Fertiliser and liquid feeds are planned from the crop’s Feeding card (📅 Feeding plan), so they’re counted and can’t overfeed.</small>
       <small class="hint">Repeating jobs: the next one is due counted from the day you actually tick it off.</small>
     </fieldset>
     <label>Notes<textarea name="notes" rows="3">${esc(d.notes || '')}</textarea></label>
@@ -633,7 +635,7 @@ function pagePlantForm(p, c, q) {
   A.usePacket = el => { read(); usePacket(d, el.dataset.k, c); render(); };
   A.addFert = () => { read(); d.fertAuto = false; d.fert.push({ product: '', amount: '', unit: 'g' }); render(); };
   A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
-  A.addSeries = () => { read(); d.series.push({ id: uid(), product: '', amount: '', unit: 'mL', every: 2, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
+  A.addSeries = () => { read(); d.series.push({ id: uid(), title: '', every: 1, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
   A.rmSeries = el => { read(); d.series.splice(+el.dataset.i, 1); render(); };
   A.rmPhoto = el => { read(); const s = el.dataset.slot; if (d.newPhotos[s]) delete d.newPhotos[s]; else d.removePhotos[s] = true; render(); };
 
@@ -1105,7 +1107,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.13.3';
+const APP_VERSION = '1.14.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

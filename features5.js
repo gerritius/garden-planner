@@ -254,12 +254,11 @@ function baseFertNote(cropId, c) {
 // suggested jobs = catalogue jobs + top-dressing with my products + weekly pest check
 const FRUITING = ['tomato', 'minitomato', 'nasu', 'piman', 'chilli', 'shishito', 'kyuri', 'zucchini'];
 function careJobs(cropId) {
-  const cr = crop(cropId), jobs = (cr.jobs || []).map(j => j.slice());
+  const cr = crop(cropId);
+  // feeding is planned from the Feeding card, so side-dressing isn't a plain job any more (earthing up stays)
+  const jobs = (cr.jobs || []).map(j => j.slice()).filter(j => !/追肥|side-dress|止め肥/i.test(j[0]) || /earth up|土寄せ/i.test(j[0])).map(j => /追肥|side-dress/i.test(j[0]) ? ['Earth up (土寄せ)', ...j.slice(1)] : j);
   const top = pick(['bokashi', 'toshoAburakasu', 'chickenManure', 'aburakasu']);
   const feed = feedOf(cropId);
-  for (const j of jobs) if (/追肥|side-dress|止め肥/i.test(j[0]) && top) j[4] = { product: top.en, perM2: feed === 'heavy' ? 40 : 30, perPlant: null };
-  if (FRUITING.includes(cropId) && top && !jobs.some(j => /追肥|side-dress/i.test(j[0])))
-    jobs.push(['Side-dress (追肥)', ['kyuri', 'zucchini'].includes(cropId) ? 21 : 30, 2, 'week', { product: top.en, perPlant: 1 }]);
   if (FRUITING.includes(cropId) || cr.family === 'brassica' || ['strawberry', 'soramame', 'edamame', 'lettuce'].includes(cropId))
     jobs.push(['Pest check (害虫チェック) – undersides & new growth', 7, 1, 'week']);
   return jobs;

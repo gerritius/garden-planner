@@ -280,7 +280,7 @@ function pageProducts() {
   A.toggleOwn = el => { const id = el.dataset.id; let l = S.myProducts || PRODUCTS.map(p => p.id); l = l.includes(id) ? l.filter(x => x !== id) : [...l, id]; S.myProducts = l; save().then(render); };
   const group = (title, kinds) => `<section><h3>${title}</h3><ul class="plist log">${PRODUCTS.filter(p => kinds.includes(p.kind)).map(p => `<li${own.includes(p.id) ? '' : ' class="off"'}><a href="#/product/${p.id}"><span class="lic">${p.kind === 'spray' ? (p.organic ? '🌱' : '⚗️') : p.kind === 'homemade' ? '🧪' : p.kind === 'lime' ? '🐚' : p.kind === 'compost' ? '🪏' : '🌿'}</span><span class="grow"><b>${esc(p.en)}</b> <small>${esc(p.ja)} · ${esc(p.maker)}</small><small>${esc(p.what)}</small>${p.kind !== 'spray' && p.kind !== 'homemade' ? `<small>${p.wait ? `Dig in ${p.wait >= 14 ? Math.round(p.wait / 7) + '–' + (Math.round(p.wait / 7) + 1) + ' weeks' : 'about a week'} before planting` : 'Can go in on planting day'}${p.top ? ' · fine as a top-dressing straight away' : ''}</small>` : ''}</span>›</a></li>`).join('')}</ul></section>`;
   const html = `<p class="hint">These are used for feeding plans, bed prep and the spray checks. Untick anything you no longer have on the product’s page.</p>
-    ${group('Sprays', ['spray', 'homemade'])}${group('Fertilisers', ['fert'])}${group('Lime & compost', ['lime', 'compost'])}
+    ${group('Sprays', ['spray', 'homemade'])}${group('Fertilisers', ['fert'])}${group('Lime, compost & soil improvers', ['lime', 'compost', 'amend'])}
     <p class="hint">Spray rules come from Japan’s official pesticide registry (農林水産省 農薬登録情報提供システム), checked ${REG_DATE}. Labels can change — the label on your bottle always wins.</p>`;
   void own;
   return { html };

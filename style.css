@@ -581,3 +581,11 @@ table.ledger tr.fg th { text-align: left; font-size: 12px; color: var(--muted); 
 table.ledger tr[data-act] { cursor: pointer; }
 details.fold.inner { border-top: 0; margin: 4px 0; }
 details.fold.inner > summary { font-size: 14px; padding: 6px 0; }
+.npk { margin: 6px 0; }
+.npkrow { display: grid; grid-template-columns: 1.4em 1fr auto; gap: 8px; align-items: center; font-size: 12px; }
+.npkrow .fbar { margin: 3px 0 !important; }
+.npkrow .nl { font-weight: 700; }
+.npkrow .nv { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.fbar i.have.p { background: #c08a3e; } .fbar i.have.k { background: #7a6bb0; }
+table.ledger tr.hd th { font-size: 11px; color: var(--muted); text-align: right; padding: 2px 4px; }
+table.ledger td:nth-child(n+2) { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; width: 3.4em; }

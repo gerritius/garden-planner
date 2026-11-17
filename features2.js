@@ -148,7 +148,7 @@ function bedTaskDialog(c, t) {
       <label>Job<input name="title" value="${esc(t ? t.title : '')}" required placeholder="e.g. Side-dress (追肥)"></label>
       <div class="two"><label>Date<input name="due" type="date" value="${date0}"></label><label class="inl chkline"><input type="checkbox" name="done"${t ? (t.done ? ' checked' : '') : ''}> <span>Already done</span></label></div>
       <details class="pktpick"${fp.product ? ' open' : ''}><summary>Fertiliser / compost used (counts towards feeding)</summary>
-        <label>Product<input name="product" list="bfl" value="${esc(fp.product || '')}" placeholder="e.g. Bokashi"><datalist id="bfl">${myProducts(['fert', 'compost', 'lime']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist></label>
+        <label>Product<input name="product" list="bfl" value="${esc(fp.product || '')}" placeholder="e.g. Bokashi"><datalist id="bfl">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist></label>
         <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${fp.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(fp.unit || 'handful')}</select></label></div></details>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div>
       ${!isNew ? `<a class="link" href="#/container/${c.id}" data-x="open">Open ${esc(c.name)} →</a>` : ''}</form>`, (m, close) => {

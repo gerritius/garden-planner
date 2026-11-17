@@ -207,14 +207,17 @@ function feedingSection(p) {
   const rows = `<tr class="hd"><th></th><th>N</th><th>P</th><th>K</th></tr>` + Object.keys(grp).map(k => { const ls = L.lines.filter(l => l.g === k); return ls.length ? `<tr class="fg"><th colspan="4">${grp[k]}</th></tr>${ls.map(l => `<tr${l.logId ? ` data-act="editFeed" data-id="${l.logId}"` : ''}><td>${l.date ? `<small>${shortDate(l.date)}</small> ` : ''}${esc(l.label)}${l.note ? `<small>${esc(l.note)}</small>` : ''}</td>${cell(l.n)}${cell(l.p)}${cell(l.k)}</tr>`).join('')}` : ''; }).join('');
   const nextUp = L.planned.slice().sort((a, b) => (a.t.due < b.t.due ? -1 : 1))[0];
   const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `🔁 Every ${s.every} days: ${esc(s.product)} ${fmtAmt(s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
+  const sim = feedSim(p, L);
   return `<section class="feeding"><h3>Feeding</h3>
-    <p class="small">${L.need ? `${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted so far: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.` : `Counted so far: <b>${gN(L.total)}</b> of ${NAME_N}.`}</p>
-    ${(() => { const sim = feedSim(p, L); return sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : ''; })()}
-    <p class="small muted">Season totals (rough):</p>${npkBars(L)}<p class="small">${L.need ? '' : feedVerdict(L, p)} ${pkNote(L, p)}${nextUp ? ` Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}</p>${scheds ? `<p class="small">${scheds}</p>` : ''}
+    ${sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : `<p class="small">${feedVerdict(L, p)}</p>`}
+    ${nextUp || scheds ? `<p class="small">${nextUp ? `Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}${scheds ? `<br>${scheds}` : ''}</p>` : ''}
     ${L.bag && !mixState(L.c) ? `<div class="banner warn">🪴 This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <button class="btn small" data-act="setMix">Set potting mix</button></div>` : ''}
-    <details class="fold inner"><summary>What’s been counted</summary><table class="ledger">${rows}</table>
-      <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use this season, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). Compost and manure release most of theirs over later seasons, so only part counts now. All rough — trust how the plants look.</p></details>
-    <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div></section>`;
+    <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div>
+    <details class="fold inner"><summary>What’s been counted</summary>
+      ${L.need ? `<p class="small">${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.</p>` : ''}
+      ${npkBars(L)}${pkNote(L, p) ? `<p class="small">${pkNote(L, p)}</p>` : ''}
+      <table class="ledger">${rows}</table>
+      <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). “Fed until” follows when each feed releases, what the crop takes as it grows, and what washes out with watering and rain. All rough — trust how the plants look.</p></details></section>`;
 }
 function bedFeedingSection(c) {
   const ps = activeIn(c.id); if (!ps.length) return '';

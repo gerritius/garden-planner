@@ -137,7 +137,7 @@ function feedPlanner(p) {
   };
   const evaluate = () => { const pd2 = planDoses(false); return Object.assign(pd2, { sim: feedSim(p, L, pd2.acc) }); };
   setDoses(); fill(); setDoses();
-  const rowHTML = r => {
+  const rowEdit = r => {
     const e = effOf(r.product, r.amount, r.unit), lead = leadOf(productByName(r.product));
     return `<div class="frow${r.on ? '' : ' off'}${r.over && !r.count ? ' over' : ''}" data-r="${r.id}">
       <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <b>${r.type === 'every' ? `Every <input type="number" class="sm" data-f="every" value="${r.every || 7}" min="1"> days` : esc(r.t || 'Extra dose')}</b></label>
@@ -145,7 +145,17 @@ function feedPlanner(p) {
       <div class="fgrid2">${r.type === 'every' ? `from <input type="date" data-f="date" value="${r.date}"> until <input type="date" data-f="until" value="${r.until || end}">` : `on <input type="date" data-f="due" value="${r.due || r.date}">`}</div>
       <small>${r.amount ? `each → N ${gN(e.n)} · P ${gN(e.p)} · K ${gN(e.k)}` : ''}${r.big ? ' · <b>left out — too much in one go; split it into smaller doses</b>' : r.type === 'every' && r.on ? ` · ${r.count} dose${r.count === 1 ? '' : 's'}${r.over ? ` — ${r.over} skipped when the soil already holds plenty` : ''}` : r.over ? ' · <b>left out — the soil still holds plenty then; it would overfeed</b>' : ''}${lead[0] && r.type === 'once' && !isLiquid(r.product) ? ` · ${esc(lead[1])}` : ''}</small>
       ${r.why ? `<small>⏸ ${esc(r.why)}</small>` : ''}${r.type === 'every' && isLiquid(r.product) && isPotOutdoor(c) ? '<small>💧 Given with the watering — on feed days the watering job becomes “Water + liquid feed”.</small>' : ''}
-      ${r.src === 'custom' || r.type === 'every' ? `<button type="button" class="link danger" data-del="${r.id}">remove</button>` : ''}</div>`;
+      <div class="btnrow"><button type="button" class="link" data-open="${r.id}">Done</button>${r.src === 'custom' || r.type === 'every' ? `<button type="button" class="link danger" data-del="${r.id}">remove</button>` : ''}</div></div>`;
+  };
+  // compact line; ✎ opens the editor for that dose
+  const rowHTML = r => {
+    if (r.open) return rowEdit(r);
+    const warn = r.big ? 'too much in one go — split it' : r.type === 'once' && r.over ? 'left out: the soil still holds plenty then' : r.type === 'every' && r.over ? `${r.over} skipped while the soil holds plenty` : '';
+    const when = r.type === 'every' ? `Every ${r.every || 7} days · ${shortDate(r.date)}–${shortDate(r.until || end)}${r.on ? ` (${r.count} dose${r.count === 1 ? '' : 's'})` : ''}` : shortDate(r.due || r.date);
+    return `<div class="frow line${r.on ? '' : ' off'}${r.over && !r.count ? ' over' : ''}" data-r="${r.id}">
+      <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <span class="grow"><b>${when}</b> · ${esc(r.product || '?')} ${r.amount ? fmtAmt(+r.amount, r.unit) : ''}
+        ${r.t && r.type === 'once' && r.src !== 'custom' ? `<small>${esc(r.t)}</small>` : ''}${warn ? `<small class="warnline">${warn}</small>` : ''}${r.why ? `<small>⏸ ${esc(r.why)}</small>` : ''}</span></label>
+      <button type="button" class="link" data-open="${r.id}">✎</button></div>`;
   };
   modal(`<h3>Feeding plan — ${esc(crop(p.cropId).en)}</h3>
     <div id="fpBars"></div><p class="small" id="fpSum"></p>
@@ -154,7 +164,7 @@ function feedPlanner(p) {
     <datalist id="fpn">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
     <form id="fpf" class="form"><div id="fpRows"></div>
       <div class="btnrow"><button type="button" class="btn small" data-x="addOnce">＋ One-off dose</button><button type="button" class="btn small" data-x="addEvery">＋ Repeating feed</button><button type="button" class="btn small" data-x="fill">↻ Re-suggest</button></div>
-      <p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} and its stage — your bag’s instructions win. Doses are kept to a normal size, and nothing is scheduled that would take nitrogen past about ${Math.round(CEILING * 100)}% of the crop’s need${L.need ? ` (${gN(ceilingN(L))})` : ''}. Liquid feeds: amounts are the concentrate you measure out.</p>
+      <details class="fold inner"><summary>How these are worked out</summary><p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} and its stage — your bag’s instructions win. Doses go where the crop would otherwise run short, kept to a normal size; a dose is left out if it’s too big on its own or the soil still holds plenty at that point. Outdoors, repeating feeds skip midwinter. Liquid feeds: amounts are the concentrate you measure out.</p></details>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save plan</button></div></form>`, (m, close) => {
     const f = m.querySelector('#fpf');
     const drawMain = () => { m.querySelector('#fpMain').innerHTML = names.map(n => { const pr = productByName(n);
@@ -184,11 +194,13 @@ function feedPlanner(p) {
       clearTimeout(m._t); m._t = setTimeout(() => { const pos = el.selectionStart; draw(); const again = m.querySelector(`[data-r="${r.id}"] [data-f="${k}"]`); if (again && el.type !== 'checkbox') { again.focus(); try { again.setSelectionRange(pos, pos); } catch (er) { /* */ } } }, el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'date' ? 0 : 500);
     });
     m.querySelector('#fpRows').addEventListener('change', e => { if (e.target.type === 'checkbox' || e.target.tagName === 'SELECT' || e.target.type === 'date') { const r = rows.find(x => x.id === e.target.closest('[data-r]').dataset.r); r[e.target.dataset.f] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; draw(); } });
-    m.querySelector('#fpRows').addEventListener('click', e => { const b = e.target.closest('[data-del]'); if (!b) return; rows.splice(rows.findIndex(r => r.id === b.dataset.del), 1); draw(); });
-    m.querySelector('[data-x=addOnce]').onclick = () => { rows.push(mkRow({ date: td, due: td, t: 'Extra dose', src: 'custom', manual: true, ...(doseOf(main, perDose, L.bag) || {}) })); draw(); };
+    m.querySelector('#fpRows').addEventListener('click', e => {
+      const o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); const r = rows.find(x => x.id === o.dataset.open); r.open = !r.open; draw(); return; }
+      const b = e.target.closest('[data-del]'); if (!b) return; rows.splice(rows.findIndex(r => r.id === b.dataset.del), 1); draw(); });
+    m.querySelector('[data-x=addOnce]').onclick = () => { rows.push(mkRow({ open: true, date: td, due: td, t: 'Extra dose', src: 'custom', manual: true, ...(doseOf(main, perDose, L.bag) || {}) })); draw(); };
     m.querySelector('[data-x=addEvery]').onclick = () => {
       const liq = names.find(n => isLiquid(n)) || main, nPer = Math.max(0.05, (L.need || 4) * 0.04);
-      rows.push(mkRow({ type: 'every', every: 7, date: td, until: end, product: liq, src: 'custom', manual: true, ...(doseOf(liq, nPer, L.bag) || { amount: 5, unit: 'mL' }) })); draw();
+      rows.push(mkRow({ open: true, type: 'every', every: 7, date: td, until: end, product: liq, src: 'custom', manual: true, ...(doseOf(liq, nPer, L.bag) || { amount: 5, unit: 'mL' }) })); draw();
     };
     m.querySelector('[data-x=fill]').onclick = () => { fill(); setDoses(); draw(); };
     m.querySelector('[data-x=no]').onclick = close;

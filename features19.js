@@ -47,7 +47,7 @@ function feedSim(p, L, extra = [], skip) {
     poolAt[d] = pool;
     const dem = wOf[d] || 0, take = Math.min(pool, dem);
     pool -= take; taken += take; unmetAll += dem - take;
-    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && dem > avgDem * 0.3 && take < dem * 0.6 && normalT(d) >= restartTemp(p.cropId)) shortFrom = d; }   // a shortfall only matters while it's growing
+    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && dem > avgDem * 0.3 && take < dem * 0.6) shortFrom = d; }   // a shortfall only matters while it's growing
     const l = pool * leach; pool -= l; lost += l;
   }
   return { start, end, shortFrom, unmetFuture, unmetAll, taken, peak, peakDate, lost, poolAt, maxPool: maxPoolOf(L), left: pool };
@@ -69,7 +69,10 @@ function simVerdict(sim, L, p) {
   if (sim.peakDate && sim.peak > sim.maxPool * 1.3 && sim.peakDate >= addDays(td, -30) && sim.peakDate <= addDays(td, 30))
     bits.push(`A lot of nitrogen is in the soil at once around ${shortDate(sim.peakDate)} (~${gN(sim.peak)}) — water through well and watch for scorched leaf edges; ${L.bag ? 'in a pot much of it will drain away over the next few weeks.' : 'skip feeding until it’s used up.'}`);
   if (!sim.shortFrom) bits.push(`<b>Fed through to ${shortDate(sim.end)}</b> with what’s in and planned.`);
-  else if (sim.shortFrom <= addDays(td, 5)) bits.push(`<b>Running short now</b> — plan a feed soon.`);
-  else bits.push(`<b>Fed until about ${shortDate(sim.shortFrom)}</b> — plan a feed before then.`);
+  else {
+    const slow = normalT(sim.shortFrom) < restartTemp(p.cropId), back = slow ? nextGrowing(p.cropId, sim.shortFrom) : null;
+    const when = sim.shortFrom <= addDays(td, 5) ? '<b>Running short now</b>' : `<b>Fed until about ${shortDate(sim.shortFrom)}</b>`;
+    bits.push(slow ? `${when} — but it’s the slow winter stretch: it only needs a little until growth picks up around ${shortDate(back)}. A light feed ${sim.shortFrom <= addDays(td, 5) ? 'now' : 'around ' + shortDate(sim.shortFrom)}, or a proper one around ${shortDate(back)}.` : `${when} — plan a feed ${sim.shortFrom <= addDays(td, 5) ? 'soon' : 'before then'}.`);
+  }
   return bits.join(' ');
 }

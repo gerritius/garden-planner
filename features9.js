@@ -168,8 +168,17 @@ function harvestModel(p, raw) {
 }
 function harvestEstimate(p) {
   const m = harvestModel(p); if (!m) return p.harvestDate || '';
-  const d = ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId));
+  let d = ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId));
+  const fe = frostEnd(p); if (fe && d > fe) d = fe;   // autumn potatoes: the tops die back with the first frosts, so they're dug then
   return d < addDays(p.sowDate, 14) ? addDays(p.sowDate, 14) : d;
+}
+// for frost-tender crops planted for autumn: the date the first frosts usually finish the tops (normal mean temperature falls to ~8.5 °C)
+function frostEnd(p) {
+  const cr = crop(p.cropId); if (!cr.frostEnd || !p.sowDate) return null;
+  const m = pd(p.sowDate).getMonth() + 1; if (m < 7 || m > 10) return null;   // spring crops are dug before summer, not stopped by frost
+  const c = container(p.containerId); if (c && c.indoor) return null;
+  for (let d = addDays(p.sowDate, 30), i = 0; i < 200; i++, d = addDays(d, 1)) if (normalT(d) < 8.5) return d;
+  return null;
 }
 // keep harvest dates current unless set by hand or picking has started
 function syncHarvest() {

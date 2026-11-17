@@ -23,6 +23,11 @@ function harvestWindow(p) {
   let mature = b > a ? ddUntil(p.harvestDate, (b - a) * rate, p.cropId, tempFor(p.containerId)) : p.harvestDate;
   const cap = addDays(p.harvestDate, Math.round((b - a) * 1.5));   // ready heads don't wait for spring: cap the spread in calendar days
   if (mature > cap) mature = cap;
+  const fe = typeof frostEnd === 'function' ? frostEnd(p) : null;
+  if (fe) {   // tops killed by frost: ready then, and dig within a few weeks before the ground freezes
+    const m2 = mature > fe ? (p.harvestDate > fe ? p.harvestDate : fe) : mature, k2 = addDays(m2, 21);
+    return { earliest: p.harvestDate, mature: m2, keep: p.keepUntil || k2, keepSet: !!p.keepUntil, a, b, late: 'frost gets into the tubers — dig before the ground freezes', cont: false, frost: fe };
+  }
   return { earliest: p.harvestDate, mature, keep: p.keepUntil || keepsUntil(p, mature), keepSet: !!p.keepUntil, a, b, late: cr.late, cont: !!cr.cont };
 }
 function harvestWindowText(p) {

@@ -159,7 +159,11 @@ const Draw = (() => {
       s += `<g class="pl${dim ? ' dim' : ''}" data-pid="${p.id}" style="--c:${p._color}">`;
       s += `<rect x="0" y="${p.from}" width="${W}" height="${p.to - p.from}" class="sec"/>`;
       const { pts, lines } = layout(c, p);
-      const r = Math.max(minR, radius(p, o.today));
+      let r = Math.max(minR, radius(p, o.today));
+      if (pts.length > 1) {   // crowded plants: draw each no wider than its share, so they don't swallow the pot
+        let nn = Infinity; for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) nn = Math.min(nn, Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]));
+        if (nn < Infinity) r = Math.max(minR, Math.min(r, nn * 0.5));
+      }
       for (const ln of lines) s += `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drill" ${ns}/>`;
       const editing = o.edit === p.id;
       pts.forEach((q, i) => {

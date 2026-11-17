@@ -16,7 +16,7 @@ const CATALOG = [
   C('celery', 'Celery', 'セロリ', '#8fbf4f', 'seedling', 'staggered', null, 40, 30, '', null, null, 90, 30,
     ['コーネル619', 'トップセラー', 'ミニホワイト', 'スジなしセロリ', 'キンサイ（中国セロリ）']),
   C('potato', 'Potato', 'じゃがいも', '#b08850', 'seed', 'rows', 8, 60, 30, '芽かき – leave 2–3 stems at 10–15 cm tall', null, null, 95, 50,
-    ['デジマ', '男爵薯', 'メークイン', 'キタアカリ', 'ニシユタカ'], { pot: 'diamond' }),
+    ['デジマ', '男爵薯', 'メークイン', 'キタアカリ', 'ニシユタカ'], { pot: 'center', frostEnd: true }),
   C('minitomato', 'Mini tomato', 'ミニトマト', '#e0443e', 'seedling', 'rows', null, 60, 45, '', null, null, 60, 50,
     ['アイコ', '千果', 'ピンキー', 'イエローアイコ', 'CFプチぷよ'], { pot: 'center' }),
   C('tomato', 'Tomato (large)', '大玉トマト', '#c62828', 'seedling', 'rows', null, 60, 50, '', null, null, 70, 50,

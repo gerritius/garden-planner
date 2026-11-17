@@ -100,16 +100,20 @@ function emergeDate(p) {
 // growth rate per day in "good-weather days": 0 below the base temperature, 1 at the reference temperature
 // hardy winter crops (brassicas, spinach, peas & beans, alliums, shungiku) keep growing slowly just above freezing
 const HARDY_FAM = ['brassica', 'allium', 'legume'], HARDY_IDS = ['spinach', 'shungiku', 'strawberry'];
+// heading brassicas almost stop growing in midwinter (that's why autumn-planted cabbage heads in spring)
+const HEADING = ['cabbage', 'hakusai', 'broccoli', 'cauliflower'];
 const growParams = id => WARM_LEAF.includes(id) ? { tb: 10, tref: 24, tcap: 28 }
   : HARDY_IDS.includes(id) || HARDY_FAM.includes(crop(id).family) ? { tb: 0, tref: 16, tcap: 20 } : { tb: 3, tref: 18, tcap: 22 };
+// growth units for one day at mean temperature T; heading brassicas pause in midwinter (days below ~6 °C add nothing)
+function growUnits(id, T) { const { tb, tcap } = growParams(id); if (HEADING.includes(id) && T < 6) return 0; return Math.max(0, Math.min(T, tcap) - tb); }
 function normalT(d) {   // smooth daily normal from monthly means
   const x = pd(d), m = x.getMonth(), f = (x.getDate() - 15) / 30, n = f >= 0 ? (m + 1) % 12 : (m + 11) % 12;
   return NORMAL_T[m] + (NORMAL_T[n] - NORMAL_T[m]) * Math.abs(f);
 }
 function ddUntil(from, need, id, tempFn) {
-  const { tb, tcap } = growParams(id), daily = S.weather && S.weather.daily;
+  const daily = S.weather && S.weather.daily, T = tempFn || (x => dayTemp(x, daily));
   let d = from, acc = 0;
-  for (let i = 0; i < 400 && acc < need; i++) { d = addDays(d, 1); acc += Math.max(0, Math.min((tempFn || (x => dayTemp(x, daily)))(d), tcap) - tb); }
+  for (let i = 0; i < 400 && acc < need; i++) { d = addDays(d, 1); acc += growUnits(id, T(d)); }
   return d;
 }
 // leaf-stage milestones (thinning, ready to plant out): catalogue days are warm-weather numbers, so use a fixed reference temperature
@@ -146,8 +150,8 @@ function refMonth(id, effSow) {
 }
 function calibratedNeed(id, days, offset, month) {
   const k = [id, days, offset, month].join('|'); if (_need[k] != null) return _need[k];
-  const { tb, tcap } = growParams(id), from = addDays(`2026-${String(month).padStart(2, '0')}-15`, offset), end = addDays(from, days);
-  let acc = 0; for (let d = from; d < end; d = addDays(d, 1)) acc += Math.max(0, Math.min(normalT(d), tcap) - tb);
+  const from = addDays(`2026-${String(month).padStart(2, '0')}-15`, offset), end = addDays(from, days);
+  let acc = 0; for (let d = from; d < end; d = addDays(d, 1)) acc += growUnits(id, normalT(d));
   return (_need[k] = acc || days * 8);
 }
 function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
@@ -189,7 +193,9 @@ function syncHarvest() {
 }
 function harvestNote(p) {
   if (p.harvestFixed) return 'date set by you';
-  const c = container(p.containerId), bits = ['estimated from the catalogue and the temperatures'];
+  const c = container(p.containerId), m = harvestModel(p), cr = crop(p.cropId), t = trayDateOf(p);
+  const base = m ? `${+p.daysFrom || cr.daysHarvest} days from ${p.method === 'seed' ? 'sowing' : t && cr.method === 'seed' ? 'tray sowing' : 'planting'} in usual weather, counted from ${shortDate(m.from)} at the pace the temperatures allow` : 'estimated from the catalogue and the temperatures';
+  const bits = [base];
   if (c && (c.indoor || (c.sun || 'full') !== 'full')) bits.push(c.indoor ? 'indoors' : (c.sun === 'part' ? 'part sun' : 'shade'));
   const l = learnedText(p.cropId, 'harvest'); if (l) bits.push('your ' + crop(p.cropId).en.toLowerCase() + ' has been ' + l);
   return bits.join('; ');

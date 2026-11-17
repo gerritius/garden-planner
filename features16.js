@@ -20,7 +20,9 @@ function harvestWindow(p) {
   if (!p.harvestDate) return null;
   const cr = crop(p.cropId), [a, b] = packetDays(p), m = harvestModel(p), g = growParams(p.cropId);
   const rate = m && m.days ? m.need / m.days : g.tref - g.tb;
-  const mature = b > a ? ddUntil(p.harvestDate, (b - a) * rate, p.cropId, tempFor(p.containerId)) : p.harvestDate;
+  let mature = b > a ? ddUntil(p.harvestDate, (b - a) * rate, p.cropId, tempFor(p.containerId)) : p.harvestDate;
+  const cap = addDays(p.harvestDate, Math.round((b - a) * 1.5));   // ready heads don't wait for spring: cap the spread in calendar days
+  if (mature > cap) mature = cap;
   return { earliest: p.harvestDate, mature, keep: p.keepUntil || keepsUntil(p, mature), keepSet: !!p.keepUntil, a, b, late: cr.late, cont: !!cr.cont };
 }
 function harvestWindowText(p) {

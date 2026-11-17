@@ -74,8 +74,8 @@ function leafDialog(o, label, after) {
 // Learning from your records
 // =====================================================================
 function ddBetween(from, to, id, tempFn) {
-  const { tb, tcap } = growParams(id), daily = S.weather && S.weather.daily, f = tempFn || (x => dayTemp(x, daily));
-  let acc = 0; for (let d = addDays(from, 1); d <= to; d = addDays(d, 1)) acc += Math.max(0, Math.min(f(d), tcap) - tb);
+  const daily = S.weather && S.weather.daily, f = tempFn || (x => dayTemp(x, daily));
+  let acc = 0; for (let d = addDays(from, 1); d <= to; d = addDays(d, 1)) acc += growUnits(id, f(d));
   return acc;
 }
 let _learn = null, _learnKey = '', _learnBusy = false;

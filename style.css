@@ -649,3 +649,4 @@ img.nthumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; f
 .seg.tabs { margin: 0 0 12px; } .seg.tabs button { font-size: 13.5px; padding: 8px 4px; line-height: 1.2; }
 .btnrow > a.btn { justify-content: center; text-align: center; }
 .fgrid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.chip.tog.off { opacity: .45; }

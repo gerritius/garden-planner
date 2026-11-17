@@ -817,6 +817,7 @@ function pagePlant(p) {
   A.leaves = () => leafDialog(p, cropName(p.cropId), () => { p.thinFixed = false; });
   A.logHarvest = () => harvestDialog(p);
   A.editHarvest = el => harvestDialog(p, (p.harvests || []).find(h => h.id === el.dataset.id));
+  A.copyTo = () => copyPlantingDialog(p);
   A.harvest = async () => {
     if (!await confirmBox(`Mark <b>${esc(cr.en)}</b> as harvested and clear it from ${esc(c ? c.name : 'the bed')}?<br><small>It stays in the history.</small>`, 'Harvest finished')) return;
     p.status = 'harvested'; p.harvestedOn = td;
@@ -858,6 +859,7 @@ function pagePlant(p) {
       ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section></details>
     ${S.plantings.filter(x => x.cropId === p.cropId).length > 1 ? `<a class="btn small" href="#/compare?crop=${p.cropId}">📊 Compare with other years</a>` : ''}
     <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested || isPlanned(p) ? '' : `<button class="btn primary" data-act="harvest">🧺 Harvest finished</button>`}${planNextButton(p)}</div>
+    ${harvested ? '' : `<button class="btn small wide" data-act="copyTo">⧉ Same in other ${c && c.type === 'bed' ? 'beds' : 'pots'}…</button>`}
     <div class="btnrow"><button class="link danger" data-act="del">Delete planting</button></div>`;
   return { html, after: () => diaryAfter(p) };
 }
@@ -1136,7 +1138,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.17.1';
+const APP_VERSION = '1.18.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

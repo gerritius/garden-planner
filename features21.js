@@ -109,3 +109,58 @@ function migrateOwnProducts() {
   (S.log || []).forEach(fix); S.tasks.forEach(t => { if (t.product && t.product !== en && re.test(t.product)) { t.title = (t.title || '').split(t.product).join(en); fix(t); } });
   S.plantings.forEach(p => { (p.fert || []).forEach(fix); (p.feedPlan || []).forEach(fix); });
 }
+
+// ---------- the same planting in other pots ----------
+function copyPlantingDialog(p) {
+  const c0 = container(p.containerId), td = todayStr();
+  const targets = S.containers.filter(c => c.id !== p.containerId && (c.type === 'bed') === (c0.type === 'bed'));
+  if (!targets.length) return alert(`No other ${c0.type === 'bed' ? 'beds' : 'pots'} to copy to.`);
+  const busy = c => { const L = Draw.dims(c).L, f = Math.min(p.from, L), t = c0.type === 'bed' ? Math.min(p.to, L) : L;
+    return (isPlanned(p) ? occupants(c.id, f, t, p.sowDate, p.sowDate) : activeIn(c.id).filter(x => x.from < t - 0.5 && x.to > f + 0.5)).map(x => crop(x.cropId).en); };
+  modal(`<h3>⧉ Same in other ${c0.type === 'bed' ? 'beds' : 'pots'}</h3><p class="muted small">${esc(cropName(p.cropId))}${p.variety ? ' · ' + esc(p.variety) : ''} · ${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</p>
+    <form id="cpf" class="form"><div class="sowchips">${targets.map(c => { const b = busy(c); return `<label class="chip big tog${b.length ? ' off' : ''}"><input type="checkbox" name="t" value="${c.id}"${b.length ? ' disabled' : ''}><span>${BED_ICON(16)} ${esc(c.name)}${b.length ? ` <small>${esc(b.join(', '))}</small>` : ''}</span></label>`; }).join('')}</div>
+      <button type="button" class="link" data-x="all">Select all empty ${c0.type === 'bed' ? 'beds' : 'pots'}</button>
+      ${p.sowDate <= td ? `<label class="inl chkline"><input type="checkbox" name="hist" checked> <span>Also copy jobs ticked off and feedings recorded so far <small>(if you did them for all the pots)</small></span></label>` : ''}
+      <p class="hint">Copies the crop, variety, date, layout and spacing, potting mix, starting fertiliser, repeating jobs and feeding plan. Photos, notes and harvests stay with this one.</p>
+      <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Copy</button></div></form>`, (m, close) => {
+    m.querySelector('[data-x=no]').onclick = close;
+    m.querySelector('[data-x=all]').onclick = () => m.querySelectorAll('#cpf input[name=t]:not(:disabled)').forEach(i => { i.checked = true; });
+    m.querySelector('#cpf').onsubmit = async e => {
+      e.preventDefault(); const f = e.target, ids = [...f.querySelectorAll('input[name=t]:checked')].map(i => i.value), hist = f.hist && f.hist.checked;
+      if (!ids.length) return close();
+      for (const cid of ids) copyPlanting(p, container(cid), hist);
+      await save(); close(); render();
+    };
+  });
+}
+function copyPlanting(p, c, hist) {
+  const c0 = container(p.containerId), L = Draw.dims(c).L, sameSize = Draw.dims(c0).L === L && Draw.dims(c0).W === Draw.dims(c).W;
+  const q = JSON.parse(JSON.stringify(p));
+  Object.assign(q, { id: uid(), containerId: c.id, created: todayStr(), photos: {}, diary: [], harvests: [], prevSpans: [], notes: '' });
+  if (c.type === 'bed') { q.from = Math.min(p.from, L - 1); q.to = Math.min(p.to, L); } else { q.from = 0; q.to = L; }
+  if (!sameSize) delete q.positions;
+  const sMap = {};
+  q.series = (q.series || []).map(s => { const id = uid(); sMap[s.id] = id; return Object.assign(s, { id }); });
+  q.feedPlan = (q.feedPlan || []).map(s => { const id = uid(); sMap[s.id] = id; return Object.assign(s, { id }); });
+  S.plantings.push(q);
+  // potting mix: the same choice as the original
+  const ev = (c0.mixLog || []).find(x => x.pid === p.id);
+  if (ev && c.type !== 'bed') (c.mixLog = (c.mixLog || []).filter(x => x.pid !== q.id)).push(Object.assign({}, ev, { id: uid(), pid: q.id }));
+  syncTasks(q);
+  if (hist) {
+    // jobs on the original (done and to-do) come across; built-in ones just take the original's ticks
+    const mine = S.tasks.filter(t => t.plantingId === q.id), clones = [];
+    for (const t of S.tasks.filter(t => t.plantingId === p.id)) {
+      const twin = !t.seriesId && !t.schedId && mine.find(x => x.kind === t.kind && x.title === t.title);
+      if (twin) { if (t.done) Object.assign(twin, { done: true, doneOn: t.doneOn, due: t.due }); continue; }
+      clones.push(Object.assign(JSON.parse(JSON.stringify(t)), { id: uid(), plantingId: q.id, seriesId: t.seriesId ? sMap[t.seriesId] || t.seriesId : t.seriesId, schedId: t.schedId ? sMap[t.schedId] || t.schedId : t.schedId, logId: null }));
+    }
+    const cloned = new Set(clones.map(t => t.seriesId || t.schedId).filter(Boolean));
+    S.tasks = S.tasks.filter(x => !(x.plantingId === q.id && (cloned.has(x.seriesId) || cloned.has(x.schedId))));   // the clones replace the fresh copies
+    S.tasks.push(...clones);
+    // feedings recorded for this crop alone count for the copy too
+    for (const l of S.log || []) if ((l.pids || []).includes(p.id) && !(l.cids || []).length) l.pids.push(q.id);
+    if (p.thinned) q.thinned = true;
+  } else { q.thinned = false; q.thinDoneOn = null; }
+  return q;
+}

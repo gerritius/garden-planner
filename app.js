@@ -310,6 +310,7 @@ function render() {
     else if (a === 'plant') ({ html, after } = pagePlant(planting(b)));
     else html = notFound();
   } catch (e) { console.error(e); html = `<div class="empty-state">Something went wrong: ${esc(e.message)}<br><a href="#/">Home</a></div>`; }
+  if (typeof groupTabs === 'function') html = groupTabs(location.hash.replace(/^#\/?/, '').split(/[/?]/)[0]) + html;
   $('#view').innerHTML = html;
   hydrate();
   after && after();
@@ -415,9 +416,8 @@ function pageContainer(c) {
       const cov = coverSection(c), soil = soilSection(c), bed = bedSection(c), plan = planSection(c), nPh = bedPhotos(c.id).length;
       const hasCov = (c.covers || []).length, hasSoil = (c.soil || []).length, hasBed = S.tasks.some(t => t.containerId === c.id) || (c.log || []).length;
       const hasPlan = S.plantings.some(p => p.containerId === c.id && isPlanned(p)) || freeGaps(c).some(g => g.s > todayStr());
-      return `<div class="carebar"><button class="btn small" data-act="addCover">🕸️ Cover</button><button class="btn small" data-act="addReading">🧪 Soil reading</button><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan</a>
-          <button class="btn small" data-act="prep">🪏 Prepare</button><button class="btn small" data-act="bedJob">＋ Job</button><button class="btn small" data-act="bedNote">📝 Note</button>
-          ${nPh ? `<a class="btn small" href="#/timeline?c=${c.id}">📷 Photos (${nPh})</a>` : ''}${ps.length ? `<a class="btn small" href="#/container/${c.id}/sections">↕ Sections</a>` : ''}<a class="btn small" href="#/rotation">🔄 Rotation</a></div>
+      A.feedBed = () => feedDialog({ cids: [c.id] }); A.bedMore = () => bedMoreMenu(c); A.bedNote = () => noteEntryDialog({ c });
+      return `<div class="carebar four"><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan</a><button class="btn small" data-act="feedBed">🌿 Feed</button><button class="btn small" data-act="addCover">🕸️ Cover</button><button class="btn small" data-act="bedNote">📝 Note</button><button class="btn small" data-act="bedMore">⋯ More</button></div>
         ${bedFeedingSection(c)}${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
         <details class="fold"><summary>🕰️ History <small>${(c.history || []).length} past crop${(c.history || []).length === 1 ? '' : 's'}</small></summary>${historySection(c)}</details>
         <details class="fold"><summary>📝 Running log</summary>${logSection(c)}</details>`;
@@ -1051,11 +1051,9 @@ function pageSettings() {
   const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
   const html = `<h3 class="grp">Plan &amp; grow</h3><div class="tiles">
       ${tile('#/plan', '📅', 'Season plan')}${tile('#/rotation', '🔄', 'Rotation')}${tile('#/seedlings', '🌱', 'Seedlings')}${tile('#/sow', '🗓️', 'Sowing calendar')}
-      ${tile('#/shop', '🛒', 'What to buy')}${tile('#/sprayday', '💦', 'Spray days')}${tile('#/picksafe', '✅', 'OK to pick?')}${tile('#/doctor', '🩺', 'What’s wrong?')}
-      ${tile('#/products', '🧴', 'Products & sprays')}${tile('#/map', '🗺️', 'Garden map')}</div>
+      ${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
     <h3 class="grp">Records</h3><div class="tiles">
-      ${tile('#/review', '📒', 'Season review')}${tile('#/compare', '📊', 'Compare years')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}
-      ${tile('#/totals', '🧮', 'Product totals')}${tile('#/spend', '💴', 'Spending')}</div>
+      ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     <h3 class="grp">Settings</h3>
     <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
@@ -1132,7 +1130,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.15.6';
+const APP_VERSION = '1.16.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

@@ -96,7 +96,7 @@ function logDialog(e, preset = {}) {
   modal(`<h3>${isNew ? 'Log something' : 'Edit log entry'}</h3>
     <form id="lf" class="form">
       <label>Date<input type="date" name="date" value="${e.date}" max="${todayStr()}"></label>
-      <div class="sowchips kinds">${LOG_KINDS.map(([k, i, l]) => `<label class="chip big tog"><input type="radio" name="kind" value="${k}"${k === e.kind ? ' checked' : ''}><span>${i} ${l}</span></label>`).join('')}</div>
+      <div class="sowchips kinds">${LOG_KINDS.filter(([k]) => k !== 'other' || !isNew || e.kind === 'other').map(([k, i, l]) => `<label class="chip big tog"><input type="radio" name="kind" value="${k}"${k === e.kind ? ' checked' : ''}><span>${i} ${l}</span></label>`).join('')}</div>
       <div id="prodrow">${libChips(e)}<label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${prods.map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
         <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(e.unit)}</select></label></div>
         <label id="perrow" hidden>The amount is<select name="per"><option value="each"${e.per !== 'total' ? ' selected' : ''}>for each bed / pot</option><option value="total"${e.per === 'total' ? ' selected' : ''}>in total, shared between them</option></select></label>

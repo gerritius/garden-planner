@@ -639,3 +639,11 @@ label.sdopt, label.sdwhen { display: flex !important; flex-direction: row !impor
 details.fold.more > summary { flex-wrap: wrap; white-space: nowrap; }
 details.fold.more > summary small { order: 3; flex-basis: 100%; white-space: normal; }
 details.fold.more > fieldset { margin-top: 8px; }
+/* bed page: five equal buttons */
+.carebar.four { flex-wrap: nowrap; }
+.carebar.four > .btn { flex: 1 1 0; min-width: 0; padding-left: 4px; padding-right: 4px; white-space: nowrap; justify-content: center; text-align: center; }
+/* note dialog photo slot and bed-note thumbnails */
+.notephoto .phslot { width: 100%; height: 150px; }
+.notephoto .phslot img { width: 100%; height: 100%; object-fit: cover; }
+img.nthumb { width: 44px; height: 44px; object-fit: cover; border-radius: 8px; flex: none; }
+.seg.tabs { margin: 0 0 12px; } .seg.tabs button { font-size: 13.5px; padding: 8px 4px; line-height: 1.2; }

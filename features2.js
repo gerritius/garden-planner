@@ -226,6 +226,7 @@ function prepDialog(c) {
   });
 }
 function noteDialog(c, n) {
+  if (!n) return noteEntryDialog({ c });
   const isNew = !n; n = n || { id: uid(), date: todayStr(), text: '' };
   modal(`<h3>${isNew ? 'Add bed note' : 'Edit note'}</h3><form id="nf" class="form"><label>Date<input type="date" name="date" value="${n.date}"></label>
     <label>Note<textarea name="text" rows="3" placeholder="e.g. Added 2 L compost and a handful of bokashi">${esc(n.text)}</textarea></label>
@@ -253,7 +254,7 @@ function bedSection(c) {
       <div class="btnrow"><button class="btn small" data-act="bedJob">＋ Add job</button><button class="btn small" data-act="prep">🪏 Prepare bed…</button></div>
       ${done.length ? `<details class="donelog"><summary>Done (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}</section>
     <section><h3>Bed notes</h3>
-      ${log.length ? `<ul class="plist">${log.map(n => `<li data-act="editNote" data-id="${n.id}"><span class="grow"><small>${niceDate(n.date)}</small>${esc(n.text)}</span><span class="muted">✎</span></li>`).join('')}</ul>` : '<p class="muted">Soil, compost, lime, anything worth remembering.</p>'}
+      ${log.length ? `<ul class="plist">${log.map(n => `<li data-act="editNote" data-id="${n.id}">${n.photo ? `<img class="nthumb" data-photo="${n.photo}" alt="">` : ''}<span class="grow"><small>${niceDate(n.date)}</small>${esc(n.text)}</span><span class="muted">✎</span></li>`).join('')}</ul>` : '<p class="muted">Soil, compost, lime, anything worth remembering.</p>'}
       <button class="btn small" data-act="bedNote">＋ Add note</button></section>`;
 }
 

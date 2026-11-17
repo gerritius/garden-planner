@@ -635,3 +635,7 @@ label.sdopt, label.sdwhen { display: flex !important; flex-direction: row !impor
 .frow.line small { display: block; color: var(--muted); }
 .frow.line small.warnline { color: #a2401c; font-weight: 600; }
 .frow.line [data-open] { font-size: 18px; text-decoration: none; padding: 0 4px; }
+/* planting form: More options with a summary of what's inside */
+details.fold.more > summary { flex-wrap: wrap; white-space: nowrap; }
+details.fold.more > summary small { order: 3; flex-basis: 100%; white-space: normal; }
+details.fold.more > fieldset { margin-top: 8px; }

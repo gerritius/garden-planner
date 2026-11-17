@@ -546,6 +546,16 @@ function pagePlantForm(p, c, q) {
     const img = nb ? `<img src="${URL.createObjectURL(nb)}">` : id && !d.removePhotos[slot] ? `<img data-photo="${id}">` : `<span>＋ ${slot === 'front' ? 'Front' : 'Back'}</span>`;
     return `<label class="phslot ph">${img}<input type="file" accept="image/*" data-slot="${slot}" hidden></label>${(nb || (id && !d.removePhotos[slot])) ? `<button type="button" class="link" data-act="rmPhoto" data-slot="${slot}">remove</button>` : ''}`;
   };
+  const moreSummary = () => {
+    const lay = (LAYOUTS.find(x => x[0] === d.layout) || [, ''])[1].replace(/\s*[–(].*$/, '');
+    const bits = [lay && `${lay}${d.plantSp ? ` ${d.plantSp} cm` : ''}`];
+    if (seed && d.thinDate) bits.push(`thin ~${shortDate(d.thinDate)}`);
+    if (d.harvestDate) bits.push(`harvest ~${shortDate(d.harvestDate)}`);
+    if (d.fert.length) bits.push(d.fert.length === 1 ? '1 fertiliser' : `${d.fert.length} fertilisers`);
+    const nj = (isNew && cr ? careJobs(cr.id).filter((j, i) => !(d.sj && d.sj[i] === false)).length : 0) + d.series.length;
+    if (nj) bits.push(`${nj} job${nj > 1 ? 's' : ''}`);
+    return bits.filter(Boolean).join(' · ');
+  };
   const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${d.startN > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
     <div class="preview big" id="pprev"></div>
     <fieldset><legend>Crop</legend>
@@ -555,18 +565,19 @@ function pagePlantForm(p, c, q) {
         <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
         ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}</label>
       <label>Planting type<div class="seg">${[['seed', 'From seed'], ['seedling', 'Seedlings / tubers']].map(([v, l]) => `<button type="button" data-act="method" data-v="${v}" class="${d.method === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>
-      <label>Packet photos<div class="phrow">${ph('front')}${ph('back')}</div></label>
-      ${packetPicker(d)}
     </fieldset>
-    <fieldset><legend>Where &amp; how</legend>
+    <fieldset><legend>Where &amp; when</legend>
       <div id="rotWarn"></div>
       ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
         `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
-      <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-      ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d)}
       ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method) : ''}
+    </fieldset>
+    <details class="fold more" id="pfMore"${d._more ? ' open' : ''}><summary>More options <small>${esc(moreSummary())}</small></summary>
+    <fieldset><legend>Layout &amp; spacing</legend>
+      <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+      ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
       ${seed ? `<label>Sowing depth (cm)<input name="depth" type="number" step="0.1" inputmode="decimal" value="${esc(d.depth)}"></label>` : ''}
       <div class="two">
         <label>${seed ? 'Sowing distance' : 'Spacing between plants'} (cm)<input name="plantSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.plantSp)}"></label>
@@ -612,7 +623,12 @@ function pagePlantForm(p, c, q) {
       <small class="hint">Fertiliser and liquid feeds are planned from the crop’s Feeding card (📅 Feeding plan), so they’re counted and can’t overfeed.</small>
       <small class="hint">Repeating jobs: the next one is due counted from the day you actually tick it off.</small>
     </fieldset>
-    <label>Notes<textarea name="notes" rows="3">${esc(d.notes || '')}</textarea></label>
+    <fieldset><legend>Packet &amp; notes</legend>
+      <label>Packet photos<div class="phrow">${ph('front')}${ph('back')}</div></label>
+      ${packetPicker(d)}
+      <label>Notes<textarea name="notes" rows="3">${esc(d.notes || '')}</textarea></label>
+    </fieldset>
+    </details>
     <button class="btn primary wide" type="submit">${isNew ? 'Save planting' : 'Save changes'}</button>
   </form>`;
 
@@ -649,6 +665,7 @@ function pagePlantForm(p, c, q) {
 
   const after = () => {
     const f = $('#pf');
+    const more = $('#pfMore'); if (more) more.addEventListener('toggle', () => { d._more = more.open; });
     preview();
     f.addEventListener('input', e => {
       const n = e.target.name || '';
@@ -1115,7 +1132,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.15.5';
+const APP_VERSION = '1.15.6';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

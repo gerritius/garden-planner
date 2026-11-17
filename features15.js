@@ -215,6 +215,7 @@ function feedingSection(p) {
     <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div>
     <details class="fold inner"><summary>What’s been counted</summary>
       ${L.need ? `<p class="small">${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.</p>` : ''}
+      ${sim && L.need ? `<p class="small">${fateLine(sim, L, p)}</p>` : ''}
       ${npkBars(L)}${pkNote(L, p) ? `<p class="small">${pkNote(L, p)}</p>` : ''}
       <table class="ledger">${rows}</table>
       <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). “Fed until” follows when each feed releases, what the crop takes as it grows, and what washes out with watering and rain. All rough — trust how the plants look.</p></details></section>`;

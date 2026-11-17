@@ -25,7 +25,7 @@ const LEAD = { kasei888: [0, 'fast — works within days'], bokashi: [7, 'fairly
 const leadOf = pr => pr ? (LEAD[pr.id] || [7, 'about a week']) : [7, ''];
 
 // growth restarts when the usual daily mean gets back above this
-const restartTemp = id => WARM_LEAF.includes(id) ? 15 : 8;
+const restartTemp = id => WARM_LEAF.includes(id) ? 15 : growParams(id).tb === 0 ? 5 : 8;   // hardy crops (garlic, onion, spinach…) keep growing slowly through winter
 function nextGrowing(id, d) { const thr = restartTemp(id); for (let i = 0; i < 200; i++) { if (normalT(addDays(d, i)) >= thr) return addDays(d, i); } return d; }
 function sideStages(p) {
   const td = todayStr(), cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60);

@@ -102,18 +102,31 @@ function feedPlanner(p) {
   const rows = stages.map(s => mkRow({ date: s.date, t: s.t, why: s.why, src: 'stage' }));
   const fill = () => {   // add doses where the crop would run short, until it's fed to the end of its season
     rows.splice(0, rows.length, ...rows.filter(r => r.src !== 'extra'));
+    rows.forEach(r => { delete r.boost; if (r.type === 'once' && !r.manual) Object.assign(r, doseOf(main, perDose, L.bag) || {}); });
     const dose = doseOf(main, perDose, L.bag); if (!dose || !L.need) return;
     const e = effOf(main, dose.amount, dose.unit); if (!e.n) return;
     const lead = leadOf(productByName(main))[0];
+    let prev = null;
     for (let i = 0; i < 10; i++) {
-      const sim = feedSim(p, L, planDoses(true).acc); if (!sim || !sim.shortFrom || sim.shortFrom > addDays(end, -10)) break;
+      const sim = feedSim(p, L, planDoses(false).acc);
+      if (prev && (!sim || !sim.shortFrom || sim.shortFrom <= prev.at)) { if (sim && sim.shortFrom && sim.shortFrom <= prev.at) rows.splice(rows.indexOf(prev.row), 1); if (sim && sim.shortFrom && sim.shortFrom <= prev.at) break; }   // that dose didn't move the shortfall on (e.g. it can't release in time) — drop it and stop
+      if (!sim || !sim.shortFrom || sim.shortFrom > addDays(end, -10)) break;
       let d = addDays(sim.shortFrom, -Math.max(3, lead)); if (d < td) d = td; d = nextGrowing(p.cropId, d);
-      if (d >= addDays(end, -7) || rows.some(r => r.type === 'once' && r.on && Math.abs(daysBetween(r.due || r.date, d)) < 7)) break;
-      rows.push(mkRow({ date: d, due: d, t: 'to keep it fed', src: 'extra', product: main, ...dose }));
+      for (let k = 0; k < 20; k++) { const near = rows.find(r => r.type === 'once' && r.on && Math.abs(daysBetween(r.due || r.date, d)) < 7); if (!near) break; d = addDays(near.due || near.date, 7); }   // a dose is already close: the next one goes a week after it
+      const stop = lastFeedDate(p); if (d >= addDays(end, -7) || (stop && d > stop)) break;
+      const row = mkRow({ date: d, due: d, t: 'to keep it fed', src: 'extra', product: main, ...dose }); rows.push(row); prev = { row, at: sim.shortFrom };
+    }
+    // garlic / onion: nothing after the last feed (止め肥), so that one is made big enough to carry the bulbs (within the single-dose limit)
+    const stop = lastFeedDate(p), last = stop && rows.filter(r => r.type === 'once' && r.on && !r.manual && (r.due || r.date) <= addDays(stop, 7)).sort((a, b) => ((a.due || a.date) < (b.due || b.date) ? -1 : 1)).pop();
+    if (last) for (let k = 0; k < 8; k++) {
+      const sim = feedSim(p, L, planDoses(false).acc); if (!sim || !sim.shortFrom) break;
+      const amt = last.unit === 'g' || last.unit === 'mL' ? Math.round(last.amount * 1.4) : Math.round(last.amount * 1.4 * 2) / 2;
+      if (effOf(main, amt, last.unit).n > L.need * 0.3) break;
+      last.amount = last.boost = amt;
     }
     rows.sort((a, b) => (a.type === 'every') - (b.type === 'every') || ((a.due || a.date) < (b.due || b.date) ? -1 : 1));
   };
-  const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag) || { amount: '', unit: 'g' }); const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
+  const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag) || { amount: '', unit: 'g' }); if (r.boost) r.amount = r.boost; const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
   // what's already planned (editable here)
   const existing = () => [
     ...S.tasks.filter(t => t.plantingId === p.id && !t.done && !t.schedId && feedTaskProduct(t)).map(t => ({ kind: 'task', id: t.id, text: `${shortDate(t.due)} · ${t.title}` })),
@@ -175,7 +188,7 @@ function feedPlanner(p) {
       const ev = evaluate();
       m.querySelector('#fpBars').innerHTML = previewBars(L, ev.add);
       const sim = ev.sim;
-      m.querySelector('#fpSum').innerHTML = sim ? `${coverBar(sim)}With this plan: ${sim.shortFrom ? `fed until about <b>${shortDate(sim.shortFrom)}</b> — add a dose or a repeating feed (↻ Re-suggest fills the gaps)` : `<b>fed through to ${shortDate(sim.end)}</b>`}.` : '';
+      m.querySelector('#fpSum').innerHTML = sim ? `${coverBar(sim)}With this plan: ${sim.shortFrom ? `fed until about <b>${shortDate(sim.shortFrom)}</b> — add a dose or a repeating feed (↻ Re-suggest fills the gaps)` : sim.stop ? `<b>fed for the season</b> — nothing after the last feed (止め肥) around ${shortDate(sim.stop)}; the bulbs finish on what’s in the soil` : `<b>fed through to ${shortDate(sim.end)}</b>`}.` : '';
       const ex = existing();
       m.querySelector('#fpExist').innerHTML = ex.length ? `<p class="small"><b>Already planned</b></p><ul class="plist">${ex.map(x => `<li><span class="grow small">${esc(x.text)}</span><button type="button" class="link danger" data-rmx="${x.kind}:${x.id}">remove</button></li>`).join('')}</ul>` : '';
       m.querySelector('#fpRows').innerHTML = rows.map(rowHTML).join('') || '<p class="muted">No doses — add one below.</p>';

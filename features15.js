@@ -18,7 +18,12 @@ const K_NEED = { hakusai: 25, cabbage: 25, broccoli: 20, cauliflower: 20, daikon
   onion: 20, naganegi: 20, hatamanegi: 12, garlic: 15, corn: 20, strawberry: 20, nanohana: 15 };
 const MIXES = [['iris', 'Iris Ohyama Golden Granular Soil', 'アイリスオーヤマ ゴールデン粒状培養土'], ['touikawa', 'Touikawa Peace Farm vegetable soil', 'おいしい野菜を育てる土'], ['other', 'Other potting mix', '培養土']];
 const MIX_N = 0.12;          // g N per litre of fresh 元肥入り potting mix (typical; check the bag)
-const MIX_SLOW_N = 0.2;      // g N per litre per year from a '365-day' slow-release mix (typical estimate)
+// fertiliser built into the potting mixes you use: N-P-K, grams per litre of mix (estimated — the bags don't say), and how long it releases for
+const MIX_FERT = {
+  touikawa: { npk: [6, 36, 6], gPerL: 2, days: 365, what: 'slow-release 6-36-6 + magnesium (like Magamp K), feeding steadily for about a year' },
+  iris: { npk: [8, 8, 8], gPerL: 1, days: 30, what: 'starter fertiliser (about 1:1:1) that lasts about a month' },
+  other: { npk: [8, 8, 8], gPerL: 1, days: 30, what: 'starter fertiliser for about a month' },
+};
 const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
 const isLiquid = n => /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || '');
@@ -64,7 +69,7 @@ function mixDialog(c) {
       <label>Mix<select name="kind">${MIXES.map(([k, en, ja]) => `<option value="${k}"${(cur ? cur.kind : 'iris') === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <div class="seg"><button type="button" data-f="1" class="on">Fresh mix</button><button type="button" data-f="0">Re-used (roots sieved out)</button></div>
       <label>Filled on<input name="date" type="date" value="${td}" max="${td}"></label>
-      <p class="hint">Fresh 元肥入り potting mix carries starter fertiliser for roughly the first month of the first crop — the app counts it then, and suggests no extra base fertiliser. Re-used mix gets compost + 8-8-8 suggested.</p>
+      <p class="hint">Fertiliser built into the mix is counted from the fill date: Touikawa as slow-release 6-36-6 + magnesium for about a year, Iris Ohyama as about a month of starter feed. Amounts are estimates — the bags don’t print them. Any 8-8-8 you mix in when refreshing is counted separately (record it as the crop’s starting fertiliser).</p>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>
     ${(c.mixLog || []).length ? `<ul class="plist">${c.mixLog.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map(e => `<li><span class="grow">${shortDate(e.date)} ${yearOfD(e.date)} · ${e.fresh ? 'fresh' : 're-used'} ${esc((MIXES.find(m => m[0] === e.kind) || MIXES[2])[1])}</span><button class="link danger" data-delmix="${e.id}">remove</button></li>`).join('')}</ul>` : ''}`, (m, close) => {
     const f = m.querySelector('#mxf'); let fresh = true;
@@ -96,12 +101,16 @@ function feedLedger(p) {
   // 1. starting soil
   if (bag) {
     const ms = mixState(c, p.sowDate), v = potVolume(c) || 40;
-    if (ms && ms.kind === 'touikawa' && ms.fresh && p.sowDate < addDays(ms.date, 365)) {
-      // "365 days of fertiliser": coated slow-release that feeds a little, steadily, for a year — across crops
-      const endD = feedEnd(p), a = p.sowDate > ms.date ? p.sowDate : ms.date, z = addDays(ms.date, 365) < endD ? addDays(ms.date, 365) : endD, share = Math.max(0, daysBetween(a, z)) / 365, tot = MIX_SLOW_N * v;
-      lines.push({ g: 'soil', name: 'mix:slow', from: a, to: z, label: `Slow-release fertiliser in the mix (${ms.mix[1]}, “365 days”, filled ${shortDate(ms.date)})`, n: tot * share, p: tot * share, k: tot * share, note: `about ${Math.round(share * 100)}% of a year’s supply falls in this crop’s season — amount estimated, the bag doesn’t say` });
-    } else if (ms && ms.firstCrop) lines.push({ g: 'soil', name: 'mix:starter', label: `Fresh potting mix (${ms.mix[1]}, filled ${shortDate(ms.date)})`, n: MIX_N * v * 0.5, p: MIX_N * v * 0.5, k: MIX_N * v * 0.5, note: 'starter fertiliser in the mix — lasts about a month' });
-    else lines.push({ g: 'soil', name: 'mix:reused', label: ms ? `Re-used potting mix (${ms.mix[1]})` : 'Potting mix (no fill date recorded)', n: 0.3, p: 0.3, k: 0.3, note: ms ? 'little left after the last crop' : 'add the mix and fill date for a better estimate' });
+    // the fertiliser in fresh mix releases from the fill date for its own period; this crop gets the part that overlaps its season
+    const mf = ms && ms.fresh ? (MIX_FERT[ms.kind] || MIX_FERT.other) : null;
+    let mixed = false;
+    if (mf) {
+      const endD = feedEnd(p), a = p.sowDate > ms.date ? p.sowDate : ms.date, rEnd = addDays(ms.date, mf.days), z = rEnd < endD ? rEnd : endD;
+      const share = Math.max(0, daysBetween(a, z)) / mf.days, g = mf.gPerL * v;
+      if (share > 0.02) { mixed = true; lines.push({ g: 'soil', name: 'mix:slow', from: a, to: z, label: `Fertiliser in the potting mix (${ms.mix[1]}, filled ${shortDate(ms.date)})`,
+        n: g * mf.npk[0] / 100 * share, p: g * mf.npk[1] / 100 * share, k: g * mf.npk[2] / 100 * share, note: `${mf.what} — ${Math.round(share * 100)}% of it falls in this crop’s time (amount estimated)` }); }
+    }
+    if (!mixed) lines.push({ g: 'soil', name: 'mix:reused', label: ms ? (ms.fresh ? `Potting mix (${ms.mix[1]}) — its built-in fertiliser is used up` : `Re-used potting mix (${ms.mix[1]})`) : 'Potting mix (no fill date recorded)', n: 0.3, p: 0.3, k: 0.3, note: ms ? 'little left' : 'add the mix and fill date for a better estimate' });
   } else lines.push({ g: 'soil', name: 'soil', label: 'The bed’s own soil', n: 6 * A2, p: 4 * A2, k: 8 * A2, note: 'slow release from the soil’s reserves over a season (rough)' });
   // 2. what the previous crop left
   const prev = lastCropIn(c, p.from, p.to, p.sowDate, p.id);

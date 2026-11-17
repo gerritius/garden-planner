@@ -218,16 +218,16 @@ function baseFertPlan(cropId, c, from, to, sowDate) {
   if (bag) {
     // bags: fresh 元肥入り potting mix needs nothing for its first crop; re-used mix gets compost + 8-8-8
     const ms = typeof mixState === 'function' ? mixState(c, sowDate || todayStr()) : null;
-    if (ms && ms.firstCrop && ms.kind !== 'touikawa') return [];
-    const slowMix = ms && ms.kind === 'touikawa' && ms.fresh && (sowDate || todayStr()) < addDays(ms.date, 365);
+    // fresh mix carries some fertiliser (Touikawa ~a year, mostly phosphate; Iris ~a month), so the 8-8-8 base is halved
+    const slowMix = ms && ms.fresh && (sowDate || todayStr()) < addDays(ms.date, ms.kind === 'touikawa' ? 365 : 30);
     const vol = (typeof potVolume === 'function' && potVolume(c)) || 40, k = vol / 40;
     const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
-    if (comp) out.push({ product: comp.en, amount: Math.round(4 * cm * k), unit: 'L' });
+    if (comp && !slowMix) out.push({ product: comp.en, amount: Math.round(4 * cm * k), unit: 'L' });   // fresh mix doesn't need compost
     const kasei = pick(['kasei888']), g888 = { heavy: 50, medium: 40, light: 20, legume: 10 }[feed] * k * bm * ff * (slowMix ? 0.5 : 1);
     const fert = kasei || pick(['bokashi', 'toshoAburakasu']);
     if (fert && cropId !== 'satsumaimo') out.push({ product: fert.en, amount: Math.round((kasei ? g888 : FEED_BAG[feed] * bm * ff) / 5) * 5, unit: 'g' });
     const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? 100;
-    if (lime && lr && lf > 0 && (!ms || !ms.firstCrop)) out.push({ product: lime.en, amount: Math.round(lr * lf * 0.3 * k / 5) * 5, unit: 'g' });
+    if (lime && lr && lf > 0 && !slowMix) out.push({ product: lime.en, amount: Math.round(lr * lf * 0.3 * k / 5) * 5, unit: 'g' });
     return out.filter(x => x.amount > 0);
   }
   // beds: compost, lime, and organic fertiliser in handfuls
@@ -242,7 +242,9 @@ function baseFertPlan(cropId, c, from, to, sowDate) {
 }
 function baseFertNote(cropId, c) {
   if (c && c.type !== 'bed') { const ms = typeof mixState === 'function' ? mixState(c) : null;
-    return ms && ms.firstCrop ? 'fresh potting mix already contains starter fertiliser for the first crop — no base fertiliser needed' : 're-used potting mix: compost plus a little 8-8-8, mixed through before planting'; }
+    if (ms && ms.fresh && ms.kind === 'touikawa' && todayStr() < addDays(ms.date, 365)) return 'fresh Touikawa mix: its slow-release fertiliser (mostly phosphate) feeds lightly for a year — add half the usual 8-8-8 for nitrogen; no lime needed';
+    if (ms && ms.fresh && todayStr() < addDays(ms.date, 30)) return 'fresh potting mix: its starter fertiliser only lasts about a month — half the usual 8-8-8 mixed through; no lime needed';
+    return 're-used potting mix: compost plus 8-8-8 mixed through before planting'; }
   const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
   const bits = [];
   if (comp) bits.push(`${comp.en}: dig in ${comp.wait >= 14 ? '2–3 weeks' : 'about a week'} before planting`);

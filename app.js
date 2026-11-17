@@ -270,7 +270,7 @@ function render() {
   try { migrateFeed(); migrateCovers(); migrateOwnProducts(); } catch (e) { console.warn(e); }
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
-  try { syncFeedPlans(); syncWater(); } catch (e) { console.warn(e); }
+  try { syncFeedPlans(); syncWater(); syncMeterJobs(); } catch (e) { console.warn(e); }
   if (!window._snapDone) { window._snapDone = true; setTimeout(snapshotDaily, 3000); }
   let html = '', after = null;
   try {
@@ -578,7 +578,7 @@ function pagePlantForm(p, c, q) {
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d)}
       <div id="mixBits">${mixFormBits(d, c)}</div>
-      ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method) : ''}
+      ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method, c, d.from, d.to) : ''}
     </fieldset>
     <details class="fold more" id="pfMore"${d._more ? ' open' : ''}><summary>More options <small>${esc(moreSummary())}</small></summary>
     <fieldset><legend>Layout &amp; spacing</legend>
@@ -1151,7 +1151,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.19.1';
+const APP_VERSION = '1.20.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

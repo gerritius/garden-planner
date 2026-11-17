@@ -208,7 +208,9 @@ function feedingSection(p) {
   const nextUp = L.planned.slice().sort((a, b) => (a.t.due < b.t.due ? -1 : 1))[0];
   const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `🔁 Every ${s.every} days: ${esc(s.product)} ${amtFor(s.product, s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
   const sim = feedSim(p, L);
+  const salt = L.c && soilReadingAdvice(L.c, p.from, p.to, p.cropId);
   return `<section class="feeding"><h3>Feeding</h3>
+    ${salt && salt.feed < 1 ? `<div class="banner warn">🧪 Your meter read salt <b>DANGER</b> on ${shortDate(salt.r.date)} — too much fertiliser in the soil. Hold off feeding (repeating feeds are paused) and water through well; take another reading in a week or so.</div>` : ''}
     ${sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : `<p class="small">${feedVerdict(L, p)}</p>`}
     ${nextUp || scheds ? `<p class="small">${nextUp ? `Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}${scheds ? `<br>${scheds}` : ''}</p>` : ''}
     ${L.bag && !mixState(L.c) ? `<div class="banner warn">🪴 This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <a class="btn small" href="#/plant/${p.id}/edit">Set it in Edit planting</a></div>` : ''}

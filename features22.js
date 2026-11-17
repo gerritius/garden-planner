@@ -91,9 +91,10 @@ function ideasDialog(c, a, b, s, e, onPick) {
     const mine = startsGrowing().filter(st => list.some(x => x.cr.id === st.cropId));
     const li = x => `<li data-idea="${x.cr.id}">${ic(x.cr.id)}<span class="grow"><b>${esc(cropName(x.cr.id))}</b>
       <small>${ideaText(x.best)} → ready ~${shortDate(x.best.ready)}, done ~${shortDate(x.best.done)}${x.alt ? ` · or ${ideaText(x.alt).replace(/^\S+ (\S)/, (m0, ch) => ch.toLowerCase())}, done ~${shortDate(x.alt.done)}` : ''}</small>
-      ${x.sameFam ? `<small class="warn">⚠ same family as the ${esc(crop(x.prev.cropId).en.toLowerCase())} before it</small>` : ''}${x.cold && !x.best.cover ? '<small>❄ slow in the cold — a tunnel or Fushokufu speeds it up</small>' : ''}</span>›</li>`;
+      ${typeof ideaSoilNotes === 'function' ? ideaSoilNotes(c, a, b, x.cr.id) + ideaColdSoil(c, a, b, x.cr.id, x.best) : ''}${x.sameFam ? `<small class="warn">⚠ same family as the ${esc(crop(x.prev.cropId).en.toLowerCase())} before it</small>` : ''}${x.cold && !x.best.cover ? '<small>❄ slow in the cold — a tunnel or Fushokufu speeds it up</small>' : ''}</span>›</li>`;
     m.querySelector('.sheet').innerHTML = `<h3>💡 What could go in ${esc(part)}?</h3>
       <p class="muted small">${esc(c.name)} · free ${s <= td ? 'now' : 'from ' + shortDate(s)}${e ? ` until ${shortDate(e)}` : ''}</p>
+      ${typeof ideaSoilBanner === 'function' ? ideaSoilBanner(c, a, b) : ''}
       <label class="inl">Needs to be clear by <input type="date" id="clrBy" value="${clearBy || ''}" min="${s}"></label>
       <small class="hint">${e ? 'Your next planned crop here, less two weeks to prepare.' : clearBy ? 'So it’s free for the next season’s planting — change it if you plan something else.' : 'No date — showing everything.'}</small>
       ${mine.length ? `<h4>Your seedlings</h4><ul class="plist">${mine.map(st => `<li data-start="${st.id}">${ic(st.cropId)}<span class="grow"><b>${esc(crop(st.cropId).en)}</b><small>${startLeft(st)} in ${esc(startWhere(st))} · sown ${shortDate(st.sowDate)}</small></span>›</li>`).join('')}</ul>` : ''}

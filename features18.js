@@ -31,7 +31,7 @@ function schedPlanned(p) {
     if (s.stopped || s.paused) continue;
     const open = S.tasks.find(t => t.schedId === s.id && !t.done), e = effOf(s.product, s.amount, s.unit);
     const ds = schedOccurrences(p, s).filter(d => !open || d > open.due);
-    for (const d of ds) out.push({ t: { due: d }, n: e.n, p: e.p, k: e.k, text: `${s.product} ${fmtAmt(s.amount, s.unit)} (every ${s.every} days)` });
+    for (const d of ds) out.push({ t: { due: d, schedId: s.id }, sid: s.id, name: s.product, n: e.n, p: e.p, k: e.k, text: `${s.product} ${fmtAmt(s.amount, s.unit)} (every ${s.every} days)` });
   }
   return out;
 }
@@ -48,7 +48,13 @@ function syncFeedPlans() {
       if (dormant(p, next < td ? td : next)) next = nextGrowing(p.cropId, next < td ? td : next);
       if (next > end) { if (open) S.tasks = S.tasks.filter(x => x !== open); s.done = true; continue; }
       const L = feedLedger(p), c = container(p.containerId), e = effOf(s.product, s.amount, s.unit), sr = c && soilReadingAdvice(c, p.from, p.to, p.cropId);
-      if ((L && L.need && L.total + e.n > ceilingN(L)) || (sr && sr.feed < 1)) { s.paused = sr && sr.feed < 1 ? 'salt' : 'enough'; if (open) S.tasks = S.tasks.filter(x => x !== open); continue; }
+      if (sr && sr.feed < 1) { s.paused = 'salt'; if (open) S.tasks = S.tasks.filter(x => x !== open); continue; }
+      // skip feeds while the soil still holds plenty; stop for good if nothing more is needed this season
+      const sim = L && L.need ? feedSim(p, L, [], x => x.sid === s.id || x.t.schedId === s.id || (open && x.t === open)) : null;
+      if (sim) {
+        let tries = 0; while (next <= end && poolOn(sim, next) + e.n > sim.maxPool && tries++ < 30) next = addDays(next, s.every);
+        if (next > end || (!sim.shortFrom && poolOn(sim, next) + e.n > sim.maxPool * 0.5 && sim.left > sim.maxPool * 0.2)) { s.paused = 'enough'; if (open) S.tasks = S.tasks.filter(x => x !== open); continue; }
+      }
       s.paused = null;
       const title = `${isLiquid(s.product) ? 'Liquid feed' : 'Feed'}: ${s.product} ${fmtAmt(s.amount, s.unit)}`;
       const withWater = isLiquid(s.product) && isPotOutdoor(c);
@@ -94,44 +100,50 @@ function feedPlanner(p) {
   // rows: stage doses, then extra doses to close the gap
   const mkRow = (o) => Object.assign({ id: uid(), on: true, type: 'once', product: main }, o);
   const rows = stages.map(s => mkRow({ date: s.date, t: s.t, why: s.why, src: 'stage' }));
-  const fill = () => {   // extra doses every ~3 weeks in growing weather until the gap is closed
+  const fill = () => {   // add doses where the crop would run short, until it's fed to the end of its season
     rows.splice(0, rows.length, ...rows.filter(r => r.src !== 'extra'));
     const dose = doseOf(main, perDose, L.bag); if (!dose || !L.need) return;
     const e = effOf(main, dose.amount, dose.unit); if (!e.n) return;
-    let have = L.total + L.plannedN + rows.filter(r => r.on && r.type === 'once').reduce((a, r) => a + effOf(r.product, r.amount, r.unit).n, 0);
-    const taken = rows.map(r => r.date);
-    for (let d = addDays(td, 21), i = 0; d < addDays(end, -14) && have + e.n <= L.need * 1.02 && i < 8; d = addDays(d, 21), i++) {
-      const g = nextGrowing(p.cropId, d); if (g >= addDays(end, -14)) break;
-      if (taken.some(x => Math.abs(daysBetween(x, g)) < 14)) continue;
-      rows.push(mkRow({ date: g, t: 'extra dose to cover the season', src: 'extra', product: main, ...dose })); taken.push(g); have += e.n;
+    const lead = leadOf(productByName(main))[0];
+    for (let i = 0; i < 10; i++) {
+      const sim = feedSim(p, L, planDoses(true).acc); if (!sim || !sim.shortFrom || sim.shortFrom > addDays(end, -10)) break;
+      let d = addDays(sim.shortFrom, -Math.max(3, lead)); if (d < td) d = td; d = nextGrowing(p.cropId, d);
+      if (d >= addDays(end, -7) || rows.some(r => r.type === 'once' && r.on && Math.abs(daysBetween(r.due || r.date, d)) < 7)) break;
+      rows.push(mkRow({ date: d, due: d, t: 'to keep it fed', src: 'extra', product: main, ...dose }));
     }
-    rows.sort((a, b) => (a.type === 'every') - (b.type === 'every') || (a.date < b.date ? -1 : 1));
+    rows.sort((a, b) => (a.type === 'every') - (b.type === 'every') || ((a.due || a.date) < (b.due || b.date) ? -1 : 1));
   };
   const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag) || { amount: '', unit: 'g' }); const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
-  setDoses(); fill(); setDoses();
   // what's already planned (editable here)
   const existing = () => [
     ...S.tasks.filter(t => t.plantingId === p.id && !t.done && !t.schedId && feedTaskProduct(t)).map(t => ({ kind: 'task', id: t.id, text: `${shortDate(t.due)} · ${t.title}` })),
     ...(p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => ({ kind: 'sched', id: s.id, text: `Every ${s.every} days: ${s.product} ${fmtAmt(s.amount, s.unit)} (until ${shortDate(s.end || end)})${s.paused ? ` — paused: ${s.paused === 'salt' ? 'salt DANGER' : 'enough nitrogen for the season'}` : ''}` })),
   ];
-  // run the plan forward in date order; anything that would pass the ceiling is left out
-  const evaluate = () => {
-    const ceil = ceilingN(L); let have = L.total + L.plannedN; const add = { n: 0, p: 0, k: 0 }, notes = {};
+  // run the plan forward in date order: a dose is left out if it's too big on its own, or the soil already holds plenty then
+  const planDoses = (quick) => {
     const occ = [];
-    for (const r of rows) { if (!r.on) continue; if (r.type === 'once') occ.push([r.due || r.date, r]); else for (const d of schedOccurrences(p, { start: r.date, every: +r.every || 7, end: r.until || end })) occ.push([d, r]); }
+    for (const r of rows) { if (!r.on || !r.product || !r.amount) continue; if (r.type === 'once') occ.push([r.due || r.date, r]); else for (const d of schedOccurrences(p, { start: r.date, every: +r.every || 7, end: r.until || end })) occ.push([d, r]); }
     occ.sort((a, b) => (a[0] < b[0] ? -1 : 1));
     for (const r of rows) { r.count = 0; r.over = 0; r.big = false; r.lastOk = null; }
-    const maxDose = L.need ? L.need * 0.3 : Infinity;   // more than this at once scorches roots, however short the crop is
-    for (const [d, r] of occ) { const e = effOf(r.product, r.amount, r.unit); if (e.n > maxDose) { r.big = true; r.over++; continue; } if (have + e.n > ceil) { r.over++; continue; } have += e.n; add.n += e.n; add.p += e.p; add.k += e.k; r.count++; r.lastOk = d; }
-    return { add, have, notes };
+    const maxDose = L.need ? L.need * 0.3 : Infinity, acc = [], add = { n: 0, p: 0, k: 0 };
+    let sim = quick ? null : feedSim(p, L, acc);
+    for (const [d, r] of occ) {
+      const e = effOf(r.product, r.amount, r.unit);
+      if (e.n > maxDose) { r.big = true; r.over++; continue; }
+      if (!quick) { if (!sim) sim = feedSim(p, L, acc); if (sim && poolOn(sim, d) + e.n > sim.maxPool) { r.over++; continue; } }
+      acc.push({ date: d, name: r.product, n: e.n }); add.n += e.n; add.p += e.p; add.k += e.k; r.count++; r.lastOk = d; sim = null;
+    }
+    return { acc, add };
   };
+  const evaluate = () => { const pd2 = planDoses(false); return Object.assign(pd2, { sim: feedSim(p, L, pd2.acc) }); };
+  setDoses(); fill(); setDoses();
   const rowHTML = r => {
     const e = effOf(r.product, r.amount, r.unit), lead = leadOf(productByName(r.product));
     return `<div class="frow${r.on ? '' : ' off'}${r.over && !r.count ? ' over' : ''}" data-r="${r.id}">
       <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <b>${r.type === 'every' ? `Every <input type="number" class="sm" data-f="every" value="${r.every || 7}" min="1"> days` : esc(r.t || 'Extra dose')}</b></label>
       <div class="fgrid"><input list="fpn" data-f="product" value="${esc(r.product || '')}"><input type="number" step="any" class="sm" data-f="amount" value="${r.amount ?? ''}"><select data-f="unit">${unitOpts(r.unit || 'g')}</select></div>
       <div class="fgrid2">${r.type === 'every' ? `from <input type="date" data-f="date" value="${r.date}"> until <input type="date" data-f="until" value="${r.until || end}">` : `on <input type="date" data-f="due" value="${r.due || r.date}">`}</div>
-      <small>${r.amount ? `each → N ${gN(e.n)} · P ${gN(e.p)} · K ${gN(e.k)}` : ''}${r.big ? ' · <b>left out — too much in one go; split it into smaller doses</b>' : r.type === 'every' && r.on ? ` · ${r.count} dose${r.count === 1 ? '' : 's'}${r.over ? ` — stops after ${r.lastOk ? shortDate(r.lastOk) : 'the start'}: more would overfeed` : ''}` : r.over ? ' · <b>left out — this would overfeed</b>' : ''}${lead[0] && r.type === 'once' && !isLiquid(r.product) ? ` · ${esc(lead[1])}` : ''}</small>
+      <small>${r.amount ? `each → N ${gN(e.n)} · P ${gN(e.p)} · K ${gN(e.k)}` : ''}${r.big ? ' · <b>left out — too much in one go; split it into smaller doses</b>' : r.type === 'every' && r.on ? ` · ${r.count} dose${r.count === 1 ? '' : 's'}${r.over ? ` — ${r.over} skipped when the soil already holds plenty` : ''}` : r.over ? ' · <b>left out — the soil still holds plenty then; it would overfeed</b>' : ''}${lead[0] && r.type === 'once' && !isLiquid(r.product) ? ` · ${esc(lead[1])}` : ''}</small>
       ${r.why ? `<small>⏸ ${esc(r.why)}</small>` : ''}${r.type === 'every' && isLiquid(r.product) && isPotOutdoor(c) ? '<small>💧 Given with the watering — on feed days the watering job becomes “Water + liquid feed”.</small>' : ''}
       ${r.src === 'custom' || r.type === 'every' ? `<button type="button" class="link danger" data-del="${r.id}">remove</button>` : ''}</div>`;
   };
@@ -152,8 +164,8 @@ function feedPlanner(p) {
     const draw = () => {
       const ev = evaluate();
       m.querySelector('#fpBars').innerHTML = previewBars(L, ev.add);
-      const total = ev.have, need = L.need;
-      m.querySelector('#fpSum').innerHTML = need ? `With this plan: <b>${gN(total)}</b> of ~${gN(need)} nitrogen for the season${total < need * 0.9 ? ` — still ${gN(need - total)} short; add a dose or a repeating feed` : total > need * 1.1 ? ' — on the generous side' : ' — about right'}.` : '';
+      const sim = ev.sim;
+      m.querySelector('#fpSum').innerHTML = sim ? `${coverBar(sim)}With this plan: ${sim.shortFrom ? `fed until about <b>${shortDate(sim.shortFrom)}</b> — add a dose or a repeating feed (↻ Re-suggest fills the gaps)` : `<b>fed through to ${shortDate(sim.end)}</b>`}.` : '';
       const ex = existing();
       m.querySelector('#fpExist').innerHTML = ex.length ? `<p class="small"><b>Already planned</b></p><ul class="plist">${ex.map(x => `<li><span class="grow small">${esc(x.text)}</span><button type="button" class="link danger" data-rmx="${x.kind}:${x.id}">remove</button></li>`).join('')}</ul>` : '';
       m.querySelector('#fpRows').innerHTML = rows.map(rowHTML).join('') || '<p class="muted">No doses — add one below.</p>';
@@ -167,6 +179,7 @@ function feedPlanner(p) {
     m.querySelector('#fpRows').addEventListener('input', e => {
       const el = e.target, r = rows.find(x => x.id === (el.closest('[data-r]') || {}).dataset?.r); if (!r || !el.dataset.f) return;
       const k = el.dataset.f; r[k] = el.type === 'checkbox' ? el.checked : el.value; if (['product', 'amount', 'unit', 'due'].includes(k)) r.manual = true;
+      if (k === 'product') { if (isLiquid(r.product) && !['mL', 'L'].includes(r.unit)) r.unit = 'mL'; else if (!isLiquid(r.product) && ['mL', 'L'].includes(r.unit) && productByName(r.product) && productByName(r.product).kind === 'fert') r.unit = 'g'; const u = el.closest('[data-r]').querySelector('[data-f=unit]'); if (u) u.value = r.unit; }
       if (k === 'every' || k === 'amount') r[k] = num(el.value);
       clearTimeout(m._t); m._t = setTimeout(() => { const pos = el.selectionStart; draw(); const again = m.querySelector(`[data-r="${r.id}"] [data-f="${k}"]`); if (again && el.type !== 'checkbox') { again.focus(); try { again.setSelectionRange(pos, pos); } catch (er) { /* */ } } }, el.type === 'checkbox' || el.tagName === 'SELECT' || el.type === 'date' ? 0 : 500);
     });

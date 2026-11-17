@@ -18,6 +18,7 @@ const K_NEED = { hakusai: 25, cabbage: 25, broccoli: 20, cauliflower: 20, daikon
   onion: 20, naganegi: 20, hatamanegi: 12, garlic: 15, corn: 20, strawberry: 20, nanohana: 15 };
 const MIXES = [['iris', 'Iris Ohyama Golden Granular Soil', 'アイリスオーヤマ ゴールデン粒状培養土'], ['touikawa', 'Touikawa Peace Farm vegetable soil', 'おいしい野菜を育てる土'], ['other', 'Other potting mix', '培養土']];
 const MIX_N = 0.12;          // g N per litre of fresh 元肥入り potting mix (typical; check the bag)
+const MIX_SLOW_N = 0.2;      // g N per litre per year from a '365-day' slow-release mix (typical estimate)
 const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
 const isLiquid = n => /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || '');
@@ -95,14 +96,18 @@ function feedLedger(p) {
   // 1. starting soil
   if (bag) {
     const ms = mixState(c, p.sowDate), v = potVolume(c) || 40;
-    if (ms && ms.firstCrop) lines.push({ g: 'soil', label: `Fresh potting mix (${ms.mix[1]}, filled ${shortDate(ms.date)})`, n: MIX_N * v * 0.5, p: MIX_N * v * 0.5, k: MIX_N * v * 0.5, note: 'starter fertiliser in the mix — lasts about a month' });
-    else lines.push({ g: 'soil', label: ms ? `Re-used potting mix (${ms.mix[1]})` : 'Potting mix (no fill date recorded)', n: 0.3, p: 0.3, k: 0.3, note: ms ? 'little left after the last crop' : 'add the mix and fill date for a better estimate' });
-  } else lines.push({ g: 'soil', label: 'The bed’s own soil', n: 6 * A2, p: 4 * A2, k: 8 * A2, note: 'slow release from the soil’s reserves over a season (rough)' });
+    if (ms && ms.kind === 'touikawa' && ms.fresh && p.sowDate < addDays(ms.date, 365)) {
+      // "365 days of fertiliser": coated slow-release that feeds a little, steadily, for a year — across crops
+      const endD = feedEnd(p), a = p.sowDate > ms.date ? p.sowDate : ms.date, z = addDays(ms.date, 365) < endD ? addDays(ms.date, 365) : endD, share = Math.max(0, daysBetween(a, z)) / 365, tot = MIX_SLOW_N * v;
+      lines.push({ g: 'soil', name: 'mix:slow', from: a, to: z, label: `Slow-release fertiliser in the mix (${ms.mix[1]}, “365 days”, filled ${shortDate(ms.date)})`, n: tot * share, p: tot * share, k: tot * share, note: `about ${Math.round(share * 100)}% of a year’s supply falls in this crop’s season — amount estimated, the bag doesn’t say` });
+    } else if (ms && ms.firstCrop) lines.push({ g: 'soil', name: 'mix:starter', label: `Fresh potting mix (${ms.mix[1]}, filled ${shortDate(ms.date)})`, n: MIX_N * v * 0.5, p: MIX_N * v * 0.5, k: MIX_N * v * 0.5, note: 'starter fertiliser in the mix — lasts about a month' });
+    else lines.push({ g: 'soil', name: 'mix:reused', label: ms ? `Re-used potting mix (${ms.mix[1]})` : 'Potting mix (no fill date recorded)', n: 0.3, p: 0.3, k: 0.3, note: ms ? 'little left after the last crop' : 'add the mix and fill date for a better estimate' });
+  } else lines.push({ g: 'soil', name: 'soil', label: 'The bed’s own soil', n: 6 * A2, p: 4 * A2, k: 8 * A2, note: 'slow release from the soil’s reserves over a season (rough)' });
   // 2. what the previous crop left
   const prev = lastCropIn(c, p.from, p.to, p.sowDate, p.id);
   if (prev) {
     const pf = feedOf(prev.cropId, prev), pp = prev.plantingId && planting(String(prev.plantingId).split(':')[0]);
-    const o = { g: 'prev', label: `Previous crop: ${crop(prev.cropId).en}`, n: 0, p: 0, k: 0, note: '' };
+    const o = { g: 'prev', name: 'prev', label: `Previous crop: ${crop(prev.cropId).en}`, n: 0, p: 0, k: 0, note: '' };
     if (pf === 'legume') { o.n = 2 * A2; o.note = 'legumes leave nitrogen in their roots'; }
     else if (pp && pp.id !== p.id) {
       const L = feedLedger(Object.assign({}, pp, { status: 'active' })), sh = A2 / feedArea(c, pp);
@@ -115,11 +120,11 @@ function feedLedger(p) {
   const oc = { n: 0, p: 0, k: 0 };
   for (const q of S.plantings) if (q.id !== p.id && q.containerId === c.id && q.sowDate && q.sowDate < p.sowDate && q.sowDate >= addDays(p.sowDate, -730) && q.from < p.to - 0.5 && q.to > p.from + 0.5)
     for (const f of q.fert || []) { const pr = productByName(f.product); if (pr && pr.kind === 'compost') { const u = usable3(feedGrams(f.amount, f.unit, f.product), f.product, 1); if (u) { const sh = A2 / feedArea(c, q); oc.n += u.n * sh; oc.p += u.p * sh; oc.k += u.k * sh; } } }
-  if (oc.n + oc.p + oc.k > 0.05) lines.push(Object.assign({ g: 'prev', label: 'Compost dug in for earlier crops', note: 'still releasing slowly' }, oc));
+  if (oc.n + oc.p + oc.k > 0.05) lines.push(Object.assign({ g: 'prev', name: 'compost-old', label: 'Compost dug in for earlier crops', note: 'still releasing slowly' }, oc));
   // 3. base fertiliser at planting
   for (const f of p.fert || []) {
     if (!f.product) continue; const pr = productByName(f.product), u = usable3(feedGrams(f.amount, f.unit, f.product), f.product);
-    lines.push(L3({ g: 'base', label: `${f.product} ${fmtAmt(f.amount, f.unit)}`, date: p.sowDate, note: !u ? 'unknown analysis — not counted' : pr && pr.kind === 'compost' ? 'compost: only ~10% of its nitrogen this season' : '' }, u));
+    lines.push(L3({ g: 'base', name: f.product, label: `${f.product} ${fmtAmt(f.amount, f.unit)}`, date: p.sowDate, note: !u ? 'unknown analysis — not counted' : pr && pr.kind === 'compost' ? 'compost: only ~10% of its nitrogen this season' : '' }, u));
   }
   // 4. every feeding since (log), shared feedings split by area
   const from = addDays(p.sowDate, -21), end = p.status === 'harvested' ? (p.harvestedOn || td) : td;
@@ -130,18 +135,18 @@ function feedLedger(p) {
     if (pids.includes(p.id)) share = 1; else if (cids.includes(c.id)) share = A2 / bedA; else if (!pids.length && !cids.length) share = A2 / bedA;
     if (!share) continue;
     const u = usable3(g * share, e.product);
-    lines.push(L3({ g: 'fed', label: `${e.product} ${fmtAmt(e.amount, e.unit)}${share < 0.999 ? ` (whole ${bag ? 'pot' : 'bed'} — ${Math.round(share * 100)}% here)` : ''}`, date: e.date, logId: e.id, note: u ? '' : 'unknown analysis — not counted' }, u));
+    lines.push(L3({ g: 'fed', name: e.product, label: `${e.product} ${fmtAmt(e.amount, e.unit)}${share < 0.999 ? ` (whole ${bag ? 'pot' : 'bed'} — ${Math.round(share * 100)}% here)` : ''}`, date: e.date, logId: e.id, note: u ? '' : 'unknown analysis — not counted' }, u));
   }
   // older records: ticked fertiliser jobs that weren't logged separately
   for (const s of p.series || []) {
     if (!s.product || s.amount == null) continue;
-    for (const t of S.tasks) if (t.seriesId === s.id && t.done && t.doneOn && !t.logId) lines.push(L3({ g: 'fed', label: `${s.product} ${fmtAmt(s.amount, s.unit)}`, date: t.doneOn }, usable3(feedGrams(s.amount, s.unit, s.product), s.product)));
+    for (const t of S.tasks) if (t.seriesId === s.id && t.done && t.doneOn && !t.logId) lines.push(L3({ g: 'fed', name: s.product, label: `${s.product} ${fmtAmt(s.amount, s.unit)}`, date: t.doneOn }, usable3(feedGrams(s.amount, s.unit, s.product), s.product)));
   }
   const sum = (gs, k) => lines.filter(l => gs.includes(l.g)).reduce((a, l) => a + (l[k] || 0), 0), ALL = ['soil', 'prev', 'base', 'fed'];
   // planned feedings still to come
   const planned = S.tasks.filter(t => t.plantingId === p.id && !t.done && (t.product || (t.seriesId && ((p.series || []).find(s => s.id === t.seriesId) || {}).product))).map(t => {
     const s = (p.series || []).find(x => x.id === t.seriesId) || t, u = usable3(feedGrams(s.amount, s.unit, s.product), s.product) || { n: 0, p: 0, k: 0 };
-    return { t, n: u.n, p: u.p, k: u.k, text: `${s.product} ${fmtAmt(s.amount, s.unit)}` };
+    return { t, n: u.n, p: u.p, k: u.k, name: s.product, text: `${s.product} ${fmtAmt(s.amount, s.unit)}` };
   });
   if (typeof schedPlanned === 'function') planned.push(...schedPlanned(p));
   return { c, bag, area: A2, need, needP, needK, lines, planned,
@@ -190,7 +195,8 @@ function feedingSection(p) {
   const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `🔁 Every ${s.every} days: ${esc(s.product)} ${fmtAmt(s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
   return `<section class="feeding"><h3>Feeding</h3>
     <p class="small">${L.need ? `${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted so far: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.` : `Counted so far: <b>${gN(L.total)}</b> of ${NAME_N}.`}</p>
-    ${npkBars(L)}<p class="small">${feedVerdict(L, p)} ${pkNote(L, p)}${nextUp ? ` Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}</p>${scheds ? `<p class="small">${scheds}</p>` : ''}
+    ${(() => { const sim = feedSim(p, L); return sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : ''; })()}
+    <p class="small muted">Season totals (rough):</p>${npkBars(L)}<p class="small">${L.need ? '' : feedVerdict(L, p)} ${pkNote(L, p)}${nextUp ? ` Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}</p>${scheds ? `<p class="small">${scheds}</p>` : ''}
     <details class="fold inner"><summary>What’s been counted</summary><table class="ledger">${rows}</table>
       <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use this season, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). Compost and manure release most of theirs over later seasons, so only part counts now. All rough — trust how the plants look.</p></details>
     <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div></section>`;
@@ -202,7 +208,7 @@ function bedFeedingSection(c) {
   const ms = c.type !== 'bed' ? mixState(c) : null;
   return `<section class="feeding"><h3>Feeding</h3>
     ${c.type !== 'bed' ? `<p class="small">🪴 ${ms ? `${ms.fresh ? 'Fresh' : 'Re-used'} ${esc(ms.mix[1])} since ${shortDate(ms.date)}` : 'Potting mix not recorded'} <button class="link" data-act="mix">${ms ? 'refilled?' : 'add'}</button></p>` : ''}
-    ${ps.map(p => { const L = feedLedger(p); return L ? `<a class="feedrow" href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(crop(p.cropId).en)}</b>${feedBar(L)}<small>${gN(L.total)}${L.need ? ` of ~${gN(L.need)}` : ''} ${NAME_N}${L.plannedN ? ` · ${gN(L.plannedN)} planned` : ''}</small></span>›</a>` : ''; }).join('')}
+    ${ps.map(p => { const L = feedLedger(p); return L ? `<a class="feedrow" href="#/plant/${p.id}">${ic(p.cropId)}<span class="grow"><b>${esc(crop(p.cropId).en)}</b>${feedBar(L)}<small>${(() => { const sim = feedSim(p, L); return sim ? (sim.shortFrom ? `fed until ~${shortDate(sim.shortFrom)}` : `fed to ${shortDate(sim.end)}`) + ' · ' : ''; })()}${gN(L.total)}${L.need ? ` of ~${gN(L.need)}` : ''} ${NAME_N} this season</small></span>›</a>` : ''; }).join('')}
     <div class="btnrow"><button class="btn small primary" data-act="feedBed">🌿 Record feeding (whole ${c.type === 'bed' ? 'bed' : 'pot'})</button></div></section>`;
 }
 

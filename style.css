@@ -619,3 +619,10 @@ label.sdopt, label.sdwhen { display: flex !important; flex-direction: row !impor
 #fpMain .chip { font-size: 13px; cursor: pointer; }
 #fpMain .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 #fpMain .chip .link { text-decoration: none; }
+.cover { margin: 8px 0 4px; }
+.cbar2 { position: relative; height: 12px; border-radius: 6px; background: var(--chip, #eee6d8); overflow: visible; }
+.cbar2 i { position: absolute; top: 0; bottom: 0; border-radius: 6px; }
+.cbar2 i.ok { left: 0; background: var(--green); }
+.cbar2 i.short { background: repeating-linear-gradient(135deg, #c96b4a 0 5px, #f0cbbd 5px 10px); }
+.cbar2 b.now { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); }
+.cdates { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }

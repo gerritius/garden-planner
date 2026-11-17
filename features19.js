@@ -1,0 +1,75 @@
+/* Day-by-day food model: each feed releases over its own time, the crop takes up what it needs as it grows
+   (little in midwinter), and pots lose what isn't taken up as water drains through. Gives "fed until about …",
+   flags too much in the soil at once, and drives the feeding plan's suggestions. */
+'use strict';
+
+// [days before it starts releasing, days it releases over]
+function relOf(name) {
+  if (name === 'mix:starter') return [0, 30];
+  if (name === 'mix:reused' || name === 'prev') return [0, 60];
+  if (isLiquid(name)) return [0, 7];
+  const pr = productByName(name || '');
+  if (pr) {
+    if (pr.id === 'kasei888') return [0, 30];
+    if (pr.id === 'bokashi' || pr.id === 'toshoAburakasu') return [3, 40];
+    if (pr.id === 'chickenManure') return [7, 55];
+    if (pr.id === 'aburakasu' || pr.id === 'neem') return [14, 70];
+    if (pr.kind === 'compost') return [0, 180];
+  }
+  const npk = npkOf(name); return npk && npk[3] >= 1 ? [0, 30] : [7, 55];
+}
+const LEACH = { pot: 0.02, bed: 0.006 };   // share of unused nitrogen lost per day (pots drain much more)
+const maxPoolOf = L => L.need ? L.need * (L.bag ? 0.4 : 0.35) : Infinity;   // more than this sitting in the soil at once = overfeeding
+
+function feedSim(p, L, extra = [], skip) {
+  if (!L || !L.need) return null;
+  const td = todayStr(), start = p.sowDate, end = feedEnd(p);
+  const inputs = [];
+  const add = (from, len, n, src) => { if (n > 0) inputs.push({ from, to: addDays(from, Math.max(1, len) - 1), rate: n / Math.max(1, len), src }); };
+  for (const l of L.lines) {
+    if (!(l.n > 0)) continue;
+    if (l.name === 'soil' || l.name === 'compost-old') add(start, daysBetween(start, end) + 1, l.n, l);
+    else if (l.name === 'mix:slow') add(l.from, daysBetween(l.from, l.to) + 1, l.n, l);
+    else { const r = relOf(l.name); add(addDays(l.date || start, r[0]), r[1], l.n, l); }
+  }
+  for (const x of L.planned) { if (!(x.n > 0) || (skip && skip(x))) continue; const r = relOf(x.name); add(addDays(x.t.due, r[0]), r[1], x.n, x); }
+  for (const x of extra) { const r = relOf(x.name); add(addDays(x.date, r[0]), r[1], x.n, x); }
+  // demand follows growth: more in warm weather, almost none in midwinter
+  const tf = tempFor(p.containerId), daily = S.weather && S.weather.daily, T = tf || (d => dayTemp(d, daily));
+  const days = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push([d, Math.max(0.05, growUnits(p.cropId, T(d)))]);
+  const W = days.reduce((a, x) => a + x[1], 0) || 1, wOf = {}; days.forEach(([d, w]) => { wOf[d] = w / W * L.need; });
+  const first = inputs.reduce((a, x) => (x.from < a ? x.from : a), start), leach = L.bag ? LEACH.pot : LEACH.bed, avgDem = L.need / Math.max(1, days.length);
+  let pool = 0, taken = 0, unmetAll = 0, unmetFuture = 0, shortFrom = null, peak = 0, peakDate = null, lost = 0;
+  const poolAt = {};
+  for (let d = first; d <= end; d = addDays(d, 1)) {
+    for (const x of inputs) if (d >= x.from && d <= x.to) pool += x.rate;
+    if (pool > peak) { peak = pool; peakDate = d; }
+    poolAt[d] = pool;
+    const dem = wOf[d] || 0, take = Math.min(pool, dem);
+    pool -= take; taken += take; unmetAll += dem - take;
+    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && dem > avgDem * 0.3 && take < dem * 0.6 && normalT(d) >= restartTemp(p.cropId)) shortFrom = d; }   // a shortfall only matters while it's growing
+    const l = pool * leach; pool -= l; lost += l;
+  }
+  return { start, end, shortFrom, unmetFuture, unmetAll, taken, peak, peakDate, lost, poolAt, maxPool: maxPoolOf(L), left: pool };
+}
+// pool on a day (before that day's own releases are fully used) — for "is there room for another dose?"
+const poolOn = (sim, d) => sim && sim.poolAt[d] != null ? sim.poolAt[d] : 0;
+
+// timeline bar for the Feeding card: fed (green) vs running short (red), with today
+function coverBar(sim) {
+  if (!sim) return '';
+  const span = Math.max(1, daysBetween(sim.start, sim.end)), pc = d => Math.max(0, Math.min(100, daysBetween(sim.start, d) / span * 100)), td = todayStr();
+  const sf = sim.shortFrom ? pc(sim.shortFrom) : 100;
+  return `<div class="cover"><div class="cbar2"><i class="ok" style="width:${sf}%"></i>${sim.shortFrom ? `<i class="short" style="left:${sf}%;width:${100 - sf}%"></i>` : ''}<b class="now" style="left:${pc(td)}%"></b></div>
+    <div class="cdates"><span>${shortDate(sim.start)}</span><span>${shortDate(sim.end)}</span></div></div>`;
+}
+function simVerdict(sim, L, p) {
+  if (!sim) return '';
+  const td = todayStr(), bits = [];
+  if (sim.peakDate && sim.peak > sim.maxPool * 1.3 && sim.peakDate >= addDays(td, -30) && sim.peakDate <= addDays(td, 30))
+    bits.push(`A lot of nitrogen is in the soil at once around ${shortDate(sim.peakDate)} (~${gN(sim.peak)}) — water through well and watch for scorched leaf edges; ${L.bag ? 'in a pot much of it will drain away over the next few weeks.' : 'skip feeding until it’s used up.'}`);
+  if (!sim.shortFrom) bits.push(`<b>Fed through to ${shortDate(sim.end)}</b> with what’s in and planned.`);
+  else if (sim.shortFrom <= addDays(td, 5)) bits.push(`<b>Running short now</b> — plan a feed soon.`);
+  else bits.push(`<b>Fed until about ${shortDate(sim.shortFrom)}</b> — plan a feed before then.`);
+  return bits.join(' ');
+}

@@ -411,6 +411,7 @@ function pageContainer(c) {
         <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
       ${ps.length ? `<button class="btn wide primary" data-act="split">＋ Add another crop to this ${c.type === 'bed' ? 'bed' : 'pot'}</button>` : ''}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
+      ${gs.length ? ideasBtn(c, gs[0][0], gs[0][1]) : ''}
     </section>
     ${(() => {
       const cov = coverSection(c), soil = soilSection(c), bed = bedSection(c), plan = planSection(c), nPh = bedPhotos(c.id).length;
@@ -527,6 +528,8 @@ function pagePlantForm(p, c, q) {
       if (q.get('crop')) applyCrop(draft, crop(q.get('crop')), c);
       if (q.get('date')) { draft.sowDate = q.get('date'); recalc(draft); }
       else if (q.get('plan') && !q.get('start')) { draft.sowDate = addDays(todayStr(), 30); recalc(draft); }
+      if (q.get('method') && ['seed', 'seedling'].includes(q.get('method'))) { draft.method = q.get('method'); recalc(draft); }
+      if (q.get('raise')) draft.raise = q.get('raise');
       if (q.get('start')) prefillFromStart(draft, q);
       if (q.get('usestart') && start(q.get('usestart'))) applyStart(draft, start(q.get('usestart')), c);
     } else {
@@ -562,6 +565,7 @@ function pagePlantForm(p, c, q) {
     <fieldset><legend>Crop</legend>
       ${isNew && !d.startId ? startChooser(d) : ''}
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
+      ${isNew && !d.startId ? `<button type="button" class="link" data-act="formIdeas">💡 What could go here${d.sowDate > todayStr() ? ' then' : ' now'}?</button>` : ''}
       <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="e.g. ${esc(cr ? (cr.varieties || [])[0] || '' : '')}" autocomplete="off">
         <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
         ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}</label>
@@ -663,6 +667,15 @@ function pagePlantForm(p, c, q) {
   A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
   A.addSeries = () => { read(); d.series.push({ id: uid(), title: '', every: 1, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
   A.rmSeries = el => { read(); d.series.splice(+el.dataset.i, 1); render(); };
+  A.formIdeas = () => {
+    read(); const g = gapAround(c, d.from, d.to, d.sowDate || todayStr());
+    ideasDialog(c, d.from, d.to, g && g.s > (d.sowDate || '') ? g.s : (d.sowDate || todayStr()), g ? g.e : null, (id, o) => {
+      applyCrop(d, crop(id), c); d.sowDate = o.P; d.method = o.kind === 'sow' ? 'seed' : 'seedling';
+      if (o.P > todayStr() && o.kind !== 'sow') d.raise = o.kind === 'raise' ? 'tray' : 'buy';
+      if (c.type !== 'bed') { delete d.mixFresh; mixDefaults(d, c); }
+      recalc(d); render();
+    });
+  };
   A.mixF = el => { read(); d.mixUser = true; d.mixFresh = el.dataset.v === '1'; if (d.mixFresh && !d.mixKind) d.mixKind = lastMixKind(); if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); render(); };
   A.rmPhoto = el => { read(); const s = el.dataset.slot; if (d.newPhotos[s]) delete d.newPhotos[s]; else d.removePhotos[s] = true; render(); };
 
@@ -1138,7 +1151,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.18.0';
+const APP_VERSION = '1.19.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

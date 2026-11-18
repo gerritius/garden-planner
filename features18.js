@@ -93,7 +93,7 @@ function feedPlanner(p) {
   const c = L.c, td = todayStr(), end = feedEnd(p), stages = sideStages(p);
   const short = Math.max(0, (L.need || 0) - L.total - L.plannedN);
   const perDose = Math.min((L.need || 4) * 0.15, Math.max(short / Math.max(1, stages.length), (L.need || 4) * 0.06));
-  const prods = myProducts(['fert']).filter(x => (NPK[x.id] || [0])[0] > 0).sort((a, b) => (isPlenty(b.id) - isPlenty(a.id)) || (leadOf(a)[0] - leadOf(b)[0]));
+  const prods = myProducts(['fert']).filter(x => (npkOf(x.en) || [0])[0] > 0).sort((a, b) => (isPlenty(b.id) - isPlenty(a.id)) || (leadOf(a)[0] - leadOf(b)[0]));
   const used = [...new Set((S.log || []).filter(e => e.kind === 'fert' && npkOf(e.product) && !productByName(e.product)).map(e => e.product))];
   const names = [...prods.map(x => x.en), ...used];
   let main = prods[0] ? prods[0].en : names[0] || '';
@@ -187,7 +187,7 @@ function feedPlanner(p) {
       m.querySelector('#fpMain').innerHTML = `<label>Main fertiliser<select id="fpMainSel">${names.map(n => `<option value="${esc(n)}"${n === main ? ' selected' : ''}>${esc(n)}${(productByName(n) && isPlenty(productByName(n).id)) ? ' ★' : ''}</option>`).join('')}</select></label>
         ${pr ? `<label class="inl chkline"><input type="checkbox" id="fpPlenty"${isPlenty(pr.id) ? ' checked' : ''}> <span>I have plenty of this <small>(★ — suggested first)</small></span></label>` : ''}`;
       m.querySelector('#fpMainSel').onchange = e => { main = e.target.value; setDoses(); fill(); setDoses(); draw(); drawMain(); };
-      const pl = m.querySelector('#fpPlenty'); if (pl) pl.onchange = async () => { const id = pr.id; S.plenty = isPlenty(id) ? S.plenty.filter(x => x !== id) : [...(S.plenty || []), id]; await save(); drawMain(); }; };
+      const pl = m.querySelector('#fpPlenty'); if (pl) pl.onchange = async () => { setPlenty(pr.id); await save(); drawMain(); }; };
     const draw = () => {
       const ev = evaluate();
       m.querySelector('#fpBars').innerHTML = previewBars(L, ev.add);

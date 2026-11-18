@@ -206,7 +206,7 @@ const bedArea = c => c.type === 'round' ? Math.PI * (c.diameter / 200) ** 2 : (c
 function prepDialog(c) {
   const a = soilM2(c), g = r => gramsFor(r, c), rd = latestReading(c);
   const sa = soilAdvice(c, 0, Draw.dims(c).L, null), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
-  const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']), lime = pick(['oysterLime']), base = pick(['bokashi', 'toshoAburakasu', 'aburakasu', 'chickenManure']);
+  const comp = pickRole('compost'), lime = pickRole('lime'), base = pickRole('base', c.type === 'bed' ? 'slow' : 'quick');
   const items = [
     ['compost', `Dig in ${comp ? comp.en : 'compost (堆肥)'} ~${Math.max(1, Math.round(a * 2 * cm * 2) / 2)} kg`, comp ? -Math.max(comp.wait, 7) : -14, true],
     ...(g(limeRate(null, rd ? rd.ph : null)) > 0 ? [['lime', `Spread ${lime ? lime.en : 'lime (苦土石灰)'} ~${g(limeRate(null, rd ? rd.ph : null))} g${rd && rd.ph != null ? ` (your pH reading: ${rd.ph})` : ''}`, lime ? 0 : -14, true]] : []),

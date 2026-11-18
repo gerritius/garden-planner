@@ -265,7 +265,7 @@ const yen = n => '¥' + Math.round(n || 0).toLocaleString('ja-JP');
 function purchaseDialog(e, preset) {
   const isNew = !e, td = todayStr();
   e = e || Object.assign({ id: uid(), date: td, item: '', cat: 'other', cost: '', qty: '', note: '' }, preset || {});
-  const known = [...new Set([...PRODUCTS.map(p => p.en), ...(S.purchases || []).map(x => x.item)])];
+  const known = [...new Set([...libList().map(p => p.en), ...(S.purchases || []).map(x => x.item)])];
   modal(`<h3>${isNew ? 'Record a purchase' : 'Edit purchase'}</h3><form id="buyf" class="form">
       <label>What<input name="item" list="buyl" value="${esc(e.item)}" required placeholder="e.g. Insect netting 1.8 × 5 m"><datalist id="buyl">${known.map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
       <div class="two"><label>Cost (¥)<input name="cost" type="number" inputmode="numeric" min="0" value="${e.cost ?? ''}" required></label><label>Quantity / size<input name="qty" value="${esc(e.qty || '')}" placeholder="e.g. 2 bags, 5 kg"></label></div>

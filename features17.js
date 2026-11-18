@@ -24,7 +24,7 @@ const FRUIT_EVERY = ['tomato', 'minitomato', 'nasu', 'piman', 'shishito', 'chill
 // how early a product needs to go on before plants can use it, and how fast it works
 const LEAD = { kasei888: [0, 'fast — works within days'], bokashi: [7, 'fairly fast — about a week'], toshoAburakasu: [7, 'fairly fast — about a week'], chickenManure: [10, 'medium — 1–2 weeks'],
   aburakasu: [21, 'slow — 2–3 weeks, slower in cold soil'], neem: [14, 'slow — about 2 weeks'], woodAsh: [0, 'fast (potash only)'] };
-const leadOf = pr => pr ? (LEAD[pr.id] || [7, 'about a week']) : [7, ''];
+const leadOf = pr => { if (!pr) return [7, '']; const d = pr.lead != null ? pr.lead : (LEAD[pr.id] || [7])[0]; return [d, leadText(d)]; };
 
 // growth restarts when the usual daily mean gets back above this
 const restartTemp = id => WARM_LEAF.includes(id) ? 15 : growParams(id).tb === 0 ? 5 : 8;   // hardy crops (garlic, onion, spinach…) keep growing slowly through winter
@@ -93,9 +93,9 @@ function sideStages(p) {
   out.skipped = skipped; out.season = se;
   return out;
 }
-const isPlenty = id => (S.plenty || []).includes(id);
+const isPlenty = id => { const p = (S.products || []).find(x => x.id === id); return p ? !!p.plenty : (S.plenty || []).includes(id); };
 function doseFor(pr, nPerDose, bag) {
-  const npk = NPK[pr.id] || [4, 4, 2, 0.7];
+  const npk = npkOf(pr.en) || [4, 4, 2, 0.7];
   if (!npk[0]) return null;
   const g = nPerDose / (npk[0] / 100 * (npk[3] || 0.7));
   if (bag) return { amount: Math.max(2, Math.round(g)), unit: 'g', g };
@@ -113,14 +113,14 @@ function sideDressDialog(p) {
   const stages = sideStages(p), short = Math.max(0, (L.need || 0) - L.total - L.plannedN), nDoses = Math.max(1, stages.length);
   // a normal side-dressing is ~10–15% of the season's nitrogen — enough to keep growth going without scorching or soft growth
   const perDose = Math.min((L.need || 4) * 0.15, Math.max(short / nDoses, (L.need || 4) * 0.06)), covers = perDose * nDoses;
-  const prods = myProducts(['fert']).filter(x => (NPK[x.id] || [0])[0] > 0).sort((a, b) => (isPlenty(b.id) - isPlenty(a.id)) || (leadOf(a)[0] - leadOf(b)[0]));
+  const prods = myProducts(['fert']).filter(x => (npkOf(x.en) || [0])[0] > 0).sort((a, b) => (isPlenty(b.id) - isPlenty(a.id)) || (leadOf(a)[0] - leadOf(b)[0]));
   let sel = prods[0] ? prods[0].id : null;
   const dueFor = (s, pr) => { const lead = leadOf(pr)[0]; return lead && addDays(s.date, -lead) > todayStr() ? addDays(s.date, -lead) : s.date; };
   modal(`<h3>Plan side-dressing — ${esc(crop(p.cropId).en)}</h3>
     <p class="small">${L.need ? (short > 0.05 ? `Short by about <b>${gN(short)}</b> nitrogen over the season — suggesting <b>${nDoses} dose${nDoses > 1 ? 's' : ''}</b> of about ${gN(perDose)} nitrogen each${covers < short * 0.9 ? `. Doses are kept to a normal size — one big feed scorches roots and gives soft, pest-prone growth; the soil supplies more as it warms up` : ''}.` : 'Already about right — these are light top-ups only if leaves look pale.') : ''}</p>
     <div id="sdBars"></div>
     <form id="sdf" class="form"><p class="small"><b>When</b></p><div id="sdWhen">${stages.length ? stages.map((s, i) => `<label class="sdwhen"><input type="checkbox" name="w${i}" checked><span class="grow"><b>${esc(s.t)}</b>
-        <small>Feed on <input type="date" name="d${i}" value="${dueFor(s, PRODUCTS.find(x => x.id === sel))}"> <span class="leadnote" data-i="${i}"></span></small>${s.why ? `<small>⏸ ${esc(s.why)}</small>` : ''}</span></label>`).join('')
+        <small>Feed on <input type="date" name="d${i}" value="${dueFor(s, product(sel))}"> <span class="leadnote" data-i="${i}"></span></small>${s.why ? `<small>⏸ ${esc(s.why)}</small>` : ''}</span></label>`).join('')
       : `<p class="muted">No side-dressing stage left before harvest${p.harvestDate ? ` (${shortDate(p.harvestDate)})` : ''} — feeding now won’t make much difference.</p>`}</div>
       <p class="small"><b>With</b> <span class="muted">— tap ☆ for what you have plenty of, so it’s suggested first</span></p><div id="sdOpts"></div>
       <p class="msg small" id="sdSum"></p>
@@ -129,7 +129,7 @@ function sideDressDialog(p) {
     const f = m.querySelector('#sdf'), edited = new Set();
     stages.forEach((s, i) => { f['d' + i].addEventListener('input', () => edited.add(i)); f['w' + i].addEventListener('change', () => update()); });
     const update = () => {
-      const pr = PRODUCTS.find(x => x.id === sel), dose = pr && doseFor(pr, perDose, L.bag), lead = leadOf(pr);
+      const pr = product(sel), dose = pr && doseFor(pr, perDose, L.bag), lead = leadOf(pr);
       const eff = dose ? usable3(feedGrams(dose.amount, dose.unit, pr.en), pr.en) : { n: 0, p: 0, k: 0 }, k = stages.filter((s, i) => f['w' + i].checked).length;
       stages.forEach((s, i) => { if (!edited.has(i)) f['d' + i].value = dueFor(s, pr); m.querySelector(`.leadnote[data-i="${i}"]`).textContent = lead[0] && f['d' + i].value !== s.date && !edited.has(i) ? `(${lead[0]} days early — ${pr.en} is slow to work)` : ''; });
       m.querySelector('#sdBars').innerHTML = previewBars(L, { n: eff.n * k, p: eff.p * k, k: eff.k * k });
@@ -142,12 +142,12 @@ function sideDressDialog(p) {
           <small>${d ? `${fmtAmt(d.amount, d.unit)} per dose → N ${gN(u.n)} · P ${gN(u.p)} · K ${gN(u.k)}` : ''}</small><small>${esc(leadOf(x)[1])}</small></span>
           <button type="button" class="link" data-star="${x.id}">${isPlenty(x.id) ? '★' : '☆'}</button></label>`; }).join('') || '<p class="muted">No fertilisers in your products — add one under Products.</p>';
       m.querySelectorAll('input[name=sdp]').forEach(r => r.onchange = () => { sel = r.value; update(); });
-      m.querySelectorAll('[data-star]').forEach(b => b.onclick = async e => { e.preventDefault(); const id = b.dataset.star; S.plenty = isPlenty(id) ? S.plenty.filter(x => x !== id) : [...(S.plenty || []), id]; await save(); drawOpts(); update(); });
+      m.querySelectorAll('[data-star]').forEach(b => b.onclick = async e => { e.preventDefault(); const id = b.dataset.star; setPlenty(id); await save(); drawOpts(); update(); });
     };
     drawOpts(); update();
     m.querySelector('[data-x=no]').onclick = close;
     f.onsubmit = async e => {
-      e.preventDefault(); const pr = PRODUCTS.find(x => x.id === sel); if (!pr) return;
+      e.preventDefault(); const pr = product(sel); if (!pr) return;
       const dose = doseFor(pr, perDose, L.bag);
       stages.forEach((s, i) => { if (!f['w' + i].checked) return;
         S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress (追肥): ${pr.en} ${fmtAmt(dose.amount, dose.unit)} — ${s.t}`, product: pr.en, amount: dose.amount, unit: dose.unit, due: f['d' + i].value || s.date, done: false }); });

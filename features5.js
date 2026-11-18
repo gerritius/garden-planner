@@ -55,8 +55,9 @@ const PRODUCTS = [
     organicNote: 'Natural ingredients only.',
     notes: [] },
 ];
-const product = id => PRODUCTS.find(x => x.id === id) || (S.customProducts || []).find(x => x.id === id);
-const myProducts = kind => PRODUCTS.concat(S.customProducts || []).filter(x => (!S.myProducts || S.myProducts.includes(x.id)) && (!kind || [].concat(kind).includes(x.kind)));
+// products come from your library (features26); PRODUCTS above is only the catalogue to add from
+const product = id => libGet(id);
+const myProducts = kind => libList(kind);
 const prodName = p => p ? `${p.en}${p.ja && p.ja !== p.en ? ' ' + p.ja : ''}` : '';
 
 // ---------- legal registration lookup ----------
@@ -129,6 +130,7 @@ function spraySection(p) {
   if (!sprays.length || !regNames(p.cropId, p.variety)) return '';
   const cards = sprays.map(pr => {
     if (pr.kind === 'homemade') return `<li><a href="#/product/${pr.id}"><span class="lic">🧪</span><span class="grow"><b>${esc(pr.en)}</b><small>Home-made — not a registered pesticide. Vinegar is an approved “特定農薬”; shōchū, wood vinegar and chilli are tolerated for your own use. See notes.</small></span>›</a></li>`;
+    if (!pr.reg) return `<li><a href="#/product/${pr.id}"><span class="lic">${pr.organic ? '🌱' : '⚗️'}</span><span class="grow"><b>${esc(pr.en)}</b><small>No registration data in the app — check its label for this crop, the dilution and the days to wait before picking${pr.phi != null ? ` (you noted ${pr.phi} day${pr.phi === 1 ? '' : 's'})` : ''}.</small></span>›</a></li>`;
     const s = regSummary(pr.id, p.cropId, p.variety);
     if (!s || !s.ok) return `<li class="no"><a href="#/product/${pr.id}"><span class="lic">🚫</span><span class="grow"><b>${esc(pr.en)}</b><small>Not registered for ${esc(crop(p.cropId).en)} — using it on this crop is not allowed (農薬取締法).</small></span>›</a></li>`;
     const used = usesSoFar(p, pr.id), left = s.uses === Infinity ? null : s.uses - used;
@@ -139,18 +141,7 @@ function spraySection(p) {
   return `<section><h3>Sprays you can use</h3><ul class="plist log sprays">${cards.join('')}</ul>
     <p class="hint">From the official pesticide registrations (農薬登録, ${REG_DATE}). Only registered crops, dilutions and limits are legal. ${pestPlan(p)}</p></section>`;
 }
-// a simple, organic-first plan for what to reach for
-function pestPlan(p) {
-  const fam = crop(p.cropId).family, ok = id => myProducts().some(x => x.id === id) && (regSummary(id, p.cropId, p.variety) || {}).ok;
-  const steps = [];
-  if (fam === 'brassica') steps.push('Net at planting; check leaf undersides weekly for eggs and caterpillars.');
-  else steps.push('Check weekly, especially leaf undersides and new growth.');
-  const first = [ok('benicaNatural') && 'Benica Natural at the first caterpillars/aphids', ok('paiBenicaV') && 'Pai Benica V for aphids and beetles'].filter(Boolean);
-  if (first.length) steps.push('First: ' + first.join('; ') + '.');
-  if (ok('spinoace')) steps.push('If caterpillars/thrips keep coming: Spino Ace (organic).');
-  if (ok('benicaXnext')) steps.push('Last resort: Benica X Next.');
-  return steps.join(' ');
-}
+// pestPlan: features26 (from your sprays)
 
 // ---------- log dialog: pick a product, check it’s legal ----------
 function libChips(e) {   // your products are offered in the product field's drop-down; this keeps which one was picked
@@ -168,6 +159,7 @@ function wireLogLibrary(m, f, e) {
   const check = () => {
     const pr = product(f.productId.value); box.innerHTML = '';
     if (!pr || pr.kind !== 'spray') { if (pr && pr.kind === 'homemade') box.innerHTML = `<p class="msg small">🧪 Home-made spray — no registration. ${esc(stochuLegal())}</p>`; return; }
+    if (!pr.reg) { box.innerHTML = '<p class="hint">No registration data in the app for this product — follow its label for which crops, the dilution, how many uses and the days before picking (put that below).</p>'; if (pr.phi != null && f.phi.value === '') f.phi.value = pr.phi; return; }
     const ts = targets(); if (!ts.length) { box.innerHTML = '<p class="hint">Tick the beds or crops you sprayed to check the rules.</p>'; return; }
     let phi = 0, bad = [];
     const lines = ts.map(p => {
@@ -208,64 +200,16 @@ const FEED_BASE_M2 = { heavy: 200, medium: 150, light: 80, legume: 60 };   // g/
 const FEED_BAG = { heavy: 100, medium: 70, light: 40, legume: 30 };         // g per 40 L bag
 const LIME_M2 = { potato: 0, satsumaimo: 50, strawberry: 50, spinach: 200, garlic: 150, onion: 150, hatamanegi: 150, naganegi: 150 };
 const sectionArea = (c, from, to) => c.type === 'bed' ? Draw.dims(c).W * (to - from) / 1e4 : null;
-const pick = ids => ids.map(product).find(p => p && myProducts().includes(p));
 // recommended starting (base) fertiliser for a crop in this bed section or bag
 // planting the first crop into fresh mix while its own fertiliser is still working (Touikawa ~a year, others ~2 months)
-const freshMixFed = (ms, sowDate) => !!(ms && ms.fresh && ms.firstCrop && (sowDate || todayStr()) < addDays(ms.date, ms.kind === 'touikawa' ? 365 : 60));
-function baseFertPlan(cropId, c, from, to, sowDate) {
-  if (!c) return [];
-  const feed = feedOf(cropId) || 'medium', area = sectionArea(c, from, to), bag = c.type !== 'bed';
-  const sa = soilAdvice(c, from, to, cropId), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
-  const sr = soilReadingAdvice(c, from, to, cropId), lf = sr ? sr.lime : 1, ff = sr ? sr.feed : 1;
-  const out = [];
-  if (bag) {
-    // bags: fresh 元肥入り potting mix needs nothing for its first crop; re-used mix gets compost + 8-8-8
-    const ms = typeof mixState === 'function' ? mixState(c, sowDate || todayStr()) : null;
-    if (freshMixFed(ms, sowDate)) return [];   // first crop in fresh mix: its fertiliser is already in it
-    // fresh mix carries some fertiliser (Touikawa ~a year, mostly phosphate; Iris ~a month), so the 8-8-8 base is halved
-    const slowMix = ms && ms.fresh && (sowDate || todayStr()) < addDays(ms.date, ms.kind === 'touikawa' ? 365 : 30);
-    const vol = (typeof potVolume === 'function' && potVolume(c)) || 40, k = vol / 40;
-    const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
-    if (comp && !slowMix) out.push({ product: comp.en, amount: Math.round(4 * cm * k), unit: 'L' });   // fresh mix doesn't need compost
-    const kasei = pick(['kasei888']), g888 = { heavy: 50, medium: 40, light: 20, legume: 10 }[feed] * k * bm * ff * (slowMix ? 0.5 : 1);
-    const fert = kasei || pick(['bokashi', 'toshoAburakasu']);
-    if (fert && cropId !== 'satsumaimo') out.push({ product: fert.en, amount: Math.round((kasei ? g888 : FEED_BAG[feed] * k * bm * ff) / 5) * 5, unit: 'g' });
-    const lime = pick(['oysterLime']), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to);
-    if (lime && lg > 0 && lf > 0 && !slowMix) out.push({ product: lime.en, amount: lg, unit: 'g' });
-    return out.filter(x => x.amount > 0);
-  }
-  // beds: compost, lime, and organic fertiliser in handfuls
-  const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
-  if (comp) out.push({ product: comp.en, amount: Math.round(area * 2 * cm * 10) / 10, unit: 'kg' });
-  const lime = pick(['oysterLime']), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to);
-  if (lime && lg > 0 && lf > 0) out.push({ product: lime.en, amount: lg, unit: 'g' });
-  const fert = pick(['bokashi', 'toshoAburakasu', 'chickenManure', 'neem']);
-  const g = cropId === 'satsumaimo' ? 0 : FEED_BASE_M2[feed] * area * bm * ff;
-  if (fert && g) out.push({ product: fert.en, amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful' });
-  return out.filter(x => x.amount > 0);
-}
-function baseFertNote(cropId, c, sowDate) {
-  if (c && c.type !== 'bed') { const ms = typeof mixState === 'function' ? mixState(c, sowDate || todayStr()) : null;
-    if (freshMixFed(ms, sowDate)) return 'fresh potting mix: no fertiliser needed — it’s already in the mix';
-    if (ms && ms.fresh && ms.kind === 'touikawa' && todayStr() < addDays(ms.date, 365)) return 'fresh Touikawa mix: its slow-release fertiliser (mostly phosphate) feeds lightly for a year — add half the usual 8-8-8 for nitrogen; no lime needed';
-    if (ms && ms.fresh && todayStr() < addDays(ms.date, 30)) return 'fresh potting mix: its starter fertiliser only lasts about a month — half the usual 8-8-8 mixed through; no lime needed';
-    return 're-used potting mix: compost plus 8-8-8 mixed through before planting'; }
-  const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
-  const bits = [];
-  if (comp) bits.push(`${comp.en}: dig in ${comp.wait >= 14 ? '2–3 weeks' : 'about a week'} before planting`);
-  const lime = pick(['oysterLime']); if (lime) bits.push(`${lime.en}${pick(['bokashi', 'toshoAburakasu']) ? ' and ' + pick(['bokashi', 'toshoAburakasu']).en : ''}: can go in on planting day`);
-  if (cropId === 'potato') bits.push('no lime for potatoes (scab)');
-  if (cropId === 'satsumaimo') bits.push('no nitrogen fertiliser for sweet potato — rich soil gives leaves, not tubers (つるぼけ)');
-  if (['carrot', 'daikon', 'hatsuka', 'kabu'].includes(cropId)) bits.push('keep compost well mixed and at least 3 weeks old for root crops');
-  return bits.join(' · ');
-}
+const freshMixFed = (ms, sowDate) => !!(ms && ms.fresh && ms.firstCrop && (sowDate || todayStr()) < addDays(ms.date, Math.max(60, mixFert(ms.kind).days)));
+// baseFertPlan / baseFertNote: features26 (by product use and N content)
 // suggested jobs = catalogue jobs + top-dressing with my products + weekly pest check
 const FRUITING = ['tomato', 'minitomato', 'nasu', 'piman', 'chilli', 'shishito', 'kyuri', 'zucchini'];
 function careJobs(cropId) {
   const cr = crop(cropId);
   // feeding is planned from the Feeding card, so side-dressing isn't a plain job any more (earthing up stays)
   const jobs = (cr.jobs || []).map(j => j.slice()).filter(j => !/追肥|side-dress|止め肥/i.test(j[0]) || /earth up|土寄せ/i.test(j[0])).map(j => /追肥|side-dress/i.test(j[0]) ? ['Earth up (土寄せ)', ...j.slice(1)] : j);
-  const top = pick(['bokashi', 'toshoAburakasu', 'chickenManure', 'aburakasu']);
   const feed = feedOf(cropId);
   if (FRUITING.includes(cropId) || cr.family === 'brassica' || ['strawberry', 'soramame', 'edamame', 'lettuce'].includes(cropId))
     jobs.push(['Pest check (害虫チェック) – undersides & new growth', 7, 1, 'week']);

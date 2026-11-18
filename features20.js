@@ -110,7 +110,7 @@ function pickPlanting(what) {
 
 // related Tools pages share one tile and switch with tabs (tabs replace the history entry, so Back goes to Tools)
 const TOOL_GROUPS = [
-  [['sprayday', '💦 Spray days'], ['picksafe', '✅ OK to pick?'], ['products', '🧴 Products']],
+  [['sprayday', '💦 Spray days'], ['picksafe', '✅ OK to pick?']],
   [['spend', '💴 Spending'], ['totals', '🧮 Product use']],
   [['review', '📒 Season review'], ['compare', '📊 Compare years']],
 ];
@@ -160,10 +160,10 @@ function mixFormBits(d, c) {
   if (!c || c.type === 'bed') return '';
   mixDefaults(d, c);
   const prior = mixBefore(c, d.sowDate || todayStr(), d._pid), fresh = prior && (prior.fresh ? prior : mixBefore(c, d.sowDate || todayStr(), d._pid, true));
-  const nm = k => esc((MIXES.find(m => m[0] === k) || MIXES[2])[1]);
-  const opts = (sel, unsure) => `${unsure ? `<option value=""${!sel ? ' selected' : ''}>Not sure</option>` : ''}${MIXES.map(([k, en, ja]) => `<option value="${k}"${sel === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}`;
+  const nm = k => esc(mixRow(k)[1]);
+  const opts = (sel, unsure) => `${unsure ? `<option value=""${!sel ? ' selected' : ''}>Not sure</option>` : ''}${mixList().map(([k, en, ja]) => `<option value="${k}"${sel === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}`;
   return `<label>Potting mix<div class="seg"><button type="button" data-act="mixF" data-v="0" class="${d.mixFresh ? '' : 'on'}">Re-used</button><button type="button" data-act="mixF" data-v="1" class="${d.mixFresh ? 'on' : ''}">Fresh mix</button></div></label>
     ${d.mixFresh ? `<label>Which mix<select name="mixKind">${opts(d.mixKind)}</select></label>`
-      : prior ? `<small class="hint">${nm(prior.kind)}${fresh ? `, filled fresh ${shortDate(fresh.date)} ${yearOfD(fresh.date)}` : ''}. Sieve out the old roots; the compost and 8-8-8 you mix in go under Starting fertiliser.</small>`
+      : prior ? `<small class="hint">${nm(prior.kind)}${fresh ? `, filled fresh ${shortDate(fresh.date)} ${yearOfD(fresh.date)}` : ''}. Sieve out the old roots; the compost and fertiliser you mix in go under Starting fertiliser.</small>`
       : `<label>Which mix is in it?<select name="mixKind">${opts(d.mixKind, true)}</select></label>`}`;
 }

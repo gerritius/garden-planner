@@ -40,15 +40,7 @@ const PROD_ALIASES = [
   ['oysterLime', /oyster|かき殻|牡蠣|カキ殻|有機石灰/i], ['cowHuskCompost', /husk|もみ殻|籾殻/i], ['cowCompost', /cow|牛\s*ふん|牛\s*糞|牛フン/i],
   ['barkCompost', /bark|バーク/i], ['kasei888', /8\s*-\s*8\s*-\s*8|化成/i],
 ];
-const productByName = n => {
-  if (!n) return undefined;
-  const t = String(n).trim(), lo = t.toLowerCase();
-  const exact = PRODUCTS.find(x => x.en === t || x.ja === t || x.id === t || x.en.toLowerCase() === lo);
-  if (exact) return exact;
-  const own = typeof customByName === 'function' && customByName(t); if (own) return own;
-  const a = PROD_ALIASES.find(([, re]) => re.test(t));
-  return a ? PRODUCTS.find(x => x.id === a[0]) : undefined;
-};
+const productByName = n => libByName(n);
 const raisable = id => !!(TRANSPLANT[id] && TRANSPLANT[id][0] > 0);
 const linkedStart = p => (S.starts || []).find(s => s.planId === p.id && s.status === 'growing');
 function planItems(p) {

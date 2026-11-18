@@ -267,7 +267,7 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
-  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); applyNursery(); } catch (e) { console.warn(e); }
+  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); migrateProducts(); applyNursery(); } catch (e) { console.warn(e); }
   A.nursery = () => nurseryDialog();
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
@@ -281,7 +281,7 @@ function render() {
     else if (a === 'log') ({ html, after } = pageLog(q));
     else if (a === 'totals') ({ html, after } = pageTotals(q));
     else if (a === 'products') ({ html, after } = pageProducts());
-    else if (a === 'product') ({ html, after } = pageProduct(b));
+    else if (a === 'product') ({ html, after } = pageProductLib(b));
     else if (a === 'search') ({ html, after } = pageSearch(q));
     else if (a === 'map') ({ html, after } = pageMap(q));
     else if (a === 'review') ({ html, after } = pageReview(q));
@@ -445,7 +445,7 @@ function pageContainerForm(c) {
     ${isNew ? `<label>How many?<input name="count" type="number" min="1" max="50" value="${esc(d.count)}"><small>More than 1 numbers them, e.g. “Bag 1”, “Bag 2”…</small></label>` : ''}
     ${(ensureAreas(), S.areas.length > 1) ? `<label>Area<select name="area">${S.areas.map(x => `<option value="${x.id}"${(d.area || S.areas[0].id) === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
     <label>Where<div class="seg wrap">${[['full', '☀️ Full sun'], ['part', '⛅ Part sun'], ['shade', '☁️ Shade'], ['in', '🏠 Indoors']].map(([v, l]) => `<button type="button" data-act="where" data-v="${v}" class="${(d.indoor ? 'in' : d.sun || 'full') === v ? 'on' : ''}">${l}</button>`).join('')}</div><small>Used for growth estimates. You can switch it any time from the ${d.type === 'bed' ? 'bed' : 'pot'}’s page.</small></label>
-    ${isNew && d.type !== 'bed' ? `<label>Potting mix<select name="mixKind"><option value="">— not recorded —</option>${MIXES.map(([k, en, ja]) => `<option value="${k}"${d.mixKind === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
+    ${isNew && d.type !== 'bed' ? `<label>Potting mix<select name="mixKind"><option value="">— not recorded —</option>${mixList().map(([k, en, ja]) => `<option value="${k}"${d.mixKind === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <label class="inl chkline"><input type="checkbox" name="mixFresh"${d.mixFresh === false ? '' : ' checked'}> <span>Fresh mix (not re-used)</span></label>` : ''}
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
     <div class="preview" id="cprev"></div>
@@ -1073,7 +1073,7 @@ function pageSettings() {
   const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
   const html = `<h3 class="grp">Plan &amp; grow</h3><div class="tiles">
       ${tile('#/plan', '📅', 'Season plan')}${tile('#/rotation', '🔄', 'Rotation')}${tile('#/seedlings', '🌱', 'Seedlings')}${tile('#/sow', '🗓️', 'Sowing calendar')}
-      ${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
+      ${tile('#/products', '🧴', 'Products')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
     <h3 class="grp">Records</h3><div class="tiles">
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     <h3 class="grp">Settings</h3>
@@ -1152,7 +1152,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.22.1';
+const APP_VERSION = '1.23.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

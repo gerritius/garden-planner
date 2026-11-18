@@ -26,7 +26,7 @@ const MIX_FERT = {
 };
 const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
-const isLiquid = n => /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || '') || !!(typeof customByName === 'function' && (customByName(n) || {}).form === 'liquid');
+const isLiquid = n => { const p = typeof libByName === 'function' && libByName(n); return p ? p.form === 'liquid' : /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || ''); };
 if (!PRODUCTS.some(p => p.id === 'woodAsh')) PRODUCTS.push({ id: 'woodAsh', kind: 'lime', en: 'Wood ash', ja: '草木灰', maker: 'generic', organic: true, wait: 7, top: true, npk: 'about 0-3-7',
   what: 'Potash (K) and a little phosphate; alkaline like lime', notes: ['Mostly potash — good before fruiting crops, potatoes and onions.', 'Alkaline: it raises pH like lime, so count it as part of your liming.', 'Don’t mix it with nitrogen manures (chicken manure, aburakasu) at the same time — it drives off ammonia. Keep a week apart.'] });
 if (!PRODUCTS.some(p => p.id === 'kuntan')) PRODUCTS.push({ id: 'kuntan', kind: 'amend', en: 'Kuntan (smoked rice husk charcoal)', ja: 'もみ殻くん炭', maker: 'generic', organic: true, wait: 0, top: true, npk: 'about 0-0.2-0.5',
@@ -61,18 +61,18 @@ function mixState(c, beforeDate) {
   const ev = (c.mixLog || []).filter(e => !beforeDate || e.date <= beforeDate).sort(mixSort).pop();
   if (!ev) return null;
   const cropsSince = [...S.plantings.filter(p => p.containerId === c.id && p.sowDate && p.sowDate >= ev.date && (!beforeDate || p.sowDate < beforeDate)), ...(c.history || []).filter(h => h.sowDate && h.sowDate >= ev.date && (!beforeDate || h.sowDate < beforeDate) && !S.plantings.some(p => p.id === h.plantingId))];
-  return Object.assign({}, ev, { firstCrop: ev.fresh && !cropsSince.length, mix: MIXES.find(m => m[0] === ev.kind) || MIXES[2] });
+  return Object.assign({}, ev, { firstCrop: ev.fresh && !cropsSince.length, mix: mixRow(ev.kind) });
 }
 function mixDialog(c) {
   const td = todayStr(), cur = mixState(c);
   modal(`<h3>Potting mix — ${esc(c.name)}</h3><form id="mxf" class="form">
-      <label>Mix<select name="kind">${MIXES.map(([k, en, ja]) => `<option value="${k}"${(cur ? cur.kind : 'iris') === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
+      <label>Mix<select name="kind">${mixList().map(([k, en, ja]) => `<option value="${k}"${(cur ? cur.kind : 'iris') === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <div class="seg"><button type="button" data-f="1" class="on">Fresh mix</button><button type="button" data-f="0">Re-used (roots sieved out)</button></div>
       <p class="hint">For fills before you started using the app. New plantings record this themselves — choose Fresh mix or Re-used in the planting form.</p>
       <label>Filled on<input name="date" type="date" value="${td}" max="${td}"></label>
-      <p class="hint">Fertiliser built into the mix is counted from the fill date: Touikawa as slow-release 6-36-6 + magnesium for about a year, Iris Ohyama as about a month of starter feed. Amounts are estimates — the bags don’t print them. Any 8-8-8 you mix in when refreshing is counted separately (record it as the crop’s starting fertiliser).</p>
+      <p class="hint">Fertiliser built into the mix is counted from the fill date, using what you’ve set for that mix under Tools → Products (N-P-K, how much, how long it lasts). Amounts are estimates — the bags don’t print them. Any fertiliser you mix in when refreshing is counted separately (record it as the crop’s starting fertiliser).</p>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>
-    ${(c.mixLog || []).length ? `<ul class="plist">${c.mixLog.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map(e => `<li><span class="grow">${shortDate(e.date)} ${yearOfD(e.date)} · ${e.fresh ? 'fresh' : 're-used'} ${esc((MIXES.find(m => m[0] === e.kind) || MIXES[2])[1])}${e.pid && planting(e.pid) ? ` <small>with ${esc(crop(planting(e.pid).cropId).en)}</small>` : ''}</span><button class="link danger" data-delmix="${e.id}">remove</button></li>`).join('')}</ul>` : ''}`, (m, close) => {
+    ${(c.mixLog || []).length ? `<ul class="plist">${c.mixLog.slice().sort((a, b) => (a.date < b.date ? 1 : -1)).map(e => `<li><span class="grow">${shortDate(e.date)} ${yearOfD(e.date)} · ${e.fresh ? 'fresh' : 're-used'} ${esc(mixRow(e.kind)[1])}${e.pid && planting(e.pid) ? ` <small>with ${esc(crop(planting(e.pid).cropId).en)}</small>` : ''}</span><button class="link danger" data-delmix="${e.id}">remove</button></li>`).join('')}</ul>` : ''}`, (m, close) => {
     const f = m.querySelector('#mxf'); let fresh = true;
     m.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { fresh = b.dataset.f === '1'; m.querySelectorAll('[data-f]').forEach(x => x.classList.toggle('on', x === b)); });
     m.querySelector('[data-x=no]').onclick = close;
@@ -105,7 +105,7 @@ function feedLedger(p) {
     // the fertiliser in fresh mix releases from the fill date for its own period; this crop gets the part that overlaps its season
     // fertiliser built into the last FRESH fill keeps releasing for its period — sieving out roots and re-using the mix doesn't remove it
     const fresh = (c.mixLog || []).filter(e => e.fresh && e.date <= p.sowDate).sort(mixSort).pop();
-    const mf = fresh ? (MIX_FERT[fresh.kind] || MIX_FERT.other) : null, fmix = fresh ? (MIXES.find(m => m[0] === fresh.kind) || MIXES[2]) : null;
+    const mf = fresh ? mixFert(fresh.kind) : null, fmix = fresh ? mixRow(fresh.kind) : null;
     const reworked = ms && !ms.fresh && fresh && ms.date > fresh.date;
     let mixed = false;
     if (mf) {
@@ -250,8 +250,13 @@ function feedDialog(e, onSave, onCancel) {
     const f = m.querySelector('#fdf');
     const tc = container((e.cids || [])[0]) || container((planting((e.pids || [])[0]) || {}).containerId);
     const calc = () => { const g = feedGrams(f.amount.value, f.unit.value, f.product.value, tc), u = usable3(g, f.product.value), liq = isLiquid(f.product.value), lm = liqMeasure(f.product.value);
-      const dd = m.querySelector('#fdd'); dd.innerHTML = lm && (lm.doses || []).length ? `<div class="sowchips">${lm.doses.map((v, i) => `<button type="button" class="chip${+f.amount.value === v && f.unit.value === 'mL' ? ' on' : ''}" data-dose="${v}">${lm.doses.length > 1 ? (i === 0 ? 'Weak' : i === lm.doses.length - 1 ? 'Strong' : 'Medium') + ': ' : ''}${v} mL per ${lm.per} L</button>`).join('')}</div>` : '';
-      dd.querySelectorAll('[data-dose]').forEach(b => b.onclick = () => { f.amount.value = b.dataset.dose; f.unit.value = 'mL'; calc(); });
+      const dd = m.querySelector('#fdd'), key = lm ? lm.id + ':' + (lm.doses || []).join(',') + '/' + lm.per : '';
+      if (dd.dataset.for !== key) {   // only redraw when the product changes — a redraw mid-tap would swallow the tap
+        dd.dataset.for = key;
+        dd.innerHTML = lm && (lm.doses || []).length ? `<div class="sowchips">${lm.doses.map((v, i) => `<button type="button" class="chip${+f.amount.value === v && f.unit.value === 'mL' ? ' on' : ''}" data-dose="${v}">${lm.doses.length > 1 ? (i === 0 ? 'Weak' : i === lm.doses.length - 1 ? 'Strong' : 'Medium') + ': ' : ''}${v} mL per ${lm.per} L</button>`).join('')}</div>` : '';
+        dd.querySelectorAll('[data-dose]').forEach(b => b.onclick = () => { f.amount.value = b.dataset.dose; f.unit.value = 'mL'; calc(); });
+      }
+      dd.querySelectorAll('[data-dose]').forEach(b => b.classList.toggle('on', +f.amount.value === +b.dataset.dose && f.unit.value === 'mL'));
       if (lm && g && u) { m.querySelector('#fdn').innerHTML = `Amount = mL mixed into ${lm.per} L of water. ${tc && tc.type !== 'bed' ? `${esc(tc.name)} (~${Math.round(potVolume(tc) || 40)} L of soil) gets about ${potLitres(tc).toFixed(1)} L of it` : 'Each pot gets its watering amount of it'} ≈ ${(g / 1.2).toFixed(1)} mL of concentrate → <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)} per pot.`; return; }
       m.querySelector('#fdn').innerHTML = !g ? (liq ? 'For liquid feeds, enter the amount of concentrate you measured out (not the diluted water).' : '') : !u ? `≈ ${Math.round(g)} g — analysis unknown, so it isn’t counted (put the N-P-K in the name, e.g. “Hyponex 6-10-5”).`
         : `≈ ${g < 10 ? g.toFixed(1) : Math.round(g)} g${liq ? ' of concentrate' : ''} → usable this season: <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)}.${liq ? ' (Liquid: enter the concentrate measured out, not the diluted water.)' : ''}`; };

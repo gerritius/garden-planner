@@ -49,6 +49,19 @@ async function ensureClimate(force) {
 }
 const climateName = () => S.climate ? `${S.climate.name || 'your location'} (${S.climate.years} averages)` : 'western Tokyo (built-in — set your location for your own)';
 
+// ---------- growth speed ----------
+// Warm-season crops (tomatoes, peppers, cucurbits, beans, corn…) don't speed up in a straight line with temperature: they
+// barely grow below ~8 °C, then pick up quickly and are close to full speed from a ~21 °C daily average (days in the mid-20s).
+// A straight line up to 24 °C made cool-summer places (London, Hokkaido) look far too slow. Cool-season crops keep the
+// straight line, which fits them. Units stay on the same scale (full speed = tref − tb a day), so 'days × (tref − tb)' still holds.
+const WARM_LO = 8, WARM_OPT = 21;
+function growUnits(id, T) {
+  const { tb, tref, tcap } = growParams(id);
+  if (HEADING.includes(id) && T < 6) return 0;
+  if (WARM_LEAF.includes(id)) return T <= WARM_LO ? 0 : (tref - tb) * (T >= WARM_OPT ? 1 : Math.pow((T - WARM_LO) / (WARM_OPT - WARM_LO), 0.6));
+  return Math.max(0, Math.min(T, tcap) - tb);
+}
+
 // ---------- sowing windows from temperature ----------
 // per crop, where the general rules need a hand. heat: mean °C above which it bolts/spoils when maturing.
 // rising / falling: sow or plant in that temperature range while it's warming / cooling (crops with set seasons).
@@ -105,7 +118,7 @@ function sowWindow(cr) {
   return res.map((r, i) => r.some(ok) ? i + 1 : 0).filter(Boolean);
 }
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
-const SOW_RULES_VER = 1;   // bump when the rules change, so stored windows are worked out again
+const SOW_RULES_VER = 2;   // bump when the rules change, so stored windows are worked out again
 function applySowWindows() {
   const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), crops.map(c => c.id + ':' + (c.daysHarvest || 0)).join(',')].join('|');
   const cache = S.sowCache && S.sowCache.key === key ? S.sowCache.m : null, worked = {};

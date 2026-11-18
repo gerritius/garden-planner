@@ -95,7 +95,7 @@ function pageSeedlings() {
       <ul class="plist starts">${grow.filter(s => s.kind === 'tray' && (s.tray || 1) === no).map(card).join('')}</ul></section>`).join('')}
     ${pots.length ? `<section><h3>9 cm pots <small class="muted">· ${pots.reduce((a, s) => a + startLeft(s), 0)} in use</small></h3><div class="traywrap">${potsSVG(pots)}</div><ul class="plist starts">${pots.map(card).join('')}</ul></section>` : ''}
     <div class="btnrow"><button class="btn primary" data-act="newStart">＋ Start seedlings</button></div>
-    <p class="hint">Tray: ${NURSERY.tray.size}. Pots: ${NURSERY.pot.size}. Small cells dry out fast — check them every day, and harden seedlings off outside for a few days before planting out.</p>
+    <p class="hint">Tray: ${NURSERY.tray.en}${NURSERY.tray.size ? ` (${NURSERY.tray.size})` : ''}. Pots: ${NURSERY.pot.size}. <button type="button" class="link" data-act="nursery">Change sizes</button> Small cells dry out fast — check them every day, and harden seedlings off outside for a few days before planting out.</p>
     ${past.length ? `<details><summary>Finished (${past.length})</summary><ul class="plist log">${past.map(s => `<li class="logi"><div class="lrow"><span class="lic">${ic(s.cropId)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}<small>${s.count} ${NURSERY[s.kind].unit}s sown ${shortDate(s.sowDate)} · ${(s.events || []).map(e => e.type === 'out' ? `${e.n} planted in ${esc((container((planting(e.pid) || {}).containerId) || {}).name || 'a bed')} ${shortDate(e.date)}` : `${e.n} discarded ${shortDate(e.date)}${e.reason ? ` (${esc(e.reason.toLowerCase())})` : ''}`).join(' · ')}</small></span></div></li>`).join('')}</ul></details>` : ''}`;
   return { html };
 }

@@ -125,7 +125,7 @@ function groupTabs(route) {
 // Older entries you added by hand (no pid) stay as the pot's history and are still counted.
 const mixSort = (a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : (a.pid ? 1 : 0) - (b.pid ? 1 : 0));
 function mixBefore(c, date, pid, freshOnly) { return (c.mixLog || []).filter(e => e.pid !== (pid || '__new') && e.date <= date && (!freshOnly || e.fresh)).sort(mixSort).pop() || null; }
-function lastMixKind() { const all = S.containers.flatMap(x => x.mixLog || []).sort(mixSort); return all.length ? all[all.length - 1].kind : 'touikawa'; }
+function lastMixKind() { const all = S.containers.flatMap(x => x.mixLog || []).sort(mixSort); return all.length ? all[all.length - 1].kind : 'other'; }
 function mixDefaults(d, c) {
   if (!c || c.type === 'bed' || d.mixFresh !== undefined) return;
   const own = (c.mixLog || []).find(e => e.pid && e.pid === d._pid);

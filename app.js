@@ -267,7 +267,8 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
-  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); } catch (e) { console.warn(e); }
+  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); applyNursery(); } catch (e) { console.warn(e); }
+  A.nursery = () => nurseryDialog();
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
   try { syncFeedPlans(); syncWater(); syncMeterJobs(); } catch (e) { console.warn(e); }
@@ -455,7 +456,7 @@ function pageContainerForm(c) {
     $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true, grid: true }); };
   A.type = el => { read(); d.type = el.dataset.v; if (d.type !== 'bed' && +d.margin === 10) d.margin = 2; if (d.type === 'bed' && +d.margin === 2) d.margin = 10; render(); };
   A.where = el => { read(); if (el.dataset.v === 'in') d.indoor = true; else { d.indoor = false; d.sun = el.dataset.v; } render(); };
-  A.preset = () => { Object.assign(d, { type: 'round', name: d.name || 'Bag', diameter: 40, depth: 35, margin: 2, count: 12 }); render(); };
+  A.preset = () => { Object.assign(d, { type: 'round', name: d.name || 'Bag', diameter: 40, depth: 35, margin: 2, count: d.count || 1 }); render(); };
   const after = () => {
     prev();
     $('#cf').addEventListener('input', prev);
@@ -1151,7 +1152,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.21.1';
+const APP_VERSION = '1.21.2';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

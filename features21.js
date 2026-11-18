@@ -60,15 +60,15 @@ function myOwnSection() {
     <button class="btn small" data-act="newOwn">＋ Add a product</button></section>`;
 }
 function ownProductDialog(x) {
-  const isNew = !x; x = x || { id: 'cust_' + uid(), en: '', ja: '', form: 'quick', npkv: ['', '', ''], per: 5, doses: [5, 10] };
+  const isNew = !x; x = x || { id: 'cust_' + uid(), en: '', ja: '', form: 'quick', npkv: ['', '', ''], per: '', doses: [] };
   const used = n => (S.log || []).some(e => e.product === n) || S.plantings.some(p => (p.fert || []).some(f => f.product === n) || (p.feedPlan || []).some(s => s.product === n));
   modal(`<h3>${isNew ? 'Add a product' : 'Edit product'}</h3><form id="opf" class="form">
-      <label>Name<input name="en" value="${esc(x.en)}" required placeholder="e.g. Kincho Liquid 6-6-7"></label>
+      <label>Name<input name="en" value="${esc(x.en)}" required placeholder="e.g. Hyponex 6-10-5"></label>
       <label>Japanese name <small>(optional)</small><input name="ja" value="${esc(x.ja || '')}"></label>
       <label>Type<select name="form">${CUSTOM_FORMS.map(([k, l]) => `<option value="${k}"${x.form === k ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
       <label>N-P-K (from the label)<div class="fgrid3"><input name="n" type="number" step="any" inputmode="decimal" value="${x.npkv ? x.npkv[0] : ''}" placeholder="N"><input name="p" type="number" step="any" inputmode="decimal" value="${x.npkv ? x.npkv[1] : ''}" placeholder="P"><input name="k" type="number" step="any" inputmode="decimal" value="${x.npkv ? x.npkv[2] : ''}" placeholder="K"></div></label>
-      <div id="liq"><label>Doses (mL of concentrate), comma-separated — weakest first<input name="doses" value="${esc((x.doses || []).join(', '))}" placeholder="e.g. 5, 10"></label>
-        <label>…mixed into how many litres of water<input name="per" type="number" step="any" inputmode="decimal" value="${x.per || 5}"></label>
+      <div id="liq"><label>Doses (mL of concentrate), comma-separated — weakest first<input name="doses" value="${esc((x.doses || []).join(', '))}" placeholder="from the label, e.g. 5, 10"></label>
+        <label>…mixed into how many litres of water<input name="per" type="number" step="any" inputmode="decimal" value="${x.per || ''}" placeholder="e.g. 5"></label>
         <p class="hint">Each pot gets about ${potLitres()} L of the mixed feed (your watering amount, set under Tools → Reminders), so a dose of 5 mL per 5 L counts as ${(5 / 5 * potLitres()).toFixed(1)} mL of concentrate per pot.</p></div>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#opf'), sh = () => { m.querySelector('#liq').hidden = f.form.value !== 'liquid'; };
@@ -83,7 +83,7 @@ function ownProductDialog(x) {
       e.preventDefault();
       const n = [f.n.value, f.p.value, f.k.value].map(v => +v || 0), oldName = x.en;
       Object.assign(x, { en: f.en.value.trim(), ja: f.ja.value.trim(), form: f.form.value, kind: f.form.value === 'compost' ? 'compost' : 'fert', npkv: n.some(v => v > 0) ? n : null, npk: n.join('-'),
-        per: +f.per.value || 5, doses: f.doses.value.split(/[,、\s]+/).map(Number).filter(v => v > 0).sort((a, b) => a - b), custom: true, organic: f.form.value === 'slow' || f.form.value === 'compost' });
+        per: +f.per.value || null, doses: f.doses.value.split(/[,、\s]+/).map(Number).filter(v => v > 0).sort((a, b) => a - b), custom: true, organic: f.form.value === 'slow' || f.form.value === 'compost' });
       if (!x.en) return;
       if (isNew) { (S.customProducts = S.customProducts || []).push(x); if (S.myProducts) S.myProducts.push(x.id); }
       // a rename carries through to records and plans
@@ -96,18 +96,25 @@ function ownProductDialog(x) {
   });
 }
 
-// Kincho liquid feed was typed in by name; make it a proper product (6-6-7, 5 or 10 mL per 5 L of water)
+// Liquid feeds typed in by name with an N-P-K (e.g. "XYZ Liquid 6-6-7") become your own products, so they can be given
+// a mixing measure (mL per so many litres). Names that only differ in spelling/case are merged into one.
 function migrateOwnProducts() {
-  if (S.ownMigrated) return; S.ownMigrated = true;
-  const names = [...new Set([...S.plantings.flatMap(p => [...(p.feedPlan || []), ...(p.fert || [])].map(f => f.product)), ...(S.log || []).map(e => e.product), ...S.tasks.map(t => t.product)].filter(n => n && /kincho|キンチョ|金鳥/i.test(n)))];
-  if (!names.length || (S.customProducts || []).some(x => /kincho/i.test(x.en))) return;
-  const en = names.find(n => /6\s*-\s*6\s*-\s*7/.test(n)) || names[0];
-  (S.customProducts = S.customProducts || []).push({ id: 'cust_kincho', en, ja: '', form: 'liquid', kind: 'fert', npkv: [6, 6, 7], npk: '6-6-7', per: 5, doses: [5, 10], custom: true });
-  if (S.myProducts && !S.myProducts.includes('cust_kincho')) S.myProducts.push('cust_kincho');
-  // other spellings of the same product become the one name
-  const re = /kincho|キンチョ|金鳥/i, fix = o => { if (o && o.product && o.product !== en && re.test(o.product)) o.product = en; };
-  (S.log || []).forEach(fix); S.tasks.forEach(t => { if (t.product && t.product !== en && re.test(t.product)) { t.title = (t.title || '').split(t.product).join(en); fix(t); } });
-  S.plantings.forEach(p => { (p.fert || []).forEach(fix); (p.feedPlan || []).forEach(fix); });
+  if (S.ownMigrated2) return; S.ownMigrated2 = true;
+  const all = [...S.plantings.flatMap(p => [...(p.feedPlan || []), ...(p.fert || [])].map(f => f.product)), ...(S.log || []).map(e => e.product), ...S.tasks.map(t => t.product)].filter(Boolean);
+  const key = n => n.toLowerCase().replace(/\s+/g, ' ').trim(), groups = {};
+  for (const n of all) { if (!isLiquid(n) || !/\d{1,2}\s*-\s*\d{1,2}\s*-\s*\d{1,2}/.test(n) || (productByName(n) && !customByName(n))) continue; (groups[key(n)] = groups[key(n)] || []).push(n); }
+  for (const names of Object.values(groups)) {
+    const existing = names.map(customByName).find(Boolean);
+    const en = existing ? existing.en : Object.entries(names.reduce((a, n) => (a[n] = (a[n] || 0) + 1, a), {})).sort((a, b) => b[1] - a[1])[0][0];
+    if (!existing) {
+      const m = en.match(/(\d{1,2})\s*-\s*(\d{1,2})\s*-\s*(\d{1,2})/), id = 'cust_' + uid();
+      (S.customProducts = S.customProducts || []).push({ id, en, ja: '', form: 'liquid', kind: 'fert', npkv: [+m[1], +m[2], +m[3]], npk: `${m[1]}-${m[2]}-${m[3]}`, per: null, doses: [], custom: true });
+      if (S.myProducts && !S.myProducts.includes(id)) S.myProducts.push(id);
+    }
+    const fix = o => { if (o && o.product && o.product !== en && key(o.product) === key(en)) o.product = en; };
+    (S.log || []).forEach(fix); S.tasks.forEach(t => { if (t.product && t.product !== en && key(t.product) === key(en)) { t.title = (t.title || '').split(t.product).join(en); fix(t); } });
+    S.plantings.forEach(p => { (p.fert || []).forEach(fix); (p.feedPlan || []).forEach(fix); });
+  }
 }
 
 // ---------- the same planting in other pots ----------
@@ -163,4 +170,23 @@ function copyPlanting(p, c, hist) {
     if (p.thinned) q.thinned = true;
   } else { q.thinned = false; q.thinDoneOn = null; }
   return q;
+}
+
+// ---------- your seed trays and small pots (sizes are yours to set) ----------
+function applyNursery() {
+  const n = S.nursery; if (!n) return;
+  if (+n.cells > 0) { NURSERY.tray.cells = +n.cells; NURSERY.tray.cols = +n.cols > 0 ? +n.cols : Math.round(Math.sqrt(+n.cells)); NURSERY.tray.en = `${n.cells}-cell tray`; }
+  if (n.traySize) NURSERY.tray.size = n.traySize;
+  if (+n.potCm > 0) { NURSERY.pot.en = `${n.potCm} cm pots`; NURSERY.pot.size = `⌀${n.potCm} cm`; }
+}
+function nurseryDialog() {
+  const t = NURSERY.tray, potCm = (S.nursery && S.nursery.potCm) || 9;
+  modal(`<h3>Your trays & pots</h3><form id="nuf" class="form">
+      <div class="two"><label>Cells per tray<input name="cells" type="number" min="1" inputmode="numeric" value="${t.cells}"></label><label>Cells across<input name="cols" type="number" min="1" inputmode="numeric" value="${t.cols}"></label></div>
+      <label>Tray size <small>(optional, for your notes)</small><input name="traySize" value="${esc(t.size || '')}"></label>
+      <label>Small pot size (cm across)<input name="potCm" type="number" min="1" step="0.5" inputmode="decimal" value="${potCm}"></label>
+      <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>`, (m, close) => {
+    m.querySelector('[data-x=no]').onclick = close;
+    m.querySelector('#nuf').onsubmit = async e => { e.preventDefault(); const f = e.target; S.nursery = { cells: +f.cells.value || t.cells, cols: +f.cols.value || null, traySize: f.traySize.value.trim(), potCm: +f.potCm.value || 9 }; applyNursery(); await save(); close(); render(); };
+  });
 }

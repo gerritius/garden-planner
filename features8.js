@@ -142,9 +142,9 @@ function qualityWarnings(only) {
   const rainy = days.find(d => d.rain >= 20), dryBefore = Object.entries(S.rainHist || {}).filter(([k]) => k >= addDays(td, -6) && k < td).every(([, v]) => v < 2);
   for (const p of live) {
     const n = crop(p.cropId).en;
-    if (HEAT_BOLT.includes(p.cropId) && hot.length && (near(p) || m >= 5 && m <= 9))
+    if (HEAT_BOLT.includes(p.cropId) && hot.length && (near(p) || normalT(td) >= 17))
       out.push([p, 'bolt', `${n}: ${hot.length > 1 ? 'warm days' : 'a warm day'} ahead (${Math.round(Math.max(...hot.map(d => d.max)))}°) — ${near(p) ? 'pick soon, it may bolt or turn bitter' : 'keep it watered; it may bolt early'}.`]);
-    else if (DAY_BOLT.includes(p.cropId) && m >= 3 && m <= 5 && p.harvestDate && p.harvestDate <= td)
+    else if (DAY_BOLT.includes(p.cropId) && warming(td) && normalT(td) >= 8 && p.harvestDate && p.harvestDate <= td)
       out.push([p, 'bolt', `${n}: lengthening days make it flower now — pick ${p.cropId === 'naganegi' ? 'before the flower buds (ネギ坊主) open' : 'before it bolts'}.`]);
     if (SPLITTERS.includes(p.cropId) && rainy && dryBefore && near(p) && outdoors(p))
       out.push([p, 'split', `${n}: ${Math.round(rainy.rain)} mm of rain ${dayName(rainy.date) === 'Today' ? 'today' : 'on ' + dayName(rainy.date)} after a dry week — pick what’s ready first, it may split.`]);

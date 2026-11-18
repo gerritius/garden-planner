@@ -68,7 +68,7 @@ function coverNotes() {
     const under = activeIn(c.id).filter(p => p.from < x.to - 0.5 && p.to > x.from + 0.5), names = [...new Set(under.map(p => crop(p.cropId).en))].join(', '), where = `${c.name} (${coverWhere(c, x)})`;
     if (!under.length && daysBetween(x.on, td) > 1) { out.push({ c, x, text: `${coverType(x.type)[2]} still on ${where} — nothing is growing under it.` }); continue; }
     if (x.type === 'fushokufu' && warm) out.push({ c, x, text: `${dayName(warm.date) === 'Today' ? 'Today' : dayName(warm.date)} reaches ${Math.round(warm.max)}° — open up the ends of the ${coverType(x.type)[2].toLowerCase()} on ${where} so ${names || 'the crop'} doesn’t cook.` });
-    else if (x.type === 'fushokufu' && noFrost && [3, 4, 5].includes(pd(td).getMonth() + 1)) out.push({ c, x, text: `No frost in the forecast — the fushokufu on ${where} can probably come off.` });
+    else if (x.type === 'fushokufu' && noFrost && warming(td) && normalT(td) >= 10) out.push({ c, x, text: `No frost in the forecast — the fushokufu on ${where} can probably come off.` });
     const flowering = under.filter(p => NEEDS_BEES.includes(p.cropId) && p.harvestDate && td >= addDays(p.harvestDate, -21));
     if (x.type === 'insect' && flowering.length) out.push({ c, x, text: `${[...new Set(flowering.map(p => crop(p.cropId).en))].join(', ')} under the net on ${where} should be flowering — lift it in the mornings for bees, or hand-pollinate.` });
   }

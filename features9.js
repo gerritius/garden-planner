@@ -106,6 +106,7 @@ const growParams = id => WARM_LEAF.includes(id) ? { tb: 10, tref: 24, tcap: 28 }
   : HARDY_IDS.includes(id) || HARDY_FAM.includes(crop(id).family) ? { tb: 0, tref: 16, tcap: 20 } : { tb: 3, tref: 18, tcap: 22 };
 // growth units for one day at mean temperature T; heading brassicas pause in midwinter (days below ~6 °C add nothing)
 function growUnits(id, T) { const { tb, tcap } = growParams(id); if (HEADING.includes(id) && T < 6) return 0; return Math.max(0, Math.min(T, tcap) - tb); }
+const warming = d => normalT(addDays(d, 30)) > normalT(d) + 1;   // spring-like: getting warmer over the next month
 function normalT(d) {   // smooth daily normal from monthly means
   const x = pd(d), m = x.getMonth(), f = (x.getDate() - 15) / 30, n = f >= 0 ? (m + 1) % 12 : (m + 11) % 12;
   return NORMAL_T[m] + (NORMAL_T[n] - NORMAL_T[m]) * Math.abs(f);

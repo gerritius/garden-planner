@@ -229,15 +229,15 @@ function baseFertPlan(cropId, c, from, to, sowDate) {
     const kasei = pick(['kasei888']), g888 = { heavy: 50, medium: 40, light: 20, legume: 10 }[feed] * k * bm * ff * (slowMix ? 0.5 : 1);
     const fert = kasei || pick(['bokashi', 'toshoAburakasu']);
     if (fert && cropId !== 'satsumaimo') out.push({ product: fert.en, amount: Math.round((kasei ? g888 : FEED_BAG[feed] * bm * ff) / 5) * 5, unit: 'g' });
-    const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? 100;
-    if (lime && lr && lf > 0 && !slowMix) out.push({ product: lime.en, amount: Math.round(lr * lf * 0.3 * k / 5) * 5, unit: 'g' });
+    const lime = pick(['oysterLime']), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to);
+    if (lime && lg > 0 && lf > 0 && !slowMix) out.push({ product: lime.en, amount: lg, unit: 'g' });
     return out.filter(x => x.amount > 0);
   }
   // beds: compost, lime, and organic fertiliser in handfuls
   const comp = pick(['cowCompost', 'cowHuskCompost', 'barkCompost']);
   if (comp) out.push({ product: comp.en, amount: Math.round(area * 2 * cm * 10) / 10, unit: 'kg' });
-  const lime = pick(['oysterLime']), lr = LIME_M2[cropId] ?? (crop(cropId).family === 'brassica' || crop(cropId).family === 'legume' ? 150 : 100);
-  if (lime && lr && lf > 0) out.push({ product: lime.en, amount: Math.round(area * lr * lf / 10) * 10, unit: 'g' });
+  const lime = pick(['oysterLime']), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to);
+  if (lime && lg > 0 && lf > 0) out.push({ product: lime.en, amount: lg, unit: 'g' });
   const fert = pick(['bokashi', 'toshoAburakasu', 'chickenManure', 'neem']);
   const g = cropId === 'satsumaimo' ? 0 : FEED_BASE_M2[feed] * area * bm * ff;
   if (fert && g) out.push({ product: fert.en, amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful' });

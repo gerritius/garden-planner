@@ -65,6 +65,22 @@ const PH_RANGE = {
   potato: [5.0, 6.0], satsumaimo: [5.5, 6.2], daikon: [5.5, 6.5], carrot: [5.5, 6.5], kyuri: [5.5, 6.5], ingen: [5.5, 6.5], corn: [5.5, 6.5], strawberry: [5.5, 6.5], satoimo: [5.5, 6.5],
 };
 const phRange = id => PH_RANGE[id] || [6.0, 6.5];
+// the space as m² of bed: a bed section's area; for a pot, its soil volume (about 150 L of mix ≈ 1 m² of dug bed)
+function soilM2(c, from, to) {
+  if (c.type === 'bed') { const L = Draw.dims(c).L; return Draw.dims(c).W * ((to ?? L) - (from ?? 0)) / 1e4; }
+  return Math.max(typeof areaOf === 'function' ? areaOf(c) : 0, (potVolume(c) || 40) / 150);
+}
+const gramsFor = (perM2, c, from, to) => { if (!(perM2 > 0)) return 0; const g = perM2 * soilM2(c, from, to); return g >= 20 ? Math.round(g / 5) * 5 : Math.max(1, Math.round(g)); };
+const spaceName = c => c.type === 'bed' ? 'this section' : `this ${c.type === 'round' ? 'pot' : 'container'} (~${Math.round(potVolume(c) || 40)} L)`;
+// lime for a crop in this space, in g/m²: the crop's usual rate, more if a reading shows the soil too acid, none if it's already high
+function limeRate(cropId, ph) {
+  const usual = cropId ? (LIME_M2[cropId] ?? (['brassica', 'legume'].includes(crop(cropId).family) ? 150 : 100)) : 100;
+  if (ph == null) return usual;
+  const [lo, hi] = cropId ? phRange(cropId) : [6.0, 6.5];
+  if (ph >= hi - 0.1) return 0;                                                        // at the top of its range or above: no lime
+  if (ph < lo - 0.25) return Math.max(usual, Math.min(300, Math.round((lo + 0.2 - ph) * 200 / 10) * 10));   // too acid: enough to correct it
+  return Math.round(usual / 2 / 10) * 10;                                               // in range: a light top-up only
+}
 const SAL_UNITS = [['us', 'µS/cm'], ['ms', 'mS/cm'], ['ppm', 'ppm'], ['lvl', 'meter scale']];
 const MOIST_UNITS = [['pct', '%'], ['lvl', '1–10 scale']];
 const salToUS = (v, u) => v == null || v === '' ? null : u === 'ms' ? v * 1000 : u === 'ppm' ? v * 2 : u === 'lvl' ? null : +v;
@@ -112,8 +128,8 @@ function soilReadingAdvice(c, from, to, cropId) {
   const out = { r, lime: 1, feed: 1, bits: [] };
   if (r.ph != null && cropId) {
     const [lo, hi] = phRange(cropId), n = crop(cropId).en;
-    if (r.ph < lo - 0.25) { const g = Math.round(Math.min(300, (lo + 0.2 - r.ph) * 200) / 10) * 10; out.lime = 1 + (lo - r.ph) * 1.5; out.bits.push(`pH ${r.ph} is acid for ${n} (best ${lo}–${hi}): mix in about ${g} g/m² oyster shell lime${cropId === 'hakusai' || crop(cropId).family === 'brassica' ? ' — acid soil also encourages clubroot' : ''}.`); }
-    else if (r.ph > hi + 0.25) { out.lime = 0; out.bits.push(`pH ${r.ph} is already above ${n}’s range (${lo}–${hi}): skip the lime${r.ph > 7.2 ? '; compost and sulphur-free organic feeds will bring it down slowly' : ''}.`); }
+    if (r.ph < lo - 0.25) { const rate = limeRate(cropId, r.ph), g = gramsFor(rate, c, from, to); out.lime = rate / limeRate(cropId, null); out.bits.push(`pH ${r.ph} is acid for ${n} (best ${lo}–${hi}): mix about ${g} g of oyster shell lime into ${spaceName(c)}${c.type === 'bed' ? ` (${rate} g/m²)` : ''}${cropId === 'hakusai' || crop(cropId).family === 'brassica' ? ' — acid soil also encourages clubroot' : ''}.`); }
+    else if (r.ph >= hi - 0.1) { out.lime = 0; if (r.ph <= hi + 0.25) { out.bits.push(`pH ${r.ph} is at the top of ${n}’s range (${lo}–${hi}): no lime needed.`); return out; } out.bits.push(`pH ${r.ph} is already above ${n}’s range (${lo}–${hi}): skip the lime${r.ph > 7.2 ? '; compost and sulphur-free organic feeds will bring it down slowly' : ''}.`); }
     else out.bits.push(`pH ${r.ph} suits ${n} (${lo}–${hi}).`);
   }
   if (r.salt === 'DANGER') { out.feed = 0.5; out.bits.push('Salt reads DANGER: there’s too much fertiliser in the soil — hold off feeding, halve any base fertiliser, and water through well. Salty soil scorches roots and seedlings.'); }

@@ -2,7 +2,9 @@
    their effect and how early they need to go on), and how much — all as editable suggestions. */
 'use strict';
 
-// usual side-dressing (追肥) stages. d: days after planting (or thinning for sown crops); f: fraction of the way to harvest; md: a calendar date (MM-DD)
+// usual side-dressing (追肥) stages. d: days after planting (or thinning for sown crops); f: fraction of the way to harvest;
+// w: tied to this planting's own winter — 'start' (as it sets in), 'mid' (a third of the way through), 'restart' (growth picks up), off: days from there.
+// w-stages only apply to plantings that actually go through a winter; last: the last feed (止め肥) — nothing after it
 const SIDE_STAGES = {
   hakusai: [{ d: 18, t: '2–3 weeks after planting / final thinning' }, { f: 0.5, t: 'as heads start to form (結球始め)' }],
   cabbage: [{ d: 25, t: '3–4 weeks after planting' }, { f: 0.55, t: 'as heads start to form (結球始め)' }],
@@ -10,11 +12,11 @@ const SIDE_STAGES = {
   daikon: [{ d: 5, t: 'at the last thinning (本葉5–6枚)' }, { d: 25, t: 'as roots start to thicken' }], kabu: [{ d: 5, t: 'after the last thinning' }], carrot: [{ d: 5, t: 'after thinning' }, { d: 30, t: 'as roots thicken' }],
   komatsuna: [{ d: 5, t: 'after thinning (only if leaves look pale)' }], chingensai: [{ d: 7, t: 'after thinning' }], mizuna: [{ d: 10, t: 'after thinning' }], spinach: [{ d: 7, t: 'after thinning' }],
   shungiku: [{ d: 10, t: 'after thinning, and after each cut' }], lettuce: [{ d: 18, t: '2–3 weeks after planting' }],
-  onion: [{ md: '01-05', t: 'early January' }, { md: '02-25', t: 'late February — the last feed (止め肥); none after March' }],
-  garlic: [{ md: '12-15', t: 'mid December' }, { md: '02-25', t: 'late February — the last feed (止め肥)' }],
+  onion: [{ w: 'mid', t: 'mid-winter — lightly' }, { w: 'restart', t: 'as growth restarts — the last feed (止め肥); none after it', last: true }],
+  garlic: [{ w: 'start', t: 'as winter sets in' }, { w: 'restart', t: 'as growth restarts — the last feed (止め肥)', last: true }],
   naganegi: [{ d: 30, t: 'with the first earthing-up (土寄せ)' }, { d: 60, t: 'with the second earthing-up' }, { d: 90, t: 'with the third earthing-up' }],
-  snappea: [{ md: '02-25', t: 'when growth restarts in spring' }, { f: 0.8, t: 'when flowering starts — lightly' }], sayaendo: [{ md: '02-25', t: 'when growth restarts in spring' }, { f: 0.8, t: 'at flowering — lightly' }],
-  soramame: [{ md: '02-25', t: 'when growth restarts in spring' }], strawberry: [{ md: '02-20', t: 'late February, as growth restarts' }],
+  snappea: [{ w: 'restart', t: 'when growth restarts in spring' }, { f: 0.8, t: 'when flowering starts — lightly' }], sayaendo: [{ w: 'restart', t: 'when growth restarts in spring' }, { f: 0.8, t: 'at flowering — lightly' }],
+  soramame: [{ w: 'restart', t: 'when growth restarts in spring' }], strawberry: [{ w: 'restart', t: 'as growth restarts' }],
   potato: [{ d: 25, t: 'when removing extra shoots (芽かき) and earthing up' }], corn: [{ d: 30, t: 'at 7–8 leaves' }, { d: 50, t: 'when tassels appear' }],
   edamame: [{ d: 30, t: 'at flowering — lightly, only if pale' }], ingen: [{ d: 30, t: 'at flowering' }],
 };
@@ -47,7 +49,10 @@ function feedSeason(p) {
   // lean stretch: heading brassicas from ~5 weeks before winter, others the last 3 weeks before it
   return (_season[k] = { ws, we, bolt, leanFrom: addDays(ws, bolt ? -35 : -21), leanTo: ws, mainAt: we });
 }
-const inLean = (se, d) => !!(se && d >= se.leanFrom && d < se.we);
+const inLean = (se, d) => !!(se && d >= se.leanFrom && d < addDays(se.we, -7));
+const stageAnchor = (se, w) => w === 'start' ? se.ws : w === 'mid' ? addDays(se.ws, Math.round(daysBetween(se.ws, se.we) / 3)) : se.we;
+// the day a dose put on `due` starts working (organic feeds take a while)
+const actsOn = (name, due) => addDays(due, leadOf(productByName(name || ''))[0] || 0);
 const leanWhy = (p, se) => se.bolt
   ? `an overwintering ${crop(p.cropId).en.toLowerCase()} is kept small going into the cold — a big plant bolts (トウ立ち) in spring instead of heading`
   : 'soft new growth going into winter is easily frost-damaged';
@@ -56,10 +61,13 @@ function sideStages(p) {
   const start = p.method === 'seed' ? (p.thinDoneOn || p.thinDate || addDays(p.sowDate, 20)) : p.sowDate;
   let raw = [];
   if (FRUIT_EVERY.includes(p.cropId)) { const keep = (harvestWindow(p) || {}).keep || addDays(hv, 60); for (let d = addDays(hv, -10), i = 1; d < keep && i <= 5; d = addDays(d, 18), i++) raw.push({ date: d, t: i === 1 ? 'as the first fruits swell' : 'every 2–3 weeks while picking' }); }
-  else for (const s of SIDE_STAGES[p.cropId] || [{ d: 21, t: 'about 3 weeks in' }, { f: 0.6, t: 'mid-season' }]) {
-    let date = s.d != null ? addDays(start, s.d) : s.f != null ? addDays(p.sowDate, Math.round(daysBetween(p.sowDate, hv) * s.f)) : null;
-    if (s.md) { const y = +p.sowDate.slice(0, 4); date = `${y}-${s.md}`; if (date <= p.sowDate) date = `${y + 1}-${s.md}`; }
-    raw.push({ date, t: s.t });
+  else {
+    let defs = (SIDE_STAGES[p.cropId] || []).filter(s => !s.w || se);   // winter-tied stages only when it goes through a winter
+    if (!defs.length) defs = [{ d: 21, t: 'about 3 weeks in' }, { f: 0.6, t: 'mid-season' }];
+    for (const s of defs) {
+      const date = s.w ? addDays(stageAnchor(se, s.w), s.off || 0) : s.d != null ? addDays(start, s.d) : addDays(p.sowDate, Math.round(daysBetween(p.sowDate, hv) * s.f));
+      raw.push({ date, t: s.t, w: s.w });
+    }
   }
   if (se && !FRUIT_EVERY.includes(p.cropId) && se.we < addDays(hv, -14) && !raw.some(r => r.date && Math.abs(daysBetween(r.date, se.we)) <= 21))
     raw.push({ date: se.we, t: se.bolt ? 'as growth restarts — the main feed for spring heads' : 'as growth restarts in spring' });
@@ -77,7 +85,7 @@ function sideStages(p) {
     }
     if (se && se.bolt && inLean(se, date)) { why = `moved from ${shortDate(date)}: ${leanWhy(p, se)} — so it waits for spring`; date = se.we; }
     else if (se && date >= se.leanFrom && date < se.ws) { light = true; why = (why ? why + '; ' : '') + `kept light: ${leanWhy(p, se)}`; }
-    const g = nextGrowing(p.cropId, date);
+    const g = r.w ? date : nextGrowing(p.cropId, date);
     if (g > date) { why = `moved from ${shortDate(date)}: too cold for roots to take feed up — growth restarts around ${shortDate(g)}${g > addDays(hv, -14) ? ` (after your harvest estimate of ${shortDate(hv)} — over winter the heads mostly wait for spring, so this still counts)` : ''}`; date = g; }
     const dup = out.find(o => Math.abs(daysBetween(o.date, date)) < 14); if (dup) { if (!dup.t.includes(t)) dup.t += ' / ' + t; continue; }
     out.push({ date, t, why, light });

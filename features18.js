@@ -112,7 +112,7 @@ function feedPlanner(p) {
       if (prev && (!sim || !sim.shortFrom || sim.shortFrom <= prev.at)) { if (sim && sim.shortFrom && sim.shortFrom <= prev.at) rows.splice(rows.indexOf(prev.row), 1); if (sim && sim.shortFrom && sim.shortFrom <= prev.at) break; }   // that dose didn't move the shortfall on (e.g. it can't release in time) — drop it and stop
       if (!sim || !sim.shortFrom || sim.shortFrom > addDays(end, -10)) break;
       let d = addDays(sim.shortFrom, -Math.max(3, lead)); if (d < td) d = td; d = nextGrowing(p.cropId, d);
-      const se = feedSeason(p); if (se && se.bolt && inLean(se, d)) d = se.we;   // nothing extra in the lean stretch before winter
+      const se = feedSeason(p); if (se && se.bolt && inLean(se, actsOn(main, d))) d = addDays(se.we, -lead) < td ? td : addDays(se.we, -lead);   // nothing extra working in the lean stretch: it waits to act from the spring restart
       for (let k = 0; k < 20; k++) { const near = rows.find(r => r.type === 'once' && r.on && Math.abs(daysBetween(r.due || r.date, d)) < 7); if (!near) break; d = addDays(near.due || near.date, 7); }   // a dose is already close: the next one goes a week after it
       const stop = lastFeedDate(p); if (d >= addDays(end, -7) || (stop && d > stop)) break;
       const row = mkRow({ date: d, due: d, t: 'to keep it fed', src: 'extra', product: main, ...dose }); rows.push(row); prev = { row, at: sim.shortFrom };
@@ -165,7 +165,7 @@ function feedPlanner(p) {
   const rowHTML = r => {
     if (r.open) return rowEdit(r);
     const warn = r.big ? 'too much in one go — split it' : r.type === 'once' && r.over ? 'left out: the soil still holds plenty then' : r.type === 'every' && r.over ? `${r.over} skipped while the soil holds plenty` : '';
-    const when = r.type === 'every' ? `Every ${r.every || 7} days · ${shortDate(r.date)}–${shortDate(r.until || end)}${r.on ? ` (${r.count} dose${r.count === 1 ? '' : 's'})` : ''}` : shortDate(r.due || r.date);
+    const when = r.type === 'every' ? `Every ${r.every || 7} days · ${shortDate(r.date)}–${shortDate(r.until || end)}${r.on ? ` (${r.count} dose${r.count === 1 ? '' : 's'})` : ''}` : r.due && r.date && r.due !== r.date ? `${shortDate(r.due)} <small>(working by ${shortDate(r.date)})</small>` : shortDate(r.due || r.date);
     return `<div class="frow line${r.on ? '' : ' off'}${r.over && !r.count ? ' over' : ''}" data-r="${r.id}">
       <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <span class="grow"><b>${when}</b> · ${esc(r.product || '?')} ${r.amount ? amtFor(r.product, +r.amount, r.unit) : ''}
         ${r.t && r.type === 'once' && r.src !== 'custom' ? `<small>${esc(r.t)}</small>` : ''}${warn ? `<small class="warnline">${warn}</small>` : ''}${r.why ? `<small>⏸ ${esc(r.why)}</small>` : ''}</span></label>
@@ -177,7 +177,7 @@ function feedPlanner(p) {
     <p class="small"><b>Main fertiliser</b> <span class="muted">— ☆ = you have plenty</span></p><div id="fpMain" class="sowchips"></div>
     <datalist id="fpn">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
     ${(stages.skipped || []).map(x => `<p class="hint">⏭ Left out: <b>${esc(x.t)}</b> — ${esc(x.why)}</p>`).join('')}
-    ${stages.season && stages.season.bolt && todayStr() < stages.season.we ? `<p class="hint">❄ Lean stretch before winter: about ${shortDate(stages.season.leanFrom)} – ${shortDate(stages.season.we)}. Nothing extra is added then.</p>` : ''}
+    ${stages.season && stages.season.bolt && todayStr() < stages.season.we ? `<p class="hint">❄ Kept lean from about ${shortDate(stages.season.leanFrom)} until growth restarts around ${shortDate(stages.season.we)} (worked out from the usual temperatures here). Nothing is set to be working in between.</p>` : ''}
     <form id="fpf" class="form"><div id="fpRows"></div>
       <div class="btnrow"><button type="button" class="btn small" data-x="addOnce">＋ One-off dose</button><button type="button" class="btn small" data-x="addEvery">＋ Repeating feed</button><button type="button" class="btn small" data-x="fill">↻ Re-suggest</button></div>
       <details class="fold inner"><summary>How these are worked out</summary><p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} and its stage — your bag’s instructions win. Doses go where the crop would otherwise run short, kept to a normal size; a dose is left out if it’s too big on its own or the soil still holds plenty at that point. Outdoors, repeating feeds skip midwinter. Liquid feeds: amounts are the concentrate you measure out.</p></details>

@@ -19,8 +19,9 @@ const trayOK = (cr, m) => sowOK(cr, m) || shiftM(cr.sow || [], -1).includes(m); 
 function clearByFor(c, s, e) {
   if (e) return addDays(e, -13);
   if (c.clearBy && c.clearBy > s) return c.clearBy;
-  const m = monthOf(s); if (m >= 4 && m <= 9) return null;
-  const y = pd(s).getFullYear() + (m >= 10 ? 1 : 0); return `${y}-04-25`;
+  if (normalT(s) >= 15) return null;   // warm season: nothing to clear for
+  for (let d = addDays(s, 1), i = 0; i < 300; i++, d = addDays(d, 1)) if (normalT(d) >= 16) return d;   // the main spring planting (Golden Week around Tokyo)
+  return null;
 }
 // when it would be done with: the harvest window's "most ready by" (for crops picked over a season, a month of picking)
 function doneOf(hp) {

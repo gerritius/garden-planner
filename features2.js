@@ -72,7 +72,8 @@ function germDialog(p, when) {
 // ---------- watering (pots & bags) ----------
 function waterInterval(d = new Date()) {
   const m = d.getMonth() + 1;
-  let iv = [6, 7, 8, 9].includes(m) ? 1 : [5, 10].includes(m) ? 2 : [4, 11].includes(m) ? 3 : m === 3 ? 4 : 5;
+  const t = normalT(iso(d));   // usual daily mean here: hotter → pots dry faster
+  let iv = t >= 21 ? 1 : t >= 17 ? 2 : t >= 11.5 ? 3 : t >= 8 ? 4 : 5;
   const today = Weather.days()[0];
   if (today && today.max >= 30) iv = 1;
   return iv;

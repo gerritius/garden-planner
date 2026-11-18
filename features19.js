@@ -70,7 +70,7 @@ function feedSim(p, L, extra = [], skip) {
     poolAt[d] = pool;
     const dem = wOf[d] || 0, take = Math.min(pool, dem);
     pool -= take; taken += take; unmetAll += dem - take;
-    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && d <= shortTo && !(lean && lean.bolt && inLean(lean, d)) && dem > avgDem * 0.3 && take < dem * 0.6) shortFrom = d; }   // a shortfall only matters while it's growing
+    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && d <= shortTo && !(lean && lean.bolt && d >= lean.leanFrom && d < addDays(lean.we, 14)) && dem > avgDem * 0.3 && take < dem * 0.6) shortFrom = d; }   // a shortfall only matters while it's growing
     const l = pool * leachOn(d); pool -= l; lost += l;
   }
   return { start, end, stop, lean, shortFrom, unmetFuture, unmetAll, taken, peak, peakDate, lost, poolAt, maxPool: maxPoolOf(L), left: pool };
@@ -110,7 +110,7 @@ function fateLine(sim, L, p) {
 }
 // crops with a last feed (止め肥): feeding later gives split bulbs and poor keeping
 function lastFeedDate(p) {
-  const s = (SIDE_STAGES[p.cropId] || []).find(x => /止め肥/.test(x.t) && x.md); if (!s || !p.sowDate) return null;
-  const y = +p.sowDate.slice(0, 4); let d = `${y}-${s.md}`; if (d <= p.sowDate) d = `${y + 1}-${s.md}`;
-  return nextGrowing(p.cropId, d) || d;
+  const s = (SIDE_STAGES[p.cropId] || []).find(x => x.last); if (!s) return null;
+  const se = feedSeason(p); if (!se || !s.w) return null;   // no winter → no fixed last feed; the harvest date limits it as usual
+  return addDays(stageAnchor(se, s.w), s.off || 0);
 }

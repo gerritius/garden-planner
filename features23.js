@@ -30,12 +30,12 @@ function soilLine(cropId, method, c, from, to) {
 function germWindow(p) {
   const cr = crop(p.cropId);
   if (p.method !== 'seed' || !cr.germ || !p.sowDate) return null;
-  const m = pd(p.sowDate).getMonth() + 1;
-  let f = [12, 1, 2].includes(m) ? 1.8 : [11, 3].includes(m) ? 1.4 : [10, 4].includes(m) ? 1.15 : 1;
-  const r = SOIL_T[p.cropId], c = p.containerId && container(p.containerId);
-  if (r && Math.abs(daysBetween(p.sowDate, todayStr())) <= 7 && !(c && c.indoor)) {
+  const r = SOIL_T[p.cropId] || [5, 15], c = p.containerId && container(p.containerId);
+  const slow = t => t >= r[1] ? 1 : t >= r[0] ? 1 + (r[1] - t) / Math.max(1, r[1] - r[0]) * 0.9 : 2.2;
+  let f = c && c.indoor ? 1 : slow(normalT(p.sowDate) + 1);   // soil runs a little warmer than the air mean
+  if (Math.abs(daysBetween(p.sowDate, todayStr())) <= 7 && !(c && c.indoor)) {
     const st = c ? soilTempFor(c, p.from, p.to) : soilTemps(), t = st && (st.week ?? st.now);
-    if (t != null) f = t >= r[1] ? 1 : t >= r[0] ? 1 + (r[1] - t) / Math.max(1, r[1] - r[0]) * 0.9 : 2.2;
+    if (t != null) f = slow(t);
   }
   return [addDays(p.sowDate, Math.round(cr.germ[0] * f)), addDays(p.sowDate, Math.round(cr.germ[1] * f))];
 }

@@ -197,7 +197,7 @@ function harvestEstimate(p) {
 // for frost-tender crops planted for autumn: the date the first frosts usually finish the tops (normal mean temperature falls to ~8.5 °C)
 function frostEnd(p) {
   const cr = crop(p.cropId); if (!cr.frostEnd || !p.sowDate) return null;
-  const m = pd(p.sowDate).getMonth() + 1; if (m < 7 || m > 10) return null;   // spring crops are dug before summer, not stopped by frost
+  if (normalT(addDays(p.sowDate, 45)) >= normalT(p.sowDate)) return null;   // planted as it warms up (spring): dug before summer, not stopped by frost
   const c = container(p.containerId); if (c && c.indoor) return null;
   for (let d = addDays(p.sowDate, 30), i = 0; i < 200; i++, d = addDays(d, 1)) if (normalT(d) < 8.5) return d;
   return null;

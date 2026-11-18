@@ -7,10 +7,11 @@ function customByName(n) {
   if (!n) return null; const t = String(n).trim(), lo = t.toLowerCase();
   return (S.customProducts || []).find(x => x.id === t || (x.en || '').toLowerCase() === lo || (x.ja && x.ja === t)) || null;
 }
-const potLitres = () => (S.water && +S.water.perBagL) || 4;   // litres of (diluted) water each pot gets — set under Tools → Reminders → Watering
+// litres of (diluted) feed a pot gets: your watering amount (per 40 L bag, Tools → Reminders) scaled to this pot's soil volume
+const potLitres = c => ((S.water && +S.water.perBagL) || 4) * (c && c.type !== 'bed' ? (potVolume(c) || 40) / 40 : 1);
 // liquid with a mixing measure: amounts in mL are "mL per <per> L of water", and each pot gets potLitres() of that
 const liqMeasure = name => { const pr = customByName(name); return pr && pr.form === 'liquid' && +pr.per > 0 ? pr : null; };
-function concentrateML(name, mL) { const pr = liqMeasure(name); return pr ? mL / pr.per * potLitres() : mL; }
+function concentrateML(name, mL, c) { const pr = liqMeasure(name); return pr ? mL / pr.per * potLitres(c) : mL; }
 // how an amount reads for this product (e.g. "5 mL per 5 L (weak)")
 function amtFor(name, amount, unit) {
   const pr = liqMeasure(name);
@@ -20,11 +21,11 @@ function amtFor(name, amount, unit) {
 }
 
 // counted amounts
-function feedGrams(amount, unit, name) {
+function feedGrams(amount, unit, name, c) {
   const a = +amount; if (!(a > 0)) return 0;
   const cp = customByName(name);
   if (cp) {
-    if (unit === 'mL' || unit === 'L') { const mL = unit === 'L' ? a * 1000 : a; return (cp.form === 'liquid' ? concentrateML(name, mL) : mL) * (cp.form === 'liquid' ? 1.2 : cp.form === 'compost' ? 0.5 : 0.9); }
+    if (unit === 'mL' || unit === 'L') { const mL = unit === 'L' ? a * 1000 : a; return (cp.form === 'liquid' ? concentrateML(name, mL, c) : mL) * (cp.form === 'liquid' ? 1.2 : cp.form === 'compost' ? 0.5 : 0.9); }
     return unit === 'kg' ? a * 1000 : unit === 'handful' ? a * HANDFUL_G : a;
   }
   const pr = productByName(name || ''), d = pr ? (DENS_ID[pr.id] || DENS[pr.kind] || 0.6) : isLiquid(name) ? 1.2 : 0.6;   // liquids: the concentrate
@@ -38,11 +39,11 @@ function npkOf(name) {
   return m ? [+m[1], +m[2], +m[3], 1] : null;
 }
 // a normal dose: liquids snap to the strengths you mix (weak / strong)
-function doseOf(name, nPerDose, bag) {
+function doseOf(name, nPerDose, bag, c) {
   const npk = npkOf(name); if (!npk || !npk[0]) return null;
   if (isLiquid(name)) {
     const conc = nPerDose / (1.2 * npk[0] / 100), pr = liqMeasure(name);
-    if (pr) { const want = conc * pr.per / potLitres(), ds = (pr.doses || []).slice().sort((a, b) => a - b); return { amount: ds.length ? ds.reduce((b, x) => (Math.abs(x - want) < Math.abs(b - want) ? x : b), ds[0]) : Math.max(1, Math.round(want)), unit: 'mL' }; }
+    if (pr) { const want = conc * pr.per / potLitres(c), ds = (pr.doses || []).slice().sort((a, b) => a - b); return { amount: ds.length ? ds.reduce((b, x) => (Math.abs(x - want) < Math.abs(b - want) ? x : b), ds[0]) : Math.max(1, Math.round(want)), unit: 'mL' }; }
     return { amount: Math.max(1, Math.round(conc)), unit: 'mL' };
   }
   const g = nPerDose / (npk[0] / 100 * (npk[3] || 0.7));
@@ -69,14 +70,14 @@ function ownProductDialog(x) {
       <label>N-P-K (from the label)<div class="fgrid3"><input name="n" type="number" step="any" inputmode="decimal" value="${x.npkv ? x.npkv[0] : ''}" placeholder="N"><input name="p" type="number" step="any" inputmode="decimal" value="${x.npkv ? x.npkv[1] : ''}" placeholder="P"><input name="k" type="number" step="any" inputmode="decimal" value="${x.npkv ? x.npkv[2] : ''}" placeholder="K"></div></label>
       <div id="liq"><label>Doses (mL of concentrate), comma-separated — weakest first<input name="doses" value="${esc((x.doses || []).join(', '))}" placeholder="from the label, e.g. 5, 10"></label>
         <label>…mixed into how many litres of water<input name="per" type="number" step="any" inputmode="decimal" value="${x.per || ''}" placeholder="e.g. 5"></label>
-        <p class="hint">Each pot gets about ${potLitres()} L of the mixed feed (your watering amount, set under Tools → Reminders), so a dose of 5 mL per 5 L counts as ${(5 / 5 * potLitres()).toFixed(1)} mL of concentrate per pot.</p></div>
-      <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
+        <p class="hint">Each pot gets about ${potLitres()} L of the mixed feed per 40 L of soil (your watering amount, set under Tools → Reminders) — more for bigger pots, less for smaller ones.</p></div>
+      <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del" data-own-confirm>Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#opf'), sh = () => { m.querySelector('#liq').hidden = f.form.value !== 'liquid'; };
     f.form.onchange = sh; sh();
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const del = m.querySelector('[data-x=del]');
     if (del) del.onclick = async () => {
-      if (used(x.en) && !await confirmBox(`<b>${esc(x.en)}</b> is in your records. They stay, but without its N-P-K and doses the app may count them differently. Delete?`, 'Delete', true)) return;
+      if (!await confirmBox(used(x.en) ? `<b>${esc(x.en)}</b> is in your records. They stay, but without its N-P-K and doses the app may count them differently. Delete it?` : `Delete <b>${esc(x.en)}</b>? This can’t be undone.`, 'Delete', true)) return;
       S.customProducts = (S.customProducts || []).filter(y => y.id !== x.id); if (S.myProducts) S.myProducts = S.myProducts.filter(id => id !== x.id); await save(); close(); render();
     };
     f.onsubmit = async e => {

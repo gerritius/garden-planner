@@ -96,8 +96,8 @@ function logDialog(e, preset = {}) {
   modal(`<h3>${isNew ? 'Log something' : 'Edit log entry'}</h3>
     <form id="lf" class="form">
       <label>Date<input type="date" name="date" value="${e.date}" max="${todayStr()}"></label>
-      <div class="sowchips kinds">${LOG_KINDS.filter(([k]) => k !== 'other' || !isNew || e.kind === 'other').map(([k, i, l]) => `<label class="chip big tog"><input type="radio" name="kind" value="${k}"${k === e.kind ? ' checked' : ''}><span>${i} ${l}</span></label>`).join('')}</div>
-      <div id="prodrow">${libChips(e)}<label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${prods.map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
+      <label>What did you do?<select name="kind">${LOG_KINDS.filter(([k]) => k !== 'other' || !isNew || e.kind === 'other').map(([k, i, l]) => `<option value="${k}"${k === e.kind ? ' selected' : ''}>${i} ${l}</option>`).join('')}</select></label>
+      <div id="prodrow">${libChips(e)}<label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${[...new Set([...libNames(), ...prods])].map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
         <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(e.unit)}</select></label></div>
         <label id="perrow" hidden>The amount is<select name="per"><option value="each"${e.per !== 'total' ? ' selected' : ''}>for each bed / pot</option><option value="total"${e.per === 'total' ? ' selected' : ''}>in total, shared between them</option></select></label>
         <label id="phirow">Wait before harvest (収穫前日数)<div class="two"><input name="phi" type="number" inputmode="numeric" min="0" value="${e.phi ?? ''}" placeholder="days, from the label"><span class="hint">Leave empty if none. Remembered for this product.</span></div></label></div>
@@ -110,7 +110,7 @@ function logDialog(e, preset = {}) {
     </form>`, (m, close) => {
     const f = m.querySelector('#lf');
     const showProd = () => {
-      const k = f.querySelector('input[name=kind]:checked').value;
+      const k = f.kind.value;
       m.querySelector('#prodrow').hidden = !['fert', 'spray', 'soil', 'water', 'pest', 'other'].includes(k);
       m.querySelector('#phirow').hidden = k !== 'spray';
       const n = new Set([...[...f.querySelectorAll('input[name=cid]:checked')].map(i => i.value), ...[...f.querySelectorAll('input[name=pid]:checked')].map(i => (planting(i.value) || {}).containerId)]).size;
@@ -125,10 +125,10 @@ function logDialog(e, preset = {}) {
     f.onsubmit = async ev => {
       ev.preventDefault();
       Object.assign(e, {
-        date: f.date.value || todayStr(), kind: f.querySelector('input[name=kind]:checked').value, product: f.product.value.trim(),
+        date: f.date.value || todayStr(), kind: f.kind.value, product: f.product.value.trim(),
         amount: f.amount.value === '' ? null : +f.amount.value, unit: f.unit.value, text: f.text.value.trim(),
         cids: [...f.querySelectorAll('input[name=cid]:checked')].map(i => i.value), pids: [...f.querySelectorAll('input[name=pid]:checked')].map(i => i.value),
-        productId: f.productId.value || null, per: f.per.value, phi: f.querySelector('input[name=kind]:checked').value === 'spray' && f.phi.value !== '' ? +f.phi.value : null,
+        productId: f.productId.value || null, per: f.per.value, phi: f.kind.value === 'spray' && f.phi.value !== '' ? +f.phi.value : null,
       });
       if (e.phi != null && e.product) (S.phi = S.phi || {})[e.product] = e.phi;
       if (isNew) (S.log = S.log || []).push(e);

@@ -12,7 +12,7 @@ function doseOf(name, nPerDose, bag) {
   if (bag) return { amount: Math.max(2, Math.round(g)), unit: 'g' };
   return g >= 15 ? { amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful' } : { amount: Math.max(5, Math.round(g / 5) * 5), unit: 'g' };
 }
-const effOf = (name, amount, unit) => usable3(feedGrams(amount, unit, name), name) || { n: 0, p: 0, k: 0 };
+const effOf = (name, amount, unit, c) => usable3(feedGrams(amount, unit, name, c), name) || { n: 0, p: 0, k: 0 };
 const isPotOutdoor = c => c && c.type !== 'bed' && !c.indoor;
 function feedEnd(p) { const w = p.harvestDate ? harvestWindow(p) : null; return w ? (crop(p.cropId).cont ? w.keep : w.mature) : addDays(p.sowDate, 120); }
 
@@ -29,7 +29,7 @@ function schedPlanned(p) {
   const out = [];
   for (const s of p.feedPlan || []) {
     if (s.stopped || s.paused) continue;
-    const open = S.tasks.find(t => t.schedId === s.id && !t.done), e = effOf(s.product, s.amount, s.unit);
+    const open = S.tasks.find(t => t.schedId === s.id && !t.done), e = effOf(s.product, s.amount, s.unit, container(p.containerId));
     const ds = schedOccurrences(p, s).filter(d => !open || d > open.due);
     for (const d of ds) out.push({ t: { due: d, schedId: s.id }, sid: s.id, name: s.product, n: e.n, p: e.p, k: e.k, text: `${s.product} ${amtFor(s.product, s.amount, s.unit)} (every ${s.every} days)` });
   }
@@ -47,7 +47,7 @@ function syncFeedPlans() {
       let next = s.last ? addDays(s.last, s.every) : s.start; const end = s.end || feedEnd(p);
       if (dormant(p, next < td ? td : next)) next = nextGrowing(p.cropId, next < td ? td : next);
       if (next > end) { if (open) S.tasks = S.tasks.filter(x => x !== open); s.done = true; continue; }
-      const L = feedLedger(p), c = container(p.containerId), e = effOf(s.product, s.amount, s.unit), sr = c && soilReadingAdvice(c, p.from, p.to, p.cropId);
+      const L = feedLedger(p), c = container(p.containerId), e = effOf(s.product, s.amount, s.unit, c), sr = c && soilReadingAdvice(c, p.from, p.to, p.cropId);
       if (sr && sr.feed < 1) { s.paused = 'salt'; if (open) S.tasks = S.tasks.filter(x => x !== open); continue; }
       // skip feeds while the soil still holds plenty; stop for good if nothing more is needed this season
       const sim = L && L.need ? feedSim(p, L, [], x => x.sid === s.id || x.t.schedId === s.id || (open && x.t === open)) : null;
@@ -102,9 +102,9 @@ function feedPlanner(p) {
   const rows = stages.map(s => mkRow({ date: s.date, t: s.t, why: s.why, src: 'stage', light: !!s.light }));
   const fill = () => {   // add doses where the crop would run short, until it's fed to the end of its season
     rows.splice(0, rows.length, ...rows.filter(r => r.src !== 'extra'));
-    rows.forEach(r => { delete r.boost; if (r.type === 'once' && !r.manual) Object.assign(r, doseOf(main, perDose, L.bag) || {}); });
-    const dose = doseOf(main, perDose, L.bag); if (!dose || !L.need) return;
-    const e = effOf(main, dose.amount, dose.unit); if (!e.n) return;
+    rows.forEach(r => { delete r.boost; if (r.type === 'once' && !r.manual) Object.assign(r, doseOf(main, perDose, L.bag, c) || {}); });
+    const dose = doseOf(main, perDose, L.bag, c); if (!dose || !L.need) return;
+    const e = effOf(main, dose.amount, dose.unit, c); if (!e.n) return;
     const lead = leadOf(productByName(main))[0];
     let prev = null;
     for (let i = 0; i < 10; i++) {
@@ -122,12 +122,12 @@ function feedPlanner(p) {
     if (last) for (let k = 0; k < 8; k++) {
       const sim = feedSim(p, L, planDoses(false).acc); if (!sim || !sim.shortFrom) break;
       const amt = last.unit === 'g' || last.unit === 'mL' ? Math.round(last.amount * 1.4) : Math.round(last.amount * 1.4 * 2) / 2;
-      if (effOf(main, amt, last.unit).n > L.need * 0.3) break;
+      if (effOf(main, amt, last.unit, c).n > L.need * 0.3) break;
       last.amount = last.boost = amt;
     }
     rows.sort((a, b) => (a.type === 'every') - (b.type === 'every') || ((a.due || a.date) < (b.due || b.date) ? -1 : 1));
   };
-  const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag) || { amount: '', unit: 'g' }); if (r.boost) r.amount = r.boost; else if (r.light && r.amount) r.amount = r.unit === 'g' || r.unit === 'mL' ? Math.max(1, Math.round(r.amount / 2)) : Math.max(0.5, Math.round(r.amount) / 2); const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
+  const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag, c) || { amount: '', unit: 'g' }); if (r.boost) r.amount = r.boost; else if (r.light && r.amount) r.amount = r.unit === 'g' || r.unit === 'mL' ? Math.max(1, Math.round(r.amount / 2)) : Math.max(0.5, Math.round(r.amount) / 2); const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
   // what's already planned (editable here)
   const existing = () => [
     ...S.tasks.filter(t => t.plantingId === p.id && !t.done && !t.schedId && feedTaskProduct(t)).map(t => ({ kind: 'task', id: t.id, text: `${shortDate(t.due)} · ${t.title}` })),
@@ -142,7 +142,7 @@ function feedPlanner(p) {
     const maxDose = L.need ? L.need * 0.3 : Infinity, acc = [], add = { n: 0, p: 0, k: 0 };
     let sim = quick ? null : feedSim(p, L, acc);
     for (const [d, r] of occ) {
-      const e = effOf(r.product, r.amount, r.unit);
+      const e = effOf(r.product, r.amount, r.unit, c);
       if (e.n > maxDose) { r.big = true; r.over++; continue; }
       if (!quick) { if (!sim) sim = feedSim(p, L, acc); if (sim && poolOn(sim, d) + e.n > sim.maxPool) { r.over++; continue; } }
       acc.push({ date: d, name: r.product, n: e.n }); add.n += e.n; add.p += e.p; add.k += e.k; r.count++; r.lastOk = d; sim = null;
@@ -152,7 +152,7 @@ function feedPlanner(p) {
   const evaluate = () => { const pd2 = planDoses(false); return Object.assign(pd2, { sim: feedSim(p, L, pd2.acc) }); };
   setDoses(); fill(); setDoses();
   const rowEdit = r => {
-    const e = effOf(r.product, r.amount, r.unit), lead = leadOf(productByName(r.product));
+    const e = effOf(r.product, r.amount, r.unit, c), lead = leadOf(productByName(r.product));
     return `<div class="frow${r.on ? '' : ' off'}${r.over && !r.count ? ' over' : ''}" data-r="${r.id}">
       <label class="inl"><input type="checkbox" data-f="on"${r.on ? ' checked' : ''}> <b>${r.type === 'every' ? `Every <input type="number" class="sm" data-f="every" value="${r.every || 7}" min="1"> days` : esc(r.t || 'Extra dose')}</b></label>
       <div class="fgrid"><input list="fpn" data-f="product" value="${esc(r.product || '')}"><input type="number" step="any" class="sm" data-f="amount" value="${r.amount ?? ''}"><select data-f="unit">${unitOpts(r.unit || 'g')}</select></div>
@@ -174,7 +174,7 @@ function feedPlanner(p) {
   modal(`<h3>Feeding plan — ${esc(crop(p.cropId).en)}</h3>
     <div id="fpBars"></div><p class="small" id="fpSum"></p>
     <div id="fpExist"></div>
-    <p class="small"><b>Main fertiliser</b> <span class="muted">— ☆ = you have plenty</span></p><div id="fpMain" class="sowchips"></div>
+    <div id="fpMain"></div>
     <datalist id="fpn">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
     ${(stages.skipped || []).map(x => `<p class="hint">⏭ Left out: <b>${esc(x.t)}</b> — ${esc(x.why)}</p>`).join('')}
     ${stages.season && stages.season.bolt && todayStr() < stages.season.we ? `<p class="hint">❄ Kept lean from about ${shortDate(stages.season.leanFrom)} until growth restarts around ${shortDate(stages.season.we)} (worked out from the usual temperatures here). Nothing is set to be working in between.</p>` : ''}
@@ -183,10 +183,11 @@ function feedPlanner(p) {
       <details class="fold inner"><summary>How these are worked out</summary><p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} and its stage — your bag’s instructions win. Doses go where the crop would otherwise run short, kept to a normal size; a dose is left out if it’s too big on its own or the soil still holds plenty at that point. Outdoors, repeating feeds skip midwinter. Liquid feeds: amounts are the concentrate you measure out.</p></details>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save plan</button></div></form>`, (m, close) => {
     const f = m.querySelector('#fpf');
-    const drawMain = () => { m.querySelector('#fpMain').innerHTML = names.map(n => { const pr = productByName(n);
-      return `<span class="chip${n === main ? ' on' : ''}" data-main="${esc(n)}">${esc(n)} ${pr ? `<button type="button" class="link" data-star="${pr.id}">${isPlenty(pr.id) ? '★' : '☆'}</button>` : ''}</span>`; }).join('');
-      m.querySelectorAll('[data-main]').forEach(ch => ch.onclick = e => { if (e.target.dataset.star) return; main = ch.dataset.main; setDoses(); fill(); setDoses(); draw(); drawMain(); });
-      m.querySelectorAll('[data-star]').forEach(b => b.onclick = async e => { e.stopPropagation(); const id = b.dataset.star; S.plenty = isPlenty(id) ? S.plenty.filter(x => x !== id) : [...(S.plenty || []), id]; await save(); drawMain(); }); };
+    const drawMain = () => { const pr = productByName(main);
+      m.querySelector('#fpMain').innerHTML = `<label>Main fertiliser<select id="fpMainSel">${names.map(n => `<option value="${esc(n)}"${n === main ? ' selected' : ''}>${esc(n)}${(productByName(n) && isPlenty(productByName(n).id)) ? ' ★' : ''}</option>`).join('')}</select></label>
+        ${pr ? `<label class="inl chkline"><input type="checkbox" id="fpPlenty"${isPlenty(pr.id) ? ' checked' : ''}> <span>I have plenty of this <small>(★ — suggested first)</small></span></label>` : ''}`;
+      m.querySelector('#fpMainSel').onchange = e => { main = e.target.value; setDoses(); fill(); setDoses(); draw(); drawMain(); };
+      const pl = m.querySelector('#fpPlenty'); if (pl) pl.onchange = async () => { const id = pr.id; S.plenty = isPlenty(id) ? S.plenty.filter(x => x !== id) : [...(S.plenty || []), id]; await save(); drawMain(); }; };
     const draw = () => {
       const ev = evaluate();
       m.querySelector('#fpBars').innerHTML = previewBars(L, ev.add);
@@ -213,10 +214,10 @@ function feedPlanner(p) {
     m.querySelector('#fpRows').addEventListener('click', e => {
       const o = e.target.closest('[data-open]'); if (o) { e.preventDefault(); const r = rows.find(x => x.id === o.dataset.open); r.open = !r.open; draw(); return; }
       const b = e.target.closest('[data-del]'); if (!b) return; rows.splice(rows.findIndex(r => r.id === b.dataset.del), 1); draw(); });
-    m.querySelector('[data-x=addOnce]').onclick = () => { rows.push(mkRow({ open: true, date: td, due: td, t: 'Extra dose', src: 'custom', manual: true, ...(doseOf(main, perDose, L.bag) || {}) })); draw(); };
+    m.querySelector('[data-x=addOnce]').onclick = () => { rows.push(mkRow({ open: true, date: td, due: td, t: 'Extra dose', src: 'custom', manual: true, ...(doseOf(main, perDose, L.bag, c) || {}) })); draw(); };
     m.querySelector('[data-x=addEvery]').onclick = () => {
       const liq = names.find(n => isLiquid(n)) || main, nPer = Math.max(0.05, (L.need || 4) * 0.04);
-      rows.push(mkRow({ open: true, type: 'every', every: 7, date: td, until: end, product: liq, src: 'custom', manual: true, ...(doseOf(liq, nPer, L.bag) || { amount: 5, unit: 'mL' }) })); draw();
+      rows.push(mkRow({ open: true, type: 'every', every: 7, date: td, until: end, product: liq, src: 'custom', manual: true, ...(doseOf(liq, nPer, L.bag, c) || { amount: 5, unit: 'mL' }) })); draw();
     };
     m.querySelector('[data-x=fill]').onclick = () => { fill(); setDoses(); draw(); };
     m.querySelector('[data-x=no]').onclick = close;

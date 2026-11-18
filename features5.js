@@ -153,10 +153,10 @@ function pestPlan(p) {
 }
 
 // ---------- log dialog: pick a product, check it’s legal ----------
-function libChips(e) {
-  const ps = myProducts(['spray', 'homemade', 'fert', 'lime', 'compost']);
-  return `<div class="sowchips libchips">${ps.map(p => `<button type="button" class="chip big${e.productId === p.id ? ' on' : ''}" data-lib="${p.id}">${p.kind === 'spray' ? (p.organic ? '🌱' : '⚗️') : p.kind === 'homemade' ? '🧪' : p.kind === 'lime' ? '🐚' : p.kind === 'compost' ? '🪏' : '🌿'} ${esc(p.en)}</button>`).join('')}</div><input type="hidden" name="productId" value="${esc(e.productId || '')}">`;
+function libChips(e) {   // your products are offered in the product field's drop-down; this keeps which one was picked
+  return `<input type="hidden" name="productId" value="${esc(e.productId || '')}">`;
 }
+const libNames = () => myProducts(['spray', 'homemade', 'fert', 'lime', 'compost']).map(p => p.en);
 function wireLogLibrary(m, f, e) {
   const box = m.querySelector('#legal');
   const targets = () => {
@@ -181,22 +181,23 @@ function wireLogLibrary(m, f, e) {
     box.innerHTML = `<ul class="legal">${lines.join('')}</ul>${bad.length ? `<p class="banner warn small">Under the Agricultural Chemicals Regulation Act (農薬取締法) you may only use a pesticide on its registered crops, within its use limit. Untick: ${esc(bad.join(', '))}.</p>` : ''}`;
     if (phi && (f.phi.value === '' || f.phi.dataset.auto)) { f.phi.value = phi; f.phi.dataset.auto = '1'; }
   };
-  m.querySelectorAll('[data-lib]').forEach(b => b.onclick = () => {
-    const pr = product(b.dataset.lib), on = f.productId.value !== pr.id;
-    m.querySelectorAll('[data-lib]').forEach(x => x.classList.toggle('on', on && x === b));
-    f.productId.value = on ? pr.id : '';
+  const pickLib = pr => {
+    const on = !!pr && f.productId.value !== pr.id;
+    f.productId.value = pr ? pr.id : '';
     if (on) {
       f.product.value = pr.en;
       const kind = pr.kind === 'spray' || pr.kind === 'homemade' ? 'spray' : pr.kind === 'fert' ? 'fert' : 'soil';
-      const r = f.querySelector(`input[name=kind][value=${kind}]`); if (r) r.checked = true;
+      if ([...f.kind.options].some(o => o.value === kind)) f.kind.value = kind;
       if (pr.kind === 'spray' && /原液/.test(pr.what)) { f.amount.value = ''; }
       if (pr.id === 'spinoace' && !f.unit.value) f.unit.value = 'L';
       f.phi.value = ''; delete f.phi.dataset.auto;
       f.dispatchEvent(new Event('change'));
     }
     check();
-  });
-  f.product.addEventListener('input', () => { if (f.productId.value && f.product.value !== product(f.productId.value).en) { f.productId.value = ''; m.querySelectorAll('[data-lib]').forEach(x => x.classList.remove('on')); check(); } });
+  };
+  // choosing (or typing) one of your products fills in its details; anything else is just a name
+  f.product.addEventListener('change', () => { const pr = myProducts().find(p => p.en === f.product.value.trim()); if (pr) { if (f.productId.value !== pr.id) pickLib(pr); } else if (f.productId.value) { f.productId.value = ''; check(); } });
+  f.product.addEventListener('input', () => { if (f.productId.value && f.product.value !== product(f.productId.value).en) { f.productId.value = ''; check(); } });
   f.phi.addEventListener('input', () => delete f.phi.dataset.auto);
   f.addEventListener('change', e2 => { if (e2.target.name === 'cid' || e2.target.name === 'pid' || e2.target.name === 'date') check(); });
   check();
@@ -228,7 +229,7 @@ function baseFertPlan(cropId, c, from, to, sowDate) {
     if (comp && !slowMix) out.push({ product: comp.en, amount: Math.round(4 * cm * k), unit: 'L' });   // fresh mix doesn't need compost
     const kasei = pick(['kasei888']), g888 = { heavy: 50, medium: 40, light: 20, legume: 10 }[feed] * k * bm * ff * (slowMix ? 0.5 : 1);
     const fert = kasei || pick(['bokashi', 'toshoAburakasu']);
-    if (fert && cropId !== 'satsumaimo') out.push({ product: fert.en, amount: Math.round((kasei ? g888 : FEED_BAG[feed] * bm * ff) / 5) * 5, unit: 'g' });
+    if (fert && cropId !== 'satsumaimo') out.push({ product: fert.en, amount: Math.round((kasei ? g888 : FEED_BAG[feed] * k * bm * ff) / 5) * 5, unit: 'g' });
     const lime = pick(['oysterLime']), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to);
     if (lime && lg > 0 && lf > 0 && !slowMix) out.push({ product: lime.en, amount: lg, unit: 'g' });
     return out.filter(x => x.amount > 0);
@@ -274,7 +275,7 @@ function careJobs(cropId) {
 function jobAmount(j, c, p) {
   const f = j[4]; if (!f) return { product: '', amount: null, unit: '' };
   if (f.perPlant) { const n = c ? Draw.layout(c, p).pts.length || 1 : 1; return { product: f.product, amount: f.perPlant * n, unit: 'handful' }; }
-  const area = c ? (sectionArea(c, p.from, p.to) ?? 0.12) : 0.12;
+  const area = c ? soilM2(c, p.from, p.to) : 0.12;
   return { product: f.product, amount: Math.max(10, Math.round(f.perM2 * area / 5) * 5), unit: 'g' };
 }
 const jobAmountText = j => !j[4] ? '' : j[4].perPlant ? ` · ${j[4].product}, 1 handful per plant` : ` · ${j[4].product}, ~${j[4].perM2} g/m²`;

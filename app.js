@@ -923,7 +923,7 @@ function taskDialog(t, p) {
       ${(isNew || s) && !(t && t.done) ? `<div class="rep-row"><select name="every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${every === n ? ' selected' : ''}>${n === 0 ? 'Does not repeat' : 'Repeat every ' + n}</option>`).join('')}</select>
         <select name="per">${['day', 'week', 'month'].map(u => `<option value="${u}"${s && s.per === u ? ' selected' : ''}>${u}(s)</option>`).join('')}</select></div>
         <small class="hint">The next one is scheduled from the day you tick it off.</small>` : ''}
-      <div class="btns">${isNew ? '' : `<button type="button" class="btn danger" data-x="del">Delete</button>`}${s && !t.done ? `<button type="button" class="btn" data-x="skip">Skip this one</button>` : ''}<button class="btn primary">Save</button></div>
+      <div class="btns">${isNew ? '' : `<button type="button" class="btn danger" data-x="del" data-own-confirm>Delete</button>`}${s && !t.done ? `<button type="button" class="btn" data-x="skip">Skip this one</button>` : ''}<button class="btn primary">Save</button></div>
       ${!isNew ? `<a class="link" href="#/plant/${p.id}" data-x="open">Open crop page →</a>` : ''}
     </form>`, (m, close) => {
     const f = m.querySelector('#tf'); wireTemplates(m, f);
@@ -1152,7 +1152,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.21.3';
+const APP_VERSION = '1.22.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

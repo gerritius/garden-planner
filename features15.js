@@ -136,14 +136,14 @@ function feedLedger(p) {
   if (oc.n + oc.p + oc.k > 0.05) lines.push(Object.assign({ g: 'prev', name: 'compost-old', label: 'Compost dug in for earlier crops', note: 'still releasing slowly' }, oc));
   // 3. base fertiliser at planting
   for (const f of p.fert || []) {
-    if (!f.product) continue; const pr = productByName(f.product), u = usable3(feedGrams(f.amount, f.unit, f.product), f.product);
+    if (!f.product) continue; const pr = productByName(f.product), u = usable3(feedGrams(f.amount, f.unit, f.product, c), f.product);
     lines.push(L3({ g: 'base', name: f.product, label: `${f.product} ${amtFor(f.product, f.amount, f.unit)}`, date: p.sowDate, note: !u ? 'unknown analysis — not counted' : pr && pr.kind === 'compost' ? 'compost: only ~10% of its nitrogen this season' : '' }, u));
   }
   // 4. every feeding since (log), shared feedings split by area
   const from = addDays(p.sowDate, -21), end = p.status === 'harvested' ? (p.harvestedOn || td) : td;
   for (const e of S.log || []) {
     if (!['fert', 'soil'].includes(e.kind) || !e.product || e.date < from || e.date > end) continue;
-    const pids = e.pids || [], cids = e.cids || [], n = pids.length + cids.length || 1, g = feedGrams(e.amount, e.unit, e.product) / (e.per === 'total' ? n : 1);
+    const pids = e.pids || [], cids = e.cids || [], n = pids.length + cids.length || 1, g = feedGrams(e.amount, e.unit, e.product, c) / (e.per === 'total' ? n : 1);
     let share = 0;
     if (pids.includes(p.id)) share = 1; else if (cids.includes(c.id)) share = A2 / bedA; else if (!pids.length && !cids.length) share = A2 / bedA;
     if (!share) continue;
@@ -153,12 +153,12 @@ function feedLedger(p) {
   // older records: ticked fertiliser jobs that weren't logged separately
   for (const s of p.series || []) {
     if (!s.product || s.amount == null) continue;
-    for (const t of S.tasks) if (t.seriesId === s.id && t.done && t.doneOn && !t.logId) lines.push(L3({ g: 'fed', name: s.product, label: `${s.product} ${amtFor(s.product, s.amount, s.unit)}`, date: t.doneOn }, usable3(feedGrams(s.amount, s.unit, s.product), s.product)));
+    for (const t of S.tasks) if (t.seriesId === s.id && t.done && t.doneOn && !t.logId) lines.push(L3({ g: 'fed', name: s.product, label: `${s.product} ${amtFor(s.product, s.amount, s.unit)}`, date: t.doneOn }, usable3(feedGrams(s.amount, s.unit, s.product, c), s.product)));
   }
   const sum = (gs, k) => lines.filter(l => gs.includes(l.g)).reduce((a, l) => a + (l[k] || 0), 0), ALL = ['soil', 'prev', 'base', 'fed'];
   // planned feedings still to come
   const planned = S.tasks.filter(t => t.plantingId === p.id && !t.done && (t.product || (t.seriesId && ((p.series || []).find(s => s.id === t.seriesId) || {}).product))).map(t => {
-    const s = (p.series || []).find(x => x.id === t.seriesId) || t, u = usable3(feedGrams(s.amount, s.unit, s.product), s.product) || { n: 0, p: 0, k: 0 };
+    const s = (p.series || []).find(x => x.id === t.seriesId) || t, u = usable3(feedGrams(s.amount, s.unit, s.product, c), s.product) || { n: 0, p: 0, k: 0 };
     return { t, n: u.n, p: u.p, k: u.k, name: s.product, text: `${s.product} ${amtFor(s.product, s.amount, s.unit)}` };
   });
   if (typeof schedPlanned === 'function') planned.push(...schedPlanned(p));
@@ -241,7 +241,6 @@ function feedDialog(e, onSave, onCancel) {
   const prods = myProducts(['fert', 'compost', 'lime', 'amend']), names = [...new Set([...prods.map(x => x.en), ...(S.log || []).filter(x => x.kind === 'fert').map(x => x.product).filter(Boolean)])];
   const targets = [...(e.cids || []).map(id => (container(id) || {}).name), ...(e.pids || []).map(id => { const p = planting(id); return p ? crop(p.cropId).en + ' · ' + ((container(p.containerId) || {}).name || '') : ''; })].filter(Boolean).join(', ') || 'Whole garden';
   modal(`<h3>🌿 ${isNew ? 'Record feeding' : 'Edit feeding'}</h3><p class="muted small">${esc(targets)}</p><form id="fdf" class="form">
-      <div class="sowchips">${prods.map(x => `<button type="button" class="chip${e.product === x.en ? ' on' : ''}" data-p="${esc(x.en)}">${esc(x.en)}</button>`).join('')}</div>
       <label>Product<input name="product" list="fdl" value="${esc(e.product || '')}" required placeholder="e.g. Bokashi, 化成肥料 8-8-8"><datalist id="fdl">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
       <div id="fdd"></div>
       <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}" required></label><label>Unit<select name="unit">${unitOpts(e.unit || 'handful')}</select></label></div>
@@ -249,13 +248,14 @@ function feedDialog(e, onSave, onCancel) {
       <p class="hint" id="fdn"></p>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#fdf');
-    const calc = () => { const g = feedGrams(f.amount.value, f.unit.value, f.product.value), u = usable3(g, f.product.value), liq = isLiquid(f.product.value), lm = liqMeasure(f.product.value);
+    const tc = container((e.cids || [])[0]) || container((planting((e.pids || [])[0]) || {}).containerId);
+    const calc = () => { const g = feedGrams(f.amount.value, f.unit.value, f.product.value, tc), u = usable3(g, f.product.value), liq = isLiquid(f.product.value), lm = liqMeasure(f.product.value);
       const dd = m.querySelector('#fdd'); dd.innerHTML = lm && (lm.doses || []).length ? `<div class="sowchips">${lm.doses.map((v, i) => `<button type="button" class="chip${+f.amount.value === v && f.unit.value === 'mL' ? ' on' : ''}" data-dose="${v}">${lm.doses.length > 1 ? (i === 0 ? 'Weak' : i === lm.doses.length - 1 ? 'Strong' : 'Medium') + ': ' : ''}${v} mL per ${lm.per} L</button>`).join('')}</div>` : '';
       dd.querySelectorAll('[data-dose]').forEach(b => b.onclick = () => { f.amount.value = b.dataset.dose; f.unit.value = 'mL'; calc(); });
-      if (lm && g && u) { m.querySelector('#fdn').innerHTML = `Amount = mL mixed into ${lm.per} L of water. Each pot gets about ${potLitres()} L of it ≈ ${(g / 1.2).toFixed(1)} mL of concentrate → <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)} per pot.`; return; }
+      if (lm && g && u) { m.querySelector('#fdn').innerHTML = `Amount = mL mixed into ${lm.per} L of water. ${tc && tc.type !== 'bed' ? `${esc(tc.name)} (~${Math.round(potVolume(tc) || 40)} L of soil) gets about ${potLitres(tc).toFixed(1)} L of it` : 'Each pot gets its watering amount of it'} ≈ ${(g / 1.2).toFixed(1)} mL of concentrate → <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)} per pot.`; return; }
       m.querySelector('#fdn').innerHTML = !g ? (liq ? 'For liquid feeds, enter the amount of concentrate you measured out (not the diluted water).' : '') : !u ? `≈ ${Math.round(g)} g — analysis unknown, so it isn’t counted (put the N-P-K in the name, e.g. “Hyponex 6-10-5”).`
         : `≈ ${g < 10 ? g.toFixed(1) : Math.round(g)} g${liq ? ' of concentrate' : ''} → usable this season: <b>N ${gN(u.n)}</b> · P ${gN(u.p)} · K ${gN(u.k)}.${liq ? ' (Liquid: enter the concentrate measured out, not the diluted water.)' : ''}`; };
-    m.querySelectorAll('[data-p]').forEach(b => b.onclick = () => { f.product.value = b.dataset.p; m.querySelectorAll('[data-p]').forEach(x => x.classList.toggle('on', x === b)); const pr = productByName(b.dataset.p); if (pr && pr.kind === 'compost' && f.unit.value === 'handful') f.unit.value = 'L'; calc(); });
+    f.product.addEventListener('change', () => { const pr = productByName(f.product.value); if (pr && pr.kind === 'compost' && f.unit.value === 'handful') f.unit.value = 'L'; if (isLiquid(f.product.value) && !['mL', 'L'].includes(f.unit.value)) f.unit.value = 'mL'; calc(); });
     f.addEventListener('input', calc); calc();
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = () => { close(); onCancel && onCancel(); };
     const del = m.querySelector('[data-x=del]'); if (del) del.onclick = async () => { S.log = S.log.filter(x => x.id !== e.id); for (const t of S.tasks) if (t.logId === e.id) t.logId = null; await save(); close(); render(); };

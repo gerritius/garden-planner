@@ -27,8 +27,32 @@ const leadOf = pr => pr ? (LEAD[pr.id] || [7, 'about a week']) : [7, ''];
 // growth restarts when the usual daily mean gets back above this
 const restartTemp = id => WARM_LEAF.includes(id) ? 15 : growParams(id).tb === 0 ? 5 : 8;   // hardy crops (garlic, onion, spinach…) keep growing slowly through winter
 function nextGrowing(id, d) { const thr = restartTemp(id); for (let i = 0; i < 200; i++) { if (normalT(addDays(d, i)) >= thr) return addDays(d, i); } return d; }
+// Where this planting's season sits: does it go through a winter (growth stopped) before harvest?
+// Overwintering crops are kept on the lean side going into winter (soft growth is frost-tender), and heading brassicas
+// grown for spring (spring cabbage, overwintered broccoli/cauliflower) much more so: big plants in the cold bolt (トウ立ち)
+// instead of heading. Their main feed is when growth restarts.
+const BOLT_IF_BIG = ['cabbage', 'broccoli', 'cauliflower', 'hakusai'];
+const _season = {};
+function feedSeason(p) {
+  if (!p || !p.sowDate) return null;
+  const c = container(p.containerId); if (c && c.indoor) return null;
+  const cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60), k = [p.cropId, p.sowDate, hv].join('|');
+  if (_season[k] !== undefined) return _season[k];
+  // winter here = the usual daily mean below ~8 °C (15 °C for warm-season crops): growth all but stops
+  const thr = WARM_LEAF.includes(p.cropId) ? 15 : 8;
+  let ws = null; for (let d = p.sowDate; d < hv; d = addDays(d, 1)) if (normalT(d) < thr) { ws = d; break; }
+  if (!ws) return (_season[k] = null);
+  let we = ws; for (let i = 0; i < 200 && normalT(we) < thr; i++) we = addDays(we, 1);
+  const bolt = BOLT_IF_BIG.includes(p.cropId);
+  // lean stretch: heading brassicas from ~5 weeks before winter, others the last 3 weeks before it
+  return (_season[k] = { ws, we, bolt, leanFrom: addDays(ws, bolt ? -35 : -21), leanTo: ws, mainAt: we });
+}
+const inLean = (se, d) => !!(se && d >= se.leanFrom && d < se.we);
+const leanWhy = (p, se) => se.bolt
+  ? `an overwintering ${crop(p.cropId).en.toLowerCase()} is kept small going into the cold — a big plant bolts (トウ立ち) in spring instead of heading`
+  : 'soft new growth going into winter is easily frost-damaged';
 function sideStages(p) {
-  const td = todayStr(), cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60);
+  const td = todayStr(), cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60), se = feedSeason(p), skipped = [];
   const start = p.method === 'seed' ? (p.thinDoneOn || p.thinDate || addDays(p.sowDate, 20)) : p.sowDate;
   let raw = [];
   if (FRUIT_EVERY.includes(p.cropId)) { const keep = (harvestWindow(p) || {}).keep || addDays(hv, 60); for (let d = addDays(hv, -10), i = 1; d < keep && i <= 5; d = addDays(d, 18), i++) raw.push({ date: d, t: i === 1 ? 'as the first fruits swell' : 'every 2–3 weeks while picking' }); }
@@ -37,17 +61,28 @@ function sideStages(p) {
     if (s.md) { const y = +p.sowDate.slice(0, 4); date = `${y}-${s.md}`; if (date <= p.sowDate) date = `${y + 1}-${s.md}`; }
     raw.push({ date, t: s.t });
   }
+  if (se && !FRUIT_EVERY.includes(p.cropId) && se.we < addDays(hv, -14) && !raw.some(r => r.date && Math.abs(daysBetween(r.date, se.we)) <= 21))
+    raw.push({ date: se.we, t: se.bolt ? 'as growth restarts — the main feed for spring heads' : 'as growth restarts in spring' });
   const out = [];
   for (const r of raw) {
     let { date, t } = r, why = '';
     const orig = date;
     if (!FRUIT_EVERY.includes(p.cropId) && orig > addDays(hv, -14)) continue;   // too close to harvest to help
-    if (date < td) { if (daysBetween(date, td) > 21) continue; why = `was due around ${shortDate(date)} — still worth doing now`; date = td; }
+    let light = false;
+    if (date < td) {
+      if (daysBetween(date, td) > 21) continue;
+      // missed, and it's now the lean stretch before winter: for heading brassicas leave it out — the spring feed does the job
+      if (se && se.bolt && inLean(se, td)) { skipped.push({ date: orig, t, why: `missed on ${shortDate(orig)}, and it’s now too close to winter: ${leanWhy(p, se)}. The main feed comes when growth restarts, around ${shortDate(se.we)}.` }); continue; }
+      why = `was due around ${shortDate(date)} — still worth doing now`; date = td;
+    }
+    if (se && se.bolt && inLean(se, date)) { why = `moved from ${shortDate(date)}: ${leanWhy(p, se)} — so it waits for spring`; date = se.we; }
+    else if (se && date >= se.leanFrom && date < se.ws) { light = true; why = (why ? why + '; ' : '') + `kept light: ${leanWhy(p, se)}`; }
     const g = nextGrowing(p.cropId, date);
     if (g > date) { why = `moved from ${shortDate(date)}: too cold for roots to take feed up — growth restarts around ${shortDate(g)}${g > addDays(hv, -14) ? ` (after your harvest estimate of ${shortDate(hv)} — over winter the heads mostly wait for spring, so this still counts)` : ''}`; date = g; }
     const dup = out.find(o => Math.abs(daysBetween(o.date, date)) < 14); if (dup) { if (!dup.t.includes(t)) dup.t += ' / ' + t; continue; }
-    out.push({ date, t, why });
+    out.push({ date, t, why, light });
   }
+  out.skipped = skipped; out.season = se;
   return out;
 }
 const isPlenty = id => (S.plenty || []).includes(id);

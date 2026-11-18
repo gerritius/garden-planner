@@ -18,7 +18,7 @@ function feedEnd(p) { const w = p.harvestDate ? harvestWindow(p) : null; return 
 
 // ---------- repeating feeds ----------
 // outdoors, no feeding while it's too cold for roots to take it up — the schedule picks up again when growth restarts
-const dormant = (p, d) => { const c = container(p.containerId); return !(c && c.indoor) && normalT(d) < restartTemp(p.cropId); };
+const dormant = (p, d) => { const c = container(p.containerId); if (c && c.indoor) return false; if (normalT(d) < restartTemp(p.cropId)) return true; const se = feedSeason(p); return !!(se && se.bolt && inLean(se, d)); };   // + heading brassicas' lean stretch before winter
 function schedOccurrences(p, s, fromDate) {
   const out = [], end = s.end || feedEnd(p);
   for (let d = fromDate || (s.last ? addDays(s.last, s.every) : s.start), i = 0; d <= end && i < 80; d = addDays(d, s.every), i++) if (!dormant(p, d)) out.push(d);
@@ -99,7 +99,7 @@ function feedPlanner(p) {
   let main = prods[0] ? prods[0].en : names[0] || '';
   // rows: stage doses, then extra doses to close the gap
   const mkRow = (o) => Object.assign({ id: uid(), on: true, type: 'once', product: main }, o);
-  const rows = stages.map(s => mkRow({ date: s.date, t: s.t, why: s.why, src: 'stage' }));
+  const rows = stages.map(s => mkRow({ date: s.date, t: s.t, why: s.why, src: 'stage', light: !!s.light }));
   const fill = () => {   // add doses where the crop would run short, until it's fed to the end of its season
     rows.splice(0, rows.length, ...rows.filter(r => r.src !== 'extra'));
     rows.forEach(r => { delete r.boost; if (r.type === 'once' && !r.manual) Object.assign(r, doseOf(main, perDose, L.bag) || {}); });
@@ -112,6 +112,7 @@ function feedPlanner(p) {
       if (prev && (!sim || !sim.shortFrom || sim.shortFrom <= prev.at)) { if (sim && sim.shortFrom && sim.shortFrom <= prev.at) rows.splice(rows.indexOf(prev.row), 1); if (sim && sim.shortFrom && sim.shortFrom <= prev.at) break; }   // that dose didn't move the shortfall on (e.g. it can't release in time) — drop it and stop
       if (!sim || !sim.shortFrom || sim.shortFrom > addDays(end, -10)) break;
       let d = addDays(sim.shortFrom, -Math.max(3, lead)); if (d < td) d = td; d = nextGrowing(p.cropId, d);
+      const se = feedSeason(p); if (se && se.bolt && inLean(se, d)) d = se.we;   // nothing extra in the lean stretch before winter
       for (let k = 0; k < 20; k++) { const near = rows.find(r => r.type === 'once' && r.on && Math.abs(daysBetween(r.due || r.date, d)) < 7); if (!near) break; d = addDays(near.due || near.date, 7); }   // a dose is already close: the next one goes a week after it
       const stop = lastFeedDate(p); if (d >= addDays(end, -7) || (stop && d > stop)) break;
       const row = mkRow({ date: d, due: d, t: 'to keep it fed', src: 'extra', product: main, ...dose }); rows.push(row); prev = { row, at: sim.shortFrom };
@@ -126,7 +127,7 @@ function feedPlanner(p) {
     }
     rows.sort((a, b) => (a.type === 'every') - (b.type === 'every') || ((a.due || a.date) < (b.due || b.date) ? -1 : 1));
   };
-  const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag) || { amount: '', unit: 'g' }); if (r.boost) r.amount = r.boost; const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
+  const setDoses = () => { for (const r of rows) if (r.type === 'once' && !r.manual) { r.product = main; Object.assign(r, doseOf(main, perDose, L.bag) || { amount: '', unit: 'g' }); if (r.boost) r.amount = r.boost; else if (r.light && r.amount) r.amount = r.unit === 'g' || r.unit === 'mL' ? Math.max(1, Math.round(r.amount / 2)) : Math.max(0.5, Math.round(r.amount) / 2); const lead = leadOf(productByName(main))[0]; r.due = r.src === 'stage' && lead && addDays(r.date, -lead) > td ? addDays(r.date, -lead) : r.date; } };
   // what's already planned (editable here)
   const existing = () => [
     ...S.tasks.filter(t => t.plantingId === p.id && !t.done && !t.schedId && feedTaskProduct(t)).map(t => ({ kind: 'task', id: t.id, text: `${shortDate(t.due)} · ${t.title}` })),
@@ -175,6 +176,8 @@ function feedPlanner(p) {
     <div id="fpExist"></div>
     <p class="small"><b>Main fertiliser</b> <span class="muted">— ☆ = you have plenty</span></p><div id="fpMain" class="sowchips"></div>
     <datalist id="fpn">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist>
+    ${(stages.skipped || []).map(x => `<p class="hint">⏭ Left out: <b>${esc(x.t)}</b> — ${esc(x.why)}</p>`).join('')}
+    ${stages.season && stages.season.bolt && todayStr() < stages.season.we ? `<p class="hint">❄ Lean stretch before winter: about ${shortDate(stages.season.leanFrom)} – ${shortDate(stages.season.we)}. Nothing extra is added then.</p>` : ''}
     <form id="fpf" class="form"><div id="fpRows"></div>
       <div class="btnrow"><button type="button" class="btn small" data-x="addOnce">＋ One-off dose</button><button type="button" class="btn small" data-x="addEvery">＋ Repeating feed</button><button type="button" class="btn small" data-x="fill">↻ Re-suggest</button></div>
       <details class="fold inner"><summary>How these are worked out</summary><p class="hint">Suggestions from usual practice for ${esc(crop(p.cropId).en)} and its stage — your bag’s instructions win. Doses go where the crop would otherwise run short, kept to a normal size; a dose is left out if it’s too big on its own or the soil still holds plenty at that point. Outdoors, repeating feeds skip midwinter. Liquid feeds: amounts are the concentrate you measure out.</p></details>

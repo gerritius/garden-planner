@@ -60,7 +60,7 @@ function feedSim(p, L, extra = [], skip) {
   const tf = tempFor(p.containerId), daily = S.weather && S.weather.daily, T = tf || (d => dayTemp(d, daily));
   const days = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push([d, Math.max(0.05, growUnits(p.cropId, T(d)))]);
   const W = days.reduce((a, x) => a + x[1], 0) || 1, wOf = {}; days.forEach(([d, w]) => { wOf[d] = w / W * L.need; });
-  const stop = lastFeedDate(p), shortTo = stop ? addDays(stop, 45) : end;   // garlic / onion: after the last feed the bulbs finish on what's in the soil
+  const stop = lastFeedDate(p), shortTo = stop ? addDays(stop, 45) : end, lean = feedSeason(p);   // garlic / onion: after the last feed the bulbs finish on what's in the soil
   const first = inputs.reduce((a, x) => (x.from < a ? x.from : a), start), leachOn = leachFn(L), avgDem = L.need / Math.max(1, days.length);
   let pool = 0, taken = 0, unmetAll = 0, unmetFuture = 0, shortFrom = null, peak = 0, peakDate = null, lost = 0;
   const poolAt = {};
@@ -70,10 +70,10 @@ function feedSim(p, L, extra = [], skip) {
     poolAt[d] = pool;
     const dem = wOf[d] || 0, take = Math.min(pool, dem);
     pool -= take; taken += take; unmetAll += dem - take;
-    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && d <= shortTo && dem > avgDem * 0.3 && take < dem * 0.6) shortFrom = d; }   // a shortfall only matters while it's growing
+    if (d >= td) { unmetFuture += dem - take; if (!shortFrom && d <= shortTo && !(lean && lean.bolt && inLean(lean, d)) && dem > avgDem * 0.3 && take < dem * 0.6) shortFrom = d; }   // a shortfall only matters while it's growing
     const l = pool * leachOn(d); pool -= l; lost += l;
   }
-  return { start, end, stop, shortFrom, unmetFuture, unmetAll, taken, peak, peakDate, lost, poolAt, maxPool: maxPoolOf(L), left: pool };
+  return { start, end, stop, lean, shortFrom, unmetFuture, unmetAll, taken, peak, peakDate, lost, poolAt, maxPool: maxPoolOf(L), left: pool };
 }
 // pool on a day (before that day's own releases are fully used) — for "is there room for another dose?"
 const poolOn = (sim, d) => sim && sim.poolAt[d] != null ? sim.poolAt[d] : 0;
@@ -91,6 +91,10 @@ function simVerdict(sim, L, p) {
   const td = todayStr(), bits = [];
   if (sim.peakDate && sim.peak > sim.maxPool * 1.3 && sim.peakDate >= addDays(td, -30) && sim.peakDate <= addDays(td, 30))
     bits.push(`A lot of nitrogen is in the soil at once around ${shortDate(sim.peakDate)} (~${gN(sim.peak)}) — water through well and watch for scorched leaf edges; ${L.bag ? 'in a pot much of it will drain away over the next few weeks.' : 'skip feeding until it’s used up.'}`);
+  const se = sim.lean;
+  if (se && se.bolt && td >= addDays(se.leanFrom, -7) && td < se.we)
+    bits.push(`<b>Keep it lean until about ${shortDate(se.we)}</b> — ${esc(leanWhy(p, se))}. Only feed now if leaves turn pale yellow, and then lightly. The main feed is around ${shortDate(se.we)}.`);
+  if (bits.length && se && se.bolt && td < se.we && sim.shortFrom && Math.abs(daysBetween(sim.shortFrom, se.we)) <= 21) return bits.join(' ');   // the lean note already says when to feed
   if (!sim.shortFrom) bits.push(sim.stop ? `<b>Fed for the season</b> — the last feed (止め肥) is around ${shortDate(sim.stop)}; after that the bulbs finish on what’s in the soil.` : `<b>Fed through to ${shortDate(sim.end)}</b> with what’s in and planned.`);
   else {
     const slow = normalT(sim.shortFrom) < restartTemp(p.cropId), back = slow ? nextGrowing(p.cropId, sim.shortFrom) : null;

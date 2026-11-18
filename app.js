@@ -1152,7 +1152,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.22.0';
+const APP_VERSION = '1.22.1';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

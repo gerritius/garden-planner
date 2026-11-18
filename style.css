@@ -673,3 +673,17 @@ select.dd-hidden { position: absolute !important; opacity: 0; pointer-events: no
 .dd-field > span { flex: 1 1 auto; min-width: 0; }
 fieldset { min-width: 0; }
 label > .dd-field, .two > label { min-width: 0; }
+/* rotation plan */
+.rotl > li { display: block; }
+.rotbed a { align-items: flex-start; }
+.rotbed .grow { display: flex; flex-direction: column; gap: 4px; }
+.rothist { display: flex; flex-direction: column; font-size: 13px; color: var(--muted); }
+.rothist i { font-style: normal; font-weight: 700; color: var(--ink); margin-right: 4px; }
+.rotavoid { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip.no { border-color: #c9573e; color: #a8432d; background: rgba(201,87,62,.08); font-size: 13px; }
+.okline { color: var(--accent, #4f7a3a); }
+.rotfam { padding: 10px 0; }
+.rotfam .rfh { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
+.rotfam .rfh .muted { margin-left: auto; }
+.rotfam p { margin: 4px 0; }
+.rotfam .rno { color: #a8432d; }

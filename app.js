@@ -267,7 +267,8 @@ function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
-  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); migrateProducts(); applyNursery(); } catch (e) { console.warn(e); }
+  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); migrateProducts(); applyNursery(); applyClimate(); } catch (e) { console.warn(e); }
+  if (!window._climTry) { window._climTry = true; setTimeout(() => ensureClimate(), 1500); }
   A.nursery = () => nurseryDialog();
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
@@ -1085,7 +1086,7 @@ function pageSettings() {
       <p class="hint" id="persist"></p><div id="snaps"></div></section></details>
     <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
-    <details class="set"><summary>🌤️ Weather location <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}</details>
+    <details class="set"><summary>🌤️ Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
     <details class="set"><summary>🎨 Appearance &amp; crop names</summary>${themeSettings()}    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section></details>
     <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
     <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
@@ -1152,7 +1153,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.23.0';
+const APP_VERSION = '1.24.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

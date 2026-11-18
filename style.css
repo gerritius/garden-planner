@@ -687,3 +687,16 @@ label > .dd-field, .two > label { min-width: 0; }
 .rotfam .rfh .muted { margin-left: auto; }
 .rotfam p { margin: 4px 0; }
 .rotfam .rno { color: #a8432d; }
+/* climate and sowing calendar */
+.climrow { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; font-size: 12px; text-align: center; margin: 6px 0; }
+.climrow i { display: block; font-style: normal; color: var(--muted); }
+.sowrow .sowed { width: 26px; padding: 0; text-decoration: none; color: var(--muted); font-size: 14px; }
+.sowrow .sowed.own { color: var(--accent, #4f7a3a); font-weight: 700; }
+.sowrow.head b { width: 26px; }
+.monthgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 8px 0; }
+.monthgrid .chip { justify-content: center; }
+.sowrow { grid-template-columns: minmax(0, 1fr) repeat(12, 15px) 26px; }
+/* chip buttons look and behave the same everywhere; a chosen one is green */
+button.chip { font: inherit; font-size: 14px; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; color: var(--ink); -webkit-appearance: none; appearance: none; }
+.chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+.monthgrid .chip { padding: 8px 4px; }

@@ -175,7 +175,7 @@ function driveSection() {
     <label>Google client ID<input id="gcid" placeholder="….apps.googleusercontent.com" autocomplete="off"></label>
     <div class="btnrow"><button class="btn small primary" data-act="driveSetId">Save</button></div></section>`;
   if (!d.connected) return `<section><h3>☁️ Google Drive</h3><p>Back up your records and photos to your own Google Drive automatically, once a day. The app can only see the files it makes there.</p>
-    <div class="btnrow"><button class="btn primary" data-act="driveConnect">Connect Google Drive</button></div><p class="hint">Client ID set ✓ · Google may warn the app isn’t verified — that’s because it’s your own; choose Continue.</p></section>`;
+    <div class="btnrow"><button class="btn primary" data-act="driveConnect">Connect Google Drive</button></div><p class="hint">Client ID set ✓ · Google may warn the app isn’t verified — that’s because it’s your own; choose Continue. If Google says “Access blocked … has not completed the Google verification process”, the account you picked isn’t a test user yet: in the Google Cloud console, Google Auth Platform → Audience → Test users → add that exact address, then try again.</p></section>`;
   const when = d.last ? new Date(d.last).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'not yet';
   return `<section><h3>☁️ Google Drive</h3>
     <p>${d.email ? `Connected as <b>${esc(d.email)}</b>. ` : 'Connected. '}Last backup: <b>${esc(when)}</b>${d.photos != null ? ` · ${d.photos} photo${d.photos === 1 ? '' : 's'} in Drive` : ''}.</p>

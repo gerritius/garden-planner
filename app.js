@@ -269,6 +269,7 @@ function render() {
   try { syncWx(); } catch (e) { console.warn(e); }
   try { migrateFeed(); migrateCovers(); migrateOwnProducts(); migrateProducts(); applyNursery(); applyClimate(); } catch (e) { console.warn(e); }
   if (!window._climTry) { window._climTry = true; setTimeout(() => ensureClimate(), 1500); }
+  if (!window._driveTry) { window._driveTry = true; setTimeout(() => driveTick().catch(e => console.warn('drive', e)), 300); }
   A.nursery = () => nurseryDialog();
   try { syncThin(); } catch (e) { console.warn(e); }
   try { syncHarvest(); } catch (e) { console.warn(e); }
@@ -353,7 +354,8 @@ function pageHome() {
     if (n === null || (n >= 7 && (S.lastEdit || '9') > S.lastBackup)) backupNote = `<a class="banner" href="#/settings">💾 ${n === null ? 'No backup yet' : `Last backup ${n} days ago`} — tap to back up</a>`;
   }
   A.sowCrop = el => sowPick(el.dataset.id);
-  const html = `${backupNote}
+  if (typeof driveOn === 'function' && driveOn() && S.drive.lastDate && daysBetween(S.drive.lastDate, td) < 7) backupNote = '';   // Drive has it covered
+  const html = `${typeof driveBanner === 'function' ? driveBanner() : ''}${backupNote}
     ${Weather.section()}
     ${headsCard()}
     <section class="today"><h2>Today’s jobs</h2>
@@ -1079,11 +1081,11 @@ function pageSettings() {
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     <h3 class="grp">Settings</h3>
     <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
-      <p>Everything is stored only on this phone. Back up regularly and save the file to Proton Drive or Google Drive.</p>
+      <p>Everything is stored only on this phone. Back up regularly — connect Google Drive below to have it done every day, or export a file and save it somewhere safe.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
-      <p class="hint" id="persist"></p><div id="snaps"></div></section></details>
+      <p class="hint" id="persist"></p><div id="snaps"></div></section>${driveSection()}</details>
     <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
     <details class="set"><summary>🌤️ Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
@@ -1153,7 +1155,7 @@ async function importBackup(file) {
 }
 
 // ---------- boot ----------
-const APP_VERSION = '1.24.1';
+const APP_VERSION = '1.25.0';
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

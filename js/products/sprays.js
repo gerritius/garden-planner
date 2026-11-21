@@ -161,3 +161,41 @@ export function pagePickSafe() {
     <p class="hint">From the sprays in your log and each product’s legal waiting period (使用時期). Log every spray so this stays right.</p>`;
   return { html };
 }
+
+// ---------- bees ----------
+// Insecticide ingredients that harm bees, by kind — in English and Japanese, with common Japanese brand names — so any
+// product can be checked from its name, its details or its registry entry, including your own products.
+const BEE_HARM = [
+  ['neonicotinoid', 'very harmful to bees, and lasts in the plant (and its flowers) for weeks', [
+    ['imidacloprid', 'イミダクロプリド', 'アドマイヤー'], ['clothianidin', 'クロチアニジン', 'ダントツ'], ['thiamethoxam', 'チアメトキサム', 'アクタラ'],
+    ['dinotefuran', 'ジノテフラン', 'スタークル|アルバリン'], ['acetamiprid', 'アセタミプリド', 'モスピラン'], ['thiacloprid', 'チアクロプリド', 'バリアード'],
+    ['nitenpyram', 'ニテンピラム', 'ベストガード'], ['sulfoxaflor', 'スルホキサフロル', 'トランスフォーム']]],
+  ['pyrethroid', 'harmful to bees on contact', [
+    ['permethrin', 'ペルメトリン', 'アディオン'], ['cypermethrin', 'シペルメトリン', 'アグロスリン'], ['deltamethrin', 'デルタメトリン', ''], ['cyhalothrin', 'シハロトリン', 'サイハロン'],
+    ['bifenthrin', 'ビフェントリン', 'テルスター'], ['etofenprox', 'エトフェンプロックス', 'トレボン'], ['fenpropathrin', 'フェンプロパトリン', 'ロディー'], ['fenvalerate', 'フェンバレレート', ''],
+    ['tralomethrin', 'トラロメトリン', 'スカウト'], ['acrinathrin', 'アクリナトリン', 'アーデント'], ['cyfluthrin', 'シフルトリン', 'バイスロイド'], ['silafluofen', 'シラフルオフェン', 'MR.ジョーカー']]],
+  ['pyrethrin', 'harmful to bees while wet, but breaks down within a day', [['pyrethrin', 'ピレトリン|除虫菊', '']]],
+  ['organophosphate', 'very harmful to bees', [
+    ['malathion', 'マラソン|マラチオン', ''], ['fenitrothion', 'フェニトロチオン|MEP', 'スミチオン'], ['diazinon', 'ダイアジノン', ''], ['chlorpyrifos', 'クロルピリホス', 'ダーズバン'],
+    ['acephate', 'アセフェート', 'オルトラン'], ['dimethoate', 'ジメトエート', ''], ['fenthion', 'フェンチオン|MPP', 'バイジット'], ['dichlorvos', 'ジクロルボス|DDVP', ''], ['prothiofos', 'プロチオホス', 'トクチオン']]],
+  ['carbamate', 'very harmful to bees', [['carbaryl', 'カルバリル|NAC', 'デナポン'], ['methomyl', 'メソミル', 'ランネート'], ['benfuracarb', 'ベンフラカルブ', 'オンコル'], ['carbosulfan', 'カルボスルファン', 'ガゼット']]],
+  ['spinosyn', 'harmful to bees while wet; safe once dry', [['spinosad', 'スピノサド', 'スピノエース'], ['spinetoram', 'スピネトラム', 'ディアナ']]],
+  ['other', 'harmful to bees', [['fipronil', 'フィプロニル', 'プリンス'], ['abamectin', 'アバメクチン', 'アグリメック'], ['emamectin', 'エマメクチン', 'アファーム'], ['chlorfenapyr', 'クロルフェナピル', 'コテツ']]],
+];
+// the bee-harmful ingredients in a product: [{ name, kind, why }]
+export function beeHarm(p) {
+  if (!p) return [];
+  const reg = p.reg && REGISTRATIONS[p.reg] ? REGISTRATIONS[p.reg].rows.flatMap(r => r.filter(x => x && typeof x === 'object' && !Array.isArray(x)).flatMap(o => Object.keys(o))) : [];
+  const text = [p.en, p.ja, p.what, p.organicNote, ...(p.notes || []), ...reg].filter(Boolean).join(' ').toLowerCase(), out = [];
+  // whole words for names in Latin letters (so NAC isn't found in "spinach"), anywhere for Japanese
+  const has = w => /^[\x20-\x7e]+$/.test(w) ? new RegExp(`(^|[^a-z])${w.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}($|[^a-z])`).test(text) : text.includes(w.toLowerCase());
+  for (const [kind, why, list] of BEE_HARM) for (const [en, ja, brands] of list) {
+    if ([en, ...ja.split('|'), ...brands.split('|')].filter(Boolean).some(has)) out.push({ name: en, kind, why });
+  }
+  return out.filter(m => !out.some(o => o !== m && o.name.includes(m.name)));   // permethrin is part of cypermethrin
+}
+// for the spray days page: the general rule, and which of your sprays it applies to
+export function beeNote() {
+  const mine = myProducts('spray').map(p => ({ p, h: beeHarm(p) })).filter(x => x.h.length);
+  return `<li>Many insecticides harm bees: neonicotinoids (e.g. imidacloprid, clothianidin, dinotefuran), pyrethroids and pyrethrins, organophosphates, carbamates, spinosad and fipronil among them. Spray early in the morning or late in the afternoon, never onto open flowers, and not when bees are about.${mine.length ? `<br>Of your sprays: ${mine.map(x => `<b>${esc(x.p.en)}</b> (${[...new Set(x.h.map(h => h.name))].join(', ')} — ${esc(x.h[0].why)})`).join('; ')}.` : ''}</li>`;
+}

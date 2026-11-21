@@ -31,7 +31,7 @@ function planItems(p) {
     else dayOf.push(`${f.product}${amt ? ' ' + amt : ''}`);
   }
   if ((p.raise === 'tray' || p.raise === 'pot') && raisable(p.cropId) && !linkedStart(p))
-    items.push({ key: 'tray', kind: 'plan_tray', due: traySowFor(p.cropId, sd), title: `Sow ${cr.en}${p.variety ? ' · ' + p.variety : ''} in ${p.raise === 'tray' ? 'a cell tray' : '9 cm pots'} (to plant out ${shortDate(sd)})` });
+    items.push({ key: 'tray', kind: 'plan_tray', due: traySowFor(p.cropId, sd), title: `Sow ${cr.en}${p.variety ? ' · ' + p.variety : ''} seeds in a tray or small pots (to plant out ${shortDate(sd)})` });
   items.push({ key: 'sow', kind: 'plan_sow', due: sd, title: `${p.method === 'seed' ? 'Sow' : 'Plant out'} ${cr.en}${p.variety ? ' · ' + p.variety : ''}${dayOf.length ? ` — mix in ${dayOf.join(' + ')} first` : ''}` });
   return items;
 }
@@ -76,10 +76,15 @@ export function planTrayPreset(p) {
 export function planFormBits(d, c) {
   if (!d.sowDate || d.sowDate <= todayStr()) return '';
   const cr = d.cropId ? crop(d.cropId) : null;
-  const raise = cr && d.method === 'seedling' && raisable(cr.id) && !d.useStart;
+  // seedlings: bought, or sown from seed by you (in a tray or small pots — which, you say when you sow them). Already
+  // linked to seedlings you've started: those are shown instead of the choice.
+  const linked = d.useStart ? null : d.id && linkedStart(d);
+  const raise = cr && d.method === 'seedling' && raisable(cr.id) && !d.useStart && !linked;
+  const own = d.raise === 'tray' || d.raise === 'pot';
   return `<div class="plannote">📅 <b>Planned</b> — saved as a plan. Prep jobs are counted back from this date${raise ? ', plus a reminder to sow seedlings' : ''}; it goes into the bed when you tick “${d.method === 'seed' ? 'Sow' : 'Plant out'}”.</div>
-    ${raise ? `<label>Seedlings<div class="seg">${[['buy', 'Buy them'], ['tray', 'Raise in tray'], ['pot', 'Raise in 9 cm pots']].map(([v, l]) => `<button type="button" data-act="raise" data-v="${v}" class="${(d.raise || 'buy') === v ? 'on' : ''}">${l}</button>`).join('')}</div>
-      ${d.raise === 'tray' || d.raise === 'pot' ? `<small class="hint">${(() => { const tp = traySowPlan(cr.id, d.sowDate), where = (KEPT.find(k => k[0] === tp.kept) || KEPT[0])[1].toLowerCase(); return `Sow them around <b>${shortDate(tp.sow)}</b> (about ${daysBetween(tp.sow, d.sowDate)} days before at that time of year)${tp.kept !== 'out' ? `, kept <b>${esc(where)}</b> — outside it’s too cold for them to be ready in time` : ''}${tp.late ? '. Even then they may be a little small — buying seedlings is the easy option' : ''}.`; })()}</small>` : ''}</label>` : ''}`;
+    ${linked ? `<p class="hint">🌱 Seedlings: yours, sown ${shortDate(linked.sowDate)} in ${esc(startWhere(linked).toLowerCase())}.</p>` : ''}
+    ${raise ? `<label>Seedlings<div class="seg">${[['buy', 'Buy them', !own], ['tray', 'Sow from seed', own]].map(([v, l, on]) => `<button type="button" data-act="raise" data-v="${v}" class="${on ? 'on' : ''}">${l}</button>`).join('')}</div>
+      ${own ? `<small class="hint">${(() => { const tp = traySowPlan(cr.id, d.sowDate), where = (KEPT.find(k => k[0] === tp.kept) || KEPT[0])[1].toLowerCase(); return `Sow them around <b>${shortDate(tp.sow)}</b> (about ${daysBetween(tp.sow, d.sowDate)} days before at that time of year)${tp.kept !== 'out' ? `, kept <b>${esc(where)}</b> — outside it’s too cold for them to be ready in time` : ''}${tp.late ? '. Even then they may be a little small — buying seedlings is the easy option' : ''}.`; })()}</small>` : ''}</label>` : ''}`;
 }
 
 // ---------- gaps & suggestions ----------
@@ -172,7 +177,7 @@ function shopItems(weeks) {
   const count = p => { try { const c = container(p.containerId); return c ? Draw.count(c, p) : 0; } catch (e) { return 0; } };
   for (const p of plans) {
     const c = container(p.containerId), cr = crop(p.cropId), where = (c ? c.name : '') + (sectionOf(p) ? ' ' + sectionOf(p) : ''), n = count(p);
-    if (p.method === 'seedling' && (p.raise || 'buy') === 'buy') items.push({ key: 'sl:' + p.id, cat: 'seedlings', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seedlings${n ? ' × ' + n : ''}`, sub: `for ${where} · plant ${shortDate(p.sowDate)}`, by: addDays(p.sowDate, -1) });
+    if (p.method === 'seedling' && (p.raise || 'buy') === 'buy' && !linkedStart(p)) items.push({ key: 'sl:' + p.id, cat: 'seedlings', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seedlings${n ? ' × ' + n : ''}`, sub: `for ${where} · plant ${shortDate(p.sowDate)}`, by: addDays(p.sowDate, -1) });
     else { const sowBy = p.raise === 'tray' || p.raise === 'pot' ? traySowFor(p.cropId, p.sowDate) : p.sowDate; items.push({ key: 'sd:' + p.id, cat: 'seeds', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seed`, sub: `have enough? sow ${shortDate(sowBy)} · ${where}`, by: sowBy }); }
     if (NETTED.includes(p.cropId) && c) { const w = c.type === 'bed' ? c.width : c.diameter || c.width, l = c.type === 'bed' ? p.to - p.from : c.diameter || c.length;
       items.push({ key: 'net:' + p.id, cat: 'netting', title: `Insect netting for ${cr.en}`, sub: `${where} · about ${((w + 90) / 100).toFixed(1)} × ${((l + 90) / 100).toFixed(1)} m with hoops (0.8 mm mesh or finer)`, by: p.sowDate }); }

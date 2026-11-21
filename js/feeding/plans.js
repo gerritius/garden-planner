@@ -1,7 +1,7 @@
 // Feeding jobs: starting fertiliser for any product, care jobs with amounts, repeating feeds (e.g. weekly liquid) — folded
 // into the watering job when they're due — and recording what you actually used when a feeding job is ticked.
 
-import { normalT, potVolume } from '../climate/climate.js';
+import { applyClimate, normalT, potVolume } from '../climate/climate.js';
 import { render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
@@ -13,7 +13,7 @@ import { feedOf, gramsFor, limeRate, soilAdvice, soilM2, soilReadingAdvice } fro
 import { finishToggle } from '../garden/tasks.js';
 import { waterPots } from '../garden/watering.js';
 import { crop } from '../plants/crops.js';
-import { harvestWindow } from '../plants/growth.js';
+import { growthDate, harvestWindow } from '../plants/growth.js';
 import { libList, myProducts, pickRole, productByName } from '../products/library.js';
 import { pestEn, regSummary } from '../products/sprays.js';
 import { feedLedger } from './ledger.js';
@@ -110,6 +110,33 @@ export function careJobs(cropId) {
   if (FRUITING.includes(cropId) || cr.family === 'brassica' || ['strawberry', 'soramame', 'edamame', 'lettuce'].includes(cropId))
     jobs.push(['Pest check (害虫チェック) – undersides & new growth', 7, 1, 'week']);
   return jobs;
+}
+// When a care job starts. Its days after sowing / planting are days of growth, at the pace the temperature allows, so
+// a cold spell pushes it back. Supports — nets, trellises, stakes, canes, tying in — for a crop that goes through winter
+// go up when it grows again in spring, not before: autumn-sown peas stay low until then and only climb in spring, and a
+// net up all winter is only something to be blown about or to crush them. Insect netting is a cover, not a support: it goes on at planting.
+const SUPPORT = /trellis|\bnet\b|stake|support|cane|tie (in|stems)|支柱|誘引|ネット\)/i, NOT_SUPPORT = /insect|防虫/i;
+export function careJobStart(p, j) {
+  const from = p.sowDate || todayStr(), days = +j[1] || 0;
+  if (!days) return from;
+  let d = growthDate(p.cropId, from, days, p.containerId);
+  if (SUPPORT.test(j[0]) && !NOT_SUPPORT.test(j[0])) { const s = feedSeason(Object.assign({}, p, { sowDate: from })); if (s && d < s.we) d = s.we; }   // it overwinters: supports in spring
+  return d;
+}
+// data version 7: care jobs that haven't come up yet (not done, still ahead) move to the dates growth gives them
+export function migrateCareJobTimes() {
+  applyClimate();   // your location's temperatures, not the defaults
+  const td = todayStr();
+  for (const p of S.plantings || []) {
+    if (!p.sowDate || p.status === 'harvested') continue;
+    const jobs = careJobs(p.cropId);
+    for (const s of p.series || []) {
+      const j = jobs.find(x => x[0] === s.title && +x[1] > 0);
+      if (!j || !s.start || s.start <= td || (S.tasks || []).some(t => t.seriesId === s.id && t.done)) continue;
+      const nd = careJobStart(p, j); if (nd === s.start) continue;
+      s.start = nd; const t = (S.tasks || []).find(x => x.seriesId === s.id && !x.done); if (t) t.due = nd;
+    }
+  }
 }
 // resolve a job's product amount for a planting at save time
 export function jobAmount(j, c, p) {

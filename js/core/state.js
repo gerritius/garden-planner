@@ -6,7 +6,7 @@ import { todayStr } from './util.js';
 export let S = null;
 export function setState(v) { S = v; return v; }
 export function blank() {
-  return { format: 1, containers: [], plantings: [], tasks: [], customCrops: [], customVarieties: {}, log: [], created: todayStr(), lastBackup: null };
+  return { format: 1, containers: [], plantings: [], tasks: [], customCrops: [], log: [], created: todayStr(), lastBackup: null };
 }
 // Saving is only switched on once the garden has loaded properly (or been restored): if loading failed, what's in
 // memory is not your garden, and saving it would write over the real one.

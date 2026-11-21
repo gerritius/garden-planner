@@ -10,7 +10,7 @@ import { Icons } from '../data/icons.js';
 export const allCrops = () => CATALOG.concat(S.customCrops || []).map(dispCrop);
 export const crop = id => allCrops().find(c => c.id === id) || (String(id).startsWith('x:') ? { id, en: String(id).slice(2), ja: '', color: '#8a9a7b', family: 'other' } : { id, en: 'Unknown crop', ja: '', color: '#6a9' });
 export const cropName = id => { const c = crop(id); return c.ja ? `${c.en} (${c.ja})` : c.en; };
-export const varieties = id => [...(crop(id).varieties || []), ...((S.customVarieties || {})[id] || [])];
+export const varieties = id => [...new Set([...(crop(id).varieties || []), ...(S.seeds || []).filter(s => s.cropId === id && s.variety).map(s => s.variety)])];
 export const ic = (id, size = 22) => Icons.crop(id, size, crop(id).color);
 export function newCropDialog(cb) {
   modal(`<h3>New crop</h3><form id="ncf" class="form">

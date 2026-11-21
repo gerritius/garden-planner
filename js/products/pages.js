@@ -8,24 +8,32 @@ import { PRODUCTS } from '../data/products.js';
 import { REG_DATE, REGISTRATIONS } from '../data/registrations.js';
 import { isLive } from '../garden/garden.js';
 import { crop, ic } from '../plants/crops.js';
+import { seedsTab } from '../plants/seeds.js';
 import { catalogue, catGet, defLead, kindOf, libGet, libList, normProd, PROD_FORMS, PROD_KINDS, product, setPlenty } from './library.js';
 import { CROP_REG, dilEn, pestEn, regSummary, spinoMixer, stochuCard, whenEn } from './sprays.js';
 
 // ---------- the Products page ----------
-export function pageProducts() {
-  setChrome('Products', { back: true, kicker: 'What you use' });
-  const groups = [['Fertilisers & feeds', ['fert'], 'fert'], ['Lime, compost & soil improvers', ['lime', 'compost', 'amend'], 'compost'], ['Potting mixes', ['mix'], 'mix'], ['Sprays', ['spray', 'homemade'], 'spray']];
+// tabs: one for each kind of product, and your seeds & plants
+const TABS = [['fert', '🌿', 'Fertiliser', 'Fertilisers & feeds', ['fert']], ['soil', '🪨', 'Soil', 'Lime, compost & soil improvers', ['lime', 'compost', 'amend']],
+  ['mix', '🪴', 'Potting mix', 'Potting mixes', ['mix']], ['spray', '💦', 'Sprays', 'Sprays', ['spray', 'homemade']], ['seeds', '🌱', 'Seeds & plants', '', null]];
+export function pageProducts(q) {
+  const tab = TABS.find(t => t[0] === (q && q.get('t'))) || TABS[0];
+  setChrome('Products & seeds', { back: true, kicker: 'What you use and grow' });
+  A.pTab = el => location.replace('#/products?t=' + el.dataset.t);
+  const tabs = `<div class="seg wrap tabs ptabs">${TABS.map(t => `<button type="button" data-act="pTab" data-t="${t[0]}" class="${t === tab ? 'on' : ''}">${t[1]} ${t[2]}</button>`).join('')}</div>`;
+  if (!tab[4]) return { html: tabs + seedsTab() };
+  const groups = [[tab[3], tab[4], tab[4][0] === 'lime' ? 'compost' : tab[4][0]]];
   const sum = p => [p.npkv && p.npkv.some(v => v > 0) ? p.npkv.join('-') : '', p.kind === 'fert' ? (PROD_FORMS.find(f => f[0] === p.form) || ['', ''])[1] : kindOf(p.kind)[2],
     p.kind === 'mix' && p.lasts ? `fertiliser for ~${p.lasts >= 60 ? Math.round(p.lasts / 30) + ' months' : p.lasts + ' days'}` : '', p.form === 'liquid' && p.per ? `${(p.doses || []).join(' or ')} mL per ${p.per} L` : '',
     p.reg ? 'registration data ✓' : '', p.plenty ? '★ plenty' : ''].filter(Boolean).join(' · ');
   A.addProd = el => productDialog(null, el.dataset.k);
   A.addCat = async el => { const c = catGet(el.dataset.id); if (!c || libGet(el.dataset.id) && (S.products || []).some(p => p.id === c.id)) return; (S.products = S.products || []).push(Object.assign(JSON.parse(JSON.stringify(c)), { tpl: c.id })); S.productsRemoved = (S.productsRemoved || []).filter(x => x !== c.id); await save(); render(); };
-  const missing = catalogue().filter(c => !(S.products || []).some(p => p.id === c.id));
-  const html = `<p class="hint">Everything here is yours to edit. Plans and suggestions use what each product is for and its N-P-K — tap one to change it, or add your own.</p>
+  const missing = catalogue().filter(c => tab[4].includes(c.kind) && !(S.products || []).some(p => p.id === c.id));
+  const html = `${tabs}<p class="hint">Everything here is yours to edit. Plans and suggestions use what each product is for and its N-P-K — tap one to change it, or add your own.</p>
     ${groups.map(([t, ks, k0]) => { const l = libList(ks); return `<section><h3>${t}</h3>${l.length ? `<ul class="plist">${l.map(p => `<li><a href="#/product/${p.id}"><span class="lic">${kindOf(p.kind)[1]}</span><span class="grow"><b>${esc(p.en)}</b>${p.ja && p.ja !== p.en ? ` <small class="ja">${esc(p.ja)}</small>` : ''}<small>${esc(sum(p))}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted small">None yet.</p>'}
       <button class="btn small" data-act="addProd" data-k="${k0}">＋ Add</button></section>`; }).join('')}
     ${missing.length ? `<details class="fold"><summary>📚 Add from the catalogue <small>${missing.length} common Japanese products</small></summary><ul class="plist">${missing.map(c => `<li><span class="lic">${kindOf(c.kind)[1]}</span><span class="grow"><b>${esc(c.en)}</b>${c.ja ? ` <small class="ja">${esc(c.ja)}</small>` : ''}<small>${esc(c.what || '')}</small></span><button class="btn small" data-act="addCat" data-id="${c.id}">＋ Add</button></li>`).join('')}</ul></details>` : ''}
-    <p class="hint">Spray rules come from Japan’s official pesticide registry (農林水産省), checked ${REG_DATE}, for the sprays that have registration data. For any other spray, follow its label.</p>`;
+    ${tab[0] === 'spray' ? `<p class="hint">Spray rules come from Japan’s official pesticide registry (農林水産省), checked ${REG_DATE}, for the sprays that have registration data. For any other spray, follow its label.</p>` : ''}`;
   return { html };
 }
 // product page: its details, and Edit

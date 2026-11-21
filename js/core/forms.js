@@ -23,17 +23,29 @@ function ddShow(anchor, items, current, pick, opts = {}) {
   let search = null;
   if (opts.filter) { search = document.createElement('input'); search.type = 'search'; search.className = 'dd-search'; search.placeholder = 'Search…'; search.oninput = () => draw(search.value); panel.appendChild(search); }
   panel.appendChild(list); document.body.appendChild(panel);
-  ddOpen = { panel, anchor, draw }; anchor.classList.add('dd-on');
-  draw(opts.query);
-  // place it under the field; above it if the keyboard / screen bottom leaves too little room
-  const r = anchor.getBoundingClientRect(), vv = window.visualViewport, vh = vv ? vv.height + vv.offsetTop : window.innerHeight;
-  const below = vh - r.bottom - 8, above = r.top - 8, up = below < 180 && above > below;
-  panel.style.left = `${Math.max(8, r.left + window.scrollX)}px`; panel.style.width = `${Math.min(r.width, window.innerWidth - 16)}px`;
-  panel.style.maxHeight = `${Math.max(140, Math.min(360, up ? above : below))}px`;
-  if (up) panel.style.top = `${r.top + window.scrollY - Math.min(panel.offsetHeight, Math.max(140, Math.min(360, above))) - 4}px`; else panel.style.top = `${r.bottom + window.scrollY + 4}px`;
+  // the box it scrolls with (a pop-up's sheet, or the page): if the field leaves it, the list closes
+  let box = anchor.parentElement; while (box && box !== document.body && !(/(auto|scroll)/.test(getComputedStyle(box).overflowY) && box.scrollHeight > box.clientHeight)) box = box.parentElement;
+  // under the field (screen position, so it follows the field however it scrolls); above it if the keyboard or the
+  // bottom of the screen leaves too little room — decided once, so it doesn't jump about while scrolling
+  let up = null;
+  const place = () => {
+    const r = anchor.getBoundingClientRect(), vv = window.visualViewport, vh = vv ? vv.height + vv.offsetTop : window.innerHeight;
+    const clip = box && box !== document.body ? box.getBoundingClientRect() : { top: 0, bottom: vh };
+    if (r.bottom < clip.top + 4 || r.top > clip.bottom - 4 || r.bottom < 0 || r.top > vh) return ddClose();
+    const below = vh - r.bottom - 8, above = r.top - 8;
+    if (up === null) up = below < 180 && above > below;
+    const room = Math.max(140, Math.min(360, up ? above : below));
+    panel.style.left = `${Math.max(8, r.left)}px`; panel.style.width = `${Math.min(r.width, window.innerWidth - 16)}px`; panel.style.maxHeight = `${room}px`;
+    panel.style.top = up ? `${r.top - Math.min(panel.offsetHeight, room) - 4}px` : `${r.bottom + 4}px`;
+  };
+  ddOpen = { panel, anchor, draw, place }; anchor.classList.add('dd-on');
+  draw(opts.query); place();
   const on = list.querySelector('.dd-item.on'); if (on) on.scrollIntoView({ block: 'nearest' });
   return ddOpen;
 }
+// keep the list with its field when anything scrolls (the page, or a pop-up), but not when the list itself does
+document.addEventListener('scroll', e => { if (ddOpen && !ddOpen.panel.contains(e.target)) ddOpen.place(); }, { capture: true, passive: true });
+if (window.visualViewport) window.visualViewport.addEventListener('scroll', () => { if (ddOpen) ddOpen.place(); });
 document.addEventListener('pointerdown', e => { if (ddOpen && !ddOpen.panel.contains(e.target) && e.target !== ddOpen.anchor && !ddOpen.anchor.contains(e.target)) ddClose(); }, true);
 window.addEventListener('resize', () => { if (ddOpen && !(ddOpen.anchor.tagName === 'INPUT' && document.activeElement === ddOpen.anchor)) ddClose(); });
 window.addEventListener('popstate', ddClose);
@@ -65,7 +77,7 @@ function enhanceList(inp) {
   const open = all => {
     const its = items(); if (!its.length) return ddClose();
     const set = v => { inp.value = v; inp._ddMute = true; inp.dispatchEvent(new Event('input', { bubbles: true })); inp.dispatchEvent(new Event('change', { bubbles: true })); inp._ddMute = false; };
-    if (ddOpen && ddOpen.anchor === inp) return ddOpen.draw(all ? '' : inp.value);
+    if (ddOpen && ddOpen.anchor === inp) { ddOpen.draw(all ? '' : inp.value); ddOpen.place(); return; }
     ddShow(inp, its, inp.value, set, { query: all ? '' : inp.value, typed: true });
   };
   inp.classList.add('dd-typed');

@@ -9,7 +9,7 @@ cabbage chip null
 harvest 2027-05-19 rot Same family as the crop before it. Hakusai will be here until about 30 Dec — both are Brassica (cabbage family) アブラナ科. Consider a different spot or extra compost.
 asked: Hakusai (0–100 cm) will probably be there until about 30 Dec.Save the plan anyway?
 after save url http://localhost:8765/#/plant/new/b1?plan=1&from=0&to=100&date=2026-12-20&crop=cabbage
-plan ["planned","2026-12-20","tray","2027-05-19",[["plan_prep","2026-12-06","Dig in Cow manure compost 2 kg — for Cabbage (Bed 2 0–100 cm)"],["plan_tray","2026-11-18","Sow Cabbage in a cell tray (to plant out 20 Dec)"],["plan_sow","2026-12-20","Plant out Cabbage — mix in Oyster shell lime 150 g + Bokashi 6.5 handfuls (~195 g) first"]]]
+plan ["planned","2026-12-20","tray","2027-05-19",[["plan_prep","2026-12-06","Dig in Cow manure compost 2 kg — for Cabbage (Bed 2 0–100 cm)"],["plan_tray","2026-11-18","Sow Cabbage seeds in a tray or small pots (to plant out 20 Dec)"],["plan_sow","2026-12-20","Plant out Cabbage — mix in Oyster shell lime 150 g + Bokashi 6.5 handfuls (~195 g) first"]]]
 preset count 4
 start ["cabbage",4,"linked",[],true]
 activated ["active","2026-11-18","2027-05-05","done",0,["harvest","pickby","series","series","series"]]

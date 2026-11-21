@@ -55,11 +55,13 @@ from the current code with `npm run fixture`, or from an older version with `nod
 |---|---|
 | `autumn-potatoes` | Potatoes planted for autumn finish with the first frosts; crowded plants drawn to their share of the pot |
 | `back-button-and-popups` | The phone's Back button closes pop-ups instead of leaving the page |
+| `bee-warning` | Bee-harmful ingredients recognised in any product (names, brands, registry); the spray days page lists your sprays that have them |
 | `climate-from-location` | Fetching the climate for a location (simulated), the sowing calendar following it, editing a crop's months |
 | `copy-planting-to-pots` | "Same in other pots": copying a planting, its jobs and feedings to other pots |
 | `crop-ideas` | "What could go here?": stop-gap crops for empty space, clear-by dates, same-family warnings |
 | `dialog-field-alignment` | Date fields line up with the fields next to them in every dialog |
 | `drive-backup` | Google Drive backup end to end against a simulated Google: connect, daily backup, photos once, tidy-up, restore |
+| `dropdown-in-popup` | A drop-down inside a scrolling pop-up stays under its field, and closes when the field scrolls away |
 | `dropdowns-deletes-pot-sizes` | The in-page drop-downs, "delete — are you sure?", fertiliser amounts scaling with pot size |
 | `feeding-by-season` | Feeding stages for many crops and planting dates: lean before winter, spring restart feeds |
 | `feeding-ledger-covers-meter` | What the feeding card counts (mix, soil, previous crop, feeds), covers, meter levels |
@@ -92,6 +94,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `recovery` | A garden that can't be loaded: recovery screen, nothing saved over it, keep a copy, restore a daily copy; no storage; undoing a restore; old formats kept |
 | `release-versions` | The version is the same in `js/version.js`, `sw.js` and `releases.json`; the release notes are in order |
 | `rotation-varieties-photos-picksafe` | Rotation plan, variety notes, photo timeline, "OK to pick?" board |
+| `seed-library` | Products & seeds → Seeds & plants: varieties with packet photos, new crops, packets coming with a chosen variety |
 | `season-plan-and-seed-packets` | The season plan's free spaces; re-using seed packets |
 | `season-plan-speed` | The season plan opens quickly and fills in its ideas |
 | `seasons-from-temperature` | Watering spacing, clear-by dates, sprouting times worked out from temperature |
@@ -113,6 +116,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `tray-sizes-and-bag-preset` | Seed tray / small pot sizes; the grow-bag preset |
 | `updates` | "What's new" once after an update; the notice when a newer version is out; Tools → What's new |
 | `warm-crops-cool-summers` | Warm-season crops in a cool-summer climate (e.g. London tomatoes) |
+| `watering-all-crops` | Watering jobs for pots, each bed, indoor pots and seedlings; they follow the latest forecast when it changes |
 | `watering-and-rain` | The watering job's timing from rain and your ticks |
 | `watering-skip-frost-thin` | Skipping a watering, removing frost and thinning jobs |
 | `weather-jobs-and-planning` | Weather-based jobs; planning a crop with tray-raised seedlings |

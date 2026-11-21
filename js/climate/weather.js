@@ -9,16 +9,25 @@ import { container, isLive } from '../garden/garden.js';
 import { coveredText, plantingCover } from '../plants/covers.js';
 import { crop } from '../plants/crops.js';
 import { startsGrowing } from '../plants/seedlings.js';
-import { sprayAlerts } from '../products/sprays.js';
+import { beeNote, sprayAlerts } from '../products/sprays.js';
 
 // ---------- weather (Open-Meteo, free, no key) ----------
 export const dayName = d => { const n = daysBetween(todayStr(), d); return n === 0 ? 'Today' : n === 1 ? 'Tmrw' : pd(d).toLocaleDateString('en-GB', { weekday: 'short' }); };
+// Keep the forecast fresh wherever you are in the app — at start, whenever the app comes back to the front, and every
+// hour — so watering, frost and spray advice always follow the latest forecast. The page is redrawn with it, except
+// while you're filling something in (it's used next time the page is drawn).
+export async function freshenWeather() {
+  if (!(await Weather.refresh())) return false;
+  const [, b, c] = route().parts, busy = b === 'new' || c === 'edit' || c === 'arrange' || c === 'sections' || !$('#modal').hidden;
+  if (!busy) render();
+  return true;
+}
 export const Weather = {
   busy: false,
   async refresh(force) {
     const w = S.weather;
     if (!w || w.lat == null || this.busy) return false;
-    if (!force && w.fetched && w.hourly && w.hourly.soil_temperature_6cm && Date.now() - w.fetched < 2 * 3600e3) return false;
+    if (!force && w.fetched && w.hourly && w.hourly.soil_temperature_6cm && Date.now() - w.fetched < 3600e3) return false;
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
@@ -154,14 +163,14 @@ function sprayDaysHTML(compact) {
 function sprayDayInfo() {
   return `<ul class="bul small"><li>A good window is dry for the hour and the <b>6 hours after</b> (and wasn’t raining just before), wind under 3 m/s (gusts under ~7 m/s), and 5–28 °C.</li>
     <li>Most sprays need a few dry hours to stick; rain soon after washes them off. Benica Natural works by contact, so it also needs to hit the pests directly.</li>
-    <li>Pyrethrin (Pai Benica V), spinosad (Spino Ace) and Benica X Next are harmful to bees while wet — spray early morning or late afternoon, not onto open flowers.</li>
+    ${beeNote()}
     <li>Spray in the cool of the day: oily sprays and hot sun can scorch leaves.</li></ul>`;
 }
 export function pageSprayDay() {
   setChrome('Spray days', { back: true, kicker: 'From the hourly forecast' });
   if (!S.weather || S.weather.lat == null) return { html: `<div class="empty-state">Set your garden’s location in Tools to see spray days.<br><a class="btn" href="#/settings">Tools</a></div>` };
   const html = `${sprayDaysHTML(false) || '<p class="muted">Hourly weather will appear when you’re online.</p>'}${sprayDayInfo()}
-    ${sprayAlerts()}<div class="btnrow"><a class="btn" href="#/products">🧴 Products &amp; sprays</a><a class="btn" href="#/log">📝 Log a spray</a></div>`;
+    ${sprayAlerts()}<div class="btnrow"><a class="btn" href="#/products?t=spray">📦 Your sprays</a><a class="btn" href="#/log">📝 Log a spray</a></div>`;
   return { html, after: () => Weather.refresh().then(ch => { if (ch && route().parts[0] === 'sprayday') render(); }) };
 }
 

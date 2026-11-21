@@ -22,6 +22,6 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   console.log('soil test:', dl.match(/Soil test.*?(?=Fed so far)/)?.[0]);
   console.log('fed:', dl.match(/Fed so far.*?\)/)?.[0]);
   console.log('new plan fert', JSON.stringify(await pg.evaluate(() => baseFertPlan('cabbage', container('b1'), 0, 100))), 'vs bag', JSON.stringify(await pg.evaluate(() => baseFertPlan('cabbage', container('g1'), 0, 40))));
-  await pg.evaluate(() => taskDialog(S.tasks.find(t => t.kind === 'water') || { kind: 'water', note: '' })); await pg.waitForTimeout(200);
+  await pg.evaluate(() => taskDialog(S.tasks.find(t => t.kind === 'water' && !t.group) || { kind: 'water', note: '' })); await pg.waitForTimeout(200);
   console.log('errs', errs); await b.close();
 })();

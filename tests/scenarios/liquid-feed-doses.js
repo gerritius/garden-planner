@@ -24,6 +24,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   console.log('card:', (await pg.textContent('section.feeding')).replace(/\s+/g, ' ').slice(0, 260));
   await pg.evaluate(() => feedDialog({ pids: ['le'] })); await pg.waitForTimeout(200);
   await pg.fill('#fdf [name=product]', 'Kincho Liquid 6-6-7'); await pg.dispatchEvent('#fdf [name=product]', 'input'); await pg.waitForTimeout(150);
+  await pg.press('#fdf [name=product]', 'Escape'); await pg.waitForTimeout(100);   // close the suggestions, as you would before tapping a dose
   await pg.click('#fdd [data-dose="10"]'); await pg.waitForTimeout(150);
   console.log('dialog:', (await pg.textContent('#fdd')).trim(), '|', await pg.textContent('#fdn'));
   await pg.locator('#modal .sheet').screenshot({ path: `${SP}/kincho_dlg.png` });

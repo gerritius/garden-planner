@@ -1,5 +1,19 @@
 [
   {
+    "version": "1.28.0",
+    "date": "2026-11-21",
+    "notes": [
+      "Products & seeds (Tools, the 📦 tile) has a tab for each kind of product, and a Seeds & plants tab for your varieties — each with its seed packet photos, used again whenever you plant that variety. Adding a variety of a crop the app doesn't know adds the crop too.",
+      "Watering jobs for everything you grow: each bed in the ground (watered much less often than pots — the soil holds far more), indoor pots and seedlings, as well as pots & bags.",
+      "Watering follows the latest forecast: it's fetched again whenever you open the app or come back to it, so a forecast that changes (say, rain that's no longer coming) changes the jobs too.",
+      "Care jobs follow growth, not the calendar: a cold spell pushes them back, and supports (nets, trellises, stakes) for crops that go through winter — like autumn-sown peas — go up in spring when they start climbing.",
+      "Seedlings: \"Buy them\" or \"Sow from seed\"; a planting that uses seedlings you started shows them instead.",
+      "Thinning advice is in English, and pre-filled for you to change.",
+      "The spray days page warns about bee-harmful ingredients in any product (neonicotinoids, pyrethroids, organophosphates and more), and lists which of your sprays have them.",
+      "Drop-down lists stay with their field when a pop-up scrolls."
+    ]
+  },
+  {
     "version": "1.27.1",
     "date": "2026-11-21",
     "notes": [

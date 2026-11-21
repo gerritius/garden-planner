@@ -94,7 +94,7 @@ export function render() {
     else if (a === 'cal') ({ html, after } = pageCalendar());
     else if (a === 'log') ({ html, after } = pageLog(q));
     else if (a === 'totals') ({ html, after } = pageTotals(q));
-    else if (a === 'products') ({ html, after } = pageProducts());
+    else if (a === 'products') ({ html, after } = pageProducts(q));
     else if (a === 'product') ({ html, after } = pageProductLib(b));
     else if (a === 'search') ({ html, after } = pageSearch(q));
     else if (a === 'map') ({ html, after } = pageMap(q));

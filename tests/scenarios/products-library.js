@@ -16,19 +16,23 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   });
   await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it
   await pg.goto(U + '#/products'); await pg.waitForTimeout(500);
+  console.log('tabs:', await pg.$$eval('.ptabs button', x => x.map(b => b.textContent + (b.classList.contains('on') ? '*' : '')).join(' | ')));
   console.log('page:', (await pg.textContent('#view')).replace(/\s+/g, ' ').slice(0, 700));
   await pg.screenshot({ path: `${SP}/products.png`, fullPage: true });
   // add my own spray (no registry)
+  await pg.click('[data-act=pTab][data-t=spray]'); await pg.waitForTimeout(300);
   await pg.click('[data-act=addProd][data-k=spray]'); await pg.waitForTimeout(200);
   await pg.fill('#pdf [name=en]', 'Garden Safe Neem Oil'); await pg.fill('#pdf [name=what]', 'neem oil 70%'); await pg.fill('#pdf [name=phi]', '1'); await pg.check('#pdf [name=organic]', { force: true });
   await pg.locator('#modal .sheet').screenshot({ path: `${SP}/prod_spray.png` });
   await pg.click('#pdf button.primary'); await pg.waitForTimeout(300);
   // add a fertiliser: switch type & form in the dialog
+  await pg.click('[data-act=pTab][data-t=fert]'); await pg.waitForTimeout(300);
   await pg.click('[data-act=addProd][data-k=fert]'); await pg.waitForTimeout(200);
   await pg.fill('#pdf [name=en]', 'Hyponex granules 6-10-5'); await pg.selectOption('#pdf [name=form]', 'quick'); await pg.waitForTimeout(150);
   await pg.fill('#pdf [name=n]', '6'); await pg.fill('#pdf [name=p]', '10'); await pg.fill('#pdf [name=k]', '5');
   await pg.click('#pdf button.primary'); await pg.waitForTimeout(300);
   // add a compost from the catalogue
+  await pg.click('[data-act=pTab][data-t=soil]'); await pg.waitForTimeout(300);
   await pg.evaluate(() => document.querySelector('details.fold').open = true);
   await pg.click('[data-act=addCat][data-id=barkCompost]'); await pg.waitForTimeout(300);
   console.log('library now:', await pg.evaluate(() => libList().map(p => `${p.kind}:${p.en}`).join(' | ')));

@@ -1,9 +1,12 @@
-// Watering pots and bags: spacing from the temperature, rain and your ticks; drainage; DRY meter readings in beds.
+// Watering: one job each for pots & bags outside, every bed in the ground, indoor pots, and seedlings — spaced by the
+// temperature, the rain (observed and the latest forecast) and when you last watered; DRY meter readings in beds.
 
-import { normalT } from '../climate/climate.js';
+import { dayTemp, normalRain, normalT } from '../climate/climate.js';
 import { dayName, Weather } from '../climate/weather.js';
 import { S } from '../core/state.js';
 import { addDays, daysBetween, iso, todayStr, uid } from '../core/util.js';
+import { Draw } from '../draw.js';
+import { startsGrowing } from '../plants/seedlings.js';
 import { earliestWaterFeed, waterFeedsDue } from '../feeding/plans.js';
 import { activeIn, container, planting } from './garden.js';
 import { bagMoistureToday } from './soil.js';
@@ -56,18 +59,47 @@ export function waterPlan(pots) {
   const noRain = addDays(start, last ? iv : 1) < td ? td : addDays(start, last ? iv : 1);
   return { due, iv, pw, rainy: rainy.filter(([x]) => x <= due), held, noRain, rain };
 }
+// ---------- watering groups ----------
+// Each group has one watering job and remembers when it was last watered: 'pots' (outside), 'bed:<id>', 'indoor', 'seedlings'.
+export const groupOf = t => t.group || 'pots';
+export const lastWatered = g => S.water ? (g === 'pots' ? S.water.lastDone : (S.water.last || {})[g]) || null : null;
+export function setLastWatered(g, d) {
+  S.water = Object.assign({}, S.water);
+  if (g === 'pots') S.water.lastDone = d; else S.water.last = Object.assign({}, S.water.last, { [g]: d });
+}
+const skippedTo = g => S.water ? (g === 'pots' ? S.water.skipTo : (S.water.skip || {})[g]) || null : null;
+export function skipWatering(g, to) {
+  S.water = Object.assign({}, S.water);
+  if (g === 'pots') S.water.skipTo = to; else S.water.skip = Object.assign({}, S.water.skip, { [g]: to });
+}
+// the forecast is old (the app was offline): say so, so nobody trusts rain that may not come
+function forecastAge() {
+  const f = S.weather && S.weather.fetched; if (!f || Date.now() - f < 6 * 3600e3) return '';
+  return ` · forecast from ${new Date(f).toLocaleString('en-GB', { weekday: 'short', hour: '2-digit', minute: '2-digit' })}`;
+}
+const rainNote = rainy => rainy.length ? ` · rain counts: ${rainy.map(([d, mm]) => `${dayName(d)} ${Math.round(mm)} mm`).join(', ')}${forecastAge()}` : '';
+function openJob(g, fields) {
+  let t = S.tasks.find(x => x.kind === 'water' && !x.done && groupOf(x) === g);
+  if (!t) { t = Object.assign({ id: uid(), kind: 'water', plantingId: null, done: false }, g === 'pots' ? {} : { group: g }); S.tasks.push(t); }
+  return Object.assign(t, fields);
+}
+const dropJob = g => { S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && groupOf(x) === g)); };
+
 export function syncWater() {
-  const on = !S.water || S.water.on !== false;
-  const pots = waterPots();
-  let open = S.tasks.find(t => t.kind === 'water' && !t.done);
   const td = todayStr();
   S.tasks = S.tasks.filter(t => !(t.kind === 'water' && t.done && daysBetween(t.doneOn, td) > 21));
-  if (!on || !pots.length) { if (open) S.tasks = S.tasks.filter(x => x !== open); return; }
+  const on = !S.water || S.water.on !== false;
+  syncPotsWater(on); syncBedsWater(on); syncIndoorWater(on); syncSeedlingWater(on);
+}
+// ---------- pots & bags outside ----------
+function syncPotsWater(on) {
+  const pots = waterPots(), td = todayStr();
+  if (!on || !pots.length) return dropJob('pots');
   const w = waterPlan(pots);
   let due = w.due, note = '';
-  const skipTo = S.water && S.water.skipTo;
+  const skipTo = skippedTo('pots');
   if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped'; }
-  else if (due > w.noRain && w.rainy.length) note = ` · rain counts: ${w.rainy.map(([d, mm]) => `${dayName(d)} ${Math.round(mm)} mm`).join(', ')}`;
+  else if (due > w.noRain && w.rainy.length) note = rainNote(w.rainy);
   else if (w.held.length) note = ' · held off: rain due the next day';
   const mt = bagMoistureToday(pots);
   if (mt.dry) { due = td; note = ` · meter: ${mt.dry} pot${mt.dry > 1 ? 's' : ''} DRY today`; }
@@ -76,10 +108,75 @@ export function syncWater() {
   const ef = earliestWaterFeed();
   if (ef) { const d = ef < td ? td : ef; if (d < due) { due = d; note = ' · liquid feed due'; } }
   const feeds = waterFeedsDue(due < td ? td : due);
-  if (!open) { open = { id: uid(), kind: 'water', plantingId: null, title: 'Water pots & bags', due, done: false }; S.tasks.push(open); }
-  open.due = due; open.feeds = feeds.map(t => t.id);
-  open.title = feeds.length ? `Water + liquid feed: ${[...new Set(feeds.map(t => (container((planting(t.plantingId) || {}).containerId) || {}).name))].join(', ')}` : 'Water pots & bags';
-  open.note = `${pots.length} pot${pots.length > 1 ? 's' : ''} · every ${w.iv === 1 ? 'day' : w.iv + ' days'} this time of year${note}`;
+  openJob('pots', {
+    due, feeds: feeds.map(t => t.id),
+    title: feeds.length ? `Water + liquid feed: ${[...new Set(feeds.map(t => (container((planting(t.plantingId) || {}).containerId) || {}).name))].join(', ')}` : 'Water pots & bags',
+    note: `${pots.length} pot${pots.length > 1 ? 's' : ''} · every ${w.iv === 1 ? 'day' : w.iv + ' days'} this time of year${note}`,
+  });
+}
+
+// ---------- beds in the ground ----------
+// The ground holds far more water than a pot: about 25 mm the roots can use in ~30 cm of ordinary soil. Each day the
+// soil loses some through the plants and the surface — more when it's warm — and rain puts it back. Watering is due
+// when about half is used (12 mm); young plantings (first three weeks) only reach the top few cm, so sooner (6 mm).
+const BED_STORE = 25;
+export const bedLoss = d => Math.max(0.4, 0.17 * dayTemp(d, S.weather && S.weather.daily));   // mm a day
+export const bedBeds = () => S.containers.filter(c => c.type === 'bed' && !c.indoor && activeIn(c.id).length);
+export function bedPlan(c) {
+  const td = todayStr(), rain = rainByDay(), g = 'bed:' + c.id;
+  const mm = d => rain[d] != null ? rain[d] : d < td ? normalRain(d) : 0;   // past days we have no record of: usual rain; beyond the forecast: none
+  const young = activeIn(c.id).some(p => p.sowDate && p.sowDate <= td && daysBetween(p.sowDate, td) < 21);
+  const allow = young ? 6 : 12, last = lastWatered(g);
+  let d = last && daysBetween(last, td) <= 45 ? last : addDays(td, -21), used = 0, due = null, held = false;
+  const rainy = [];
+  for (let i = 0; i < 120 && !due; i++) {
+    d = addDays(d, 1);
+    const r = mm(d); used = Math.min(BED_STORE, Math.max(0, used + bedLoss(d) - r));
+    if (r >= 2 && d >= addDays(td, -3)) rainy.push([d, r]);
+    if (used < allow || d < td) continue;   // still enough — or dry already before today: then it's due today
+    if (!held && mm(addDays(d, 1)) >= used * 0.8) { held = true; continue; }   // a good soak due the next day: wait for it
+    due = d;
+  }
+  const { W, L } = Draw.dims(c), m2 = (W * L) / 1e4;
+  return { due, allow, young, rainy: rainy.filter(([x]) => !due || x <= due), every: Math.max(1, Math.round(allow / bedLoss(td))), litres: Math.round(allow * m2), m2 };
+}
+function syncBedsWater(on) {
+  const td = todayStr(), beds = on ? bedBeds() : [];
+  for (const t of S.tasks.filter(x => x.kind === 'water' && !x.done && groupOf(x).startsWith('bed:') && !beds.some(c => 'bed:' + c.id === groupOf(x)))) dropJob(groupOf(t));
+  for (const c of beds) {
+    const g = 'bed:' + c.id, w = bedPlan(c);
+    let due = w.due, note = rainNote(w.rainy);
+    const skipTo = skippedTo(g); if (skipTo && (!due || skipTo > due)) { due = skipTo; note = ' · skipped'; }
+    const r = (c.soil || []).filter(x => x.date === td && x.moistLvl).pop();   // the meter beats the sums
+    if (r && /^DRY/.test(r.moistLvl)) { due = td; note = ' · meter reads DRY'; }
+    else if (r && /^WET/.test(r.moistLvl) && due && due <= td) { due = addDays(td, 1); note = ' · meter says still wet'; }
+    if (!due || daysBetween(td, due) > 60) { dropJob(g); continue; }   // cool and wet: nothing to do for a long while
+    openJob(g, {
+      due, containerId: c.id, title: `Water ${c.name}`,
+      note: `in the ground · about ${w.litres} L (${w.allow} L per m²) · every ~${w.every} day${w.every === 1 ? '' : 's'} without rain this time of year${w.young ? ', young plants' : ''}${note}`,
+    });
+  }
+}
+
+// ---------- indoor pots, and seedlings ----------
+// Indoors no rain reaches them: every 3 days, every 2 in summer warmth.
+function syncIndoorWater(on) {
+  const cs = on ? S.containers.filter(c => c.indoor && activeIn(c.id).length) : [];
+  if (!cs.length) return dropJob('indoor');
+  const td = todayStr(), iv = normalT(td) >= 24 ? 2 : 3, last = lastWatered('indoor');
+  let due = last ? addDays(last, iv) : td, note = '';
+  const skipTo = skippedTo('indoor'); if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped'; }
+  openJob('indoor', { due, title: 'Water indoor pots', note: `${cs.map(c => c.name).join(', ')} · every ${iv} days — no rain reaches them${note}` });
+}
+// Seedlings in trays and small pots dry out fast: every day, every other day when it's cool; rain counts for ones outside.
+function syncSeedlingWater(on) {
+  const ss = on ? startsGrowing() : [];
+  if (!ss.length) return dropJob('seedlings');
+  const td = todayStr(), iv = normalT(td) >= 12 ? 1 : 2, last = lastWatered('seedlings'), rain = rainByDay();
+  let due = last ? addDays(last, iv) : td, note = '';
+  if (ss.every(s => (s.kept || 'out') === 'out') && due <= td && (rain[td] || 0) >= 3) { due = addDays(td, 1); note = ` · rain today (${Math.round(rain[td])} mm)`; }
+  const skipTo = skippedTo('seedlings'); if (skipTo && skipTo > due) { due = skipTo; note = ' · skipped'; }
+  openJob('seedlings', { due, title: 'Water seedlings', note: `${ss.length} lot${ss.length > 1 ? 's' : ''} of seedlings · ${iv === 1 ? 'every day' : 'every other day'} this time of year${note}` });
 }
 
 // ---------- beds: a DRY reading becomes a watering job (unless good rain is due) ----------
@@ -90,8 +187,9 @@ export function syncMeterJobs() {
     if (c.type !== 'bed' || c.indoor) continue;
     const r = (c.soil || []).filter(x => x.date === td && x.moistLvl).pop();
     const open = S.tasks.find(t => t.meterWater && t.containerId === c.id && !t.done);
-    const want = r && /^DRY/.test(r.moistLvl) && !rainSoon;
+    const bedJob = S.tasks.some(t => t.kind === 'water' && !t.done && t.group === 'bed:' + c.id);   // the bed's own watering job already follows the meter
+    const want = r && /^DRY/.test(r.moistLvl) && !rainSoon && !bedJob;
     if (want && !open) S.tasks.push({ id: uid(), kind: 'bed', containerId: c.id, plantingId: null, title: `Water ${c.name} — meter reads ${r.moistLvl}`, due: td, done: false, meterWater: true });
-    else if (!want && open && open.due <= td) S.tasks = S.tasks.filter(t => t !== open);   // rain coming, or a newer reading says it's fine
+    else if (!want && open && (open.due <= td || bedJob)) S.tasks = S.tasks.filter(t => t !== open);   // rain coming, a newer reading says it's fine, or the bed job has it
   }
 }

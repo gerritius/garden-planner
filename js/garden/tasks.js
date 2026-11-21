@@ -15,7 +15,7 @@ import { myProducts, productByName } from '../products/library.js';
 import { activeIn, container, isLive, isPlanned, planting, sizeLabel } from './garden.js';
 import { activatePlan, planTrayPreset, syncPlanTasks, undoActivate } from './planning.js';
 import { moistureToday } from './soil.js';
-import { syncWater, waterPlan, waterPots } from './watering.js';
+import { bedLoss, bedPlan, groupOf, lastWatered, rainByDay, setLastWatered, skipWatering, syncWater, waterPlan, waterPots } from './watering.js';
 
 // ---------- the task list ----------
 export const effDue = t => (!t.done && t.due < todayStr()) ? todayStr() : t.due;
@@ -108,7 +108,7 @@ export function finishToggle(t, done, td) {
   const p = t.plantingId ? planting(t.plantingId) : null;
   if (done) {
     t.done = true; t.doneOn = td;
-    if (t.kind === 'water') { t.prevLast = S.water && S.water.lastDone; S.water = Object.assign({}, S.water, { lastDone: td }); if (t.feeds && t.feeds.length) completeWaterFeeds(t, td); }
+    if (t.kind === 'water') { const g = groupOf(t); t.prevLast = lastWatered(g); setLastWatered(g, td); if (t.feeds && t.feeds.length) completeWaterFeeds(t, td); }
     if (t.kind === 'germ' && p) setTimeout(() => germDialog(p, td), 320);
     if (t.kind === 'thin' && p) { p.thinned = true; p.thinDoneOn = td; }
     if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = td;
@@ -125,7 +125,7 @@ export function finishToggle(t, done, td) {
     }
   } else {
     t.done = false; t.doneOn = null;
-    if (t.kind === 'water') { S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t)); S.water = Object.assign({}, S.water, { lastDone: t.prevLast || null }); }
+    if (t.kind === 'water') { const g = groupOf(t); S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t && groupOf(x) === g)); setLastWatered(g, t.prevLast || null); }
     if (t.kind === 'germ' && p) p.germ = null;
     if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; }
     if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = null;
@@ -230,6 +230,20 @@ function waterTaskDialog(t) {
     m.querySelector('[data-x=skip]').onclick = async () => { S.water = Object.assign({}, S.water, { skipTo: addDays(todayStr(), 1) }); syncWater(); await save(); close(); render(); };
   });
 }
+// watering a bed, the indoor pots or the seedlings: what the job is based on, and skip today
+function otherWaterDialog(t) {
+  const g = groupOf(t), c = g.startsWith('bed:') ? container(g.slice(4)) : null, w = c ? bedPlan(c) : null;
+  const rows = w ? Object.entries(rainByDay()).filter(([d]) => d >= addDays(todayStr(), -3) && d <= addDays(todayStr(), 6)).sort().map(([d, mm]) => `<tr${d === todayStr() ? ' class="on"' : ''}><td>${dayName(d)}</td><td>${Math.round(mm || 0)} mm</td><td>${bedLoss(d).toFixed(1)} mm</td></tr>`).join('') : '';
+  modal(`<h3>${CAN_ICON(24)} ${esc(t.title)}</h3><p class="msg">${esc(t.note || '')}</p>
+    <p class="small">Next watering: <b>${niceDate(t.due)}</b>.</p>
+    ${c ? `<p class="hint">Soil in the ground holds far more water than a pot — about ${25} mm the roots can use in 30 cm of ordinary soil. Each day it loses some through the plants and the surface (more when it’s warm), and rain puts it back. It’s time to water when about ${w.allow} mm is used${w.young ? ' (less, while the plants are young and their roots shallow)' : ''}: give about ${w.litres} L to this ${w.m2.toFixed(1)} m² bed, slowly so it soaks in.</p>
+      ${rows ? `<div class="tscroll"><table class="reg rain"><tr><th>Day</th><th>Rain</th><th>Soil loses</th></tr>${rows}</table></div>` : ''}` : g === 'seedlings' ? '<p class="hint">Seedlings in trays and small pots dry out fast — check them every day in warm weather, and water when the top of the mix is dry.</p>' : '<p class="hint">Indoors no rain reaches them: water when the top 2 cm of the mix is dry.</p>'}
+    ${!S.weather || S.weather.lat == null ? '<p class="hint">Set your garden’s location in Tools so rain can be counted.</p>' : ''}
+    <div class="btns"><button class="btn" data-x="skip">Skip today</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
+    m.querySelector('[data-x=ok]').onclick = close;
+    m.querySelector('[data-x=skip]').onclick = async () => { skipWatering(g, addDays(todayStr(), 1)); syncWater(); await save(); close(); render(); };
+  });
+}
 function startTaskDialog(t) {
   const s = start(t.startId); if (!s) return orphanTaskDialog(t);
   modal(`<h3>${esc(t.title)}</h3><p class="muted small">${ic(s.cropId)} ${esc(crop(s.cropId).en)} · ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
@@ -248,7 +262,7 @@ function orphanTaskDialog(t) {
 }
 // Task add/edit dialog
 export function taskDialog(t, p) {
-  if (t && t.kind === 'water') return waterTaskDialog(t);
+  if (t && t.kind === 'water') return groupOf(t) === 'pots' ? waterTaskDialog(t) : otherWaterDialog(t);
   if (t && t.kind === 'frost') return frostTaskDialog(t);
   if (t && t.startId) return startTaskDialog(t);
   if (t && t.kind === 'wx') return wxTaskDialog(t);

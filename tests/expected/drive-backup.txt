@@ -7,7 +7,7 @@ needs tap: banner ☁️ Google Drive backup is due — tap to back up
 after tap: prompt null | lastDate 2026-11-18 | banner false
 photo uploads this time: 1 | backups kept 15 | deleted 11
 restore list: [
-  'Wed 18 Nov18/11/2026, 10:00:05 · 12 KB›',
+  'Wed 18 Nov18/11/2026, 10:00:05 · 13 KB›',
   'Mon 26 Oct26/10/2026, 17:00:00 · 1 KB›'
 ]
   [alert] Restored, with 2 photos.

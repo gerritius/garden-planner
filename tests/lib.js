@@ -17,7 +17,8 @@ function moduleFiles(dir = path.join(ROOT, 'js'), out = []) {
 }
 function bridgeSource() {
   // imported relative to the page, so they're the very modules the page runs (also on the test site, under /test/)
-  return `const mods = await Promise.all(${JSON.stringify(moduleFiles())}.map(f => import(new URL(f, document.baseURI).href)));
+  // (a module an older version of the app doesn't have is skipped)
+  return `const mods = await Promise.all(${JSON.stringify(moduleFiles())}.map(f => import(new URL(f, document.baseURI).href).catch(() => ({}))));
 const setters = {}; for (const m of mods) for (const k of Object.keys(m)) if (/^set[A-Z]/.test(k)) setters[k] = m[k];
 for (const m of mods) for (const k of Object.keys(m)) {
   const set = k === 'S' ? setters.setState : setters['set' + k.replace(/^_+/, '').replace(/^./, c => c.toUpperCase())];

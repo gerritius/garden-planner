@@ -19,13 +19,13 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     }
     S.water = { lastDone }; S.tasks = S.tasks.filter(t => t.kind !== 'water'); await save();
   }, lastDone);
-  const w = () => pg.evaluate(() => { syncWater(); const t = S.tasks.find(t => t.kind === 'water' && !t.done); return t.due + ' | ' + t.note; });
+  const w = () => pg.evaluate(() => { syncWater(); const t = S.tasks.find(t => t.kind === 'water' && !t.group && !t.done); return t.due + ' | ' + t.note; });
   await setup('2026-11-15'); console.log('ticked today :', await w());
   await setup('2026-11-12'); console.log('last 12 Nov  :', await w());
   await setup(null); console.log('never        :', await w());
   await setup('2026-11-09'); console.log('last 9 Nov   :', await w());
   await pg.goto(U); await pg.waitForTimeout(300);
-  await pg.evaluate(() => taskDialog(S.tasks.find(t => t.kind === 'water' && !t.done))); await pg.waitForTimeout(200);
+  await pg.evaluate(() => taskDialog(S.tasks.find(t => t.kind === 'water' && !t.group && !t.done))); await pg.waitForTimeout(200);
   await pg.screenshot({ path: SP + '/waterdlg.png' }); await pg.click('[data-x=ok]');
   // seedlings
   await pg.click('.fab'); await pg.waitForTimeout(200); await pg.click('[data-q=start]'); await pg.waitForTimeout(200);

@@ -29,7 +29,7 @@ export const blobToDataURL = b => new Promise(r => { const f = new FileReader();
 
 // ---------- shared photos: only deleted when nothing uses them ----------
 function photoUsed(id) {
-  return S.plantings.some(p => Object.values(p.photos || {}).includes(id) || (p.diary || []).some(d => d.photo === id));
+  return S.plantings.some(p => Object.values(p.photos || {}).includes(id) || (p.diary || []).some(d => d.photo === id)) || (S.seeds || []).some(s => s.front === id || s.back === id);
 }
 export async function dropPhoto(id) {
   if (!id || photoUsed(id)) return;

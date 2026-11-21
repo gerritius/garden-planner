@@ -16,7 +16,8 @@ export function leachFn(L) {
   const c = L.c, td = todayStr(), rain = rainByDay(), indoor = !!c.indoor;
   if (!L.bag) return d => Math.min(0.2, 0.002 + (d < td ? (S.rainHist && S.rainHist[d] != null ? S.rainHist[d] : normalRain(d)) : (rain[d] != null ? rain[d] : normalRain(d))) * 0.0015);
   const fullMM = potWater([c]).fullMM;
-  const done = new Set(S.tasks.filter(t => t.kind === 'water' && t.done && t.doneOn).map(t => t.doneOn).concat(S.water && S.water.lastDone ? [S.water.lastDone] : []));
+  // waterings of the pots & bags (not the beds, indoor pots or seedlings)
+  const done = new Set(S.tasks.filter(t => t.kind === 'water' && !t.group && t.done && t.doneOn).map(t => t.doneOn).concat(S.water && S.water.lastDone ? [S.water.lastDone] : []));
   const since = [...done].sort()[0] || td;   // before the oldest watering on record, assume the usual interval
   const pace = waterPace(done, td);   // if you water more often than the default (e.g. every 3 days through winter), assume you keep doing so
   return d => {

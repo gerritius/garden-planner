@@ -9,14 +9,15 @@ import { $, addDays, daysBetween, esc, num, shortDate, todayStr, uid, unitOpts }
 import { HANDFUL_G } from '../data/catalog.js';
 import { Draw } from '../draw.js';
 import { lastMixKind, mixDefaults, mixDraftC, mixFormBits, saveMixChoice } from '../feeding/mix.js';
-import { baseFertNote, baseFertPlan, careJobs, FRUITING, jobAmount, jobAmountText } from '../feeding/plans.js';
+import { baseFertNote, baseFertPlan, careJobStart, careJobs, FRUITING, jobAmount, jobAmountText } from '../feeding/plans.js';
 import { activeIn, container, decorate, endOf, gaps, isPlanned, noteVacated, occupants, planRotation } from '../garden/garden.js';
 import { gapAround, ideasDialog } from '../garden/ideas.js';
-import { planFormBits } from '../garden/planning.js';
+import { linkedStart, planFormBits } from '../garden/planning.js';
 import { rotationNote } from '../garden/rotation.js';
 import { soilAdvice, soilLine, soilReadingAdvice } from '../garden/soil.js';
 import { syncTasks } from '../garden/tasks.js';
 import { allCrops, crop, newCropDialog, varieties } from '../plants/crops.js';
+import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import {
   applyStart, linkStartOnSave, prefillFromStart, start, startChooser, startPlanted, startReadyNote, startWhere
@@ -134,7 +135,7 @@ export function pagePlantForm(p, c, q) {
       <label>Approx. date<input name="thinDate" type="date" value="${esc(d.thinDate || '')}" data-manual="thinManual"></label></div>
       <small class="hint">The date is estimated from when they come up and the temperatures, and updates by itself — unless you change it here. Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
     ${isNew && cr && careJobs(cr.id).length ? `<fieldset><legend>Suggested jobs</legend>
-      ${careJobs(cr.id).map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `day ${j[1]}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}${esc(jobAmountText(j))}</small></span></label>`).join('')}
+      ${careJobs(cr.id).map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `around ${shortDate(careJobStart({ cropId: cr.id, sowDate: d.sowDate || todayStr(), containerId: c && c.id, harvestDate: d.harvestDate }, j))}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}${esc(jobAmountText(j))}</small></span></label>`).join('')}
       <small class="hint">Untick any you don’t do. They become jobs on this crop’s page and the calendar.</small></fieldset>` : ''}
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
@@ -229,6 +230,7 @@ export function pagePlantForm(p, c, q) {
     });
     f.addEventListener('change', async e => {
       const n = e.target.name || '';
+      if (n === 'variety') { read(); if (packetForVariety(d)) render(); return; }   // a variety from your seeds brings its packet
       if (n === 'cropId') {
         read();
         if (e.target.value === '__new') { e.target.value = d.cropId; return newCropDialog(id => { applyCrop(d, crop(id), c); d.method = 'seed'; render(); }); }
@@ -273,7 +275,7 @@ async function savePlanting(p, d, c) {
   p.daysFrom = num(d.daysFrom); p.daysTo = num(d.daysTo); p.keepUntil = d.keepUntil || '';
   saveMixChoice(p, d, c);
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
-  p.raise = p.status === 'planned' && p.method === 'seedling' ? (d.raise || 'buy') : (p.raise || '');
+  p.raise = p.status === 'planned' && p.method === 'seedling' ? (linkedStart(p) ? 'tray' : d.raise === 'pot' ? 'tray' : d.raise || 'buy') : (p.raise || '');   // linked to seedlings you started: sown from seed
   const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
   if (!isNew && p.status === 'active') noteVacated(p, oldFrom, oldTo);
@@ -286,7 +288,7 @@ async function savePlanting(p, d, c) {
   });
   if (isNew) {
     const cj = careJobs(p.cropId);
-    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: addDays(p.sowDate || todayStr(), j[1] || 0), end: /Pest check|Side-dress \(追肥\)$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
+    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: careJobStart(p, j), end: /Pest check|Side-dress \(追肥\)$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
   }
   if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;
   // photos
@@ -298,11 +300,7 @@ async function savePlanting(p, d, c) {
     if (want) p.photos[slot] = want; else delete p.photos[slot];
     if (old && old !== want) await dropPhoto(old);
   }
-  // remember custom variety
-  if (p.variety && !varieties(p.cropId).includes(p.variety)) {
-    S.customVarieties = S.customVarieties || {};
-    (S.customVarieties[p.cropId] = S.customVarieties[p.cropId] || []).push(p.variety);
-  }
+  rememberSeed(p);   // a variety (or packet) you hadn't listed joins your seeds
   if (isNew) linkStartOnSave(d, p);
   if (isNew && d.startId) startPlanted(d, p);
   syncTasks(p);
@@ -314,6 +312,11 @@ async function savePlanting(p, d, c) {
 // ---------- re-using seed packet photos ----------
 function packets(excludeKey) {
   const seen = new Map();
+  for (const s of seedList()) {   // your seed library first
+    if (!s.front && !s.back) continue;
+    const key = (s.front || '') + '|' + (s.back || ''); if (key === excludeKey) continue;
+    seen.set(key, { key, front: s.front, back: s.back, cropId: s.cropId, variety: s.variety || '', uses: [] });
+  }
   for (const p of S.plantings) {
     const ph = p.photos || {}; if (!ph.front && !ph.back) continue;
     const key = (ph.front || '') + '|' + (ph.back || ''); if (key === excludeKey) continue;
@@ -337,4 +340,12 @@ function usePacket(d, key, c) {
   for (const s of ['front', 'back']) { if (!d.photos[s]) delete d.photos[s]; delete d.newPhotos[s]; delete d.removePhotos[s]; }
   if (!d.cropId) { applyCrop(d, crop(x.cropId), c); }
   if (!d.variety && x.cropId === d.cropId) d.variety = x.variety;
+}
+
+// choosing a variety from your seeds brings its packet photos (unless this planting has its own)
+export function packetForVariety(d) {
+  const s = d.cropId && seedFor(d.cropId, d.variety), ph = d.photos || {};
+  if (!s || (!s.front && !s.back) || ph.front || ph.back || Object.keys(d.newPhotos || {}).length) return false;
+  d.photos = Object.assign({}, ph, s.front ? { front: s.front } : {}, s.back ? { back: s.back } : {});
+  return true;
 }

@@ -1,7 +1,7 @@
-tiles: 📅Season plan | 🔄Rotation | 🌱Seedlings | 🗓️Sowing calendar | 🧴Products | 💦Sprays | 🩺What’s wrong? | 🗺️Garden map | 📒Seasons | 💴Spending & use | 🏷️Varieties | 📷Photos
+tiles: 📅Season plan | 🔄Rotation | 🌱Seedlings | 🗓️Sowing calendar | 📦Products & seeds | 💦Sprays | 🩺What’s wrong? | 🗺️Garden map | 📒Seasons | 💴Spending & use | 🏷️Varieties | 📷Photos
 on /picksafe
 back → /settings
-products has tabs? false
+products has tabs? true
 spend 💴 Spending
 totals 🧮 Product use
 review 📒 Season review

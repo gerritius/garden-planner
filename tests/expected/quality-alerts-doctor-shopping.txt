@@ -25,6 +25,6 @@ shop [
   'Supports for Snap peaBed 2 0–70 cm · poles + climbing net (きゅうりネット) · by 13 Dec'
 ]
 spend ¥3,740spent all up [["Cabbage seedlings × 3","seedlings",980,"2026-11-18"],["Insect netting 1.8 × 5 m","net",1480,""],["Bokashi","fert",1280,"2026-11-18"]]
-snaps [ 'Wed 18 Nov4 plantings · 9 jobsRestore' ]
+snaps [ 'Wed 18 Nov4 plantings · 10 jobsRestore' ]
 soil form 🌡 This week: soil cool (~11°) — slow to come up (best 12°+).
 errs []

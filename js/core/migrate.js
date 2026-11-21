@@ -6,21 +6,24 @@
 //   3. npm test — tests/scenarios/old-backups.js restores every saved backup and checks nothing is lost
 // Saves from before data versions existed have no dataVersion: they run every step.
 
+import { migrateCareJobTimes } from '../feeding/plans.js';
 import { migrateCovers } from '../plants/covers.js';
-import { migrateHarvestDates } from '../plants/growth.js';
+import { migrateHarvestDates, migrateThinningText } from '../plants/growth.js';
+import { migrateSeeds } from '../plants/seeds.js';
 import { migrateFeed, migrateOwnProducts, migrateProducts } from '../products/library.js';
 import { blank, S, setState } from './state.js';
 
-export const DATA_VERSION = 6;
+export const DATA_VERSION = 7;
 const STEPS = [
   { to: 2, what: 'harvest dates typed in by hand stay as they are', run: migrateHarvestDates },
   { to: 3, what: 'cover names: fleece and cloche → fushokufu, bird net → insect net', run: migrateCovers },
   { to: 4, what: 'chemical fertiliser 8-8-8 joins the ticked products', run: migrateFeed },
   { to: 5, what: 'liquid feeds written with their N-P-K become your own products', run: migrateOwnProducts },
   { to: 6, what: 'all products become one editable library', run: migrateProducts },
+  { to: 7, what: 'your varieties and packet photos become a seed library; thinning advice in English; care jobs timed by growth', run: () => { migrateSeeds(); migrateThinningText(); migrateCareJobTimes(); } },
 ];
 
-const LISTS = { containers: 'beds and pots', plantings: 'plantings', tasks: 'jobs', log: 'log entries', customCrops: 'own crops', starts: 'seedling trays', products: 'products' };
+const LISTS = { containers: 'beds and pots', plantings: 'plantings', tasks: 'jobs', log: 'log entries', customCrops: 'own crops', starts: 'seedling trays', products: 'products', seeds: 'seeds' };
 // What would stop the app from working with this data, in plain words ('' when it's fine). Deliberately only the things
 // that really break it: anything else the app copes with, and refusing good data would be worse.
 export function dataProblem(d) {

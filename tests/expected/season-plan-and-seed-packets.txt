@@ -6,5 +6,5 @@ picker open true
 after packet hakusai 無双 1
 photos [["hk","hakusai",{"front":"ph1"}],["ID","snappea",{}],["ID","hakusai",{"front":"ph1"}]]
 blob survives true
-blob gone when unused true
+blob gone when unused false
 errs []

@@ -35,7 +35,7 @@ const openAll = async pg => { for (let i = 0; i < 20; i++) { const b = await pg.
   const in2 = await pg.evaluate(() => addDays(todayStr(), 2));
   await (await er.$('[data-f=date]')).fill(in2); await pg.waitForTimeout(300);
   await pg.click('#fpf button.primary'); await pg.waitForTimeout(400);
-  const water = () => pg.evaluate(() => { syncFeedPlans(); syncWater(); const w = S.tasks.find(t => t.kind === 'water' && !t.done); return [w.due, w.title, (w.feeds || []).length, S.tasks.filter(t => t.withWater && !t.done).map(t => t.due).join(',')]; });
+  const water = () => pg.evaluate(() => { syncFeedPlans(); syncWater(); const w = S.tasks.find(t => t.kind === 'water' && !t.group && !t.done); return [w.due, w.title, (w.feeds || []).length, S.tasks.filter(t => t.withWater && !t.done).map(t => t.due).join(',')]; });
   console.log('plan saved', JSON.stringify(await pg.evaluate(() => planting('ln').feedPlan)));
   console.log('water (just watered):', JSON.stringify(await water()));
   console.log('feed job hidden on its own?', await pg.evaluate(() => S.tasks.filter(t => t.withWater && !t.done).map(t => taskVisible(t))));
@@ -43,7 +43,7 @@ const openAll = async pg => { for (let i = 0; i < 20; i++) { const b = await pg.
   console.log('water (watered yesterday):', JSON.stringify(await water()));
   await pg.evaluate(async () => { const t = S.tasks.find(t => t.withWater && !t.done); planting('ln').feedPlan[0].start = todayStr(); await save(); });
   console.log('water (feed due today):', JSON.stringify(await water()));
-  const wid = await pg.evaluate(() => S.tasks.find(t => t.kind === 'water' && !t.done).id);
+  const wid = await pg.evaluate(() => S.tasks.find(t => t.kind === 'water' && !t.group && !t.done).id);
   await pg.evaluate(id => toggleTask(id, true), wid); await pg.waitForTimeout(500);
   console.log('after tick:', JSON.stringify(await pg.evaluate(() => [S.water.lastDone, S.log.filter(e => e.text === 'with watering').map(e => [e.product, e.amount, e.unit, e.date]), planting('ln').feedPlan[0].last, S.tasks.filter(t => t.schedId && !t.done).map(t => t.due)])));
   console.log('water after tick:', JSON.stringify(await water()));

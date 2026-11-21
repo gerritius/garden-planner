@@ -7,6 +7,6 @@ lettuce out 2027-03-01: sow 2027-02-01 (28 d) kept in
 onion out 2026-11-20: sow 2026-09-24 (57 d) kept out
 celery out 2027-05-20: sow 2027-03-11 (70 d) kept cover
 tomato out 2026-05-01: sow 2026-03-05 (57 d) kept in
-form: 📅 Planned — saved as a plan. Prep jobs are counted back from this date, plus a reminder to sow seedlings; it goes into the bed when you tick “Plant out”. SeedlingsBuy themRaise in trayRaise in 9 cm pots Sow them around 5 Mar (about 57 days before at that time of year), kept indoors / heated — outside it’s too cold for them to be ready in time.
-tasks: [["Sow Tomato (large) in a cell tray (to plant out 1 May)","2027-03-05"],["Plant out Tomato (large)","2027-05-01"]]
+form: 📅 Planned — saved as a plan. Prep jobs are counted back from this date, plus a reminder to sow seedlings; it goes into the bed when you tick “Plant out”. SeedlingsBuy themSow from seed Sow them around 5 Mar (about 57 days before at that time of year), kept indoors / heated — outside it’s too cold for them to be ready in time.
+tasks: [["Sow Tomato (large) seeds in a tray or small pots (to plant out 1 May)","2027-03-05"],["Plant out Tomato (large)","2027-05-01"]]
 errs []

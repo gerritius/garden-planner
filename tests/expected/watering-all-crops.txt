@@ -1,0 +1,21 @@
+with the first forecast (Fri 23 mm, Sat 15 mm):
+  Water Plot A: 2026-11-18 — in the ground · about 24 L (12 L per m²) · every ~6 days without rain this time of year
+  Water Plot B: 2026-11-25 — in the ground · about 12 L (6 L per m²) · every ~3 days without rain this time of year, young plants · rain counts: Fri 23 mm, Sat 15 mm
+  Water indoor pots: 2026-11-18 — Kitchen pot · every 3 days — no rain reaches them
+  Water pots & bags: 2026-11-24 — 1 pot · every 3 days this time of year · rain counts: Fri 23 mm, Sat 15 mm
+  Water seedlings: 2026-11-18 — 1 lot of seedlings · every other day this time of year
+after the forecast changed to Fri 3 mm, Sat 0 mm:
+  Water Plot A: 2026-11-18 — in the ground · about 24 L (12 L per m²) · every ~6 days without rain this time of year
+  Water Plot B: 2026-11-21 — in the ground · about 12 L (6 L per m²) · every ~3 days without rain this time of year, young plants · rain counts: Fri 3 mm
+  Water indoor pots: 2026-11-18 — Kitchen pot · every 3 days — no rain reaches them
+  Water pots & bags: 2026-11-22 — 1 pot · every 3 days this time of year · rain counts: Fri 3 mm
+  Water seedlings: 2026-11-18 — 1 lot of seedlings · every other day this time of year
+ticked Plot A: {"lastDone":"2026-11-18","last":{"bed:b1":"2026-11-18","bed:b2":"2026-11-16"}} 
+  Water Plot A: 2026-11-26 — in the ground · about 24 L (12 L per m²) · every ~6 days without rain this time of year · rain counts: Fri 3 mm
+  Water Plot B: 2026-11-21 — in the ground · about 12 L (6 L per m²) · every ~3 days without rain this time of year, young plants · rain counts: Fri 3 mm
+  Water indoor pots: 2026-11-18 — Kitchen pot · every 3 days — no rain reaches them
+  Water pots & bags: 2026-11-22 — 1 pot · every 3 days this time of year · rain counts: Fri 3 mm
+  Water seedlings: 2026-11-18 — 1 lot of seedlings · every other day this time of year
+unticked: {"bed:b1":"2026-11-10","bed:b2":"2026-11-16"} | Plot B job still there: true
+Plot B dialog: Soil in the ground holds far more water than a pot — about 25 mm the roots can use in 30 cm of ordinary soil. Each day it loses some through | rain table rows: 10
+errs []

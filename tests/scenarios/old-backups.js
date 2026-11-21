@@ -28,11 +28,14 @@ const files = fs.readdirSync(DIR).filter(f => f.endsWith('.json')).sort((a, b) =
       photos: (await DB.photoKeys()).length, crops: (S.customCrops || []).length, starts: (S.starts || []).length, dataVersion: S.dataVersion,
       products: (S.products || []).map(p => p.en).sort(), covers: S.containers.flatMap(c => (c.covers || []).map(x => x.type)),
       diaryPhoto: !!S.plantings.some(p => (p.diary || []).some(d => d.photo)), drive: !!(S.drive && S.drive.clientId),
+      seeds: (S.seeds || []).map(s => `${s.cropId}${s.variety ? ' ' + s.variety : ''}${s.front || s.back ? ' (packet)' : ''}`).sort(), oldVarieties: 'customVarieties' in S,
+      thin: [...new Set(S.plantings.map(p => p.thinStage).filter(Boolean))].sort(),
     }));
     console.log(`== a backup saved by version ${ver(f).join('.')}`);   // (no "v" before it: the runner masks app versions written that way)
     console.log('  restore said:', said.join(' / ') || '(nothing)');
     console.log(`  kept: ${r.containers}/${st.containers.length} beds & pots, ${r.plantings}/${st.plantings.length} plantings, ${r.done}/${st.tasks.filter(t => t.done).length} jobs done, ${r.log}/${(st.log || []).length} log entries, ${r.photos}/${Object.keys(fixture.photos || {}).length} photos, ${r.crops}/${(st.customCrops || []).length} own crops, ${r.starts}/${(st.starts || []).length} seedling trays, note photo ${r.diaryPhoto}${st.drive ? `, Drive settings ${r.drive}` : ''}`);
     console.log(`  converted: data version ${r.dataVersion}, covers ${JSON.stringify(r.covers)}, products: ${r.products.join(', ')}`);
+    console.log(`  seeds: ${r.seeds.join(', ') || 'none'}${r.oldVarieties ? ' (old variety list still there!)' : ''} | thinning: ${r.thin.join(' / ') || 'none'}`);
     // every page, every bed and pot, every planting and its form
     const routes = ['#/', '#/cal', '#/log', '#/settings', '#/products', '#/map', '#/sow', '#/plan', '#/rotation', '#/seedlings', '#/review', '#/totals', '#/spend', '#/shop', '#/picksafe', '#/varieties', '#/timeline', '#/doctor']
       .concat(await pg.evaluate(() => [...S.containers.map(c => '#/container/' + c.id), ...S.plantings.flatMap(p => ['#/plant/' + p.id, '#/plant/' + p.id + '/edit'])]));

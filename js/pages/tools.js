@@ -8,10 +8,7 @@ import { morningSection } from '../core/notify.js';
 import { A, render, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { themeSettings } from '../core/theme.js';
-import { confirmBox } from '../core/ui.js';
 import { $, daysBetween, esc, niceDate, shortDate, todayStr } from '../core/util.js';
-import { CATALOG } from '../data/catalog.js';
-import { crop, ic, newCropDialog } from '../plants/crops.js';
 import { learnSection } from '../plants/learning.js';
 import { harvestTotalsSection } from '../records/review.js';
 import { IS_TEST } from '../core/site.js';
@@ -25,23 +22,14 @@ export function pageSettings() {
   A.relNotes = allReleaseNotes;
   A.copyMain = copyFromMainSite;
   A.import = () => $('#impf').click();
-  A.delCrop = async el => {
-    const id = el.dataset.id;
-    if (S.plantings.some(p => p.cropId === id)) return alert('This crop is used by a planting, so it can’t be deleted.');
-    if (!await confirmBox('Delete this custom crop?', 'Delete', true)) return;
-    S.customCrops = S.customCrops.filter(c => c.id !== id); await save(); render();
-  };
-  A.delVar = async el => { const { id, v } = el.dataset; S.customVarieties[id] = (S.customVarieties[id] || []).filter(x => x !== v); await save(); render(); };
-  A.newCrop = () => newCropDialog(() => render());
   A.persist = async () => { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist().catch(() => false); storageNote(true); };
-  const cv = Object.entries(S.customVarieties || {}).filter(([, l]) => l.length);
   A.lang = async el => { S.lang = el.dataset.v; await save(); render(); };
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
   const tile = (h, i, l) => `<a class="tile" href="${h}"><span>${i}</span>${l}</a>`;
   const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
   const html = `<h3 class="grp">Plan &amp; grow</h3><div class="tiles">
       ${tile('#/plan', '📅', 'Season plan')}${tile('#/rotation', '🔄', 'Rotation')}${tile('#/seedlings', '🌱', 'Seedlings')}${tile('#/sow', '🗓️', 'Sowing calendar')}
-      ${tile('#/products', '🧴', 'Products')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
+      ${tile('#/products', '📦', 'Products &amp; seeds')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
     <h3 class="grp">Records</h3><div class="tiles">
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     ${IS_TEST ? `<section><h3>🧪 Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
@@ -53,20 +41,12 @@ export function pageSettings() {
       <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
       <p class="hint" id="persist"></p><div id="snaps"></div></section>${driveSection()}</details>
-    <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>One daily job for pots &amp; bags, spaced by season and skipped after rain (needs the weather location below for the rain check).</p>
+    <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>Watering jobs for pots &amp; bags, each bed in the ground (they hold far more water, so much less often), indoor pots and seedlings — spaced by the temperature, and put off when enough rain has fallen or is forecast (needs the weather location for the rain).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
     <details class="set"><summary>🌤️ Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
     <details class="set"><summary>🎨 Appearance &amp; crop names</summary>${themeSettings()}    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section></details>
     <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
     <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
-    <details class="set"><summary>🌾 Crops, varieties &amp; catalogue</summary>    <section><h3>Custom crops</h3>
-      ${S.customCrops.length ? `<ul class="plist">${S.customCrops.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}</span><button class="link danger" data-act="delCrop" data-id="${c.id}">delete</button></li>`).join('')}</ul>` : '<p class="muted">None yet.</p>'}
-      <button class="btn small" data-act="newCrop">＋ Add crop</button></section>
-    <section><h3>Your varieties</h3>
-      ${cv.length ? `<ul class="plist">${cv.flatMap(([id, l]) => l.map(v => `<li>${ic(id)}<span class="grow">${esc(v)} <small>${esc(crop(id).en)}</small></span><button class="link danger" data-act="delVar" data-id="${id}" data-v="${esc(v)}">delete</button></li>`)).join('')}</ul>` : '<p class="muted">Varieties you type in that aren’t in the catalogue are remembered here.</p>'}</section>
-    <section><h3>Catalogue</h3><p class="muted">${CATALOG.length} built-in crops with about 5 varieties each. Values are typical starting points — always check the packet.</p>
-      <details><summary>Show crops</summary><ul class="plist">${CATALOG.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}<small>${c.varieties.map(esc).join('、')}</small></span></li>`).join('')}</ul></details></section>
-</details>
     <p class="hint center">Garden Planner · v${APP_VERSION}${IS_TEST ? ' · test site' : ''} · <a href="#/settings" data-act="relNotes">What’s new</a></p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));

@@ -37,6 +37,8 @@ function ddUntil(from, need, id, tempFn) {
 }
 // leaf-stage milestones (thinning, ready to plant out): catalogue days are warm-weather numbers, so use a fixed reference temperature
 function leafDate(id, emerge, leafDays, tempFn, factor) { const g = growParams(id); return ddUntil(emerge, Math.max(3, leafDays) * (g.tref - g.tb) * (factor || 1), id, tempFn); }
+// `days` of growth from a date, at the pace the temperatures there allow (a cold spell stretches them)
+export const growthDate = (id, from, days, containerId) => leafDate(id, from, days, tempFor(containerId));
 export const germAvg = id => { const g = crop(id).germ || [5, 10]; return (g[0] + g[1]) / 2; };
 export function thinEstimate(p) {
   const cr = crop(p.cropId); if (!cr.daysThin || !p.sowDate) return p.thinDate || '';
@@ -187,8 +189,12 @@ export function germDialog(p, when) {
 }
 
 // ---------- true-leaf counts ----------
+// data version 7: thinning advice saved on plantings from when it was in Japanese, in English
+const THIN_EN = {"芽かき – leave 2–3 stems at 10–15 cm tall": "Remove extra shoots: keep 2–3 stems when they're 10–15 cm tall", "本葉2–3枚 then 5–6枚": "At 2–3 true leaves, then again at 5–6", "本葉3–4枚": "At 3–4 true leaves", "初生葉が開いたら 2本立ち": "Down to 2 plants once the first leaves open", "本葉5–6枚で1本立ち": "Down to 1 plant at 5–6 true leaves", "本葉2–3枚": "At 2–3 true leaves", "本葉2–3枚 then 5枚": "At 2–3 true leaves, then again at 5", "本葉2–3枚で2本立ち": "Down to 2 plants at 2–3 true leaves", "本葉3–4枚で1本立ち": "Down to 1 plant at 3–4 true leaves", "本葉4–5枚": "At 4–5 true leaves", "本葉2枚で1本立ち": "Down to 1 plant at 2 true leaves"};
+export function migrateThinningText() { for (const p of S.plantings || []) if (THIN_EN[p.thinStage]) p.thinStage = THIN_EN[p.thinStage]; }
+// "at 2–3 true leaves" (or 本葉2–3枚, as older plantings say) → 2.5
 function leafTarget(text) {
-  const m = String(text || '').match(/本葉\s*(\d+)(?:\s*[–\-~〜]\s*(\d+))?\s*枚/);
+  const m = String(text || '').match(/(\d+)(?:\s*[–\-~〜]\s*(\d+))?\s*true leaves/i) || String(text || '').match(/本葉\s*(\d+)(?:\s*[–\-~〜]\s*(\d+))?\s*枚/);
   return m ? (m[2] ? (+m[1] + +m[2]) / 2 : +m[1]) : null;
 }
 export const lastLeaves = o => (o.leaves || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1)).pop() || null;

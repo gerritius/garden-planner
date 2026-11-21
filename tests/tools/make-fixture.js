@@ -113,7 +113,8 @@ const serve = root => http.createServer((q, r) => {
       await DB.putPhoto('fixphoto1', new Blob([bytes], { type: 'image/png' }));
       (cab.diary = cab.diary || []).push({ id: 'fixdiary1', date: '2026-11-10', note: 'Hearts starting to form', photo: 'fixphoto1', tags: [] });
       const pot = S.plantings.find(p => p.cropId === 'potato'); (pot.harvests = pot.harvests || []).push({ date: '2026-11-15', count: 4, note: 'first dig' });
-      (S.customVarieties = S.customVarieties || {}).garlic = ['Howaito Roppen'];
+      if (Array.isArray(S.seeds)) { const s = S.seeds.find(x => x.cropId === 'garlic' && x.variety === 'Howaito Roppen'); if (s) Object.assign(s, { maker: 'Takii', front: 'fixphoto1' }); else S.seeds.push({ id: 'sd_fix1', cropId: 'garlic', variety: 'Howaito Roppen', maker: 'Takii', front: 'fixphoto1', back: null, notes: '', added: '2026-10-01' }); }   // the seed library (1.28+)
+      else (S.customVarieties = S.customVarieties || {}).garlic = ['Howaito Roppen'];
       out.push('note with photo', 'harvest', 'variety');
       if (has('PRODUCTS') && !S.prodLib && !Array.isArray(S.myProducts)) { S.myProducts = PRODUCTS.map(p => p.id).filter(id => ['bokashi', 'chickenManure', 'oysterLime', 'paiBenicaV', 'cowCompost'].includes(id)); out.push('ticked products'); }
       if (has('PRODUCTS') && !S.prodLib) { S.plenty = ['chickenManure']; out.push('plenty of chicken manure'); }

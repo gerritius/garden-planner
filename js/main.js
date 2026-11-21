@@ -9,6 +9,7 @@ import { allowSaving, blank, S, save, setState } from './core/state.js';
 import { IS_TEST } from './core/site.js';
 import { applyTheme } from './core/theme.js';
 import { checkForUpdate, whatsNewOnce } from './core/updates.js';
+import { freshenWeather } from './climate/weather.js';
 import { $, go, todayStr } from './core/util.js';
 import { taskDialog, toggleTask } from './garden/tasks.js';
 
@@ -49,7 +50,9 @@ if (IS_TEST) { document.body.classList.add('site-test'); $('#top .bar').insertAd
   // new versions: what changed in this one (once), and a notice when a newer one is out
   whatsNewOnce();
   setTimeout(checkForUpdate, 4000); setInterval(checkForUpdate, 6 * 3600e3);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForUpdate(); });
+  // the forecast: fresh at start, when the app comes back to the front, and hourly
+  setTimeout(freshenWeather, 1000); setInterval(freshenWeather, 3600e3);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkForUpdate(); freshenWeather(); } });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 })();

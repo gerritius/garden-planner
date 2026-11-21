@@ -1,0 +1,4 @@
+list opened under the field: true | the pop-up scrolls: true
+after scrolling the pop-up a little, still under the field: true
+after scrolling the field out of view, the list closed: true
+errs []

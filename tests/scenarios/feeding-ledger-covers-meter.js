@@ -63,6 +63,6 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   // 7) meter DRY on a bag -> water today
   await pg.evaluate(async () => { container('g2').soil = [{ id: 'r1', date: todayStr(), from: 0, to: 40, moistLvl: 'DRY', salt: 'NOR', ph: 6.5 }]; await save(); });
   await pg.goto(U); await pg.waitForTimeout(300);
-  console.log('water', await pg.evaluate(() => { const t = S.tasks.find(t => t.kind === 'water' && !t.done); return t && t.due + ' ' + t.note; }));
+  console.log('water', await pg.evaluate(() => { const t = S.tasks.find(t => t.kind === 'water' && !t.group && !t.done); return t && t.due + ' ' + t.note; }));
   console.log('errs', errs); await b.close();
 })();

@@ -1,4 +1,4 @@
-# Runs the scenario tests on every push and pull request. The result shows as ✓ / ✗ next to each commit on GitHub.
+# Lints the app's modules and runs the scenario tests on every push and pull request. The result shows as ✓ / ✗ next to each commit on GitHub.
 name: Tests
 on:
   push:
@@ -14,6 +14,8 @@ jobs:
         with:
           node-version: 24
       - run: npm install
+      - name: Lint (a name used without importing it, unused code)
+        run: npm run lint
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - name: Keep the test output if something failed

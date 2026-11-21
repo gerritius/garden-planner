@@ -1,0 +1,336 @@
+// The planting form: crop, place, layout, dates, potting mix and starting fertiliser; re-using seed packet photos.
+
+import { DB } from '../core/db.js';
+import { compress, dropPhoto } from '../core/photos.js';
+import { A, draft, notFound, render, setChrome, setDraft } from '../core/router.js';
+import { S, save } from '../core/state.js';
+import { confirmBox } from '../core/ui.js';
+import { $, addDays, daysBetween, esc, num, shortDate, todayStr, uid, unitOpts } from '../core/util.js';
+import { HANDFUL_G } from '../data/catalog.js';
+import { Draw } from '../draw.js';
+import { lastMixKind, mixDefaults, mixDraftC, mixFormBits, saveMixChoice } from '../feeding/mix.js';
+import { baseFertNote, baseFertPlan, careJobs, FRUITING, jobAmount, jobAmountText } from '../feeding/plans.js';
+import { activeIn, container, decorate, endOf, gaps, isPlanned, noteVacated, occupants, planRotation } from '../garden/garden.js';
+import { gapAround, ideasDialog } from '../garden/ideas.js';
+import { planFormBits } from '../garden/planning.js';
+import { rotationNote } from '../garden/rotation.js';
+import { soilAdvice, soilLine, soilReadingAdvice } from '../garden/soil.js';
+import { syncTasks } from '../garden/tasks.js';
+import { allCrops, crop, newCropDialog, varieties } from '../plants/crops.js';
+import { harvestEstimate, thinEstimate } from '../plants/growth.js';
+import {
+  applyStart, linkStartOnSave, prefillFromStart, start, startChooser, startPlanted, startReadyNote, startWhere
+} from '../plants/seedlings.js';
+import { myProducts } from '../products/library.js';
+
+// ---------- the form ----------
+export const LAYOUTS = [['rows', 'Rows'], ['continuous', 'Continuous line (drill)'], ['staggered', 'Staggered rows (offset, e.g. 3–4–3)'],
+  ['scatter', 'Scattered / broadcast'], ['center', 'Single plant in the centre'], ['diamond', 'Diamond (4 plants)'], ['free', 'Custom – place each plant by hand']];
+export function applyCrop(d, cr, c) {
+  d.cropId = cr.id; d.method = cr.method || 'seed';
+  let lay = cr.layout || 'rows';
+  if (c && c.type !== 'bed') lay = cr.pot || ((cr.spread || 0) >= 35 ? 'center' : lay);
+  d.layout = lay;
+  d.depth = cr.depth ?? ''; d.rowSp = cr.rowSp ?? ''; d.plantSp = cr.sowSp ?? '';
+  d.thinStage = cr.thinStage || ''; d.thinSp = cr.thinSp ?? ''; d.spread = cr.spread ?? '';
+  d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
+  d.daysFrom = cr.daysHarvest || ''; d.daysTo = cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''; d.keepUntil = '';
+  d.dir = cr.dir || 'across'; d.rows = ''; d.variety = ''; d.sj = {};
+  if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, mixDraftC(c, d), d.from, d.to, d.sowDate); d.fertAuto = true; } catch (e) { console.warn(e); } }
+  recalc(d);
+}
+export function recalc(d) {
+  if (!d.sowDate) return;
+  if (!d.harvestManual && d.daysHarvest) d.harvestDate = harvestEstimate({ id: d.id, cropId: d.cropId, sowDate: d.sowDate, method: d.method, germ: d.germ, daysFrom: num(d.daysFrom), containerId: d.containerId, seededOn: d.seededOn || (d.useStart && start(d.useStart) ? start(d.useStart).sowDate : null) });
+  if (!d.thinManual && d.daysThin && d.method === 'seed' && d.thinSp) d.thinDate = thinEstimate({ cropId: d.cropId, sowDate: d.sowDate, method: 'seed', germ: d.germ });
+}
+function setPath(o, path, v) {
+  const ks = path.split('.'); let cur = o;
+  for (let i = 0; i < ks.length - 1; i++) cur = cur[ks[i]];
+  cur[ks[ks.length - 1]] = v;
+}
+export function pagePlantForm(p, c, q) {
+  const isNew = !p;
+  if (!isNew) c = container(p.containerId);
+  if (!c) return { html: notFound() };
+  const L = Draw.dims(c).L;
+  if (!draft) {
+    if (isNew) {
+      const g = gaps(c)[0] || [0, L];
+      setDraft({ containerId: c.id, from: num(q.get('from')) ?? g[0], to: num(q.get('to')) ?? g[1], sowDate: todayStr(), fert: [], series: [], notes: '', photos: {}, newPhotos: {}, removePhotos: {} });
+      Object.assign(draft, { cropId: '', method: 'seed', layout: c.type === 'bed' ? 'rows' : 'center', depth: '', rowSp: '', plantSp: '', rows: '', thinStage: '', thinSp: '', spread: '', variety: '' });
+      if (q.get('crop')) applyCrop(draft, crop(q.get('crop')), c);
+      if (q.get('date')) { draft.sowDate = q.get('date'); recalc(draft); }
+      else if (q.get('plan') && !q.get('start')) { draft.sowDate = addDays(todayStr(), 30); recalc(draft); }
+      if (q.get('method') && ['seed', 'seedling'].includes(q.get('method'))) { draft.method = q.get('method'); recalc(draft); }
+      if (q.get('raise')) draft.raise = q.get('raise');
+      if (q.get('start')) prefillFromStart(draft, q);
+      if (q.get('usestart') && start(q.get('usestart'))) applyStart(draft, start(q.get('usestart')), c);
+    } else {
+      setDraft(JSON.parse(JSON.stringify(p))); draft.newPhotos = {}; draft.removePhotos = {};
+      draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
+      draft.harvestManual = true; draft.thinManual = true; draft._pid = p.id;
+    }
+    if (c.type !== 'bed') { if (isNew) delete draft.mixFresh; mixDefaults(draft, c); if (draft.fertAuto && draft.cropId) try { draft.fert = baseFertPlan(draft.cropId, mixDraftC(c, draft), draft.from, draft.to, draft.sowDate); } catch (e) { console.warn(e); } }
+  }
+  const d = draft;
+  setChrome(isNew ? 'New planting' : 'Edit planting', { back: true, kicker: c.name });
+  const cr = d.cropId ? crop(d.cropId) : null;
+  const seed = d.method === 'seed';
+  const rowish = ['rows', 'continuous', 'staggered'].includes(d.layout);
+  const cropOpts = `<option value="">Choose a crop…</option>` + allCrops().map(x => `<option value="${x.id}"${x.id === d.cropId ? ' selected' : ''}>${esc(x.en)}${x.ja ? ' ' + esc(x.ja) : ''}</option>`).join('') + `<option value="__new">＋ Add a new crop…</option>`;
+  const ph = slot => {
+    const nb = d.newPhotos[slot], id = d.photos[slot];
+    const img = nb ? `<img src="${URL.createObjectURL(nb)}">` : id && !d.removePhotos[slot] ? `<img data-photo="${id}">` : `<span>＋ ${slot === 'front' ? 'Front' : 'Back'}</span>`;
+    return `<label class="phslot ph">${img}<input type="file" accept="image/*" data-slot="${slot}" hidden></label>${(nb || (id && !d.removePhotos[slot])) ? `<button type="button" class="link" data-act="rmPhoto" data-slot="${slot}">remove</button>` : ''}`;
+  };
+  const moreSummary = () => {
+    const lay = (LAYOUTS.find(x => x[0] === d.layout) || [, ''])[1].replace(/\s*[–(].*$/, '');
+    const bits = [lay && `${lay}${d.plantSp ? ` ${d.plantSp} cm` : ''}`];
+    if (seed && d.thinDate) bits.push(`thin ~${shortDate(d.thinDate)}`);
+    if (d.harvestDate) bits.push(`harvest ~${shortDate(d.harvestDate)}`);
+    if (d.fert.length) bits.push(d.fert.length === 1 ? '1 fertiliser' : `${d.fert.length} fertilisers`);
+    const nj = (isNew && cr ? careJobs(cr.id).filter((j, i) => !(d.sj && d.sj[i] === false)).length : 0) + d.series.length;
+    if (nj) bits.push(`${nj} job${nj > 1 ? 's' : ''}`);
+    return bits.filter(Boolean).join(' · ');
+  };
+  const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${d.startN > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
+    <div class="preview big" id="pprev"></div>
+    <fieldset><legend>Crop</legend>
+      ${isNew && !d.startId ? startChooser(d) : ''}
+      <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
+      ${isNew && !d.startId ? `<button type="button" class="link" data-act="formIdeas">💡 What could go here${d.sowDate > todayStr() ? ' then' : ' now'}?</button>` : ''}
+      <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="e.g. ${esc(cr ? (cr.varieties || [])[0] || '' : '')}" autocomplete="off">
+        <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
+        ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}</label>
+      <label>Planting type<div class="seg">${[['seed', 'From seed'], ['seedling', 'Seedlings / tubers']].map(([v, l]) => `<button type="button" data-act="method" data-v="${v}" class="${d.method === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>
+    </fieldset>
+    <fieldset><legend>Where &amp; when</legend>
+      <div id="rotWarn"></div>
+      ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
+        `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
+      <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
+      <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d)}
+      <div id="mixBits">${mixFormBits(d, c)}</div>
+      ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method, c, d.from, d.to) : ''}
+    </fieldset>
+    <details class="fold more" id="pfMore"${d._more ? ' open' : ''}><summary>More options <small>${esc(moreSummary())}</small></summary>
+    <fieldset><legend>Layout &amp; spacing</legend>
+      <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
+      ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
+      ${seed ? `<label>Sowing depth (cm)<input name="depth" type="number" step="0.1" inputmode="decimal" value="${esc(d.depth)}"></label>` : ''}
+      <div class="two">
+        <label>${seed ? 'Sowing distance' : 'Spacing between plants'} (cm)<input name="plantSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.plantSp)}"></label>
+        ${rowish ? `<label>Between rows (cm)<input name="rowSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.rowSp)}"></label>` : ''}
+      </div>
+      ${rowish ? `<label>Row direction<select name="dir"><option value="across"${d.dir !== 'along' ? ' selected' : ''}>Across – rows stacked down the long side</option><option value="along"${d.dir === 'along' ? ' selected' : ''}>Lengthways – rows run down the long side</option></select></label>` : ''}
+      ${rowish ? `<label>Number of rows<input name="rows" type="number" min="1" inputmode="numeric" value="${esc(d.rows)}" placeholder="auto">
+        <small><span id="fitTxt"></span>If you enter a number, the rows are spread evenly between the margins.</small></label>` : ''}
+      <small class="hint">Rows and plants start at the edge margin and are spread evenly, so actual spacing is never less than what you enter.</small>
+    </fieldset>
+    ${seed ? `<fieldset><legend>Thinning</legend>
+      <label>When to thin<input name="thinStage" value="${esc(d.thinStage)}" placeholder="e.g. at 3 true leaves"></label>
+      <div class="two"><label>Thin to (cm)<input name="thinSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.thinSp)}"></label>
+      <label>Approx. date<input name="thinDate" type="date" value="${esc(d.thinDate || '')}" data-manual="thinManual"></label></div>
+      <small class="hint">The date is estimated from when they come up and the temperatures, and updates by itself — unless you change it here. Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
+    ${isNew && cr && careJobs(cr.id).length ? `<fieldset><legend>Suggested jobs</legend>
+      ${careJobs(cr.id).map((j, i) => `<label class="inl chkline"><input type="checkbox" name="sj.${i}"${d.sj && d.sj[i] === false ? '' : ' checked'}> <span>${esc(j[0])} <small>${j[1] ? `day ${j[1]}` : 'at planting'}${j[2] ? ` · then every ${j[2]} ${j[3]}${j[2] > 1 ? 's' : ''}` : ''}${esc(jobAmountText(j))}</small></span></label>`).join('')}
+      <small class="hint">Untick any you don’t do. They become jobs on this crop’s page and the calendar.</small></fieldset>` : ''}
+    <fieldset><legend>Harvest</legend>
+      <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
+      <label>Mature size (cm across)<input name="spread" type="number" inputmode="decimal" value="${esc(d.spread)}"></label></div>
+      <div class="two"><label>Packet: days to harvest, from<input name="daysFrom" type="number" inputmode="numeric" value="${esc(d.daysFrom ?? (cr ? cr.daysHarvest : ''))}"></label><label>to<input name="daysTo" type="number" inputmode="numeric" value="${esc(d.daysTo ?? (cr && cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''))}"></label></div>
+      <label>Keeps until (optional)<input name="keepUntil" type="date" value="${esc(d.keepUntil || '')}"><small>Leave empty and the app works it out from the crop and the temperatures — cold weather lets roots and brassicas hold much longer.</small></label>
+      ${cr && cr.daysHarvest ? `<small class="hint">Estimated from the catalogue (about ${cr.daysHarvest} days from ${seed || (cr.method === 'seed' && (d.startId || d.useStart)) ? 'sowing' : 'planting'} at the usual time of year${cr.method === 'seed' && (d.startId || d.useStart) ? ', counted from the tray sowing' : ''}) and the temperatures — colder weather pushes it later. It updates by itself unless you change it here to match the packet.</small>` : ''}
+    </fieldset>
+    <fieldset><legend>Starting fertiliser</legend>
+      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d), d.sowDate))}.</p>` : ''}
+      ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
+        <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
+      <datalist id="fertNames">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist>
+      <button type="button" class="btn small" data-act="addFert">＋ Add fertiliser</button>
+      <small class="hint">Units: g, handfuls (1 handful ≈ ${HANDFUL_G} g of granular fertiliser), mL or L.</small>
+    </fieldset>
+    <fieldset><legend>Repeating jobs</legend>
+      ${d.series.map((s, i) => `<div class="series">
+        <div class="fert">${!s.product ? `<input name="series.${i}.title" value="${esc(s.title || '')}" placeholder="Job (e.g. Earth up 土寄せ)">` : `<input name="series.${i}.product" value="${esc(s.product)}"><input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
+        <select name="series.${i}.unit">${unitOpts(s.unit)}</select>`}<button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
+        <div class="rep-row"><select name="series.${i}.every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${+s.every === n ? ' selected' : ''}>${n === 0 ? 'Once' : 'Every ' + n}</option>`).join('')}</select>
+        ${+s.every > 0 ? `<select name="series.${i}.per">${['day', 'week', 'month'].map(u => `<option value="${u}"${s.per === u ? ' selected' : ''}>${u}${+s.every > 1 ? 's' : ''}</option>`).join('')}</select>` : ''}
+        <label class="inl">${+s.every > 0 ? 'from' : 'on'} <input type="date" name="series.${i}.start" value="${esc(s.start || '')}"></label>
+        ${+s.every > 0 ? `<label class="inl">until <input type="date" name="series.${i}.end" value="${esc(s.end || '')}"></label>` : ''}</div></div>`).join('')}
+      <button type="button" class="btn small" data-act="addSeries">＋ Add repeating job</button>
+      <small class="hint">Fertiliser and liquid feeds are planned from the crop’s Feeding card (📅 Feeding plan), so they’re counted and can’t overfeed.</small>
+      <small class="hint">Repeating jobs: the next one is due counted from the day you actually tick it off.</small>
+    </fieldset>
+    <fieldset><legend>Packet &amp; notes</legend>
+      <label>Packet photos<div class="phrow">${ph('front')}${ph('back')}</div></label>
+      ${packetPicker(d)}
+      <label>Notes<textarea name="notes" rows="3">${esc(d.notes || '')}</textarea></label>
+    </fieldset>
+    </details>
+    <button class="btn primary wide" type="submit">${isNew ? 'Save planting' : 'Save changes'}</button>
+  </form>`;
+
+  const read = () => {
+    d.sj = d.sj || {};
+    for (const el of $('#pf').elements) if (el.name) setPath(d, el.name, el.type === 'checkbox' ? el.checked : el.value);
+    d.from = num(d.from) ?? 0; d.to = num(d.to) ?? L;
+    if (document.activeElement && /^fert\./.test(document.activeElement.name || '')) d.fertAuto = false;
+  };
+  const preview = () => {
+    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
+    tmp.thinned = p ? p.thinned : false;
+    if (tmp.layout === 'free' && !(tmp.positions || []).length) tmp.positions = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
+    const planMode = d.sowDate > todayStr();
+    const others = decorate(planMode ? occupants(c.id, 0, 1e9, d.sowDate, d.sowDate, p && p.id) : activeIn(c.id).filter(x => !p || x.id !== p.id));
+    const vw = Math.min(window.innerWidth, 640) - 48;
+    const ft = $('#fitTxt'); if (ft) { const n = Draw.fitRows(c, tmp); ft.textContent = n ? `${n} row${n > 1 ? 's' : ''} fit at ${tmp.rowSp} cm. ` : ''; $('#pf').rows.placeholder = n ? 'auto: ' + n : 'auto'; }
+    const rw = $('#rotWarn');
+    if (rw) { const rn = planMode ? planRotation(c, d.from, d.to, d.cropId, d.sowDate, p && p.id) : rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; const sr = d.cropId ? soilReadingAdvice(c, d.from, d.to, d.cropId) : null; if (sr) { rw.innerHTML += `<p class="soiln">🧪 ${sr.bits.map(esc).join(' ')}</p>`; if (!rw.className) rw.className = 'note'; }
+    const sa = soilAdvice(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); if (sa) { rw.innerHTML += `<p class="soiln">🪱 ${sa.text}</p>`; if (!rn || !rn.same) rw.className = sa.level === 'warn' ? 'warn' : 'note'; } }
+    $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
+    // also show a "grown" preview at harvest
+  };
+  A.searchVar = () => { read(); const q = `${cr ? cr.ja : ''} ${d.variety || ''} 種 まき方`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
+  A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
+  A.raise = el => { read(); d.raise = el.dataset.v; render(); };
+  A.useStart = el => { read(); applyStart(d, start(el.dataset.id), c); render(); };
+  A.usePacket = el => { read(); usePacket(d, el.dataset.k, c); render(); };
+  A.addFert = () => { read(); d.fertAuto = false; d.fert.push({ product: '', amount: '', unit: 'g' }); render(); };
+  A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
+  A.addSeries = () => { read(); d.series.push({ id: uid(), title: '', every: 1, per: 'week', start: addDays(d.sowDate || todayStr(), 14), end: '' }); render(); };
+  A.rmSeries = el => { read(); d.series.splice(+el.dataset.i, 1); render(); };
+  A.formIdeas = () => {
+    read(); const g = gapAround(c, d.from, d.to, d.sowDate || todayStr());
+    ideasDialog(c, d.from, d.to, g && g.s > (d.sowDate || '') ? g.s : (d.sowDate || todayStr()), g ? g.e : null, (id, o) => {
+      applyCrop(d, crop(id), c); d.sowDate = o.P; d.method = o.kind === 'sow' ? 'seed' : 'seedling';
+      if (o.P > todayStr() && o.kind !== 'sow') d.raise = o.kind === 'raise' ? 'tray' : 'buy';
+      if (c.type !== 'bed') { delete d.mixFresh; mixDefaults(d, c); }
+      recalc(d); render();
+    });
+  };
+  A.mixF = el => { read(); d.mixUser = true; d.mixFresh = el.dataset.v === '1'; if (d.mixFresh && !d.mixKind) d.mixKind = lastMixKind(); if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); render(); };
+  A.rmPhoto = el => { read(); const s = el.dataset.slot; if (d.newPhotos[s]) delete d.newPhotos[s]; else d.removePhotos[s] = true; render(); };
+
+  const after = () => {
+    const f = $('#pf');
+    const more = $('#pfMore'); if (more) more.addEventListener('toggle', () => { d._more = more.open; });
+    preview();
+    f.addEventListener('input', e => {
+      const n = e.target.name || '';
+      if (e.target.dataset.manual) d[e.target.dataset.manual] = true;
+      if (n === 'thinDate') d.thinUser = true;
+      if (n === 'harvestDate') d.hvUser = true;
+      read();
+      if (n === 'sowDate' || n === 'thinSp' || n === 'daysFrom') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
+      if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); const mb = $('#mixBits'); if (mb && !d.mixUser) { delete d.mixFresh; mb.innerHTML = mixFormBits(d, c); } }
+      preview();
+    });
+    f.addEventListener('change', async e => {
+      const n = e.target.name || '';
+      if (n === 'cropId') {
+        read();
+        if (e.target.value === '__new') { e.target.value = d.cropId; return newCropDialog(id => { applyCrop(d, crop(id), c); d.method = 'seed'; render(); }); }
+        const keepSow = d.sowDate; applyCrop(d, crop(e.target.value), c); d.sowDate = keepSow; recalc(d); return render();
+      }
+      if (n === 'layout' || n === 'dir' || /\.every$/.test(n)) { read(); return render(); }
+      if (n === 'mixKind') { read(); d.mixUser = true; if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); return render(); }
+      if (e.target.dataset.slot) {
+        const file = e.target.files[0]; if (!file) return;
+        read(); d.newPhotos[e.target.dataset.slot] = await compress(file); delete d.removePhotos[e.target.dataset.slot]; render();
+      }
+    });
+    f.addEventListener('submit', async e => {
+      e.preventDefault(); read();
+      if (!d.cropId) return alert('Choose a crop first.');
+      if (!(d.to > d.from)) return alert('“To” must be more than “From”.');
+      if (d.from < 0 || d.to > L + 0.01) return alert(`Section must be within 0–${L} cm.`);
+      if (d.sowDate > todayStr()) {
+        const hd = d.harvestDate && d.harvestDate > d.sowDate ? d.harvestDate : addDays(d.sowDate, 60);
+        const occ = occupants(c.id, d.from, d.to, d.sowDate, hd, p && p.id);
+        if (occ.length && !await confirmBox(`${occ.map(x => `<b>${esc(crop(x.cropId).en)}</b> (${x.from}–${x.to} cm) ${isPlanned(x) ? `is planned there from ${shortDate(x.sowDate)}` : `will probably be there until about ${shortDate(endOf(x))}`}`).join('<br>')}.<br>Save the plan anyway?`, 'Save plan')) return;
+      } else {
+        const clash = activeIn(c.id).find(x => (!p || x.id !== p.id) && x.from < d.to - 0.01 && x.to > d.from + 0.01);
+        if (clash) return alert(`That overlaps ${crop(clash.cropId).en} (${clash.from}–${clash.to} cm). Adjust From/To.`);
+      }
+      await savePlanting(p, d, c);
+    });
+  };
+  return { html, after };
+}
+async function savePlanting(p, d, c) {
+  const isNew = !p;
+  if (isNew) { p = { id: uid(), containerId: c.id, status: 'active', created: todayStr(), thinned: false, photos: {} }; S.plantings.push(p); }
+  const fields = ['cropId', 'variety', 'method', 'layout', 'dir', 'sowDate', 'thinStage', 'thinDate', 'harvestDate', 'notes'];
+  for (const k of fields) p[k] = d[k] || '';
+  if (d.thinUser) p.thinFixed = !!d.thinDate;
+  if (d.hvUser) p.harvestFixed = !!d.harvestDate;
+  p.daysFrom = num(d.daysFrom); p.daysTo = num(d.daysTo); p.keepUntil = d.keepUntil || '';
+  saveMixChoice(p, d, c);
+  if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
+  p.raise = p.status === 'planned' && p.method === 'seedling' ? (d.raise || 'buy') : (p.raise || '');
+  const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
+  for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
+  if (!isNew && p.status === 'active') noteVacated(p, oldFrom, oldTo);
+  if (p.method !== 'seed') { p.depth = null; p.thinSp = null; p.thinDate = ''; p.thinStage = ''; }
+  p.fert = (d.fert || []).filter(f => f.product || f.amount).map(f => ({ product: f.product, amount: num(f.amount), unit: f.unit || 'g' }));
+  const oldSeries = p.series || [];
+  p.series = (d.series || []).filter(s => s.product || s.amount || s.title).map(s => {
+    const o = oldSeries.find(x => x.id === s.id) || {};
+    return Object.assign(o, { id: s.id || uid(), title: s.title || '', product: s.product, amount: num(s.amount), unit: s.unit || 'mL', every: +s.every || 0, per: s.per || 'week', start: s.start || p.sowDate, end: s.end || '', customTitle: o.customTitle && s.product === o.product ? o.customTitle : '' });
+  });
+  if (isNew) {
+    const cj = careJobs(p.cropId);
+    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: addDays(p.sowDate || todayStr(), j[1] || 0), end: /Pest check|Side-dress \(追肥\)$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
+  }
+  if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;
+  // photos
+  p.photos = p.photos || {};
+  for (const slot of ['front', 'back']) {
+    const old = p.photos[slot];
+    let want = d.removePhotos[slot] ? null : (d.photos || {})[slot] || null;
+    if (d.newPhotos[slot]) { want = uid(); await DB.putPhoto(want, d.newPhotos[slot]); }
+    if (want) p.photos[slot] = want; else delete p.photos[slot];
+    if (old && old !== want) await dropPhoto(old);
+  }
+  // remember custom variety
+  if (p.variety && !varieties(p.cropId).includes(p.variety)) {
+    S.customVarieties = S.customVarieties || {};
+    (S.customVarieties[p.cropId] = S.customVarieties[p.cropId] || []).push(p.variety);
+  }
+  if (isNew) linkStartOnSave(d, p);
+  if (isNew && d.startId) startPlanted(d, p);
+  syncTasks(p);
+  await save();
+  setDraft(null);
+  if (isNew) location.replace('#/plant/' + p.id); else history.back();
+}
+
+// ---------- re-using seed packet photos ----------
+function packets(excludeKey) {
+  const seen = new Map();
+  for (const p of S.plantings) {
+    const ph = p.photos || {}; if (!ph.front && !ph.back) continue;
+    const key = (ph.front || '') + '|' + (ph.back || ''); if (key === excludeKey) continue;
+    const e = seen.get(key) || { key, front: ph.front || null, back: ph.back || null, cropId: p.cropId, variety: p.variety || '', uses: [] };
+    e.uses.push(p); seen.set(key, e);
+  }
+  return [...seen.values()];
+}
+function packetPicker(d) {
+  const cur = ((d.photos || {}).front || '') + '|' + ((d.photos || {}).back || '');
+  const list = packets(cur).sort((a, b) => ((b.cropId === d.cropId) - (a.cropId === d.cropId)) || ((b.variety === d.variety) - (a.variety === d.variety)));
+  if (!list.length) return '';
+  const mine = list.filter(x => !d.cropId || x.cropId === d.cropId), rest = list.filter(x => d.cropId && x.cropId !== d.cropId);
+  const chip = x => `<button type="button" class="pkt" data-act="usePacket" data-k="${esc(x.key)}"><img data-photo="${x.front || x.back}" alt=""><span>${esc(crop(x.cropId).en)}${x.variety ? `<small>${esc(x.variety)}</small>` : ''}</span></button>`;
+  return `<details class="pktpick"${mine.length && !(d.photos || {}).front && !(d.photos || {}).back ? ' open' : ''}><summary>Use a packet you’ve already photographed${mine.length ? ` (${mine.length})` : ''}</summary>
+    <div class="pkts">${mine.map(chip).join('')}${rest.length ? `${mine.length ? '<small class="muted pktsep">Other crops</small>' : ''}${rest.slice(0, 12).map(chip).join('')}` : ''}</div></details>`;
+}
+function usePacket(d, key, c) {
+  const x = packets().find(e => e.key === key); if (!x) return;
+  d.photos = Object.assign({}, d.photos, { front: x.front || undefined, back: x.back || undefined });
+  for (const s of ['front', 'back']) { if (!d.photos[s]) delete d.photos[s]; delete d.newPhotos[s]; delete d.removePhotos[s]; }
+  if (!d.cropId) { applyCrop(d, crop(x.cropId), c); }
+  if (!d.variety && x.cropId === d.cropId) d.variety = x.variety;
+}

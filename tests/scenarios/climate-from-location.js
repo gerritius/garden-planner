@@ -15,7 +15,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.evaluate(async () => { delete S.climate; S.weather = null; S.sowOverride = {}; S.plantings = []; S.tasks = []; await save(); });
   await pg.goto(U + '#/sow'); await pg.waitForTimeout(500);
   const row = async id => pg.evaluate(id => [...document.querySelectorAll(`.sowrow i[data-id=${id}]`)].map((e, i) => e.classList.contains('on') ? i + 1 : 0).filter(Boolean).join(','), id);
-  console.log('kicker:', await pg.textContent('#kicker'), '| tomato', await row('tomato'), '| garlic', await row('garlic'), '| timing', await pg.evaluate(() => { const t0 = performance.now(); _climKey = ''; applyClimate(); return Math.round(performance.now() - t0) + ' ms'; }));
+  console.log('kicker:', await pg.textContent('#kicker'), '| tomato', await row('tomato'), '| garlic', await row('garlic'), '| timing', await pg.evaluate(() => { const t0 = performance.now(); applyClimate(true); return Math.round(performance.now() - t0) + ' ms'; }));
   await pg.screenshot({ path: `${SP}/sowcal.png`, fullPage: true });
   // set a location → climate fetched automatically
   await pg.evaluate(async () => { S.weather = { lat: -37.81, lon: 144.96, name: 'Melbourne' }; await save(); });

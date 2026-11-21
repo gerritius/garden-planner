@@ -15,6 +15,7 @@ You need [Node.js](https://nodejs.org) (version 22 or later).
 npm install                          # once: installs Playwright, the browser driver
 npx playwright install chromium      # once: downloads the browser it drives
 npm test                             # run all scenarios (about 5 minutes)
+npm run lint                         # check the code: names used without importing them, unused code
 npm test -- feeding                  # only scenarios with "feeding" in the name
 ```
 
@@ -38,6 +39,9 @@ They also run automatically on GitHub for every push (see `.github/workflows/tes
   other outside request is blocked.
 - **Screenshots** some scenarios take go to `tests/output/<name>/` (not kept in git) — handy for checking layouts by eye.
 - Each scenario starts with an empty app in a fresh browser, so they don't affect each other.
+- **Reaching into the app**: the app is made of ES modules, so its functions aren't globals. `tests/lib.js` adds a small
+  generated script to the page that makes every module's exports available by name, so a scenario can still write
+  `pg.evaluate(() => crop('tomato'))` or change `S` and call `save()`.
 
 ## What each scenario covers
 
@@ -67,6 +71,7 @@ They also run automatically on GitHub for every push (see `.github/workflows/tes
 | `log-sprays-frost-alerts` | Logging sprays (days to wait before picking), frost jobs, weather alerts |
 | `microclimate-and-learning` | Sun/shade/indoors changing estimates; learning from your own records |
 | `notes-bed-buttons-quick-add` | The note dialog (with photo), bed page buttons, Quick add |
+| `offline-files` | Every file the app loads is on the service worker's offline list, and every file on it exists |
 | `plant-size-in-drawing` | How big plants are drawn as they grow |
 | `planting-form-more-options` | The short planting form and its "More options" |
 | `potato-harvest-dates` | Potato harvest dates for different planting dates |

@@ -1,0 +1,133 @@
+// Climate from your location: 10 years of daily records for your weather location (Open-Meteo archive) → usual
+// temperature and rainfall for each month. Until it's fetched (or with no location) the built-in western Tokyo values
+// are used. Also growth speed from temperature, and the microclimate of each bed or pot (indoors, sun, size).
+
+import { A, render } from '../core/router.js';
+import { S, save } from '../core/state.js';
+import { modal } from '../core/ui.js';
+import { $, addDays, daysBetween, esc, pd, todayStr } from '../core/util.js';
+import { _season } from '../feeding/stages.js';
+import { container } from '../garden/garden.js';
+import { _ideaCache } from '../garden/ideas.js';
+import { _need, growParams, HEADING, WARM_LEAF } from '../plants/growth.js';
+import { applySowWindows, MONTHS } from './sowing.js';
+
+// ---------- usual temperature and rain for each month ----------
+// Catalogue "days to thin" assume good growing weather (~18 °C for cool-season crops, ~24 °C for warm-season).
+// Growth is counted in degree-days above a base temperature, so cold weeks add very little.
+export const NORMAL_T = [5.2, 5.7, 8.7, 13.9, 18.2, 21.4, 25.0, 26.4, 22.8, 17.5, 12.1, 7.6];   // monthly mean, western Tokyo (approx.)
+export function dayTemp(d, daily) {
+  if (S.tempHist && S.tempHist[d] != null) return S.tempHist[d];
+  const i = daily && daily.time ? daily.time.indexOf(d) : -1;
+  if (i >= 0 && daily.temperature_2m_max[i] != null) return (daily.temperature_2m_max[i] + daily.temperature_2m_min[i]) / 2;
+  return normalT(d);
+}
+export const warming = d => normalT(addDays(d, 30)) > normalT(d) + 1;   // spring-like: getting warmer over the next month
+export function normalT(d) {   // smooth daily normal from monthly means
+  const x = pd(d), m = x.getMonth(), f = (x.getDate() - 15) / 30, n = f >= 0 ? (m + 1) % 12 : (m + 11) % 12;
+  return NORMAL_T[m] + (NORMAL_T[n] - NORMAL_T[m]) * Math.abs(f);
+}
+// unused nitrogen washes out with water passing through: pots with each watering (and rain if outdoors), beds mostly with rain
+const RAIN_MONTH = [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51];   // normal mm per month, western Tokyo (approx.)
+export const normalRain = d => { const x = pd(d); return RAIN_MONTH[x.getMonth()] / new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate(); };
+// Tools → Weather location: what the climate is based on
+export function climateSection() {
+  A.climRefresh = async () => { const el = $('#climst'); if (el) el.textContent = 'Fetching…'; const ok = await ensureClimate(true); if (!ok && el) el.textContent = 'Couldn’t fetch it — are you online?'; };
+  const c = S.climate, t = NORMAL_T, rows = MONTHS.map((m, i) => `<span><i>${m[0]}</i>${Math.round(t[i])}°</span>`).join('');
+  return `<section><h3>Climate</h3><p>Sowing months, growth and harvest estimates, frost and watering use the usual weather for <b>${esc(climateName())}</b>.</p>
+    <div class="climrow">${rows}</div>
+    ${S.weather && S.weather.lat != null ? `<div class="btnrow"><button class="btn small" data-act="climRefresh">↻ ${c ? 'Refresh' : 'Get'} climate for ${esc(S.weather.name || 'my location')}</button></div><p class="small muted" id="climst"></p>` : '<p class="hint">Set your location above and the app fetches the usual temperatures and rainfall there (10 years of records).</p>'}</section>`;
+}
+
+// ---------- climate from your location ----------
+export const TOKYO_T = NORMAL_T.slice(), TOKYO_RAIN = RAIN_MONTH.slice();
+let _climKey = '', _climBusy = false;
+export function clearSeasonCaches() {
+  for (const k in _need) delete _need[k];
+  for (const k in _season) delete _season[k];
+  _ideaCache.clear();
+}
+export function applyClimate(force) {
+  const c = S.climate && Array.isArray(S.climate.t) && S.climate.t.length === 12 ? S.climate : null;
+  const t = c ? c.t : TOKYO_T, r = c ? c.rain : TOKYO_RAIN, key = t.join(',') + '|' + JSON.stringify(S.sowOverride || {});
+  if (!force && key === _climKey) return;
+  _climKey = key;
+  for (let i = 0; i < 12; i++) { NORMAL_T[i] = t[i]; RAIN_MONTH[i] = r[i]; }
+  clearSeasonCaches();
+  applySowWindows();
+}
+export async function ensureClimate(force) {
+  const w = S.weather; if (!w || w.lat == null || _climBusy || !navigator.onLine) return false;
+  const c = S.climate;
+  if (!force && c && Math.abs(c.lat - w.lat) < 0.15 && Math.abs(c.lon - w.lon) < 0.15 && daysBetween(c.fetched, todayStr()) < 365) return false;
+  _climBusy = true;
+  try {
+    const y = new Date().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean,precipitation_sum&timezone=auto`;
+    const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status);
+    const j = await r.json(), d = j.daily; if (!d || !d.time) throw new Error('no data');
+    const tSum = Array(12).fill(0), tN = Array(12).fill(0), rain = {};
+    d.time.forEach((ds, i) => { const m = +ds.slice(5, 7) - 1, t = d.temperature_2m_mean[i], p = d.precipitation_sum[i];
+      if (t != null) { tSum[m] += t; tN[m]++; }
+      if (p != null) { const k = ds.slice(0, 7); rain[k] = (rain[k] || 0) + p; } });
+    const rSum = Array(12).fill(0), rN = Array(12).fill(0);
+    Object.entries(rain).forEach(([k, v]) => { const m = +k.slice(5, 7) - 1; rSum[m] += v; rN[m]++; });
+    const t = tSum.map((s, i) => tN[i] ? Math.round(s / tN[i] * 10) / 10 : null), rr = rSum.map((s, i) => rN[i] ? Math.round(s / rN[i]) : null);
+    if (t.some(v => v == null)) throw new Error('incomplete');
+    S.climate = { lat: w.lat, lon: w.lon, name: w.name || '', t, rain: rr, years: `${y - 10}–${y - 1}`, fetched: todayStr() };
+    applyClimate(); await save(); render();
+    return true;
+  } catch (e) { console.warn('climate', e); return false; } finally { _climBusy = false; }
+}
+const climateName = () => S.climate ? `${S.climate.name || 'your location'} (${S.climate.years} averages)` : 'western Tokyo (built-in — set your location for your own)';
+
+// ---------- growth speed ----------
+// Warm-season crops (tomatoes, peppers, cucurbits, beans, corn…) don't speed up in a straight line with temperature: they
+// barely grow below ~8 °C, then pick up quickly and are close to full speed from a ~21 °C daily average (days in the mid-20s).
+// A straight line up to 24 °C made cool-summer places (London, Hokkaido) look far too slow. Cool-season crops keep the
+// straight line, which fits them. Units stay on the same scale (full speed = tref − tb a day), so 'days × (tref − tb)' still holds.
+const WARM_LO = 8, WARM_OPT = 21;
+export function growUnits(id, T) {
+  const { tb, tref, tcap } = growParams(id);
+  if (HEADING.includes(id) && T < 6) return 0;
+  if (WARM_LEAF.includes(id)) return T <= WARM_LO ? 0 : (tref - tb) * (T >= WARM_OPT ? 1 : Math.pow((T - WARM_LO) / (WARM_OPT - WARM_LO), 0.6));
+  return Math.max(0, Math.min(T, tcap) - tb);
+}
+
+// ---------- microclimate: indoors/outdoors, sun, container size ----------
+const SUN = [['full', '☀️ Full sun'], ['part', '⛅ Part sun'], ['shade', '☁️ Shade']];
+export function potVolume(c) {
+  if (!c || c.type === 'bed') return null;
+  const dep = +c.depth || 30;
+  return c.type === 'round' ? Math.PI * (c.diameter / 2) ** 2 * dep / 1000 : (c.width * c.length * dep) / 1000;
+}
+// how a spot shifts the daily mean temperature the plants feel (catalogue dates assume an ordinary full-sun garden)
+function climateOffset(c) {
+  if (!c) return T => T;
+  if (c.indoor) return T => Math.min(26, Math.max(14, T + 5));
+  const sun = c.sun || 'full', vol = potVolume(c);
+  let off = sun === 'part' ? -0.7 : sun === 'shade' ? -1.5 : 0;
+  if (vol != null && vol < 15) off += sun === 'full' ? 0.6 : sun === 'part' ? 0.3 : 0;
+  else if (vol != null && vol < 60 && sun === 'full') off += 0.3;
+  return T => T + off - (vol != null && vol < 15 && T < 5 ? 0.8 : 0);
+}
+export function tempFor(cid) {
+  const c = container(cid); if (!c || (!c.indoor && (c.sun || 'full') === 'full' && potVolume(c) == null)) return null;
+  const adj = climateOffset(c), daily = S.weather && S.weather.daily;
+  return d => adj(dayTemp(d, daily));
+}
+export function climateLabel(c) {
+  if (c.indoor) return '🏠 Indoors';
+  return (SUN.find(s => s[0] === (c.sun || 'full')) || SUN[0])[1] + ' · outdoors';
+}
+export function climateDialog(c) {
+  modal(`<h3>Where is ${esc(c.name)}?</h3>
+    <div class="btns col">${[['out', '🌳 Outdoors'], ['in', '🏠 Indoors']].map(([k, l]) => `<button class="btn${(c.indoor ? 'in' : 'out') === k ? ' primary' : ''}" data-io="${k}">${l}</button>`).join('')}</div>
+    ${c.indoor ? '' : `<p class="small">Sun</p><div class="seg">${SUN.map(([k, l]) => `<button type="button" data-sun="${k}" class="${(c.sun || 'full') === k ? 'on' : ''}">${l}</button>`).join('')}</div>`}
+    <p class="hint">Changes the growth estimates for everything in it straight away. Indoors: no rain, frost or wind alerts, and it’s left out of the rain-based watering (water it yourself). ${potVolume(c) != null ? `Pot size (~${Math.round(potVolume(c))} L) is taken into account — small pots warm up faster in sun and get colder in frost.` : ''}</p>
+    <div class="btns"><button class="btn primary" data-x="ok">Done</button></div>`, (m, close) => {
+    m.querySelector('[data-x=ok]').onclick = close;
+    m.querySelectorAll('[data-io]').forEach(b => b.onclick = async () => { c.indoor = b.dataset.io === 'in'; await save(); close(); render(); climateDialog(c); });
+    m.querySelectorAll('[data-sun]').forEach(b => b.onclick = async () => { c.sun = b.dataset.sun; await save(); close(); render(); });
+  });
+}

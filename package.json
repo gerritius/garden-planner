@@ -1,12 +1,15 @@
 {
   "name": "garden-planner",
   "private": true,
-  "description": "Offline garden planner (static web app). The app itself needs no build; this file is only for the tests.",
+  "description": "Offline garden planner (static web app). The app itself needs no build; this file is only for the tests and the linter.",
   "scripts": {
     "test": "node tests/run.js",
-    "test:update": "node tests/run.js --update"
+    "test:update": "node tests/run.js --update",
+    "lint": "eslint js sw.js"
   },
   "devDependencies": {
+    "eslint": "9.39.5",
+    "globals": "17.14.0",
     "playwright": "1.63.0"
   }
 }

@@ -1,6 +1,19 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
-const CACHE = 'garden-planner-v60';
-const ASSETS = ['./', 'index.html', 'style.css', 'catalog.js', 'db.js', 'draw.js', 'app.js', 'icons.js', 'features.js', 'features2.js', 'features3.js', 'features4.js', 'registrations.js', 'features5.js', 'features6.js', 'features7.js', 'features8.js', 'features9.js', 'features10.js', 'features11.js', 'features12.js', 'features13.js', 'features14.js', 'features15.js', 'features16.js', 'features17.js', 'features18.js', 'features19.js', 'features20.js', 'features21.js', 'features22.js', 'features23.js', 'features24.js', 'features25.js', 'features26.js', 'features27.js', 'features28.js', 'fonts/ZillaSlab-500.woff2', 'fonts/ZillaSlab-700.woff2', 'fonts/Caveat-600.woff2', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'];
+const CACHE = 'garden-planner-v61';
+const ASSETS = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
+  'fonts/ZillaSlab-500.woff2', 'fonts/ZillaSlab-700.woff2', 'fonts/Caveat-600.woff2',
+  // the app's modules (a test checks this list covers every file the app loads)
+  'js/backup/backup.js', 'js/backup/drive.js', 'js/climate/climate.js', 'js/climate/sowing.js', 'js/climate/weather.js',
+  'js/core/db.js', 'js/core/forms.js', 'js/core/notify.js', 'js/core/photos.js', 'js/core/router.js', 'js/core/state.js',
+  'js/core/theme.js', 'js/core/ui.js', 'js/core/util.js', 'js/data/catalog.js', 'js/data/icons.js', 'js/data/products.js',
+  'js/data/registrations.js', 'js/draw.js', 'js/feeding/ledger.js', 'js/feeding/mix.js', 'js/feeding/nutrients.js',
+  'js/feeding/planner.js', 'js/feeding/plans.js', 'js/feeding/sim.js', 'js/feeding/stages.js', 'js/garden/garden.js',
+  'js/garden/ideas.js', 'js/garden/map.js', 'js/garden/planning.js', 'js/garden/rotation.js', 'js/garden/soil.js',
+  'js/garden/tasks.js', 'js/garden/watering.js', 'js/main.js', 'js/pages/calendar.js', 'js/pages/container.js',
+  'js/pages/home.js', 'js/pages/planting-form.js', 'js/pages/planting.js', 'js/pages/search.js', 'js/pages/tools.js',
+  'js/plants/covers.js', 'js/plants/crops.js', 'js/plants/growth.js', 'js/plants/learning.js', 'js/plants/problems.js',
+  'js/plants/seedlings.js', 'js/plants/varieties.js', 'js/products/library.js', 'js/products/pages.js', 'js/products/sprays.js',
+  'js/records/history.js', 'js/records/log.js', 'js/records/notes.js', 'js/records/review.js', 'js/version.js'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
@@ -39,7 +52,6 @@ async function morningJobs(force) {
   const live = id => { const p = (S.plantings || []).find(x => x.id === id); return p && p.status !== 'harvested'; };
   const jobs = (S.tasks || []).filter(t => !t.done && t.due && t.due <= td && (!t.plantingId || live(t.plantingId)) && !(t.kind === 'water' && S.water && S.water.on === false));
   if (!jobs.length && !force) { await idbSet('notified', td); return; }
-  const name = id => { const p = (S.plantings || []).find(x => x.id === id); return p ? p.cropId : ''; };
   const order = t => t.kind === 'wx' || t.kind === 'frost' ? 0 : t.kind === 'water' ? 1 : 2;
   const lines = jobs.sort((a, b) => order(a) - order(b)).slice(0, 5).map(t => '• ' + t.title);
   await self.registration.showNotification(jobs.length ? `${jobs.length} garden job${jobs.length > 1 ? 's' : ''} today` : 'Nothing to do in the garden today', {

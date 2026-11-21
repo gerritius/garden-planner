@@ -1,0 +1,4 @@
+saved: [["2027-03-09","Side-dress (追肥): Chemical fertiliser 8-8-8 3 handfuls (~90 g"],["2027-04-05","Side-dress (追肥): Chemical fertiliser 8-8-8 3 handfuls (~90 g"]]
+card: Feeding 18 Oct2 MayKeep it lean until about 9 Mar — an overwintering cabbage is kept small going into the cold — a big plant bolts (トウ立ち) in spring instead of heading. Only feed now if leaves turn pale yellow, and then lightly. The main feed is around 9 Mar. Fed through to 2 May with what’s in and p
+lean banner? false
+errs []

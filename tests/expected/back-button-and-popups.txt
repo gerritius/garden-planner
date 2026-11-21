@@ -1,0 +1,10 @@
+crop page → /plant/ce | modal open: false
+feeding plan open → /plant/ce | modal open: true
+after Back → /plant/ce | modal open: false
+after Cancel → /plant/ce | modal open: false
+after one Back → /container/g1 | modal open: false
+confirm open → /plant/ce | modal open: true
+task deleted: true
+after delete → /plant/ce | modal open: false
+plant-out navigated → /plant/new/g1?crop=lettuce&start=st&n=5 | modal open: false
+errs []

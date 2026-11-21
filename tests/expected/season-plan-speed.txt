@@ -1,0 +1,15 @@
+#/plan N ms
+#/rotation N ms
+#/ N ms
+#/container/b2 N ms
+plan chips filled: [
+  'Whole bed free from 19 Dec · after Daikon Spinach 🌱 done ~6 MarShungiku 🌱 done ~22 AprLe',
+  '100–200 cm free from 23 Dec · after Hakusai Spinach 🌱 done ~10 MarShungiku 🌱 done ~24 Ap',
+  '0–100 cm free from 17 May · after Cabbage Shungiku 🪴 done ~6 JulLettuce 🪴 done ~7 JulSpi'
+] | placeholders left 0
+plan again (cached): N ms
+freeGaps ×14 N ms
+gapLi (ideas) ×14 N ms
+cropIdeas one bag N ms
+feedSim ×all N ms
+errs []

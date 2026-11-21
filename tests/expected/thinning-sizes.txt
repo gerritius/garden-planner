@@ -1,0 +1,9 @@
+{
+  pastHarvest_unthinned: 50,
+  thinAfterHarvest: 42,
+  thinDateMissing: 42,
+  nearHarvest_thinned: 42,
+  beforeThin: 2,
+  seedling: 38
+}
+errs []

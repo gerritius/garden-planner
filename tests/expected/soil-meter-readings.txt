@@ -1,0 +1,16 @@
+bed water job: [["Water Plot A — meter reads DRY","2026-11-18"]]
+soil temp bag1: {"now":14,"week":14,"src":"meter","date":"2026-11-18","off":5} | bed: {"now":9,"week":9,"src":"meter","date":"2026-11-18","off":0}
+germ carrot bag1 vs bed: [["2026-11-26","2026-12-04"],["2026-11-30","2026-12-11"]]
+form bag1: [
+  '<p class="hint soil s1">🌡 This week: soil cool (~14°) — slow to come up (best 15°+). <small>(your meter, 18 Nov — warmer than the forecast by ~5°)</small></p>',
+  'seed',
+  2,
+  [
+    '<circle cx="20" cy="20" r="20" class="soil"></circle>',
+    '<p class="hint soil s1">🌡 This week: soil cool (~14°) — slow to come up (best 15°+). <small>(your meter, 18 Nov — warme'
+  ]
+]
+form bed:  | 🧪 pH 5.5 is acid for Spinach (best 6.5–7.2): mix about 480 g of oyster shell lime into this section (240 g/m²).
+feeding card: Feeding 🧪 Your meter read salt DANGER on 18 Nov — too much fertiliser in the soil. Hold off feeding (repeating feeds are paused) and water through well; take another reading in a week or so. 1 Nov23 JanRunning short now
+ideas bed: 💡 What could go in the whole bed? Plot A · free now 🌡 Soil here ~9° this week (from your meter). Needs to be clear by So it’s free for the next season’s planting — change it if you plan something else. Done by 30 Apr (11) Mizuna (水菜) 🪴 Plant seedlings now → ready ~7 Dec, done ~24 Dec · or sow now under a tunnel or Fushokufu, done ~12 Feb 🧪 pH 5.5 is acid for it (best 6–6.5) — lime first›Komatsuna (小松菜) 🪴 Plant seedlings now → ready ~11 Dec, done ~28 Dec · or sow now under a tunnel or Fushokufu, done ~12 Feb 🧪 pH 5.5 is acid for it (best 6–6.5) — lime first›Radish (二十日大根) 🌱 Sow now → ready ~24 Dec, done ~7 Jan 🧪 pH 5.5 is acid for it (best 6–6.5) — lime first❄ slow in the cold — a tunnel or Fushokufu speeds it up›Shungiku (春菊) 🪴 Plant seedlings now → ready ~12 Dec, done ~11 Jan · or sow now under a tunnel or Fushokufu, done ~22 Mar 🧪 pH 5.5 is acid for it (best 6–6.5) — lime fir
+errs []

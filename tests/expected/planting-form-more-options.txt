@@ -1,0 +1,4 @@
+more open? false | summary: More options Staggered rows 45 cm · thin ~5 Jan · harvest ~4 May · 3 fertilisers · 4 jobs
+still open after re-render? true
+saved {"crop":"hakusai","layout":"rows","sp":40,"notes":"test note","fert":3,"tasks":8} /plant/ID
+errs []

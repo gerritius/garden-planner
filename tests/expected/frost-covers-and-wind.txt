@@ -1,0 +1,15 @@
+frost before fleece [ [ 'lettuce' ] ]
+frost after fleece [ [] ]
+wind advice [
+  'Tie in stems and check stakes are firm: Snap pea',
+  'Check tunnel hoops, pegs and the edges of: Bed 2 0–100 cm (insect net tunnel), Bag 3 (fushokufu tunnel)',
+  'Move light pots and anything loose somewhere sheltered',
+  'Pick what’s ready first: Hakusai',
+  'Afterwards: check for snapped stems and earth up anything rocked loose (土寄せ)'
+]
+card chips [ '🕸️ insect net tunnel', '🧣 fushokufu tunnel' ]
+notes [
+  'Insect net tunnel still on Bed 2 (0–100 cm) — nothing is growing under it.'
+]
+log [ 'Fushokufu tunnel on', 'Finished Hakusai', 'Sowed Snap pea' ]
+errs []

@@ -1,0 +1,10 @@
+tiles: 📅Season plan | 🔄Rotation | 🌱Seedlings | 🗓️Sowing calendar | 🧴Products | 💦Sprays | 🩺What’s wrong? | 🗺️Garden map | 📒Seasons | 💴Spending & use | 🏷️Varieties | 📷Photos
+on /picksafe
+back → /settings
+products has tabs? false
+spend 💴 Spending
+totals 🧮 Product use
+review 📒 Season review
+compare 📊 Compare years
+home has tabs? false
+errs []

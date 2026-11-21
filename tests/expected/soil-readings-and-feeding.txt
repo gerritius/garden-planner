@@ -1,0 +1,5 @@
+readings Soil readings 🧪pH 5.5 · moisture DRY · salt DANGER · 12°C18 Nov · 0–100 cm✎ ＋ Add reading
+soil test: undefined
+fed: undefined
+new plan fert [{"product":"Cow manure compost","amount":2,"unit":"kg"},{"product":"Oyster shell lime","amount":150,"unit":"g"},{"product":"Bokashi","amount":3.5,"unit":"handful"}] vs bag [{"product":"Cow manure compost","amount":4,"unit":"L"},{"product":"Chemical fertiliser 8-8-8","amount":55,"unit":"g"},{"product":"Oyster shell lime","amount":45,"unit":"g"}]
+errs []

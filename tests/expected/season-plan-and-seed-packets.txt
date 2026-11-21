@@ -1,0 +1,10 @@
+gap chips [ '🌱 Snap pea your seedlings ×24', '🌱 Snap pea your seedlings ×24' ]
+form snappea スナック753 2026-12-31 | Using 24 Snap pea seedlings from tray 1, ready about 3 Dec.
+plan ["planned","seedling","tray",true,["sgerm 2026-11-17","plan_prep 2026-12-17","plan_sow 2026-12-31"]]
+chooser []
+picker open true
+after packet hakusai 無双 1
+photos [["hk","hakusai",{"front":"ph1"}],["ID","snappea",{}],["ID","hakusai",{"front":"ph1"}]]
+blob survives true
+blob gone when unused true
+errs []

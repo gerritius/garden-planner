@@ -1,0 +1,30 @@
+quality []
+sow chips [
+  'Leaf onion',
+  'Radish◐',
+  'Spinach◐',
+  'Snap pea◐',
+  'Onion',
+  'Snow pea◐',
+  'Broad bean◐'
+]
+dx [
+  'Best match: Cabbage white caterpillars アオムシ',
+  'Diamondback moth コナガ',
+  'Armyworms / cutworm moths ヨトウムシ',
+  'Loopers ウワバ'
+]
+sprays Your sprays registered for this on Hakusai:🌱 Benica Natural spray — Ready to use · no wait🌱 Spino Ace water granules — Dilute 2,500–5,000× · wait 3 days before picking · max 3 uses⚗️ Benica X Next spray — Ready to use · wait 7 days before picking · max 2 uses 
+diary [{"id":"ID","date":"2026-11-18","photo":null,"note":"Possible Cabbage white caterpillars (アオムシ): holes chewed in leaves; droppings (frass) on or between leaves","tags":["caterpillars"]}]
+shop [
+  'Cabbage seedlings × 3for Bed 2 120–200 cm · plant 8 Dec · by 7 Dec',
+  'Snap pea seedhave enough? sow 13 Dec · Bed 2 0–70 cm · by 13 Dec',
+  'Cow manure compost1.5 kg for the planned crops — check what’s left in the bag',
+  'Bokashi260 g for the planned crops — check what’s left in the bag',
+  'Insect netting for CabbageBed 2 120–200 cm · about 1.9 × 1.7 m with hoops (0.8 mm mesh or finer) · by 8 Dec',
+  'Supports for Snap peaBed 2 0–70 cm · poles + climbing net (きゅうりネット) · by 13 Dec'
+]
+spend ¥3,740spent all up [["Cabbage seedlings × 3","seedlings",980,"2026-11-18"],["Insect netting 1.8 × 5 m","net",1480,""],["Bokashi","fert",1280,"2026-11-18"]]
+snaps [ 'Wed 18 Nov4 plantings · 9 jobsRestore' ]
+soil form 🌡 This week: soil cool (~11°) — slow to come up (best 12°+).
+errs []

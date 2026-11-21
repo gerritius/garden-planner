@@ -1,0 +1,13 @@
+carebar: 📅 Plan🌿 Feed🕸️ Cover📝 Note⋯ More
+bed log: [["Added compost",true]]
+more menu: 🧪Soil reading🪏Prepare the bed✓Add a job↕Sections🔄Rotation
+reading dialog: Soil reading — Plot A
+after Back modal open? false /container/b1
+rotation link → /rotation modal open? false
+crop diary: [["first true leaves",null]]
+quick add: 📝Note / photo🧺Harvest🌿Feed✓Job🌱Seedlings⋯More
+more: 📋Log something💴Purchase🩺Something wrong?＋New bed or pot🪴My seedlings
+→ /seedlings
+note for bed dialog: Plot A
+log kinds: 
+errs []

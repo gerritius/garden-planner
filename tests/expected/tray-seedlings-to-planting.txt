@@ -1,0 +1,11 @@
+migrated [["old1","2026-11-20",true],["old2","2027-01-05",false]]
+tray ready line Sown 10 Oct (39 days)
+form values 2027-01-21 2027-05-02 2027-05-05 2027-10-25
+daikon | Bed 2 | seed | active | 2026-09-05 |  | 2026-11-20 | 2026-10-31 | fixed | 
+komatsuna | Bed 2 | seed | active | 2026-11-10 |  | 2027-01-05 | 2027-01-05 | auto | 2027-01-05
+komatsuna | Bag 1 | seed | active | 2026-11-18 |  | 2027-01-21 | 2027-01-21 | auto | 2027-01-21
+broccoli | Bed 1 | seedling | active | 2026-11-18 |  | 2027-05-02 | 2027-05-02 | auto | 2027-05-02
+cabbage | Bed 1 | seedling | active | 2026-11-18 | 2026-10-10 | 2027-05-05 | 2027-05-05 | auto | 2027-05-05
+hakusai | Bed 2 | seedling | planned | 2027-08-30 |  | 2027-10-25 | 2027-10-25 | auto | 2027-08-10
+spinach | Bed 3 | seed | active | 2026-11-16 |  | 2027-01-10 | 2026-12-29 | fixed | 2027-01-10
+errs []

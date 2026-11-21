@@ -1,0 +1,4 @@
+URL http://localhost:8765/#/plant/new/b1?from=110&to=180 hakusai now [ 0, 110 ]
+FORM from/to 110 180
+HANDLES 3
+errs []

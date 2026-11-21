@@ -1,0 +1,8 @@
+Bag 1 0–40: advice "pH 5.5 is acid for Spinach (best 6.5–7.2): mix about 70 g of oyster shell lime into this pot (~44 L)." | starting fertiliser lime 70 g
+Plot A 0–90: advice "pH 5.5 is acid for Spinach (best 6.5–7.2): mix about 215 g of oyster shell lime into this section (240 g/m²)." | starting fertiliser lime 215 g
+Plot A 0–200: advice "pH 5.5 is acid for Spinach (best 6.5–7.2): mix about 480 g of oyster shell lime into this section (240 g/m²)." | starting fertiliser lime 480 g
+Plot B 0–200: advice "pH 7.4 is at the top of Spinach’s range (6.5–7.2): no lime needed." | starting fertiliser lime none g
+g1 prep: Prepare Bag 1~44 L of soil · amounts are typical rates for this much soil — adjust to your products.🪱 Cucumber is a heavy feeder, so the soil is likely run down. Dig in extra compost and use the full base fertiliser. Amounts below are adjusted. Planting date 
+b1 prep: Prepare Plot A2.00 m² · amounts are typical rates for this much soil — adjust to your products. Planting date Dig in Cow manure compost ~4 kg (14 days before) Spread Oyster shell lime ~280 g (your pH reading: 5.5) (on planting day — can go in straight away) Ba
+b2 prep: Prepare Plot B2.00 m² · amounts are typical rates for this much soil — adjust to your products. Planting date Dig in Cow manure compost ~4 kg (14 days before) Base fertiliser: Bokashi ~300 g (on planting day — can go in straight away) Dig & shape the bed (畝立て)
+errs []

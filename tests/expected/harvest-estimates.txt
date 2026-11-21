@@ -1,0 +1,21 @@
+Hakusai direct, bed, 25 Aug                      new 2026-11-20  old 2026-11-13
+Hakusai direct, 15 Sep (late)                    new 2026-12-06  old 2026-12-04
+Komatsuna in bag, 10 Sep                         new 2026-10-15  old 2026-10-15
+Komatsuna in bag, 10 Nov                         new 2027-01-05  old 2026-12-15
+Komatsuna, 15 Mar (spring)                       new 2027-04-20  old 2027-04-19
+Cabbage bought seedlings, 10 Sep                 new 2026-11-25  old 2026-10-30
+Cabbage from own tray (sown 10 Aug), out 10 Sep  new 2026-11-25  old 2026-10-29
+Tomato seedlings, 5 May                          new 2027-07-16  old 2027-07-14
+Tomato seedlings, 10 Apr (early)                 new 2027-06-21  old 2027-06-19
+Snap pea direct, 25 Oct                          new 2027-04-08  old 2027-04-03
+Snap pea direct, 1 Nov (up 16 Nov)               new 2027-04-18  old 2027-04-10
+Garlic cloves, 1 Oct                             new 2027-05-09  old 2027-05-09
+Potato, 1 Mar                                    new 2027-06-20  old 2027-06-04
+Daikon, 5 Sep                                    new 2026-10-31  old 2026-11-04
+Tray: hakusai sown 1 Sep → ready                 new 2026-09-20  old 2026-09-23
+Tray: lettuce sown 15 Nov, outside               new 2027-02-09  old 2026-12-13
+Tray: lettuce sown 15 Nov, under cover           new 2026-12-29  old 2026-12-13
+Tray: lettuce sown 15 Nov, indoors               new 2026-12-14  old 2026-12-13
+Thin: snap pea up 16 Nov                         new 2026-12-02  old (was 10 Dec)
+Tray: to plant cabbage 20 Dec, sow by            new 2026-11-13  old 2026-11-20
+errs []

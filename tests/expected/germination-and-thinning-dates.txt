@@ -1,0 +1,4 @@
+{"snappea_old":"2026-11-21","snappea_up16Nov":"2026-12-02","snappea_notup":"2026-11-26","komatsuna_Nov10":"2026-11-29","komatsuna_Sep10":"2026-09-22 (old: 2026-09-24)","hakusai_Aug25":"2026-09-15 (old: 2026-09-19)","spinach_Dec1":"2027-01-09","corn_May1":"2026-05-25 (old: 2026-05-21)"}
+tasks [["sp","2026-12-02"],["sp2","2026-11-25"]]
+row Thinning本葉2–3枚で2本立ち → 25 cm · around 2 Dec (from when they came up (16 Nov) and the temperatures)
+errs []

@@ -1,0 +1,3 @@
+[ 21.84313725490196, 20.842105263157897, 0.98 ]
+Size in drawing44 cm across today (grows to ~50 cm by 25 Nov) 
+errs []

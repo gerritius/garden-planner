@@ -1,0 +1,4 @@
+form layout: center harvest: 2026-12-10
+as tubers, harvest: 2026-12-10
+{"hv":"2026-12-10","w":{"earliest":"2026-12-10","mature":"2026-12-10","keep":"2026-12-31","keepSet":false,"a":95,"b":124,"late":"frost gets into the tubers — dig before the ground freezes","cont":false,"frost":"2026-12-10"},"txt":"<p class=\"pickby\">Harvest window: from <b>10 Dec</b> · most ready by ~<b>10 Dec</b> · keeps until about <b>31 Dec</b> — after that frost gets into the tubers — dig before the ground freezes. <small class=\"muted\">Packet: 95–124 days.</small></p>"}
+errs []

@@ -1,0 +1,100 @@
+# Tests
+
+These are **scenario tests**: each one opens the app in an invisible, phone-sized Chrome browser, sets up a garden
+(beds, pots, plantings, products, records), uses a feature the way you would — tapping buttons, filling forms — and
+prints what the app shows or works out (dates, amounts, messages). It also records any errors the page throws.
+
+The first time a scenario runs, what it prints is saved in `tests/expected/`. After that, every run compares the new
+output with the saved one, so any change in behaviour shows up — wanted or not.
+
+## Running them
+
+You need [Node.js](https://nodejs.org) (version 22 or later).
+
+```
+npm install                          # once: installs Playwright, the browser driver
+npx playwright install chromium      # once: downloads the browser it drives
+npm test                             # run all scenarios (about 5 minutes)
+npm test -- feeding                  # only scenarios with "feeding" in the name
+```
+
+They also run automatically on GitHub for every push (see `.github/workflows/tests.yml`); the result shows as a ✓ or
+✗ next to each commit.
+
+## When a test fails
+
+- **"crashed"** or **"errors in the page"**: something is broken — the message shows where.
+- **"output changed"**: the app now prints something different. The runner shows the first line that differs; the full
+  new output is in `tests/output/<name>.actual.txt` to compare with `tests/expected/<name>.txt`.
+  - If the change is a bug, fix the app.
+  - If the change is intended (say, a better harvest estimate), accept it with `npm run test:update` and commit the
+    updated files in `tests/expected/`, so the change is visible in the history.
+
+## Things to know
+
+- **The date is fixed** at 18 November 2026, 10:00 Tokyo time (see `tests/lib.js`), so results don't change from day
+  to day. Scenarios that need another date set their plantings' dates explicitly.
+- **No internet**: weather, the climate archive and Google Drive are simulated inside the scenarios that need them; any
+  other outside request is blocked.
+- **Screenshots** some scenarios take go to `tests/output/<name>/` (not kept in git) — handy for checking layouts by eye.
+- Each scenario starts with an empty app in a fresh browser, so they don't affect each other.
+
+## What each scenario covers
+
+| Scenario | What it checks |
+|---|---|
+| `autumn-potatoes` | Potatoes planted for autumn finish with the first frosts; crowded plants drawn to their share of the pot |
+| `back-button-and-popups` | The phone's Back button closes pop-ups instead of leaving the page |
+| `climate-from-location` | Fetching the climate for a location (simulated), the sowing calendar following it, editing a crop's months |
+| `copy-planting-to-pots` | "Same in other pots": copying a planting, its jobs and feedings to other pots |
+| `crop-ideas` | "What could go here?": stop-gap crops for empty space, clear-by dates, same-family warnings |
+| `dialog-field-alignment` | Date fields line up with the fields next to them in every dialog |
+| `drive-backup` | Google Drive backup end to end against a simulated Google: connect, daily backup, photos once, tidy-up, restore |
+| `dropdowns-deletes-pot-sizes` | The in-page drop-downs, "delete — are you sure?", fertiliser amounts scaling with pot size |
+| `feeding-by-season` | Feeding stages for many crops and planting dates: lean before winter, spring restart feeds |
+| `feeding-ledger-covers-meter` | What the feeding card counts (mix, soil, previous crop, feeds), covers, meter levels |
+| `feeding-plan-liquid-with-watering` | Feeding plan doses; weekly liquid feeds merged into the watering job |
+| `feeding-plan-suggestions` | Feeding plan suggestions for celery and cabbage; overfeeding guard |
+| `frost-covers-and-wind` | Frost warnings and covers, wind advice |
+| `garden-map` | The garden map: dragging beds, scrolling |
+| `garlic-feeding-model` | The day-by-day nitrogen model for garlic in a bag (drainage, uptake, "fed until") |
+| `garlic-feeding-plan` | Garlic's feeding card and plan, including the last feed (止め肥) |
+| `germination-and-thinning-dates` | When seedlings come up and when to thin, from temperatures |
+| `harvest-estimates` | Harvest dates for crops sown at different times of year |
+| `history-past-crops-and-log` | Adding past crops, bed history, logging feeds and sprays |
+| `lime-amounts` | Lime from a pH reading, sized to the bed section or pot, the same everywhere |
+| `liquid-feed-doses` | A liquid feed with doses mixed into the can (e.g. 5 or 10 mL per 5 L) and how it's counted |
+| `log-sprays-frost-alerts` | Logging sprays (days to wait before picking), frost jobs, weather alerts |
+| `microclimate-and-learning` | Sun/shade/indoors changing estimates; learning from your own records |
+| `notes-bed-buttons-quick-add` | The note dialog (with photo), bed page buttons, Quick add |
+| `plant-size-in-drawing` | How big plants are drawn as they grow |
+| `planting-form-more-options` | The short planting form and its "More options" |
+| `potato-harvest-dates` | Potato harvest dates for different planting dates |
+| `potting-mix-fertiliser` | Fertiliser in fresh and re-used potting mix |
+| `potting-mix-in-planting-form` | Choosing fresh or re-used mix when planting; defaults from the pot's history |
+| `products-library` | Adding, editing, renaming and removing products; the catalogue; sprays without registry data |
+| `quality-alerts-doctor-shopping` | Harvest-quality warnings, the problem finder, the shopping list |
+| `realistic-garden-numbers` | A garden like a real one: products, nutrient counts, starting fertiliser, "fed until" |
+| `rotation-varieties-photos-picksafe` | Rotation plan, variety notes, photo timeline, "OK to pick?" board |
+| `season-plan-and-seed-packets` | The season plan's free spaces; re-using seed packets |
+| `season-plan-speed` | The season plan opens quickly and fills in its ideas |
+| `seasons-from-temperature` | Watering spacing, clear-by dates, sprouting times worked out from temperature |
+| `seedling-tray-sowing-dates` | When to sow trays for a planting date, and where to keep them (outside / cover / indoors) |
+| `soil-meter-readings` | Soil temperature, moisture, pH and salt readings and everything they change |
+| `soil-readings-and-feeding` | Soil readings feeding into the feeding advice |
+| `sowing-windows` | Sowing months worked out from temperature: matches the Japanese chart for Tokyo; other climates |
+| `split-bed-sections` | Splitting a bed into sections for several crops |
+| `spray-days` | Good spraying days from the forecast |
+| `spray-mixing-and-legality` | Spray dilution helper and the registered-crop legality check |
+| `spray-registry-table` | What the pesticide registry allows for each crop |
+| `spring-cabbage-plan` | Saving a feeding plan for overwintering cabbage |
+| `storage-note-by-device` | The storage-safety note on different phones |
+| `thinning-done-date` | Ticking off thinning, and the date it was done |
+| `thinning-sizes` | Plant sizes around thinning |
+| `tools-tabs` | Tools page tiles and the tabs between related pages |
+| `tray-seedlings-to-planting` | Seedlings in trays through to planting out |
+| `tray-sizes-and-bag-preset` | Seed tray / small pot sizes; the grow-bag preset |
+| `warm-crops-cool-summers` | Warm-season crops in a cool-summer climate (e.g. London tomatoes) |
+| `watering-and-rain` | The watering job's timing from rain and your ticks |
+| `watering-skip-frost-thin` | Skipping a watering, removing frost and thinning jobs |
+| `weather-jobs-and-planning` | Weather-based jobs; planning a crop with tray-raised seedlings |

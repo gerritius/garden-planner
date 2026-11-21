@@ -1,0 +1,25 @@
+# Runs the scenario tests on every push and pull request. The result shows as ✓ / ✗ next to each commit on GitHub.
+name: Tests
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  scenarios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm install
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Keep the test output if something failed
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-output
+          path: tests/output
+          retention-days: 7

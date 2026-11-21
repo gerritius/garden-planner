@@ -1,0 +1,7 @@
+water before 2026-11-18 1 pot · every 3 days this time of year
+water after skip 2026-11-19 1 pot · every 3 days this time of year · skipped
+after reload 2026-11-19 1 pot · every 3 days this time of year · skipped
+frost exists true
+frost gone false undefined
+thin gone true
+errs []

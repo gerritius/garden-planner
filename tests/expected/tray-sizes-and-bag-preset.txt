@@ -1,0 +1,4 @@
+before: Tray: 49-cell tray (28.
+after: Tray: 72-cell tray (28.5 × 28. | free in tray 1: 72
+preset count: 1
+errs []

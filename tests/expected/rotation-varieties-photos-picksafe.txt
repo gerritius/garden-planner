@@ -1,0 +1,13 @@
+fam []
+beds []
+variety Grow again?👍 Yes🤔 Maybe👎 No Notes Saved ✓Save note Every time you’ve grown it (1)1 Sept 2026 · Bed 2 sown · came up good in 3 days · first pick after 70 days · 2 picked Problems: Caterpillars 青虫・ヨトウムシ›
+varieties [
+  'Hakusai · 無双 👍grown 1× · last 1 Sept 2026 · Solid heads, slow in cold›',
+  'Komatsuna · no variety grown 1× · last 20 Oct 2026›'
+]
+photo view  Tue 15 Sept · Hakusai day 14 Seedlings 1 / 3Newer › Swipe left or right.
+picksafe [
+  '⛔Komatsuna · Bag 1 Wait 12 days — until 30 Nov (Spino Ace water granules on 16 Nov) · ready from 27 Nov›',
+  '✅Hakusai · Bed 2 OK to pick — no spray waiting period · ready from 5 Dec›'
+]
+errs []

@@ -1,0 +1,21 @@
+cabbage care jobs: ["Cover with insect netting (防虫ネット)","Earth up (土寄せ)","Pest check (害虫チェック) – undersides & new growth"]
+cabbage rows: [
+  '9 Mar · Chemical fertiliser 8-8-8 3 handfuls (~90 g) as heads start to form (結球始め) / as growth restarts — the main feed for spring heads⏸ mo',
+  '5 Apr · Chemical fertiliser 8-8-8 3 handfuls (~90 g) to keep it fed ✎'
+]
+sum: 
+    18 Oct2 MayWith this plan: fed through to 2 May.
+big dose row:  N 144 g · P 115 g · K 144 g · left out — too much in one go; split it into smaller doses Doneremove
+cabbage feed tasks: [["2027-03-09",3,"handful"],["2027-04-05",3,"handful"]]
+every row: Every days gkghandfulsmLLmL from until each → N 0.1 g · P 0.1 g · K 0.2 g · 4 doses 💧 Given with the watering — on feed days the watering job becomes “Water + liquid feed”. Doneremove
+plan saved [{"id":"ID","product":"Kincho Liquid 6-6-7","amount":2,"unit":"mL","every":7,"start":"2026-11-20","end":"2027-01-23","paused":null}]
+water (just watered): ["2026-11-20","Water + liquid feed: Bag 1",1,"2026-11-20"]
+feed job hidden on its own? [ false ]
+water (watered yesterday): ["2026-11-20","Water + liquid feed: Bag 1",1,"2026-11-20"]
+water (feed due today): ["2026-11-18","Water + liquid feed: Bag 1",1,"2026-11-18"]
+after tick: ["2026-11-18",[["Kincho Liquid 6-6-7",2,"mL","2026-11-18"]],"2026-11-18",["2026-11-25"]]
+water after tick: ["2026-11-21","Water pots & bags",0,"2026-11-25"]
+paused after heavy feed? ["enough",0]
+card: Feeding 1 Nov23 JanRunning short now — plan a feed soon. Next: Kincho Liquid 6-6-7 2 mL 25 Nov.🔁 Every 7 days: Kincho Liquid 6-6-7 2 mL 🌿 Record feeding📅 Feeding plan… What’s been counted Lettuce needs about 3.5 g of nitrogen over the season in this pot. Counted: 0.8 g + 0.4 g planned. Where it g
+task templates: ["Remove side shoots (わき芽かき)"]
+errs []

@@ -1,0 +1,13 @@
+hist [[{"id":"h_ID","manual":true,"cropId":"minitomato","variety":"アイコ","from":0,"to":40,"sowDate":"2026-04-01","harvestedOn":"2026-09-30","note":"","feed":""}],[{"id":"h_ID","manual":true,"cropId":"x:Okra","variety":"","from":0,"to":100,"sowDate":"","harvestedOn":"2026-08-31","note":"","feed":""}]]
+prev Previous crop hereMini tomato (ミニトマト)
+log items 8
+fert [
+  'Fertilised: 化成肥料 8-8-8 · 2 handfuls (~60 g)',
+  'Side-dress & earth up (追肥・土寄せ)'
+]
+bag1 [ 'Sprayed: BT spray', 'Planted Garlic' ]
+edit dlg BT spray
+search okra Beds & notesPast crop: OkraPlot A · 31 Aug›
+search BT Running log💦Sprayed: BT spray1000× dilution8 Nov · Whole garden›
+qa log true
+errs []

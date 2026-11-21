@@ -1,0 +1,4 @@
+tomato: daysHarvest 70 (from planting), base 10°, full speed at 24° (capped 28°)
+Tokyo: plant 2026-05-01 → first ripe 2026-07-15 (75 days) · picking days before mean <12°: 90 · speed in July 100% · window [4,5,6,7]
+London: plant 2026-06-01 → first ripe 2026-08-24 (84 days) · picking days before mean <12°: 53 · speed in July 89% · window [5,6]
+errs []

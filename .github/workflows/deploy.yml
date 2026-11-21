@@ -89,13 +89,13 @@ jobs:
           mode=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type 2>/dev/null || echo none)
           echo "mode=$mode" >> "$GITHUB_OUTPUT"
           if [ "$mode" != "workflow" ]; then echo "::notice::GitHub Pages is set to '$mode', so this run doesn't publish (the main branch is still published as it is, and the test site isn't). In Settings → Pages, set Source to 'GitHub Actions'."; fi
-      - uses: actions/upload-pages-artifact@v4
+      - uses: actions/upload-pages-artifact@v5
         if: steps.pages.outputs.mode == 'workflow'
         with:
           path: _site
       - id: deployment
         if: steps.pages.outputs.mode == 'workflow'
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
   release:
     needs: check   # main passed its checks; it goes live in this run's deploy (or a newer one, which includes it)

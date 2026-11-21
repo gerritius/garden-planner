@@ -1,0 +1,4 @@
+every module in js/ is loaded by the app: true 
+the form has a select: true
+without the test bridge, selects become in-page drop-downs: true
+errs []

@@ -77,6 +77,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `liquid-feed-doses` | A liquid feed with doses mixed into the can (e.g. 5 or 10 mL per 5 L) and how it's counted |
 | `log-sprays-frost-alerts` | Logging sprays (days to wait before picking), frost jobs, weather alerts |
 | `microclimate-and-learning` | Sun/shade/indoors changing estimates; learning from your own records |
+| `modules-loaded` | Every module is loaded by the app itself (not just by the test bridge); drop-downs work without the bridge |
 | `notes-bed-buttons-quick-add` | The note dialog (with photo), bed page buttons, Quick add |
 | `offline-files` | Every file the app loads is on the service worker's offline list, and every file on it exists |
 | `plant-size-in-drawing` | How big plants are drawn as they grow |

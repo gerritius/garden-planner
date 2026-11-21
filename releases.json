@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.27.1",
+    "date": "2026-11-21",
+    "notes": [
+      "Drop-down lists open right under the field again (crops, products and so on), instead of the phone's own picker or the bar above the keyboard.",
+      "Deleting something asks \"are you sure?\" again.",
+      "Both had stopped working in 1.26.0."
+    ]
+  },
+  {
     "version": "1.27.0",
     "date": "2026-11-21",
     "notes": [

@@ -1,6 +1,7 @@
 // Starts the app: loads the saved garden, wires up the page-wide listeners and draws the first page.
 
 import { showRecovery } from './backup/recovery.js';
+import './core/forms.js';   // drop-down lists and "are you sure?" before deleting: they set themselves up when loaded
 import { DB } from './core/db.js';
 import { DATA_VERSION, upgrade } from './core/migrate.js';
 import { A, render } from './core/router.js';

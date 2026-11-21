@@ -59,6 +59,7 @@ a { color: var(--green); }
 #top h1 { font-family: var(--head); font-weight: 700; font-size: 23px; margin: 0; line-height: 1.15; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .01em; }
 #sub { font-size: 13px; opacity: .8; margin-top: 1px; }
 #back[hidden] { display: none; }
+[hidden] { display: none !important; }   /* a class's display (e.g. .btnrow) must not undo the hidden attribute */
 #back { background: none; border: 0; color: inherit; padding: 6px 6px 6px 0; margin-left: -6px; cursor: pointer; display: flex; }
 #hstats { display: flex; gap: 8px; }
 #hstats:empty { display: none; }
@@ -341,6 +342,11 @@ legend { font-family: var(--hand); font-weight: 600; font-size: 24px; padding: 0
 .seg a:first-child { border-left: 0; }
 .seg a.on { background: var(--green); color: var(--green-ink); }
 .mapbox { display: flex; justify-content: center; margin: 10px 0; }
+.mapbox.zoomed { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.mapbox.zoomed svg { max-width: none; }
+.mapzoom { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; }
+.mapzoom .btn { min-width: 44px; font-size: 20px; padding: 2px 10px; }
+.mapzoom span { min-width: 90px; text-align: center; color: var(--muted); font-size: 14px; }
 .mapbox svg { max-width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
 .map .mapgrid { stroke: var(--line); stroke-width: 1; }
 .map .mapbg { fill: transparent; }

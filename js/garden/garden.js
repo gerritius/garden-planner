@@ -15,6 +15,17 @@ export const activeIn = cid => S.plantings.filter(p => p.containerId === cid && 
 export const typeLabel = c => c.type === 'bed' ? 'Bed' : c.type === 'round' ? 'Round pot' : 'Rectangular pot';
 export const sizeLabel = c => c.type === 'round' ? `⌀${c.diameter} × ${c.depth || '?'} cm deep` :
   c.type === 'bed' ? `${c.width} × ${c.length} cm` : `${c.width} × ${c.length} × ${c.depth || '?'} cm`;
+// Sizes the app is made for: a bed up to 50 m on each side, a pot up to 3 m across. Returns what's wrong, or ''.
+export const SIZE_MAX = { bed: 5000, pot: 300, depth: 200 };
+export function sizeProblem(c) {
+  const { W, L } = Draw.dims(c), big = Math.max(W, L), small = Math.min(W, L), m = +c.margin || 0;
+  if (c.type === 'bed' && big > SIZE_MAX.bed) return `A bed can be up to ${SIZE_MAX.bed / 100} m (${SIZE_MAX.bed} cm) on each side. For a bigger area, add it as several beds.`;
+  if (c.type !== 'bed' && big > SIZE_MAX.pot) return `A pot can be up to ${SIZE_MAX.pot / 100} m (${SIZE_MAX.pot} cm) across. For anything bigger, choose Bed.`;
+  if (c.type !== 'bed' && +c.depth > SIZE_MAX.depth) return `A pot can be up to ${SIZE_MAX.depth} cm deep.`;
+  if (m < 0) return 'The margin from the edges can’t be less than 0.';
+  if (m * 2 >= small) return `A ${m} cm margin from each edge leaves no room to plant — make it less than ${Math.floor(small / 2)} cm.`;
+  return '';
+}
 export function decorate(list) { return list.map(p => Object.assign({}, p, { _color: crop(p.cropId).color, _label: crop(p.cropId).en })); }
 export function gaps(c, excludeId) {
   const L = Draw.dims(c).L, out = [];

@@ -10,7 +10,7 @@ const U = 'http://localhost:8765/';
     for (let i = 1; i <= 12; i++) S.containers.push({ id: 'g' + i, type: 'round', name: 'Bag ' + i, diameter: 40, depth: 35, margin: 2, pos: [ (i % 2) * 150, 250 + i * 70 ] }); S.containers[0].pos=[0,0]; S.containers[1].pos=[150,0];
     await save();
   });
-  await pg.goto(U + '#/map?edit=1'); await pg.waitForTimeout(500);
+  await pg.goto(U + '#/map?edit=1'); await pg.waitForSelector('#mapbox svg'); await pg.waitForTimeout(500);   // touch handling is ready once the map is drawn
   const cdp = await ctx.newCDPSession(pg);
   const swipe = async (x, y0, y1) => {
     await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y: y0 }] });

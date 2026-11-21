@@ -9,6 +9,7 @@ import { crop, ic } from '../plants/crops.js';
 import { activeIn, container, decorate, noteVacated, planting } from './garden.js';
 
 // ---------- garden map ----------
+let mapZoom = 1;   // ×1 shows the whole area; zooming in is for when a big bed makes the rest tiny
 export function ensureAreas() {
   if (!S.areas || !S.areas.length) S.areas = [{ id: 'a_' + uid(), name: 'Garden' }];
   for (const c of S.containers) if (!S.areas.find(a => a.id === c.area)) c.area = S.areas[0].id;
@@ -26,15 +27,30 @@ function autoPlace(areaId) {
     c.pos = [x, y]; x += w + 30; rowH = Math.max(rowH, h);
   }
 }
-export function mapSVG(areaId, { edit = false, width = 360, sel = null } = {}) {
+// how far the map spreads: its width in cm (beds and pots placed first)
+function mapExtent(areaId) {
   const cs = S.containers.filter(c => c.area === areaId);
-  if (!cs.length) return '<p class="muted center">No beds or pots in this area yet.</p>';
   autoPlace(areaId);
-  let maxX = 0, maxY = 0;
-  for (const c of cs) { const [w, h] = boxOf(c); maxX = Math.max(maxX, c.pos[0] + w); maxY = Math.max(maxY, c.pos[1] + h); }
+  let maxX = 0, maxY = 0, smallest = Infinity;
+  for (const c of cs) { const [w, h] = boxOf(c); maxX = Math.max(maxX, c.pos[0] + w); maxY = Math.max(maxY, c.pos[1] + h); smallest = Math.min(smallest, w, h); }
+  return { cs, maxX, maxY, smallest };
+}
+// zooming in only helps when something on the map is drawn too small to see or tap (under ~24 px): then up to the
+// zoom that shows the smallest bed or pot at about 60 px (never past 4 px per cm)
+export function maxZoom(areaId, width) {
+  const { cs, maxX, smallest } = mapExtent(areaId); if (!cs.length) return 1;
+  const px1 = width / (maxX + 60);
+  if (smallest * px1 >= 24) return 1;
+  let z = 1; while (z < 64 && smallest * px1 * z < 60 && px1 * z * 2 <= 4) z *= 2;
+  return z;
+}
+export function mapSVG(areaId, { edit = false, width = 360, sel = null } = {}) {
+  const { cs, maxX, maxY } = mapExtent(areaId);
+  if (!cs.length) return '<p class="muted center">No beds or pots in this area yet.</p>';
   const pad = 30, W = maxX + pad * 2, H = maxY + pad * 2 + 20 + (edit ? 250 : 0), px = width / W;
-  let s = `<svg class="map" viewBox="${-pad} ${-pad} ${W} ${H}" width="${width}" height="${(H * px).toFixed(0)}" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<defs><pattern id="mg" width="50" height="50" patternUnits="userSpaceOnUse"><path d="M50 0H0V50" fill="none" class="mapgrid"/></pattern></defs><rect x="${-pad}" y="${-pad}" width="${W}" height="${H}" fill="url(#mg)" class="mapbg"/>`;
+  const cell = [50, 100, 200, 500, 1000, 2000, 5000].find(g => g * px >= 12) || 5000;   // grid squares at least 12 px
+  let s = `<svg class="map" viewBox="${-pad} ${-pad} ${W} ${H}" width="${width}" height="${(H * px).toFixed(0)}" data-grid="${cell}" xmlns="http://www.w3.org/2000/svg">`;
+  s += `<defs><pattern id="mg" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse"><path d="M${cell} 0H0V${cell}" fill="none" class="mapgrid" vector-effect="non-scaling-stroke"/></pattern></defs><rect x="${-pad}" y="${-pad}" width="${W}" height="${H}" fill="url(#mg)" class="mapbg"/>`;
   for (const c of cs) {
     const { W: cw, L: cl } = Draw.dims(c), [bw, bh] = boxOf(c);
     let inner = Draw.svg(c, decorate(activeIn(c.id)), { px: 1, minPx: 1.6, today: todayStr() });
@@ -55,7 +71,19 @@ export function pageMap(q) {
   const edit = q.get('edit') === '1';
   setChrome('Garden map', { back: true, kicker: edit ? 'Drag to arrange · tap to select' : S.areas.find(a => a.id === areaId).name });
   let sel = null;
-  const vw = Math.min(window.innerWidth, 680) - 32;
+  const vw = Math.min(window.innerWidth, 680) - 32, zmax = maxZoom(areaId, vw);
+  if (mapZoom > zmax) mapZoom = zmax;
+  // zoom: the map gets wider than the screen and scrolls sideways; keep the middle of the view where it was
+  const zoomTo = z => {
+    const box = $('#mapbox'), svg = box.querySelector('svg'); if (!svg) return;
+    const r = svg.getBoundingClientRect(), fx = (box.scrollLeft + box.clientWidth / 2) / r.width, fy = (window.innerHeight / 2 - r.top) / r.height;
+    mapZoom = z; draw();
+    const r2 = box.querySelector('svg').getBoundingClientRect();
+    box.scrollLeft = fx * r2.width - box.clientWidth / 2;
+    window.scrollBy(0, r2.top + fy * r2.height - window.innerHeight / 2);
+  };
+  A.zoomIn = () => zoomTo(Math.min(zmax, mapZoom * 2));
+  A.zoomOut = () => zoomTo(Math.max(1, mapZoom / 2));
   A.area = el => location.replace(`#/map?a=${el.dataset.id}${edit ? '&edit=1' : ''}`);
   A.newArea = () => { const n = prompt('Name of the new area (e.g. Community garden):'); if (!n) return; const a = { id: 'a_' + uid(), name: n.trim() }; S.areas.push(a); save().then(() => location.replace(`#/map?a=${a.id}&edit=1`)); };
   A.renameArea = () => { const a = S.areas.find(x => x.id === areaId); const n = prompt('Rename area:', a.name); if (n) { a.name = n.trim(); save().then(render); } };
@@ -73,15 +101,21 @@ export function pageMap(q) {
     });
   };
   const html = `<div class="seg wrap">${S.areas.map(a => `<button type="button" data-act="area" data-id="${a.id}" class="${a.id === areaId ? 'on' : ''}">${esc(a.name)}</button>`).join('')}</div>
+    ${zmax > 1 ? `<div class="mapzoom"><button type="button" class="btn small" data-act="zoomOut" aria-label="Zoom out">－</button><span id="zoomTxt"></span><button type="button" class="btn small" data-act="zoomIn" aria-label="Zoom in">＋</button></div>` : ''}
     <div id="mapbox" class="mapbox"></div>
     <div id="selbar" class="btnrow" hidden><button class="btn small" data-act="rot">⟳ Rotate</button><button class="btn small" data-act="moveTo">Move to area…</button></div>
     ${edit ? `<div class="btnrow"><a class="btn primary" href="#/map?a=${areaId}" onclick="location.replace(this.href);return false;">Done</a></div>
       <div class="btnrow"><button class="btn small" data-act="newArea">＋ New area</button><button class="btn small" data-act="renameArea">Rename area</button><button class="btn small danger" data-act="delArea">Delete area</button></div>
-      <p class="hint">Grid squares are 50 cm. Drag beds and pots roughly where they are; exact placement doesn’t matter.</p>`
+      <p class="hint"><span id="gridTxt">Grid squares are 50 cm.</span> Drag beds and pots roughly where they are; exact placement doesn’t matter.</p>`
       : `<div class="btnrow"><a class="btn" href="#/map?a=${areaId}&edit=1" onclick="location.replace(this.href);return false;">✥ Arrange map</a><button class="btn" data-act="newArea">＋ New area</button></div>`}`;
   function draw() {
-    $('#mapbox').innerHTML = mapSVG(areaId, { edit, width: vw, sel });
+    const box = $('#mapbox');
+    box.innerHTML = mapSVG(areaId, { edit, width: vw * mapZoom, sel });
+    box.classList.toggle('zoomed', mapZoom > 1);
     $('#selbar').hidden = !(edit && sel);
+    const zt = $('#zoomTxt'); if (zt) zt.textContent = mapZoom > 1 ? `×${mapZoom}` : 'Whole area';
+    const g = box.querySelector('svg') && +box.querySelector('svg').dataset.grid, gt = $('#gridTxt');
+    if (gt && g) gt.textContent = `Grid squares are ${g >= 100 ? g / 100 + ' m' : g + ' cm'}.`;
   }
   const after = () => {
     draw();

@@ -114,7 +114,7 @@ export function careJobs(cropId) {
 // resolve a job's product amount for a planting at save time
 export function jobAmount(j, c, p) {
   const f = j[4]; if (!f) return { product: '', amount: null, unit: '' };
-  if (f.perPlant) { const n = c ? Draw.layout(c, p).pts.length || 1 : 1; return { product: f.product, amount: f.perPlant * n, unit: 'handful' }; }
+  if (f.perPlant) { const n = c ? Draw.count(c, p) || 1 : 1; return { product: f.product, amount: f.perPlant * n, unit: 'handful' }; }
   const area = c ? soilM2(c, p.from, p.to) : 0.12;
   return { product: f.product, amount: Math.max(10, Math.round(f.perM2 * area / 5) * 5), unit: 'g' };
 }

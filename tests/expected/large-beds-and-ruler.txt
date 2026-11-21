@@ -1,0 +1,23 @@
+form opened: true
+crop chosen, preview drawn: true
+saved: true
+counted: 110723 plants, 0 placed one by one, many=110723
+bed page: true | drawn as a pattern: true | plants drawn one by one: 0
+size note on the bed page: A bed can be up to 50 m (5000 cm) on each side. For a bigger area, add it as several beds. Edit size
+planting page: true | 110,723 plants | arrange offered: false
+arrange page: This planting has about 110,723 plants — too many to place one by one
+home: true
+map zoom offered: true | Whole area | move/rotate bar hidden: true
+zoomed to ×64 | scrolls sideways: true | a bag is at least 60 px: true
+tapping a bag opens it: true
+grid note: Grid squares are 50 cm.
+edit form says: A bed can be up to 50 m (5000 cm) on each side. For a bigger area, add it as several beds.
+save refused: A bed can be up to 50 m (5000 cm) on each side. For a bigger area, add it as several beds. | still 10000
+5000 × 5000: (nothing)
+margin 2600: A 2600 cm margin from each edge leaves no room to plant — make it less than 2500 cm.
+pot 450 cm: A pot can be up to 3 m (300 cm) across. For anything bigger, choose Bed.
+ruler 1 × 2 m bed: 50 100 50 100 150 200
+ruler 1.2 × 12 m bed: 100 100 200 300 400 500 600 700 800 900 1000 1100 1200
+ruler round bag: ""
+ruler 100 m bed: 2000 4000 6000 8000 10000 2000 4000 6000 8000 10000
+errs []

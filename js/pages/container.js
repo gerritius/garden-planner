@@ -8,7 +8,7 @@ import { $, $$, esc, go, niceDate, num, shortDate, todayStr, uid } from '../core
 import { Draw, plotSVG } from '../draw.js';
 import { mixDialog, mixList } from '../feeding/mix.js';
 import { feedDialog } from '../feeding/plans.js';
-import { activeIn, decorate, gaps, isPlanned, planting, prevCrop, sizeLabel, typeLabel } from '../garden/garden.js';
+import { activeIn, decorate, gaps, isPlanned, planting, prevCrop, sizeLabel, sizeProblem, typeLabel } from '../garden/garden.js';
 import { ideasBtn } from '../garden/ideas.js';
 import { ensureAreas } from '../garden/map.js';
 import { freeGaps, planSection } from '../garden/planning.js';
@@ -37,6 +37,7 @@ export function pageContainer(c) {
     S.containers = S.containers.filter(x => x !== c); await save(); go('#/');
   };
   const html = `<div class="plotwrap">${plotSVG(c, { width: vw, maxH: window.innerHeight * 0.62, labels: true, gaps: true, showMargin: true, grid: true })}</div>
+    ${sizeProblem(c) ? `<p class="banner warn">${esc(sizeProblem(c))} <a href="#/container/${c.id}/edit">Edit size</a></p>` : ''}
     <p class="hint center">${typeLabel(c)} · ${sizeLabel(c)}${c.margin ? ` · ${c.margin} cm edge margin` : ''}${c.type !== 'round' ? ' · top → bottom = long side' : ''}</p>
     <div class="center"><button class="chip big" data-act="climate">${climateLabel(c)} ✎</button></div>
     <section><h3>Growing now</h3>
@@ -79,12 +80,14 @@ export function pageContainerForm(c) {
     ${isNew && d.type !== 'bed' ? `<label>Potting mix<select name="mixKind"><option value="">— not recorded —</option>${mixList().map(([k, en, ja]) => `<option value="${k}"${d.mixKind === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <label class="inl chkline"><input type="checkbox" name="mixFresh"${d.mixFresh === false ? '' : ' checked'}> <span>Fresh mix (not re-used)</span></label>` : ''}
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
-    <div class="preview" id="cprev"></div>
+    <div class="preview" id="cprev"></div><p class="banner warn" id="sizeWarn" hidden></p>
     <button class="btn primary wide" type="submit">${isNew ? 'Add' : 'Save'}</button></form>`;
   const read = () => { const f = $('#cf'); for (const el of f.elements) if (el.name) d[el.name] = el.type === 'checkbox' ? el.checked : el.value; };
   const prev = () => { read(); const t = { id: 'prev', type: d.type, width: num(d.width) || 1, length: num(d.length) || 1, diameter: num(d.diameter) || 1, margin: num(d.margin) || 0 };
     if (t.type !== 'round' && t.width > t.length) [t.width, t.length] = [t.length, t.width];
-    $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true, grid: true }); };
+    $('#cprev').innerHTML = Draw.svg(t, [], { px: Math.min(220 / Draw.dims(t).L, 260 / Draw.dims(t).W), showMargin: true, grid: true });
+    const filled = d.type === 'round' ? num(d.diameter) > 0 : num(d.width) > 0 && num(d.length) > 0;   // nothing to say while a size is still being typed
+    const why = filled ? sizeProblem(Object.assign(t, { depth: num(d.depth) })) : '', w = $('#sizeWarn'); w.textContent = why; w.hidden = !why; };
   A.type = el => { read(); d.type = el.dataset.v; if (d.type !== 'bed' && +d.margin === 10) d.margin = 2; if (d.type === 'bed' && +d.margin === 2) d.margin = 10; render(); };
   A.where = el => { read(); if (el.dataset.v === 'in') d.indoor = true; else { d.indoor = false; d.sun = el.dataset.v; } render(); };
   A.preset = () => { Object.assign(d, { type: 'round', name: d.name || 'Bag', diameter: 40, depth: 35, margin: 2, count: d.count || 1 }); render(); };
@@ -102,6 +105,7 @@ export function pageContainerForm(c) {
         if (w > l) [w, l] = [l, w];
         Object.assign(base, { width: w, length: l, depth: d.type === 'rect' ? num(d.depth) : null });
       }
+      const why = sizeProblem(base); if (why) return alert(why);
       const name = (d.name || '').trim() || (d.type === 'bed' ? 'Bed' : 'Pot');
       if (isNew) {
         const n = Math.max(1, Math.min(50, parseInt(d.count) || 1));

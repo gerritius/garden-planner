@@ -246,6 +246,10 @@ export function pagePlantForm(p, c, q) {
       if (!d.cropId) return alert('Choose a crop first.');
       if (!(d.to > d.from)) return alert('“To” must be more than “From”.');
       if (d.from < 0 || d.to > L + 0.01) return alert(`Section must be within 0–${L} cm.`);
+      if (d.layout === 'free' && !(d.positions || []).length) {
+        const n = Draw.count(c, Object.assign({}, d, { layout: 'rows', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp) }));
+        if (n > Draw.MAX_ARRANGE) return alert(`That's about ${n.toLocaleString('en-AU')} plants — too many to place one by one. Choose rows or another layout.`);
+      }
       if (d.sowDate > todayStr()) {
         const hd = d.harvestDate && d.harvestDate > d.sowDate ? d.harvestDate : addDays(d.sowDate, 60);
         const occ = occupants(c.id, d.from, d.to, d.sowDate, hd, p && p.id);

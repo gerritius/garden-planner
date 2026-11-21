@@ -1,5 +1,5 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
-const CACHE = 'garden-planner-v61';
+const CACHE = 'garden-planner-v62';
 const ASSETS = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/ZillaSlab-500.woff2', 'fonts/ZillaSlab-700.woff2', 'fonts/Caveat-600.woff2',
   // the app's modules (a test checks this list covers every file the app loads)

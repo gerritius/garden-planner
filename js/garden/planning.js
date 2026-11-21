@@ -68,7 +68,7 @@ export function undoActivate(p) {
 }
 export function planTrayPreset(p) {
   const c = container(p.containerId); let n = 0;
-  try { n = c ? Draw.layout(c, p).pts.length : 0; } catch (e) { /* ignore */ }
+  try { n = c ? Draw.count(c, p) : 0; } catch (e) { /* ignore */ }
   return { cropId: p.cropId, variety: p.variety || '', kind: p.raise === 'pot' ? 'pot' : 'tray', count: n ? Math.ceil(n * 1.25) : '', planId: p.id };
 }
 
@@ -169,7 +169,7 @@ export function planNextButton(p) {
 function shopItems(weeks) {
   const td = todayStr(), until = addDays(td, weeks * 7), items = [];
   const plans = S.plantings.filter(p => isPlanned(p) && p.sowDate <= until).sort((a, b) => (a.sowDate < b.sowDate ? -1 : 1));
-  const count = p => { try { const c = container(p.containerId); return c ? Draw.layout(c, p).pts.length : 0; } catch (e) { return 0; } };
+  const count = p => { try { const c = container(p.containerId); return c ? Draw.count(c, p) : 0; } catch (e) { return 0; } };
   for (const p of plans) {
     const c = container(p.containerId), cr = crop(p.cropId), where = (c ? c.name : '') + (sectionOf(p) ? ' ' + sectionOf(p) : ''), n = count(p);
     if (p.method === 'seedling' && (p.raise || 'buy') === 'buy') items.push({ key: 'sl:' + p.id, cat: 'seedlings', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seedlings${n ? ' × ' + n : ''}`, sub: `for ${where} · plant ${shortDate(p.sowDate)}`, by: addDays(p.sowDate, -1) });

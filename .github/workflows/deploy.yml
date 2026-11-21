@@ -1,7 +1,9 @@
 # Publishes the app. A push to `test` updates the test site (…/garden-planner/test/); a push to `main` updates the real
 # site and, for a new version, tags it (v1.2.3) and makes a GitHub release with its notes from releases.json.
-# Nothing goes live unless the lint and every test pass first. (GitHub only lets the main branch publish, so a push to
-# test, once its tests pass, asks a run on main to publish both sites.)
+# Nothing goes live unless the lint and every test pass first: every run checks the branch it runs on before
+# publishing. (GitHub only lets the main branch publish, so a push to test, once its tests pass, asks a run on main to
+# publish both sites — that run checks main too.) Only the publishing itself waits its turn; it always publishes the
+# latest of both branches, so a newer publish replacing a waiting one loses nothing.
 #
 # Needs, once: Settings → Pages → Build and deployment → Source: "GitHub Actions". Until then GitHub keeps publishing
 # the main branch as it is, and the test site isn't published.
@@ -10,22 +12,13 @@ on:
   push:
     branches: [main, test]
   workflow_dispatch:
-    inputs:
-      reason:
-        description: '"test" when a push to test asks for the sites to be published (main was checked when it was pushed)'
-        required: false
-        default: ''
 permissions:
   contents: write   # tags and releases
   pages: write
   id-token: write
   actions: write    # a push to test asks a run on main to publish
-concurrency:
-  group: deploy
-  cancel-in-progress: false
 jobs:
   check:
-    if: github.event_name == 'push' || inputs.reason != 'test'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -59,11 +52,14 @@ jobs:
       - name: Ask a run on main to publish (with the test site from this push)
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main -f reason=test
+        run: gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main
 
   deploy:
     needs: check
-    if: always() && github.ref == 'refs/heads/main' && (needs.check.result == 'success' || (needs.check.result == 'skipped' && inputs.reason == 'test'))
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: pages
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -102,8 +98,8 @@ jobs:
         uses: actions/deploy-pages@v4
 
   release:
-    needs: deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check   # main passed its checks; it goes live in this run's deploy (or a newer one, which includes it)
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -116,5 +112,5 @@ jobs:
           V=$(node -p "require('fs').readFileSync('js/version.js','utf8').match(/APP_VERSION = '([^']+)'/)[1]")
           if git rev-parse -q --verify "refs/tags/v$V" >/dev/null; then echo "v$V is already released."; exit 0; fi
           node -e "const r = require('./releases.json')[0]; if (r.version !== '$V') { console.error('releases.json has no notes for $V'); process.exit(1); } console.log(r.notes.map(n => '- ' + n).join('\n'))" > notes.md
-          gh release create "v$V" --target "$GITHUB_SHA" --title "Garden Planner $V" --notes-file notes.md
+          gh release create "v$V" --target "$GITHUB_SHA" --title "Garden Planner $V" --notes-file notes.md || gh release view "v$V" >/dev/null   # another run may have just made it
           echo "Released v$V."

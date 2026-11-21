@@ -1,0 +1,9 @@
+updated from the previous version: Updated to NEW.What’s new
+  what’s new lists: this version | notes: true
+  next time: (none)
+a new install: (none)
+a garden from before these notes: Updated to NEW.What’s new
+a newer version out: Version 99.0.0 is ready.What’s newUpdate now
+  its notes: Something new / Something else
+Tools → What’s new lists every release: true
+errs []

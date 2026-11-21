@@ -17,8 +17,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     S.plantings.push({ id: 'sp', containerId: 'b2', cropId: 'spinach', method: 'seed', layout: 'rows', from: 100, to: 200, rowSp: 15, plantSp: 3, sowDate: '2026-09-20', harvestDate: '2026-11-25', status: 'active', photos: {}, series: [], harvests: [] });
     S.plantings.push({ id: 'k1', containerId: 'g1', cropId: 'komatsuna', method: 'seed', layout: 'continuous', from: 0, to: 40, rowSp: 15, plantSp: 3, sowDate: '2026-09-10', status: 'active', photos: {}, series: [{ id: 'se1', title: 'Side-dress (追肥)', product: 'Chemical fertiliser 8-8-8', amount: 10, unit: 'g', every: 0, per: 'week', start: addDays(todayStr(), -2) }], harvests: [] });
     S.tasks.push({ id: 'oldjob', containerId: 'b1', plantingId: null, kind: 'bed', title: 'Side-dress', due: '2026-10-25', done: false });
-    for (const p of S.plantings) syncTasks(p); await save();
+    for (const p of S.plantings) syncTasks(p); delete S.dataVersion; await save();
   });
+  await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it
   await pg.goto(U); await pg.waitForTimeout(400);
   console.log('cover type migrated', await pg.evaluate(() => container('b1').covers[0].type));
   // 1) fix the old bed job: mark done 25 Oct with 3 handfuls bokashi

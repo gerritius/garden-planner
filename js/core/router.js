@@ -1,6 +1,7 @@
 // Pages: reads the address (#/…), draws the matching page and the header, and holds the per-page action handlers (A).
 
 import { snapshotDaily } from '../backup/backup.js';
+import { failure, pageRecovery, showRecovery } from '../backup/recovery.js';
 import { driveTick } from '../backup/drive.js';
 import { applyClimate, ensureClimate } from '../climate/climate.js';
 import { pageSow } from '../climate/sowing.js';
@@ -18,18 +19,17 @@ import { pagePlantForm } from '../pages/planting-form.js';
 import { pageArrange, pagePlant } from '../pages/planting.js';
 import { pageSearch } from '../pages/search.js';
 import { groupTabs, pageSettings } from '../pages/tools.js';
-import { migrateCovers } from '../plants/covers.js';
 import { syncHarvest, syncThin } from '../plants/growth.js';
 import { pageDoctor } from '../plants/problems.js';
 import { applyNursery, nurseryDialog, pageSeedlings } from '../plants/seedlings.js';
 import { pageVarieties, pageVariety } from '../plants/varieties.js';
-import { migrateFeed, migrateOwnProducts, migrateProducts } from '../products/library.js';
 import { pageProductLib, pageProducts } from '../products/pages.js';
 import { pagePickSafe } from '../products/sprays.js';
 import { pageLog } from '../records/log.js';
 import { pageDiary, pagePhotos, pageTimeline } from '../records/notes.js';
 import { pageCompare, pageReview, pageSpend, pageTotals } from '../records/review.js';
 import { hydrate } from './photos.js';
+import { savingAllowed } from './state.js';
 import { $, $$, esc } from './util.js';
 
 // ---------- per-page state ----------
@@ -68,6 +68,7 @@ export function setChrome(title, { back = false, tab = null, kicker = '', sub = 
   $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
 }
 export function render() {
+  if (failure) return showRecovery();   // the garden couldn't be loaded: nothing else until that's sorted
   const { parts, q } = route();
   const key = location.hash;
   if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
@@ -75,8 +76,8 @@ export function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
-  try { migrateFeed(); migrateCovers(); migrateOwnProducts(); migrateProducts(); applyNursery(); applyClimate(); } catch (e) { console.warn(e); }
-  if (!bgStarted) {   // once per visit: check the Drive backup, fetch the climate, take the daily snapshot
+  try { applyNursery(); applyClimate(); } catch (e) { console.warn(e); }
+  if (!bgStarted && savingAllowed()) {   // once per visit: check the Drive backup, fetch the climate, take the daily snapshot (never while not saving)
     bgStarted = true;
     setTimeout(() => driveTick().catch(e => console.warn('drive', e)), 300);
     setTimeout(() => ensureClimate(), 1500);
@@ -122,8 +123,10 @@ export function render() {
     else if (a === 'plant' && c === 'photos') ({ html, after } = pagePhotos(planting(b)));
     else if (a === 'plant' && c === 'arrange') ({ html, after } = pageArrange(planting(b)));
     else if (a === 'plant') ({ html, after } = pagePlant(planting(b)));
+    else if (a === 'recovery') ({ html, after } = pageRecovery());
     else html = notFound();
-  } catch (e) { console.error(e); html = `<div class="empty-state">Something went wrong: ${esc(e.message)}<br><a href="#/">Home</a></div>`; }
+  } catch (e) { console.error(e); html = `<div class="empty-state">Something went wrong: ${esc(e.message)}<br><a href="#/">Home</a> · <a href="#/recovery">Recovery</a></div>`; }
+  if (!savingAllowed()) html = `<p class="banner warn">Changes aren’t being saved: this phone’s storage couldn’t be opened. <a href="#/recovery">Recovery</a></p>` + html;
   html = groupTabs(location.hash.replace(/^#\/?/, '').split(/[/?]/)[0]) + html;
   $('#view').innerHTML = html;
   hydrate();

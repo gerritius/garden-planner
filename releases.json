@@ -1,0 +1,29 @@
+[
+  {
+    "version": "1.27.0",
+    "date": "2026-11-21",
+    "notes": [
+      "If your garden ever can't be loaded, a Recovery screen helps instead: keep a copy of what's stored, go back to one of this phone's daily copies, restore a backup file, or start again — nothing is saved over your garden while it can't be loaded.",
+      "Restoring a backup (file, daily copy or Google Drive) can be undone from Tools → Backup, and your photos are no longer cleared before a restore.",
+      "Backups made by older versions of the app are tested with every change, so they keep restoring correctly.",
+      "The app tells you when a newer version is out, with what's new, and shows what changed after it updates.",
+      "There's now a separate test site for trying out changes first, with its own data."
+    ]
+  },
+  {
+    "version": "1.26.1",
+    "date": "2026-11-21",
+    "notes": [
+      "Very large beds no longer freeze the app; bed and pot sizes are checked as you type.",
+      "The garden map can zoom in when a big bed makes everything else tiny.",
+      "The ruler along beds no longer shows 0, never crowds, and round pots have none."
+    ]
+  },
+  {
+    "version": "1.26.0",
+    "date": "2026-11-21",
+    "notes": [
+      "Behind the scenes: the app's code was reorganised so it's easier to keep working well. Nothing should look different."
+    ]
+  }
+]

@@ -23,8 +23,9 @@ const U = `http://localhost:${PORT}/`;
     S.log = [{ id: 'l1', kind: 'fert', product: 'Bokashi', amount: 2, unit: 'handful', date: '2026-11-01', cids: ['b1'], pids: [] }, { id: 'l2', kind: 'fert', product: 'Kincho Liquid 6-6-7', amount: 10, unit: 'mL', date: '2026-11-10', cids: [], pids: ['ce'] },
       { id: 'l3', kind: 'fert', product: 'Wood ash', amount: 1, unit: 'handful', date: '2026-11-05', cids: ['b1'], pids: [] }, { id: 'l4', kind: 'spray', product: 'Benica Natural spray', productId: 'benicaNatural', date: '2026-11-12', cids: [], pids: ['cb'] }];
     S.tasks = []; S.plantings.forEach(p => { const d = { cropId: p.cropId, sowDate: p.sowDate, method: p.method, containerId: p.containerId, daysHarvest: crop(p.cropId).daysHarvest }; recalc(d); p.harvestDate = d.harvestDate; syncTasks(p); });
-    await save();
+    delete S.dataVersion; await save();
   });
+  await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it
   await pg.goto(U + '#/'); await pg.waitForTimeout(500);
   const out = await pg.evaluate(() => {
     const r = [];

@@ -1,6 +1,6 @@
-Pot 20 L: base ["3L","20g","13g"] | Kincho 5 mL/5 L → 5.0 mL conc | lime@pH5.5 19 g
-Pot 44 L: base ["7L","45g","30g"] | Kincho 5 mL/5 L → 5.0 mL conc | lime@pH5.5 40 g
-Pot 80 L: base ["12L","80g","55g"] | Kincho 5 mL/5 L → 5.0 mL conc | lime@pH5.5 75 g
+Pot 20 L: base ["3L","20g","13g"] | Kincho 5 mL/5 L → 2.0 mL conc | lime@pH5.5 19 g
+Pot 44 L: base ["7L","45g","30g"] | Kincho 5 mL/5 L → 4.4 mL conc | lime@pH5.5 40 g
+Pot 80 L: base ["12L","80g","55g"] | Kincho 5 mL/5 L → 8.0 mL conc | lime@pH5.5 75 g
 crop panel: search box true | items 40
 filtered: [ 'Spinach ほうれん草' ]
 crop now spinach | field shows Spinach ほうれん草

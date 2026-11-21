@@ -12,8 +12,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     S.plantings = [{ id: 'le', containerId: 'g1', cropId: 'lettuce', method: 'seedling', layout: 'center', from: 0, to: 40, rowSp: 20, plantSp: 20, sowDate: '2026-11-01', status: 'active', photos: {}, series: [], harvests: [], fert: [],
       feedPlan: [{ id: 'fp', product: 'Kincho Liquid 6-6-7', amount: 5, unit: 'mL', every: 7, start: '2026-11-10', end: '2027-01-20' }] }];
     S.log = [{ id: 'l1', kind: 'fert', product: 'Kincho liquid 6-6-7', amount: 10, unit: 'mL', date: '2026-11-10', cids: ['g1'], pids: [] }];
-    S.tasks = []; await save();
+    S.tasks = []; delete S.dataVersion; await save();
   });
+  await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it
   await pg.goto(U + '#/plant/le'); await pg.waitForTimeout(500);
   console.log('custom:', JSON.stringify(await pg.evaluate(() => S.customProducts)));
   console.log('log renamed:', await pg.evaluate(() => S.log[0].product));

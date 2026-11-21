@@ -22,6 +22,12 @@ npm test -- feeding                  # only scenarios with "feeding" in the name
 They also run automatically on GitHub for every push (see `.github/workflows/tests.yml`); the result shows as a ✓ or
 ✗ next to each commit.
 
+## Backups from older versions
+
+`tests/fixtures/backups/` holds backups made by older versions of the app (a made-up garden, no personal data). Make one
+from the current code with `npm run fixture`, or from an older version with `node tests/tools/make-fixture.js v1.26.1`
+(any git tag or commit). Do this before changing what the app saves — see "Data safety" in the main README.
+
 ## When a test fails
 
 - **"crashed"** or **"errors in the page"**: something is broken — the message shows where.
@@ -74,6 +80,7 @@ They also run automatically on GitHub for every push (see `.github/workflows/tes
 | `notes-bed-buttons-quick-add` | The note dialog (with photo), bed page buttons, Quick add |
 | `offline-files` | Every file the app loads is on the service worker's offline list, and every file on it exists |
 | `plant-size-in-drawing` | How big plants are drawn as they grow |
+| `old-backups` | Backups made by older versions (1.3.3 onwards) restore with nothing lost, formats converted, every page working; each format change has a backup from before it |
 | `planting-form-more-options` | The short planting form and its "More options" |
 | `potato-harvest-dates` | Potato harvest dates for different planting dates |
 | `potting-mix-fertiliser` | Fertiliser in fresh and re-used potting mix |
@@ -81,6 +88,8 @@ They also run automatically on GitHub for every push (see `.github/workflows/tes
 | `products-library` | Adding, editing, renaming and removing products; the catalogue; sprays without registry data |
 | `quality-alerts-doctor-shopping` | Harvest-quality warnings, the problem finder, the shopping list |
 | `realistic-garden-numbers` | A garden like a real one: products, nutrient counts, starting fertiliser, "fed until" |
+| `recovery` | A garden that can't be loaded: recovery screen, nothing saved over it, keep a copy, restore a daily copy; no storage; undoing a restore; old formats kept |
+| `release-versions` | The version is the same in `js/version.js`, `sw.js` and `releases.json`; the release notes are in order |
 | `rotation-varieties-photos-picksafe` | Rotation plan, variety notes, photo timeline, "OK to pick?" board |
 | `season-plan-and-seed-packets` | The season plan's free spaces; re-using seed packets |
 | `season-plan-speed` | The season plan opens quickly and fills in its ideas |
@@ -95,11 +104,13 @@ They also run automatically on GitHub for every push (see `.github/workflows/tes
 | `spray-registry-table` | What the pesticide registry allows for each crop |
 | `spring-cabbage-plan` | Saving a feeding plan for overwintering cabbage |
 | `storage-note-by-device` | The storage-safety note on different phones |
+| `test-site` | The test site (`/test/`) has its own garden, settings and offline copy, no Drive backup, and copies the real garden without changing it |
 | `thinning-done-date` | Ticking off thinning, and the date it was done |
 | `thinning-sizes` | Plant sizes around thinning |
 | `tools-tabs` | Tools page tiles and the tabs between related pages |
 | `tray-seedlings-to-planting` | Seedlings in trays through to planting out |
 | `tray-sizes-and-bag-preset` | Seed tray / small pot sizes; the grow-bag preset |
+| `updates` | "What's new" once after an update; the notice when a newer version is out; Tools → What's new |
 | `warm-crops-cool-summers` | Warm-season crops in a cool-summer climate (e.g. London tomatoes) |
 | `watering-and-rain` | The watering job's timing from rain and your ticks |
 | `watering-skip-frost-thin` | Skipping a watering, removing frost and thinning jobs |

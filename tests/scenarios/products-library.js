@@ -12,8 +12,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     S.containers = [{ id: 'g1', type: 'round', name: 'Bag 1', diameter: 40, depth: 35, margin: 2, history: [], mixLog: [{ id: 'm1', date: '2026-10-01', kind: 'touikawa', fresh: true }] },
       { id: 'b1', type: 'bed', name: 'Plot A', width: 100, length: 200, margin: 10, history: [] }];
     S.plantings = [{ id: 'cb', containerId: 'b1', cropId: 'cabbage', method: 'seedling', layout: 'staggered', from: 0, to: 200, rowSp: 45, plantSp: 45, sowDate: '2026-10-18', status: 'active', photos: {}, series: [], harvests: [], fert: [{ product: 'Bokashi', amount: 4, unit: 'handful' }] }];
-    S.log = []; S.tasks = []; await save();
+    S.log = []; S.tasks = []; delete S.dataVersion; await save();
   });
+  await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it
   await pg.goto(U + '#/products'); await pg.waitForTimeout(500);
   console.log('page:', (await pg.textContent('#view')).replace(/\s+/g, ' ').slice(0, 700));
   await pg.screenshot({ path: `${SP}/products.png`, fullPage: true });

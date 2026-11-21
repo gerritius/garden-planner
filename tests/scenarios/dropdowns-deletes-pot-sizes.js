@@ -11,8 +11,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     S.customProducts = [{ id: 'cust_k', en: 'Kincho Liquid 6-6-7', form: 'liquid', kind: 'fert', npkv: [6, 6, 7], per: 5, doses: [5, 10], custom: true }];
     S.plantings = [{ id: 'le', containerId: 'p1', cropId: 'lettuce', method: 'seedling', layout: 'center', from: 0, to: 40, sowDate: '2026-11-01', status: 'active', photos: {}, series: [], harvests: [], fert: [] }];
     S.log = [{ id: 'lg', kind: 'fert', product: 'Chemical fertiliser 8-8-8', amount: 10, unit: 'g', date: '2026-11-10', cids: [], pids: ['le'] }];
-    S.tasks = []; S.ownMigrated2 = true; await save();
+    S.tasks = []; S.ownMigrated2 = true; delete S.dataVersion; await save();
   });
+  await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it
   console.log(await pg.evaluate(() => S.containers.filter(c => c.type !== 'bed').map(c => `${c.name}: base ${JSON.stringify(baseFertPlan('lettuce', c, 0, 40, todayStr()).map(f => f.amount + f.unit))} | Kincho 5 mL/5 L → ${(feedGrams(5, 'mL', 'Kincho Liquid 6-6-7', c) / 1.2).toFixed(1)} mL conc | lime@pH5.5 ${gramsFor(limeRate('lettuce', 5.5), c)} g`).join('\n')));
   // planting form: select → drop-down
   await pg.goto(U + '#/plant/new/b1?crop=lettuce'); await pg.waitForTimeout(500);

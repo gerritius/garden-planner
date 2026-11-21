@@ -97,17 +97,19 @@ export function frostEnd(p) {
   for (let d = addDays(p.sowDate, 30), i = 0; i < 200; i++, d = addDays(d, 1)) if (normalT(d) < 8.5) return d;
   return null;
 }
+// data version 2: plantings from before harvest dates followed the temperature keep dates that were clearly typed in by hand
+export function migrateHarvestDates() {
+  if (S.hvMig) return;
+  for (const p of S.plantings) {
+    if (p.status === 'harvested' || !p.harvestDate || !p.sowDate) continue;
+    const cr = crop(p.cropId), dh = +cr.daysHarvest || 0, tp = raisable(p.cropId) ? tpDays(p.cropId) : 0;
+    const old = [addDays(p.sowDate, dh), addDays(p.sowDate, Math.max(14, dh - tp)), p.seededOn ? addDays(p.seededOn, dh) : null].filter(Boolean);
+    if (!old.some(o => Math.abs(daysBetween(o, p.harvestDate)) <= 1)) p.harvestFixed = true;
+  }
+  S.hvMig = true;
+}
 // keep harvest dates current unless set by hand or picking has started
 export function syncHarvest() {
-  if (!S.hvMig) {   // older plantings: keep dates that were clearly typed in by hand
-    for (const p of S.plantings) {
-      if (p.status === 'harvested' || !p.harvestDate || !p.sowDate) continue;
-      const cr = crop(p.cropId), dh = +cr.daysHarvest || 0, tp = raisable(p.cropId) ? tpDays(p.cropId) : 0;
-      const old = [addDays(p.sowDate, dh), addDays(p.sowDate, Math.max(14, dh - tp)), p.seededOn ? addDays(p.seededOn, dh) : null].filter(Boolean);
-      if (!old.some(o => Math.abs(daysBetween(o, p.harvestDate)) <= 1)) p.harvestFixed = true;
-    }
-    S.hvMig = true;
-  }
   for (const p of S.plantings) {
     if (p.status === 'harvested' || p.harvestFixed || (p.harvests || []).length || !crop(p.cropId).daysHarvest) continue;
     if (S.tasks.some(t => t.plantingId === p.id && t.kind === 'harvest' && t.done)) continue;

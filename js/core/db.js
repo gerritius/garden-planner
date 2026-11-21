@@ -1,12 +1,13 @@
 // Tiny IndexedDB wrapper: 'kv' holds the app state, 'photos' holds image blobs.
 
-// Tiny IndexedDB wrapper: 'kv' holds the app state, 'photos' holds image blobs.
+import { DB_NAME } from './site.js';
+
 export let dataVer = 0;   // bumped on every save of the state, so cached results know when they're stale
 export const DB = (() => {
   let dbp;
   function open() {
     if (!dbp) dbp = new Promise((res, rej) => {
-      const r = indexedDB.open('garden-planner', 1);
+      const r = indexedDB.open(DB_NAME, 1);
       r.onupgradeneeded = () => { const d = r.result; d.createObjectStore('kv'); d.createObjectStore('photos'); };
       r.onsuccess = () => res(r.result);
       r.onerror = () => rej(r.error);
@@ -30,6 +31,7 @@ export const DB = (() => {
     putPhoto: (id, blob) => tx('photos', 'readwrite', s => s.put(blob, id)),
     delPhoto: id => tx('photos', 'readwrite', s => s.delete(id)),
     photoKeys: () => tx('photos', 'readonly', s => s.getAllKeys()),
+    kvKeys: () => tx('kv', 'readonly', s => s.getAllKeys()),
     clearPhotos: () => tx('photos', 'readwrite', s => s.clear()),
   };
 })();

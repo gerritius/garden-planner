@@ -1,0 +1,5 @@
+js/version.js, sw.js and releases.json have the same version: true 
+versions look like 1.2.3: true
+releases.json is newest first, each version once: true
+every release has a date and notes: true
+errs []

@@ -1,6 +1,6 @@
 // The Tools page (settings and every tool), and the tabs between related tool pages.
 
-import { exportBackup, importBackup, snapshotSection } from '../backup/backup.js';
+import { copyFromMainSite, exportBackup, importBackup, snapshotSection } from '../backup/backup.js';
 import { driveSection } from '../backup/drive.js';
 import { climateSection } from '../climate/climate.js';
 import { weatherSettings } from '../climate/weather.js';
@@ -14,12 +14,16 @@ import { CATALOG } from '../data/catalog.js';
 import { crop, ic, newCropDialog } from '../plants/crops.js';
 import { learnSection } from '../plants/learning.js';
 import { harvestTotalsSection } from '../records/review.js';
+import { IS_TEST } from '../core/site.js';
+import { allReleaseNotes } from '../core/updates.js';
 import { APP_VERSION } from '../version.js';
 
 // ---------- the Tools page ----------
 export function pageSettings() {
   setChrome('Tools', { tab: 'settings', kicker: 'Backup, weather & settings' });
   A.export = exportBackup;
+  A.relNotes = allReleaseNotes;
+  A.copyMain = copyFromMainSite;
   A.import = () => $('#impf').click();
   A.delCrop = async el => {
     const id = el.dataset.id;
@@ -40,6 +44,8 @@ export function pageSettings() {
       ${tile('#/products', '🧴', 'Products')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
     <h3 class="grp">Records</h3><div class="tiles">
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
+    ${IS_TEST ? `<section><h3>🧪 Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
+      <button class="btn wide" data-act="copyMain">Copy my real garden here</button></section>` : ''}
     <h3 class="grp">Settings</h3>
     <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly — connect Google Drive below to have it done every day, or export a file and save it somewhere safe.</p>
@@ -61,7 +67,7 @@ export function pageSettings() {
     <section><h3>Catalogue</h3><p class="muted">${CATALOG.length} built-in crops with about 5 varieties each. Values are typical starting points — always check the packet.</p>
       <details><summary>Show crops</summary><ul class="plist">${CATALOG.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}<small>${c.varieties.map(esc).join('、')}</small></span></li>`).join('')}</ul></details></section>
 </details>
-    <p class="hint center">Garden Planner · v${APP_VERSION}</p>`;
+    <p class="hint center">Garden Planner · v${APP_VERSION}${IS_TEST ? ' · test site' : ''} · <a href="#/settings" data-act="relNotes">What’s new</a></p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));
     storageNote();

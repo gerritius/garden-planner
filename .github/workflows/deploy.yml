@@ -1,0 +1,120 @@
+# Publishes the app. A push to `test` updates the test site (…/garden-planner/test/); a push to `main` updates the real
+# site and, for a new version, tags it (v1.2.3) and makes a GitHub release with its notes from releases.json.
+# Nothing goes live unless the lint and every test pass first. (GitHub only lets the main branch publish, so a push to
+# test, once its tests pass, asks a run on main to publish both sites.)
+#
+# Needs, once: Settings → Pages → Build and deployment → Source: "GitHub Actions". Until then GitHub keeps publishing
+# the main branch as it is, and the test site isn't published.
+name: Deploy
+on:
+  push:
+    branches: [main, test]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: '"test" when a push to test asks for the sites to be published (main was checked when it was pushed)'
+        required: false
+        default: ''
+permissions:
+  contents: write   # tags and releases
+  pages: write
+  id-token: write
+  actions: write    # a push to test asks a run on main to publish
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+jobs:
+  check:
+    if: github.event_name == 'push' || inputs.reason != 'test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - run: npm install
+      - name: Lint
+        run: npm run lint
+      - name: Version raised for app changes
+        if: github.ref == 'refs/heads/main'
+        run: node tools/release-check.js
+      - run: npx playwright install --with-deps chromium
+      - run: npm test
+      - name: Keep the test output if something failed
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-output
+          path: tests/output
+          retention-days: 7
+
+  publish-test:
+    needs: check
+    if: github.ref == 'refs/heads/test'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask a run on main to publish (with the test site from this push)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run deploy.yml --repo "$GITHUB_REPOSITORY" --ref main -f reason=test
+
+  deploy:
+    needs: check
+    if: always() && github.ref == 'refs/heads/main' && (needs.check.result == 'success' || (needs.check.result == 'skipped' && inputs.reason == 'test'))
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          path: main
+      - name: Is there a test branch?
+        id: branches
+        working-directory: main
+        run: |
+          if git ls-remote --exit-code --heads origin test >/dev/null; then echo "test=yes" >> "$GITHUB_OUTPUT"; else echo "test=no" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v6
+        if: steps.branches.outputs.test == 'yes'
+        with:
+          ref: test
+          path: testsrc
+      - name: Put the site together (main at the top, test under test/)
+        run: node main/tools/build-site.js main ${{ steps.branches.outputs.test == 'yes' && 'testsrc' || '-' }} _site
+      - name: Is GitHub Pages set to deploy from Actions?
+        id: pages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mode=$(gh api "repos/${GITHUB_REPOSITORY}/pages" --jq .build_type 2>/dev/null || echo none)
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          if [ "$mode" != "workflow" ]; then echo "::notice::GitHub Pages is set to '$mode', so this run doesn't publish (the main branch is still published as it is, and the test site isn't). In Settings → Pages, set Source to 'GitHub Actions'."; fi
+      - uses: actions/upload-pages-artifact@v4
+        if: steps.pages.outputs.mode == 'workflow'
+        with:
+          path: _site
+      - id: deployment
+        if: steps.pages.outputs.mode == 'workflow'
+        uses: actions/deploy-pages@v4
+
+  release:
+    needs: deploy
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Tag and release a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(node -p "require('fs').readFileSync('js/version.js','utf8').match(/APP_VERSION = '([^']+)'/)[1]")
+          if git rev-parse -q --verify "refs/tags/v$V" >/dev/null; then echo "v$V is already released."; exit 0; fi
+          node -e "const r = require('./releases.json')[0]; if (r.version !== '$V') { console.error('releases.json has no notes for $V'); process.exit(1); } console.log(r.notes.map(n => '- ' + n).join('\n'))" > notes.md
+          gh release create "v$V" --target "$GITHUB_SHA" --title "Garden Planner $V" --notes-file notes.md
+          echo "Released v$V."

@@ -12,7 +12,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     S.plantings.push({ id: 'old1', containerId: 'b2', cropId: 'daikon', method: 'seed', layout: 'rows', from: 0, to: 100, rowSp: 30, plantSp: 30, sowDate: '2026-09-05', harvestDate: '2026-11-20', status: 'active', photos: {}, series: [], harvests: [] });
     S.plantings.push({ id: 'old2', containerId: 'b2', cropId: 'komatsuna', method: 'seed', layout: 'rows', from: 100, to: 200, rowSp: 15, plantSp: 3, sowDate: '2026-11-10', harvestDate: addDays('2026-11-10', 35), status: 'active', photos: {}, series: [], harvests: [] });
     S.starts = [{ id: 'st', cropId: 'cabbage', kind: 'tray', tray: 1, count: 10, sowDate: '2026-10-10', kept: 'cover', status: 'growing', events: [], created: '1' }];
-    S.hvMig = false; await save();
+    S.hvMig = false; delete S.dataVersion; await save();   // saved as an older version of the app would have
   });
   await pg.goto(U); await pg.waitForTimeout(400);
   console.log('migrated', JSON.stringify(await pg.evaluate(() => ['old1', 'old2'].map(id => [id, planting(id).harvestDate, !!planting(id).harvestFixed]))));

@@ -29,13 +29,37 @@ use — so to see where something comes from, look at the `import` lines.
 
 A few conventions:
 
-- **The garden is `S`** (`js/core/state.js`). Change it, then call `save()`. To replace it wholesale (restore), use `setState()`.
+- **The garden is `S`** (`js/core/state.js`). Change it, then call `save()`. To replace it wholesale, use `restoreGarden()`
+  (`js/backup/backup.js`): it checks the data, brings it up to date and keeps the old garden so it can be undone.
 - **Pages** are functions that return `{ html, after }`; `render()` in `js/core/router.js` picks one from the address (`#/…`).
 - **Buttons** carry `data-act="name"`; the page sets `A.name = el => …` while it draws (`A` is cleared on every page).
 - **Every name is defined once.** If something needs to behave differently, change it where it's defined.
 
-## Releasing a change
+## How a change reaches the phone
 
-1. Bump `APP_VERSION` in `js/version.js` and `CACHE` in `sw.js` (phones then fetch the new files).
-2. A new module goes in the `ASSETS` list in `sw.js` (the `offline-files` test fails if one is missing).
-3. `npm run lint` and `npm test` — both also run on GitHub for every push. See [tests/README.md](tests/README.md).
+1. **Work on the `test` branch.** Every push there is linted and tested, then published to the test site,
+   <https://gerritius.github.io/garden-planner/test/> — striped purple header, "TEST SITE" badge. It has its own garden
+   (Tools → "Copy my real garden here" starts it from a copy; the real one is never changed), its own offline copy and
+   settings, and no Google Drive backup.
+2. **Release by merging `test` into `main`.** Before it goes live the version must be raised in three places that a
+   test keeps in step: `js/version.js`, `VERSION` in `sw.js`, and `releases.json` (newest first, with notes written for
+   the person using the app — the app shows them).
+3. **On `main`** the same checks run, the real site is published, and the new version is tagged (`v1.27.0`) with a
+   GitHub release carrying the notes. A change to the app without a new version is refused.
+4. **On the phone** the app notices the new version (at start, when it comes back to the front, and every few hours),
+   offers "Update now", and afterwards shows what's new once.
+
+All of this is in `.github/workflows/deploy.yml`. It needs GitHub Pages set to deploy from Actions (Settings → Pages →
+Source: GitHub Actions).
+
+## Data safety
+
+- **The saved format has a version** (`DATA_VERSION` in `js/core/migrate.js`). Older saves are brought up to date when
+  they're loaded or restored, step by step; a copy in the old format is kept on the phone first.
+- **Changing the format:** while the app still writes the old format, run `npm run fixture` to save a backup made by it
+  into `tests/fixtures/backups/`; then raise `DATA_VERSION` and add the step. The `old-backups` test restores every
+  backup there (from versions back to 1.3.3) and checks nothing is lost and every page works; it fails if a format change
+  has no backup from before it.
+- **If the garden can't be loaded**, the recovery screen takes over and nothing is saved over it: keep a copy of what's
+  stored, go back to one of the phone's daily copies, restore a backup file, or start again (keeping the old one).
+- **Every restore can be undone** (Tools → Backup), and restoring no longer clears photos first.

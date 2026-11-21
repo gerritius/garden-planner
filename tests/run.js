@@ -18,6 +18,7 @@ const { FIXED_NOW } = require('./lib');
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.woff2': 'font/woff2', '.svg': 'image/svg+xml' };
 const server = http.createServer((req, res) => {
   let p = decodeURIComponent(new URL(req.url, 'http://x').pathname); if (p.endsWith('/')) p += 'index.html';
+  if (p.startsWith('/test/')) p = p.slice(5);   // the test site: the same files under /test/, as on GitHub Pages
   const f = path.join(ROOT, p);
   if (!f.startsWith(ROOT)) { res.writeHead(403); return res.end(); }
   fs.readFile(f, (err, data) => { if (err) { res.writeHead(404); return res.end('not found'); } res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream' }); res.end(data); });

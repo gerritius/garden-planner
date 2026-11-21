@@ -16,9 +16,8 @@ function moduleFiles(dir = path.join(ROOT, 'js'), out = []) {
   return out.sort();
 }
 function bridgeSource() {
-  const files = moduleFiles();
-  return files.map((f, i) => `import * as m${i} from '/${f}';`).join('\n') + `
-const mods = [${files.map((_, i) => 'm' + i).join(', ')}];
+  // imported relative to the page, so they're the very modules the page runs (also on the test site, under /test/)
+  return `const mods = await Promise.all(${JSON.stringify(moduleFiles())}.map(f => import(new URL(f, document.baseURI).href)));
 const setters = {}; for (const m of mods) for (const k of Object.keys(m)) if (/^set[A-Z]/.test(k)) setters[k] = m[k];
 for (const m of mods) for (const k of Object.keys(m)) {
   const set = k === 'S' ? setters.setState : setters['set' + k.replace(/^_+/, '').replace(/^./, c => c.toUpperCase())];
@@ -29,14 +28,15 @@ window.__bridged = true;
 }
 
 async function newContext(browser, extra = {}) {
-  const { openFolds, ...opts } = extra;
+  const { openFolds, bridge: useBridge = true, ...opts } = extra;   // bridge: false for an old version of the app (plain scripts, no modules)
   const ctx = await browser.newContext(Object.assign({}, devices['Pixel 7'], { timezoneId: 'Asia/Tokyo' }, opts));
   await ctx.clock.setFixedTime(FIXED_NOW);
   await ctx.route(u => !['localhost', '127.0.0.1'].includes(u.hostname), r => r.abort());
+  if (openFolds) await ctx.addInitScript(() => setInterval(() => document.querySelectorAll('#pf details:not([open])').forEach(d => { d.open = true; }), 30));
+  if (!useBridge) return ctx;
   const bridge = bridgeSource();
   await ctx.route(u => u.pathname === '/__test_bridge.js', r => r.fulfill({ contentType: 'text/javascript', body: bridge }));
   await ctx.addInitScript(() => { if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === '8765') import('/__test_bridge.js'); });
-  if (openFolds) await ctx.addInitScript(() => setInterval(() => document.querySelectorAll('#pf details:not([open])').forEach(d => { d.open = true; }), 30));
   // after loading a page of the app, wait until the bridge is in place
   const ready = p => p.waitForFunction(() => window.__bridged === true, null, { timeout: 10000 }).catch(() => {});
   const wrap = p => {

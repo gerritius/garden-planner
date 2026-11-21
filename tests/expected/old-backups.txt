@@ -1,0 +1,32 @@
+== a backup saved by version 1.3.3
+  restore said: Backup restored.
+  kept: 6/6 beds & pots, 7/7 plantings, 2/2 jobs done, 0/0 log entries, 1/1 photos, 1/1 own crops, 0/0 seedling trays, note photo true
+  converted: data version 6, covers [], products: Aburakasu (oil cake), Bark compost, Benica Natural spray, Benica X Next spray, Bokashi, Chemical fertiliser 8-8-8, Chicken manure, Cow manure + rice husk compost, Cow manure compost, Kuntan (smoked rice husk charcoal), Oyster shell lime, Pai Benica V spray, Potting mix (with starter fertiliser), Pure Neem pellets, Spino Ace water granules, Stochu (home-made), Tosho Super Fermented aburakasu, Wood ash
+  pages: 38 opened, broken: none
+  exported again: 7 plantings, true same jobs, 0 log, 1 photos, 18 products
+== a backup saved by version 1.10.0
+  restore said: Backup restored.
+  kept: 6/6 beds & pots, 7/7 plantings, 2/2 jobs done, 3/3 log entries, 1/1 photos, 1/1 own crops, 1/1 seedling trays, note photo true
+  converted: data version 6, covers ["fushokufu"], products: Bokashi, Chemical fertiliser 8-8-8, Chicken manure, Cow manure compost, Kincho Liquid 6-6-7, Oyster shell lime, Pai Benica V spray, Potting mix (with starter fertiliser)
+  pages: 38 opened, broken: none
+  exported again: 7 plantings, true same jobs, 3 log, 1 photos, 8 products
+== a backup saved by version 1.22.0
+  restore said: Backup restored.
+  kept: 6/6 beds & pots, 7/7 plantings, 2/2 jobs done, 3/3 log entries, 1/1 photos, 1/1 own crops, 1/1 seedling trays, note photo true
+  converted: data version 6, covers ["insect"], products: Bokashi, Chemical fertiliser 8-8-8, Chicken manure, Cow manure compost, Iris Ohyama Golden Granular Soil, Kincho Liquid 6-6-7, Oyster shell lime, Pai Benica V spray, Potting mix (with starter fertiliser), Touikawa Peace Farm vegetable soil
+  pages: 38 opened, broken: none
+  exported again: 7 plantings, true same jobs, 3 log, 1 photos, 10 products
+== a backup saved by version 1.25.2
+  restore said: Backup restored.
+  kept: 6/6 beds & pots, 7/7 plantings, 2/2 jobs done, 3/3 log entries, 1/1 photos, 1/1 own crops, 1/1 seedling trays, note photo true, Drive settings true
+  converted: data version 6, covers ["insect"], products: Aburakasu (oil cake), Bark compost, Benica Natural spray, Benica X Next spray, Bokashi, Chemical fertiliser 8-8-8, Chicken manure, Cow manure + rice husk compost, Cow manure compost, Kincho Liquid 6-6-7, Kuntan (smoked rice husk charcoal), Oyster shell lime, Pai Benica V spray, Potting mix (with starter fertiliser), Pure Neem pellets, Spino Ace water granules, Stochu (home-made), Tosho Super Fermented aburakasu, Wood ash
+  pages: 38 opened, broken: none
+  exported again: 7 plantings, true same jobs, 3 log, 1 photos, 19 products
+== a backup saved by version 1.27.0
+  restore said: Backup restored.
+  kept: 6/6 beds & pots, 7/7 plantings, 2/2 jobs done, 3/3 log entries, 1/1 photos, 1/1 own crops, 1/1 seedling trays, note photo true, Drive settings true
+  converted: data version 6, covers ["insect"], products: Aburakasu (oil cake), Bark compost, Benica Natural spray, Benica X Next spray, Bokashi, Chemical fertiliser 8-8-8, Chicken manure, Cow manure + rice husk compost, Cow manure compost, Kuntan (smoked rice husk charcoal), Oyster shell lime, Pai Benica V spray, Potting mix (with starter fertiliser), Pure Neem pellets, Spino Ace water granules, Stochu (home-made), Tosho Super Fermented aburakasu, Wood ash
+  pages: 38 opened, broken: none
+  exported again: 7 plantings, true same jobs, 3 log, 1 photos, 18 products
+a backup from the current format (6) is ready for the next change: true
+errs []

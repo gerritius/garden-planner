@@ -1,7 +1,9 @@
-# Lints the app's modules and runs the scenario tests on every push and pull request. The result shows as ✓ / ✗ next to each commit on GitHub.
+# Lints the app's modules and runs the scenario tests for work on other branches and pull requests. (Pushes to main and
+# test are checked the same way by the Deploy workflow, before they go live.) The result shows as ✓ / ✗ on GitHub.
 name: Tests
 on:
   push:
+    branches-ignore: [main, test]
   pull_request:
   workflow_dispatch:
 jobs:

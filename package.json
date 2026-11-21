@@ -5,7 +5,9 @@
   "scripts": {
     "test": "node tests/run.js",
     "test:update": "node tests/run.js --update",
-    "lint": "eslint js sw.js"
+    "lint": "eslint js sw.js",
+    "fixture": "node tests/tools/make-fixture.js",
+    "build-site": "node tools/build-site.js . - _site"
   },
   "devDependencies": {
     "eslint": "9.39.5",

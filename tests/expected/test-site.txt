@@ -1,0 +1,9 @@
+test site: TEST SITE | Garden Planner (test) | starts empty: true | site test / garden-planner-test
+Drive on the test site: Backing up to Google Drive is off on the test site, so test gardens never mix with your real backups.
+copied the real garden: 1 bed, 1 planting, Drive settings dropped: true
+the real site’s stored garden is exactly as before: true
+real site: Plot A, 1 planting | no test badge: true
+settings kept apart: x / true
+databases: garden-planner, garden-planner-test
+offline copies: garden-planner-main-VERSION, garden-planner-test-VERSION
+errs []

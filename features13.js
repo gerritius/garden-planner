@@ -8,6 +8,7 @@
 const NPK = {
   bokashi: [4, 4, 2, 0.7], toshoAburakasu: [3, 3, 2, 0.75], aburakasu: [5, 2, 1, 0.7], chickenManure: [3, 5, 3, 0.6], neem: [4, 1, 1, 0.5],
   cowCompost: [0.7, 0.7, 0.7, 0.1], cowHuskCompost: [0.6, 0.7, 0.8, 0.1], barkCompost: [0.5, 0.3, 0.3, 0.05], oysterLime: [0, 0, 0, 0],
+  kasei888: [8, 8, 8, 1], woodAsh: [0, 3, 7, 0], kuntan: [0, 0.2, 0.5, 0],
 };
 // typical nitrogen for the whole crop, g per m² (= kg/10a in Japanese 施肥基準), incl. side-dressing
 const N_NEED = {

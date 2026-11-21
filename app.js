@@ -1162,6 +1162,7 @@ document.addEventListener('click', e => {
   if (el.dataset.act === 'editTask') { const t = S.tasks.find(x => x.id === el.dataset.id); if (t) taskDialog(t); return; }
   if (A[el.dataset.act]) { e.preventDefault(); A[el.dataset.act](el); }
 });
+document.addEventListener('keydown', e => { const el = e.key === 'Enter' && e.target.closest && e.target.closest('[data-enter]'); if (el && A[el.dataset.enter]) { e.preventDefault(); A[el.dataset.enter](el); } });
 document.addEventListener('change', e => { if (e.target.matches('input[data-task]')) toggleTask(e.target.dataset.task, e.target.checked); });
 $('#back').addEventListener('click', () => { if (history.length > 1) history.back(); else go('#/'); });
 window.addEventListener('hashchange', render);

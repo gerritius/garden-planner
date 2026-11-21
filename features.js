@@ -215,7 +215,7 @@ function weatherSettings() {
   return `<section><h3>Weather</h3>
     ${w && w.lat != null ? `<p>Forecast for <b>${esc(w.name)}</b> <small>(${w.lat}, ${w.lon})</small></p><div class="btnrow"><button class="btn small" data-act="wxClear">Remove location</button></div>` : '<p>Show a 7-day forecast on the home screen, with frost, heavy rain, wind and heat alerts for what you’re growing.</p>'}
     <div class="btnrow"><button class="btn" data-act="wxHere">📍 Use my current location</button></div>
-    <div class="searchrow"><input id="wxq" placeholder="…or search a town, e.g. Setagaya" enterkeyhint="search" onkeydown="if(event.key==='Enter'){event.preventDefault();A.wxSearch();}"><button class="btn" data-act="wxSearch">Search</button></div>
+    <div class="searchrow"><input id="wxq" placeholder="…or search a town, e.g. Setagaya" enterkeyhint="search" data-enter="wxSearch"><button class="btn" data-act="wxSearch">Search</button></div>
     <div id="wxres"></div>
     <p class="hint">Uses the free Open-Meteo service. Only your garden’s rough location (2 decimal places, about 1 km) is sent to get the forecast.</p></section>`;
 }

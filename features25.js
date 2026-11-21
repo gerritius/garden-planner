@@ -3,32 +3,28 @@
 'use strict';
 
 // ---------- a data version: anything saved bumps it, so cached results know when they're stale ----------
-let dataVer = 0;
-const _dbSet = DB.set.bind(DB);
-DB.set = function (k, v) { if (k === 'state') dataVer++; return _dbSet(k, v); };
 const _ideaCache = new Map();
-const _cropIdeasOrig = cropIdeas;
-cropIdeas = function (c, a, b, s, clearBy) {   // eslint-disable-line no-global-assign
+// cached until something is saved (or the day changes)
+function cropIdeas(c, a, b, s, clearBy) {
   const k = [dataVer, todayStr(), c.id, a, b, s, clearBy || ''].join('|');
   if (_ideaCache.has(k)) return _ideaCache.get(k);
   if (_ideaCache.size > 200) _ideaCache.clear();
-  const r = _cropIdeasOrig(c, a, b, s, clearBy); _ideaCache.set(k, r); return r;
-};
+  const r = cropIdeasUncached(c, a, b, s, clearBy); _ideaCache.set(k, r); return r;
+}
 
 // ---------- season plan / bed page free spaces: show at once, fill the idea chips in just after ----------
-const _gapLiOrig = gapLi;
-gapLi = function (c, g) {   // eslint-disable-line no-global-assign
+function gapLi(c, g) {
   const k = [dataVer, todayStr(), c.id, g.a, g.b, g.s, g.e || ''].join('|');
   const clearBy = clearByFor(c, g.s, g.e), ck = [dataVer, todayStr(), c.id, g.a, g.b, g.s, clearBy || ''].join('|');
-  if (_ideaCache.has(ck)) return _gapLiOrig(c, g);   // already worked out: draw it fully
+  if (_ideaCache.has(ck)) return gapLiFull(c, g);   // already worked out: draw it fully
   const id = 'gl' + Math.abs(hashStr(k));
-  setTimeout(() => queueIdle(() => { const el = document.getElementById(id); if (el) el.outerHTML = _gapLiOrig(c, g); }), 0);
+  setTimeout(() => queueIdle(() => { const el = document.getElementById(id); if (el) el.outerHTML = gapLiFull(c, g); }), 0);
   // the same row without the suggestion chips for now
   const L = Draw.dims(c).L, part = g.a > 0 || g.b < L ? `${g.a}–${g.b} cm` : c.type === 'bed' ? 'Whole bed' : 'Whole pot', days = g.e ? daysBetween(g.s, g.e) + 1 : null;
   A.ideas = el => { const [cid, x, y, s, e] = el.dataset.ideas.split('|'); ideasDialog(container(cid), +x, +y, s, e || null); };
   return `<li class="gap" id="${id}"><div><b>${part}</b> free ${g.s <= todayStr() ? 'now' : 'from ' + shortDate(g.s)}${g.e ? ` until ${shortDate(g.e)} <small>(${days} days, before ${esc(crop(g.next.cropId).en)})</small>` : ''}${g.prev ? ` <small>· after ${esc(crop(g.prev.cropId).en)}</small>` : ''}</div>
     <div class="sowchips">${gapStartChips(c, g)}<span class="chip muted">…</span><button type="button" class="chip" data-act="ideas" data-ideas="${c.id}|${g.a}|${g.b}|${g.s}|${g.e || ''}">💡 More ideas…</button></div></li>`;
-};
+}
 const hashStr = s => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; };
 // one at a time, in idle moments, so scrolling stays smooth
 const _idleQ = []; let _idleBusy = false;

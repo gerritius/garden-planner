@@ -1,5 +1,6 @@
 'use strict';
 // Tiny IndexedDB wrapper: 'kv' holds the app state, 'photos' holds image blobs.
+let dataVer = 0;   // bumped on every save of the state, so cached results know when they're stale
 const DB = (() => {
   let dbp;
   function open() {
@@ -23,7 +24,7 @@ const DB = (() => {
   }
   return {
     get: k => tx('kv', 'readonly', s => s.get(k)),
-    set: (k, v) => tx('kv', 'readwrite', s => s.put(v, k)),
+    set: (k, v) => { if (k === 'state') dataVer++; return tx('kv', 'readwrite', s => s.put(v, k)); },
     getPhoto: id => tx('photos', 'readonly', s => s.get(id)),
     putPhoto: (id, blob) => tx('photos', 'readwrite', s => s.put(blob, id)),
     delPhoto: id => tx('photos', 'readwrite', s => s.delete(id)),

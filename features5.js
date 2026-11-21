@@ -54,6 +54,12 @@ const PRODUCTS = [
     what: 'Vinegar + wood vinegar + shōchū + a little Tabasco, diluted in water',
     organicNote: 'Natural ingredients only.',
     notes: [] },
+  { id: 'kasei888', kind: 'fert', en: 'Chemical fertiliser 8-8-8', ja: '化成肥料 8-8-8', maker: 'generic', organic: false, wait: 0, top: true, npk: '8-8-8',
+    what: 'Balanced quick-release granular fertiliser', notes: ['Fast-acting: plants can use nearly all of it this season.', 'Mix it well into the soil as base fertiliser; as a side-dressing keep it a few cm from stems.', 'Not allowed in organic (JAS) growing.'] },
+  { id: 'woodAsh', kind: 'lime', en: 'Wood ash', ja: '草木灰', maker: 'generic', organic: true, wait: 7, top: true, npk: 'about 0-3-7',
+    what: 'Potash (K) and a little phosphate; alkaline like lime', notes: ['Mostly potash — good before fruiting crops, potatoes and onions.', 'Alkaline: it raises pH like lime, so count it as part of your liming.', 'Don’t mix it with nitrogen manures (chicken manure, aburakasu) at the same time — it drives off ammonia. Keep a week apart.'] },
+  { id: 'kuntan', kind: 'amend', en: 'Kuntan (smoked rice husk charcoal)', ja: 'もみ殻くん炭', maker: 'generic', organic: true, wait: 0, top: true, npk: 'about 0-0.2-0.5',
+    what: 'Soil conditioner — drainage, air and microbes; tiny amount of potash', notes: ['Mainly improves soil structure and drainage; its nutrient value is small.', 'Slightly alkaline.', 'Good mixed into seed and potting mixes, or around seedlings.'] },
 ];
 // products come from your library (features26); PRODUCTS above is only the catalogue to add from
 const product = id => libGet(id);

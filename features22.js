@@ -29,7 +29,7 @@ function doneOf(hp) {
   const w = harvestWindow(Object.assign({}, hp, { harvestDate: est }));
   return { ready: est, done: w ? (w.cont ? addDays(est, 30) : w.mature) : addDays(est, 14) };
 }
-function cropIdeas(c, a, b, s, clearBy) {
+function cropIdeasUncached(c, a, b, s, clearBy) {
   const td = todayStr(); s = s > td ? s : td;
   const before = S.plantings.filter(p => p.containerId === c.id && (isLive(p) || isPlanned(p)) && p.from < b - 0.5 && p.to > a + 0.5 && endOf(p) <= addDays(s, 1)).sort((x, y) => (endOf(x) < endOf(y) ? 1 : -1))[0];
   const out = [], prev = before || (typeof lastCropIn === 'function' ? lastCropIn(c, a, b, s) : null), prevFam = prev ? crop(prev.cropId).family : null;
@@ -117,7 +117,7 @@ function ideasDialog(c, a, b, s, e, onPick) {
 }
 
 // free spaces on the bed page and the plan list: the top few ideas as chips, plus the full list
-function gapLi(c, g) {
+function gapLiFull(c, g) {
   const L = Draw.dims(c).L, part = g.a > 0 || g.b < L ? `${g.a}–${g.b} cm` : c.type === 'bed' ? 'Whole bed' : 'Whole pot';
   const days = g.e ? daysBetween(g.s, g.e) + 1 : null, clearBy = clearByFor(c, g.s, g.e);
   const top = cropIdeas(c, g.a, g.b, g.s, clearBy).filter(x => x.best.fits && !x.sameFam).slice(0, 4);

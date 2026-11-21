@@ -3,10 +3,7 @@
 'use strict';
 
 // ---------- products & potting mixes ----------
-if (!PRODUCTS.some(p => p.id === 'kasei888')) PRODUCTS.push({ id: 'kasei888', kind: 'fert', en: 'Chemical fertiliser 8-8-8', ja: '化成肥料 8-8-8', maker: 'generic', organic: false, wait: 0, top: true, npk: '8-8-8',
-  what: 'Balanced quick-release granular fertiliser', notes: ['Fast-acting: plants can use nearly all of it this season.', 'Mix it well into the soil as base fertiliser; as a side-dressing keep it a few cm from stems.', 'Not allowed in organic (JAS) growing.'] });
 function migrateFeed() { if (Array.isArray(S.myProducts) && !S.kaseiAdded) { if (!S.myProducts.includes('kasei888')) S.myProducts.push('kasei888'); S.kaseiAdded = true; } }
-NPK.kasei888 = [8, 8, 8, 1]; NPK.woodAsh = [0, 3, 7, 0]; NPK.kuntan = [0, 0.2, 0.5, 0];
 // how much of each nutrient plants can use this season
 function availPK(npk) { return npk[3] >= 1 ? [0.8, 1] : npk[0] === 0 ? [0.6, 1] : npk[3] < 0.2 ? [0.3, 0.7] : [0.6, 0.8]; }
 // typical P (as P₂O₅) and K (as K₂O) per m² over the season (Japanese 施肥基準, kg/10a = g/m²)
@@ -27,10 +24,6 @@ const MIX_FERT = {
 const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
 const isLiquid = n => { const p = typeof libByName === 'function' && libByName(n); return p ? p.form === 'liquid' : /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || ''); };
-if (!PRODUCTS.some(p => p.id === 'woodAsh')) PRODUCTS.push({ id: 'woodAsh', kind: 'lime', en: 'Wood ash', ja: '草木灰', maker: 'generic', organic: true, wait: 7, top: true, npk: 'about 0-3-7',
-  what: 'Potash (K) and a little phosphate; alkaline like lime', notes: ['Mostly potash — good before fruiting crops, potatoes and onions.', 'Alkaline: it raises pH like lime, so count it as part of your liming.', 'Don’t mix it with nitrogen manures (chicken manure, aburakasu) at the same time — it drives off ammonia. Keep a week apart.'] });
-if (!PRODUCTS.some(p => p.id === 'kuntan')) PRODUCTS.push({ id: 'kuntan', kind: 'amend', en: 'Kuntan (smoked rice husk charcoal)', ja: 'もみ殻くん炭', maker: 'generic', organic: true, wait: 0, top: true, npk: 'about 0-0.2-0.5',
-  what: 'Soil conditioner — drainage, air and microbes; tiny amount of potash', notes: ['Mainly improves soil structure and drainage; its nutrient value is small.', 'Slightly alkaline.', 'Good mixed into seed and potting mixes, or around seedlings.'] });
 
 // ---------- amounts ----------
 function feedGrams(amount, unit, name) {

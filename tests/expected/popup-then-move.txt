@@ -1,0 +1,4 @@
+moved on while the step back was on its way: #/plan
+after deleting: #/container/b1 | plantings left: 0
+Back (to the page before the planting): #/container/b1 | pop-up open: false
+errs []

@@ -90,6 +90,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `potting-mix-fertiliser` | Fertiliser in fresh and re-used potting mix |
 | `potting-mix-in-planting-form` | Choosing fresh or re-used mix when planting; defaults from the pot's history |
 | `products-library` | Adding, editing, renaming and removing products; the catalogue; sprays without registry data |
+| `popup-then-move` | Answering a pop-up and moving to another page straight after (Save, Delete): the app stays on the new page |
 | `quality-alerts-doctor-shopping` | Harvest-quality warnings, the problem finder, the shopping list |
 | `realistic-garden-numbers` | A garden like a real one: products, nutrient counts, starting fertiliser, "fed until" |
 | `recovery` | A garden that can't be loaded: recovery screen, nothing saved over it, keep a copy, restore a daily copy; no storage; undoing a restore; old formats kept |

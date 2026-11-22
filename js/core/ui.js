@@ -4,6 +4,23 @@ import { $, esc } from './util.js';
 
 // ---------- pop-up dialogs ----------
 // each pop-up gets its own step in the back history, so the phone's Back button closes it instead of leaving the page
+// Closing one with its own buttons takes that step back again, which the browser does a moment later. If the app moves
+// to another page in that moment (Save → the new planting), the step back would land after it and undo the move —
+// so the page the app went to is noted, and gone to again once the step back has landed.
+let stepBack = null;   // { hash: where the step back lands, wanted: a page the app went to meanwhile }
+window.addEventListener('popstate', () => {
+  if (!stepBack) return;
+  if (location.hash === stepBack.hash && !(history.state && history.state.gpModal)) {
+    const w = stepBack.wanted; stepBack = null;
+    if (w && w !== location.hash) location.replace(w);
+  } else stepBack.wanted = location.hash;
+});
+window.addEventListener('hashchange', () => { if (stepBack && location.hash !== stepBack.hash) stepBack.wanted = location.hash; });
+function takeStepBack(hash) {
+  const mine = stepBack = { hash, wanted: null };
+  history.back();
+  setTimeout(() => { if (stepBack === mine) stepBack = null; }, 3000);   // in case it never lands
+}
 export function modal(html, mount) {
   const m = $('#modal'), openedHash = location.hash;
   m.innerHTML = `<div class="sheet">${html}</div>`;
@@ -13,7 +30,7 @@ export function modal(html, mount) {
     const fromBack = arg === true;   // buttons pass their click event here — only the Back button passes true
     m.hidden = true; m.innerHTML = ''; m._close = null;
     // closed with its own buttons: drop the extra history step — unless another pop-up opened or the page changed meanwhile
-    if (!fromBack) setTimeout(() => { if (m.hidden && history.state && history.state.gpModal && location.hash === openedHash) history.back(); }, 0);
+    if (!fromBack) setTimeout(() => { if (m.hidden && history.state && history.state.gpModal && location.hash === openedHash) takeStepBack(openedHash); }, 0);
   };
   m._close = close;
   m.onclick = e => { if (e.target === m) close(); };

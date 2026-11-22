@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.28.2",
+    "date": "2026-11-22",
+    "notes": [
+      "After answering a pop-up (like \"Save the plan anyway?\" or \"Delete this planting?\"), the app no longer sometimes jumps back to the page you were on — e.g. back to the planting form after the planting had already been saved, where saving again would make a second one."
+    ]
+  },
+  {
     "version": "1.28.1",
     "date": "2026-11-22",
     "notes": [

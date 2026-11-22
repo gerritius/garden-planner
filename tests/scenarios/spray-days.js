@@ -1,9 +1,10 @@
-const { newContext } = require('../lib');
+const { newContext, FIXED_NOW } = require('../lib');
 const { chromium, devices } = require('playwright');
 (async () => {
   const b = await chromium.launch(); const ctx = await newContext(b);
-  const td = new Date(); const ymd = d => d.toISOString().slice(0, 10);
-  const days = [...Array(14)].map((_, i) => ymd(new Date(Date.now() + (i - 7) * 864e5)));
+  const ymd = d => d.toISOString().slice(0, 10);
+  // a fortnight around the browser's (fixed) today, not the real one
+  const days = [...Array(14)].map((_, i) => ymd(new Date(+FIXED_NOW + (i - 7) * 864e5)));
   const hrs = days.flatMap(d => [...Array(24)].map((_, h) => d + 'T' + String(h).padStart(2, '0') + ':00'));
   const body = { daily: { time: days, weather_code: days.map(() => 2), temperature_2m_max: days.map(() => 15), temperature_2m_min: days.map(() => 6), precipitation_sum: days.map((d, i) => i === 9 ? 12 : 0), precipitation_probability_max: days.map((d, i) => i === 9 ? 80 : 5), wind_speed_10m_max: days.map(() => 9), wind_gusts_10m_max: days.map(() => 20) },
     hourly: { time: hrs, temperature_2m: hrs.map(() => 13), precipitation: hrs.map(t => t.startsWith(days[9]) ? 0.5 : 0), precipitation_probability: hrs.map(t => t.startsWith(days[9]) ? 80 : 5), wind_speed_10m: hrs.map(() => 5), wind_gusts_10m: hrs.map(() => 12) } };

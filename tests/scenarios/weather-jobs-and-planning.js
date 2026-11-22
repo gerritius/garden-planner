@@ -43,6 +43,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.screenshot({ path: SP + '/planform.png', fullPage: true });
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(500);
   if (await pg.$('#modal [data-x=ok]')) { console.log('asked:', (await pg.textContent('#modal .msg')).slice(0, 120)); await pg.click('#modal [data-x=ok]'); await pg.waitForTimeout(500); }
+  await pg.waitForURL(u => !/\/plant\/new\//.test(u), { timeout: 5000 }).catch(() => {});   // saving moves on to the new planting
   console.log('after save url', pg.url());
   console.log('plan', JSON.stringify(await pg.evaluate(() => { const p = S.plantings.find(p => p.cropId === 'cabbage'); return [p.status, p.sowDate, p.raise, p.harvestDate, S.tasks.filter(t => t.plantingId === p.id && !t.done).map(t => [t.kind, t.due, t.title])]; })));
   await pg.screenshot({ path: SP + '/planpage.png', fullPage: true });

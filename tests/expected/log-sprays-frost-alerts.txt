@@ -3,10 +3,10 @@ phi mem { Sumithion: 14 }
 frost task [ [ 'Cover before frost Fri (-2°): Lettuce', '2026-11-19' ] ]
 alerts [ '<b>Hard frost</b> Fri -2° — cover Lettuce' ]
 spray alert null
-banner Sprayed Sumithion on 18 Nov — don’t pick until 2 Dec (14-day wait)
+banner Sprayed Sumithion on 15 Nov — don’t pick until 29 Nov (14-day wait)
 soil SoilEdamame was a legume, so the soil has extra nitrogen. Cut the base fertiliser by about a third. Good spot for Hakusai.🌱 Planting detailsPlantingFrom seedLayout
 harvest dlg warn true
-totals 💴 Spending🧮 Product use2026All years EverythingFertiliser & soilSprays Bed / pot AllPlot ABag 1Bag 2All 🌿 Bokashi 480 g · used 5× · last 1 Nov Plot A210 gBag 1210 gBag 260 g 💦 Sumithion 2 mL · used 2× · last 18 Nov Plot A1 mLBag 11 mL 🌿 化成肥料 8-8-8 60 g · used 2× · last 15 Oct Plot A60 g Handfuls count as ~30 g. When one entry covers several beds, the amount is counted per bed unless you chose
+totals 💴 Spending🧮 Product use2026All years EverythingFertiliser & soilSprays Bed / pot AllPlot ABag 1Bag 2All 🌿 Bokashi 480 g · used 5× · last 1 Nov Plot A210 gBag 1210 gBag 260 g 💦 Sumithion 2 mL · used 2× · last 15 Nov Plot A1 mLBag 11 mL 🌿 化成肥料 8-8-8 60 g · used 2× · last 15 Oct Plot A60 g Handfuls count as ~30 g. When one entry covers several beds, the amount is counted per bed unless you chose
 prep Prepare Plot A2.00 m² · amounts are typical rates for this much soil — adjust to your products.🪱 Edamame was a legume, so the soil has extra nitrogen. Cut the base fertiliser by about a third. Amounts below are adjusted. Planting date Dig in Cow manure compost ~4 kg (14 days before) Spread Oyster s
 form Last crop here: Edamame (枝豆) (finished Aug 2026).🪱 Edamame was a legume, so the soil has extra nitrogen. Cut the base fertiliser by about a third. Carrot especially dislikes rich soil (leafy growth, forked or small roots) — go very light on fertiliser. For Carrot, dig compost in at least 3 weeks before sowing — fresh compost or manure causes forked roots.
 form2 Same family as the last crop here. Mini tomato was here before (finished Sept 2026) — both are Nightshade (tomato family) ナス科. Consider extra compost or a different spot.🪱 Mini tomato is a heavy feeder, so the soil is likely run down. Dig in extra compost and use the full base fertiliser. Eggplant is hungry too — consider adding 50% more compost, or plant a legume or light feeder here instead.

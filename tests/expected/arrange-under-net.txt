@@ -1,0 +1,11 @@
+hk | net drawn over the plants: true | 6 plants
+  moved: [10,10] → [20,14]
+  removed one: 5 plants
+  added one: 6 plants
+  saved: free, 6 plants
+dk | net drawn over the plants: true | 6 plants
+  moved: [10,120] → [20,124]
+  removed one: 5 plants
+  added one: 6 plants
+  saved: free, 6 plants
+errs []

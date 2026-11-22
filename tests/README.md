@@ -53,6 +53,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 
 | Scenario | What it checks |
 |---|---|
+| `arrange-under-net` | Moving, removing and adding plants by hand in a bed with a net over it |
 | `autumn-potatoes` | Potatoes planted for autumn finish with the first frosts; crowded plants drawn to their share of the pot |
 | `back-button-and-popups` | The phone's Back button closes pop-ups instead of leaving the page |
 | `bee-warning` | Bee-harmful ingredients recognised in any product (names, brands, registry); the spray days page lists your sprays that have them |

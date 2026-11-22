@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.28.1",
+    "date": "2026-11-22",
+    "notes": [
+      "Arranging plants by hand works again in beds with a net or other cover over them: taps go through the cover to the plants, and a tap close to a plant counts."
+    ]
+  },
+  {
     "version": "1.28.0",
     "date": "2026-11-21",
     "notes": [

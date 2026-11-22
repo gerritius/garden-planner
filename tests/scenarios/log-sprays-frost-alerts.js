@@ -1,4 +1,4 @@
-const { newContext } = require('../lib');
+const { newContext, FIXED_NOW } = require('../lib');
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
@@ -47,5 +47,5 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.evaluate(async () => { S.plantings = S.plantings.filter(p => p.id !== 'hk'); await save(); }); await pg.goto(U + '#/plant/new/b1?crop=carrot'); await pg.waitForTimeout(300); console.log('form', await pg.textContent('#rotWarn'));
   await pg.goto(U + '#/plant/new/g1?crop=nasu'); await pg.waitForTimeout(300); console.log('form2', await pg.textContent('#rotWarn'));
   console.log('errs', errs); await b.close();
-  function addDaysLocal(n) { const d = new Date(); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
+  function addDaysLocal(n) { const d = new Date(FIXED_NOW); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); }
 })();

@@ -152,13 +152,20 @@ export function pageArrange(p) {
     let drag = null;
     const toCm = e => { const svg = box.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const r = pt.matrixTransform(svg.getScreenCTM().inverse()); return [r.x, r.y]; };
     const clampIn = q => { q[0] = Math.max(0, Math.min(W, q[0])); q[1] = Math.max(0, Math.min(L, q[1])); return q; };
+    // the plant under the finger: the circle tapped, or else the nearest one within a fingertip (~14 px)
+    const plantAt = e => {
+      const circ = e.target.closest('circle[data-i]'); if (circ) return +circ.dataset.i;
+      const q = toCm(e), reach = 14 / px; let best = -1, bd = Infinity;
+      d.pts.forEach((p, i) => { const dd = Math.hypot(p[0] - q[0], p[1] - q[1]); if (dd < bd) { bd = dd; best = i; } });
+      return bd <= reach ? best : -1;
+    };
     box.addEventListener('pointerdown', e => {
-      const circ = e.target.closest('circle[data-i]');
-      if (d.mode === 'move' && circ) { drag = +circ.dataset.i; box.setPointerCapture(e.pointerId); e.preventDefault(); }
-      else if (d.mode === 'remove' && circ) { d.pts.splice(+circ.dataset.i, 1); draw(); }
+      const i = d.mode === 'add' ? -1 : plantAt(e);
+      if (d.mode === 'move' && i >= 0) { drag = i; box.setPointerCapture(e.pointerId); e.preventDefault(); }
+      else if (d.mode === 'remove' && i >= 0) { d.pts.splice(i, 1); draw(); }
       else if (d.mode === 'add') { const q = clampIn(toCm(e)); if (Draw.inside(c, q[0], q[1])) { d.pts.push(q); draw(); } }
     });
-    const dz = dragZone(box, t => d.mode !== 'move' || !!t.closest('circle[data-i]'));
+    const dz = dragZone(box, t => d.mode !== 'move' || !!t.closest('circle[data-i]') || !!t.closest('.cover'));
     const mv = e => {
       if (drag == null) return;
       const q = clampIn(toCm(e)); d.pts[drag] = q;

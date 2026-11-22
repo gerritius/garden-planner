@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.29.1",
+    "date": "2026-11-22",
+    "notes": [
+      "Crops sown in a continuous line (spinach, carrots, komatsuna…): when you look at how many have come up, count the seedlings along 10 cm of row instead of being told there are hundreds of \"spots\" — the app works out the share from how thickly it was sown.",
+      "A planting sown in a continuous line shows about how many plants it will be once thinned."
+    ]
+  },
+  {
     "version": "1.29.0",
     "date": "2026-11-22",
     "notes": [

@@ -63,5 +63,17 @@ const U = 'http://localhost:8765/';
   console.log('radish sown 1 Oct, nothing:', (await pg.textContent('#modal .sheet')).replace(/\s+/g, ' ').slice(0, 200), '| first choice:', await pg.textContent('#modal .btn.primary'));
   await pg.click('#modal [data-r=all]'); await pg.waitForTimeout(400);
   console.log('  re-sown →', await state('rd'));
+  // a drill (spinach sown a seed every cm or so) in a 160 × 100 cm bed: count a short stretch of row, not "700 spots"
+  await pg.evaluate(async () => {
+    const cr = crop('spinach');
+    S.containers.push({ id: 'b2', type: 'bed', name: 'Plot B', width: 100, length: 160, margin: 10, history: [] });
+    S.plantings.push({ id: 'dr', containerId: 'b2', cropId: 'spinach', method: 'seed', layout: 'continuous', from: 0, to: 160, rowSp: cr.rowSp, plantSp: cr.sowSp, thinSp: cr.thinSp, sowDate: '2026-11-08', status: 'active', photos: {}, series: [], harvests: [] });
+    syncTasks(planting('dr')); await save();
+  });
+  await pg.goto(U + '#/plant/dr'); await pg.waitForTimeout(300);
+  console.log('drill page:', await pg.evaluate(() => { const dt = [...document.querySelectorAll('dl.details dt')].find(x => x.textContent === 'Layout'); return dt ? dt.nextElementSibling.textContent : 'no Layout row: ' + document.querySelector('dl.details')?.textContent.slice(0, 200); }));
+  await pg.click('[data-act=germLook]'); await pg.waitForTimeout(300);
+  console.log('drill count:', (await pg.textContent('#gcf label:nth-of-type(2)')).replace(/\s+/g, ' ').trim());
+  await pg.fill('#gcf input[name=cnt]', '2'); console.log('2 seedlings there → share:', await pg.inputValue('#gcf input[name=pct]'));
   console.log('errs', errs); await b.close();
 })();

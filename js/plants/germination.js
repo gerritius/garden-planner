@@ -104,21 +104,25 @@ export function germText(p, short) {
 // ---------- recording a look ----------
 export function germDialog(p, opts = {}) {
   const gw = germWindow(p), cs = germChecks(p), td = todayStr(), since = daysBetween(p.sowDate, td);
-  const c = container(p.containerId), spots = c ? Draw.count(c, p) : 0;
+  // counting them: spots sown (rows, stations) — or, for a drill sown a seed every centimetre or so, the seedlings along a
+  // short stretch of row (nobody counts a whole drill)
+  const c = container(p.containerId), drill = p.layout === 'continuous' && !p.thinned;
+  const sp = Draw.spacingNow(p), stretch = sp >= 4 ? 30 : 10, per = drill ? Math.max(1, Math.round(stretch / sp)) : c ? Draw.count(c, p) : 0;
   const chips = [[0, 'None yet'], [5, 'A few'], [25, 'A quarter'], [50, 'Half'], [75, 'Most'], [100, 'All']];
   modal(`<h3>How many of the ${esc(lc(p))} have come up?</h3>
     <p class="muted small">Sown ${shortDate(p.sowDate)} (${since} day${since === 1 ? '' : 's'} ago)${gw ? ` · expected ${shortDate(gw[0])}–${shortDate(gw[1])}` : ''}${cs.length ? `<br>So far: ${cs.map(x => `${shortDate(x.date)} ${esc(pctText(x))}`).join(' · ')}` : ''}</p>
     <form id="gcf" class="form">
       <div class="sowchips">${chips.map(([v, l]) => `<button type="button" class="chip big" data-pct="${v}">${l}</button>`).join('')}</div>
       <label>Roughly what share has come up? <small>(a guess is fine)</small><span class="pctin"><input name="pct" type="number" inputmode="numeric" min="0" max="100" step="1" required placeholder="e.g. 20"> %</span></label>
-      ${spots > 1 ? `<label>…or count them <small>(of about ${spots.toLocaleString('en-AU')} spots sown)</small><span class="pctin"><input name="cnt" type="number" inputmode="numeric" min="0" step="1"> up</span></label>` : ''}
+      ${drill ? `<label>…or count the seedlings along ${stretch} cm of row <small>(about ${per} seeds sown there — one every ${sp} cm)</small><span class="pctin"><input name="cnt" type="number" inputmode="numeric" min="0" step="1"> up</span></label>`
+        : per > 1 ? `<label>…or count them <small>(of about ${per.toLocaleString('en-AU')} spots sown)</small><span class="pctin"><input name="cnt" type="number" inputmode="numeric" min="0" step="1"> up</span></label>` : ''}
       <label>Looked on<input name="date" type="date" value="${td}" min="${p.sowDate}" max="${td}"></label>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#gcf');
     const mark = () => m.querySelectorAll('[data-pct]').forEach(b => b.classList.toggle('on', f.pct.value !== '' && +b.dataset.pct === +f.pct.value));
     m.querySelectorAll('[data-pct]').forEach(b => b.onclick = () => { f.pct.value = b.dataset.pct; if (f.cnt) f.cnt.value = ''; mark(); });
     f.pct.oninput = () => { if (f.cnt) f.cnt.value = ''; mark(); };
-    if (f.cnt) f.cnt.oninput = () => { if (f.cnt.value !== '') f.pct.value = Math.min(100, Math.round(+f.cnt.value / spots * 100)); mark(); };
+    if (f.cnt) f.cnt.oninput = () => { if (f.cnt.value !== '') f.pct.value = Math.min(100, Math.round(+f.cnt.value / per * 100)); mark(); };
     m.querySelector('[data-x=no]').onclick = () => { close(); render(); };
     f.onsubmit = async e => {
       e.preventDefault();

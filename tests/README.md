@@ -72,6 +72,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `garden-map` | The garden map: dragging beds, scrolling |
 | `garlic-feeding-model` | The day-by-day nitrogen model for garlic in a bag (drainage, uptake, "fed until") |
 | `garlic-feeding-plan` | Garlic's feeding card and plan, including the last feed (止め肥) |
+| `germination-looks` | Looking at slow seeds every few days with roughly how many are up: nothing yet (thinning waits), a few, counted; when they came up; stopping; re-sowing |
 | `germination-and-thinning-dates` | When seedlings come up and when to thin, from temperatures |
 | `harvest-estimates` | Harvest dates for crops sown at different times of year |
 | `history-past-crops-and-log` | Adding past crops, bed history, logging feeds and sprays |

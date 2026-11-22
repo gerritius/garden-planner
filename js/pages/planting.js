@@ -14,6 +14,7 @@ import { rotationNote } from '../garden/rotation.js';
 import { readingText, soilAdvice, soilReadingAdvice } from '../garden/soil.js';
 import { BED_ICON, seriesTitle, sortTasks, syncTasks, taskDialog, taskLi } from '../garden/tasks.js';
 import { crop, cropName, ic } from '../plants/crops.js';
+import { germChecks, germDialog, germText, pctText } from '../plants/germination.js';
 import { germWindow, harvestNote, harvestWindowText, lastLeaves, leafDialog, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
 import { myProducts } from '../products/library.js';
@@ -46,7 +47,11 @@ export function pagePlant(p) {
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
-    (() => { const gw = germWindow(p); return gw ? ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${p.germ.result}</b> (${shortDate(p.germ.date)})` : ''}`] : null; })(),
+    (() => {
+      const gw = germWindow(p); if (!gw) return null;
+      const cs = germChecks(p), more = p.status === 'active' && !(p.germ && p.germ.over);
+      return ['Germination', `expected ${shortDate(gw[0])}–${shortDate(gw[1])}${p.germ ? ` · <b>${esc(germText(p))}</b>` : ''}${cs.length ? `<br><small class="muted">${cs.map(c => `${shortDate(c.date)} ${esc(pctText(c))}`).join(' · ')}</small>` : ''}${more || cs.length ? ` <button class="link" data-act="germLook">${cs.length ? 'add a look' : 'record how many are up'}</button>` : ''}`];
+    })(),
     seed && p.thinSp ? ['Thinning', `${p.thinStage ? p.thinStage + ' → ' : ''}${p.thinSp} cm${p.thinned ? ` ✓ done ${shortDate(p.thinDoneOn)}` : ` · around ${shortDate(p.thinDate)} <small class="muted">(${thinNote(p)})</small> <button class="link" data-act="leaves">🌿 ${lastLeaves(p) ? `${lastLeaves(p).n} true leaves on ${shortDate(lastLeaves(p).date)} — update` : 'Count true leaves'}</button>`}`] : null,
     p.harvestDate && !harvested ? ['Harvest estimate', `from ${shortDate(p.harvestDate)} <small class="muted">(${harvestNote(p)})</small>`] : null,
     p.spread ? ['Mature size', `~${p.spread} cm across`] : null,
@@ -59,6 +64,7 @@ export function pagePlant(p) {
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.germLook = () => germDialog(p);
   A.addPrev = () => pastCropDialog(c, null, { from: p.from, to: p.to });
   A.leaves = () => leafDialog(p, cropName(p.cropId), () => { p.thinFixed = false; });
   A.logHarvest = () => harvestDialog(p);

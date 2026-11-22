@@ -9,7 +9,8 @@ import { JOB_TEMPLATES } from '../data/catalog.js';
 import { amtFor } from '../feeding/nutrients.js';
 import { completeWaterFeeds, feedTaskProduct, tickFeedTask } from '../feeding/plans.js';
 import { crop, cropName, ic } from '../plants/crops.js';
-import { germDialog, syncCareTasks } from '../plants/growth.js';
+import { germDialog, moveGermCheck, notUpYet, removeGermCheck } from '../plants/germination.js';
+import { syncCareTasks } from '../plants/growth.js';
 import { plantOutDialog, start, startDialog, startTaskMeta, startWhere } from '../plants/seedlings.js';
 import { myProducts, productByName } from '../products/library.js';
 import { activeIn, container, isLive, isPlanned, planting, sizeLabel } from './garden.js';
@@ -58,7 +59,7 @@ export function syncTasks(p) {
   if (p.status === 'harvested') { S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && !t.done)); return; }
   if (p.status === 'planned') { S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && !t.done && !t.plan)); syncPlanTasks(p); return; }
   S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && t.plan && !t.done));
-  upsertAuto(p, 'thin', !p.no_thin && p.method === 'seed' && p.thinSp > 0 && !!p.thinDate && !p.thinned, p.thinDate,
+  upsertAuto(p, 'thin', !p.no_thin && p.method === 'seed' && p.thinSp > 0 && !!p.thinDate && !p.thinned && !notUpYet(p), p.thinDate,   // nothing to thin until they're up
     `Thin${p.thinStage ? ' (' + p.thinStage + ')' : ''} to ${p.thinSp} cm`);
   upsertAuto(p, 'harvest', !p.no_harvest && !!p.harvestDate, p.harvestDate, 'Earliest harvest – check crop');
   syncCareTasks(p);
@@ -74,7 +75,7 @@ export function syncTasks(p) {
 }
 function redate(t, p, d) {
   if (t.kind === 'thin' && p) p.thinDoneOn = d;
-  if (t.kind === 'germ' && p && p.germ) p.germ.date = d;
+  if (t.kind === 'germ' && p && t.look) { moveGermCheck(p, t.look, d); t.look = d; }
   if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = d;
   if (t.spawned && p) {
     const nt = S.tasks.find(x => x.id === t.spawned && !x.done), s = (p.series || []).find(x => x.id === t.seriesId);
@@ -88,6 +89,7 @@ export function toggleTask(id, done) {
   if (done && t.kind === 'transplant' && t.startId && start(t.startId)) { render(); return plantOutDialog(start(t.startId)); }
   if (done && feedTaskProduct(t)) { render(); return tickFeedTask(t); }
   if (done && t.kind === 'plan_tray' && planting(t.plantingId)) { render(); return startDialog(null, planTrayPreset(planting(t.plantingId))); }
+  if (done && t.kind === 'germ' && planting(t.plantingId)) { render(); return germDialog(planting(t.plantingId), { task: t }); }   // how many are up, and when you looked
   if (done && due && due < td && t.kind !== 'water') return whenDone(t, due, td);
   finishToggle(t, done, td);
 }
@@ -109,7 +111,7 @@ export function finishToggle(t, done, td) {
   if (done) {
     t.done = true; t.doneOn = td;
     if (t.kind === 'water') { const g = groupOf(t); t.prevLast = lastWatered(g); setLastWatered(g, td); if (t.feeds && t.feeds.length) completeWaterFeeds(t, td); }
-    if (t.kind === 'germ' && p) setTimeout(() => germDialog(p, td), 320);
+    if (t.kind === 'germ' && p && !t.look) setTimeout(() => germDialog(p, { task: t }), 320);
     if (t.kind === 'thin' && p) { p.thinned = true; p.thinDoneOn = td; }
     if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = td;
     if (t.kind === 'plan_sow' && p && isPlanned(p)) activatePlan(p, td);
@@ -126,7 +128,7 @@ export function finishToggle(t, done, td) {
   } else {
     t.done = false; t.doneOn = null;
     if (t.kind === 'water') { const g = groupOf(t); S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t && groupOf(x) === g)); setLastWatered(g, t.prevLast || null); }
-    if (t.kind === 'germ' && p) p.germ = null;
+    if (t.kind === 'germ' && p) { if (t.look) removeGermCheck(p, t.look); t.look = null; S.tasks = S.tasks.filter(x => !(x !== t && x.plantingId === p.id && x.kind === 'germ' && !x.done)); }
     if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; }
     if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = null;
     if (t.kind === 'plan_sow' && p && isLive(p)) undoActivate(p);

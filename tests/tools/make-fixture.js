@@ -116,6 +116,14 @@ const serve = root => http.createServer((q, r) => {
       if (Array.isArray(S.seeds)) { const s = S.seeds.find(x => x.cropId === 'garlic' && x.variety === 'Howaito Roppen'); if (s) Object.assign(s, { maker: 'Takii', front: 'fixphoto1' }); else S.seeds.push({ id: 'sd_fix1', cropId: 'garlic', variety: 'Howaito Roppen', maker: 'Takii', front: 'fixphoto1', back: null, notes: '', added: '2026-10-01' }); }   // the seed library (1.28+)
       else (S.customVarieties = S.customVarieties || {}).garlic = ['Howaito Roppen'];
       out.push('note with photo', 'harvest', 'variety');
+      // germination: the spinach looked at once and nothing up yet; the lettuce came up patchy
+      const sp = S.plantings.find(p => p.cropId === 'spinach'), le = S.plantings.find(p => p.cropId === 'lettuce');
+      if (has('recordGermCheck')) { recordGermCheck(sp, { date: '2026-11-05', pct: 0 }); recordGermCheck(le, { date: '2026-10-28', pct: 40 }); out.push('germination checks'); }
+      else if (has('germDialog')) {
+        sp.germ = { result: 'none', date: '2026-11-05' }; le.germ = { result: 'patchy', date: '2026-10-28' };
+        for (const [p, d] of [[sp, '2026-11-05'], [le, '2026-10-28']]) { const t = S.tasks.find(t => t.plantingId === p.id && t.kind === 'germ'); if (t) Object.assign(t, { done: true, doneOn: d }); }
+        out.push('germination: nothing up / patchy');
+      }
       if (has('PRODUCTS') && !S.prodLib && !Array.isArray(S.myProducts)) { S.myProducts = PRODUCTS.map(p => p.id).filter(id => ['bokashi', 'chickenManure', 'oysterLime', 'paiBenicaV', 'cowCompost'].includes(id)); out.push('ticked products'); }
       if (has('PRODUCTS') && !S.prodLib) { S.plenty = ['chickenManure']; out.push('plenty of chicken manure'); }
       if (has('COVER_TYPES') && COVER_TYPES.some(t => t[0] === 'fleece')) for (const c of S.containers) for (const x of c.covers || []) { x.type = 'fleece'; out.push('cover type fleece (renamed in later versions)'); }

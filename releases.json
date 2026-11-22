@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.29.0",
+    "date": "2026-11-22",
+    "notes": [
+      "Checking that seeds have come up is now a few looks, not one answer: each time, say roughly how many are up (None yet, A few, A quarter… or a percentage, or count them), and when you looked. You can add a look from the planting's page too.",
+      "Nothing up yet? The app asks again in 3 days, and doesn't plan thinning until they're up — harvest is counted from when they do come up. Some crops (spinach especially) can take weeks in cold soil; re-sowing is only suggested once it's taking far longer than usual.",
+      "Some up? It asks again every few days until most are up or the number stops changing, then offers re-sowing the gaps. When they came up is worked out from your looks, and thinning and harvest follow it.",
+      "Your earlier answers are kept: a \"Nothing came up\" from the last few weeks becomes your first look, with the next one due now."
+    ]
+  },
+  {
     "version": "1.28.2",
     "date": "2026-11-22",
     "notes": [

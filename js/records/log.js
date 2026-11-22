@@ -9,6 +9,7 @@ import { container, isLive, planting } from '../garden/garden.js';
 import { BED_ICON, taskOwner } from '../garden/tasks.js';
 import { coverLogItems } from '../plants/covers.js';
 import { crop, cropName, ic } from '../plants/crops.js';
+import { germChecks, pctText } from '../plants/germination.js';
 import { pestName } from '../plants/problems.js';
 import { startLogItems } from '../plants/seedlings.js';
 import { myProducts, product } from '../products/library.js';
@@ -40,6 +41,7 @@ export function logFeed() {
   for (const t of S.tasks) {
     if (!t.done || !t.doneOn || t.startId) continue;
     const { p, c } = taskOwner(t);
+    if (t.kind === 'germ' && p && t.look && germChecks(p).length) continue;   // the look itself is listed with the planting
     if (t.kind === 'frost') { out.push({ date: t.doneOn, kind: 'cover', title: t.title, sub: (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '), cids: t.cids || [], pids: [] }); continue; }
     if (t.kind === 'wx') { out.push({ date: t.doneOn, kind: t.wx === 'wind' ? 'cover' : 'job', title: t.title, sub: 'Weather', all: true, cids: [], pids: [] }); continue; }
     if (t.kind === 'water') { out.push({ date: t.doneOn, kind: 'water', title: t.title || 'Watered pots & bags', sub: t.note || '', all: !t.containerId, cids: t.containerId ? [t.containerId] : [] }); continue; }
@@ -49,7 +51,7 @@ export function logFeed() {
   for (const p of S.plantings) {
     const c = container(p.containerId), where = c ? c.name : '', cids = c ? [c.id] : [], pids = [p.id], href = '#/plant/' + p.id, n = crop(p.cropId).en;
     if (p.sowDate && p.sowDate <= td && !p.startId) out.push({ date: p.sowDate, kind: 'sow', title: `${p.method === 'seed' ? 'Sowed' : 'Planted'} ${n}${p.variety ? ' · ' + p.variety : ''}`, sub: where + (c && c.type === 'bed' ? ` · ${p.from}–${p.to} cm` : ''), href, cids, pids });
-    if (p.germ && p.germ.date) out.push({ date: p.germ.date, kind: 'note', title: `${n} came up: ${p.germ.result}`, sub: where, href, cids, pids });
+    for (const k of germChecks(p)) out.push({ date: k.date, kind: 'note', title: `${n}: ${pctText(k).replace(/^patchy$/, 'came up patchy')}`, sub: where, href, cids, pids });
     for (const h of p.harvests || []) out.push({ date: h.date, kind: 'harvest', title: `Picked ${h.count} ${n}`, sub: where + (h.note ? ' · ' + h.note : ''), href, cids, pids });
     for (const d of p.diary || []) out.push({ date: d.date, kind: (d.tags || []).length ? 'pest' : d.photo ? 'diary' : 'note', title: d.note || (d.tags || []).map(pestName).join(', ') || 'Photo', sub: n + (where ? ' · ' + where : '') + ((d.tags || []).length && d.note ? ' · ' + d.tags.map(pestName).join(', ') : ''), href: `#/plant/${p.id}/diary/${d.id}`, photo: d.photo, cids, pids });
     if (p.status === 'harvested' && p.harvestedOn) out.push({ date: p.harvestedOn, kind: 'done', title: `Finished ${n}`, sub: where, href, cids, pids });

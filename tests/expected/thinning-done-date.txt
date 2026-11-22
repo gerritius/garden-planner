@@ -1,6 +1,6 @@
 thin [ '2026-09-20', 43 ]
 Size in drawing43 cm across today (grows to ~50 cm by 29 Nov)
 edited 2026-09-28
-germ [ { result: 'good', date: '2026-09-03' }, '2026-09-03' ]
+germ [ 'good', '2026-09-03', '2026-09-03', 0 ]
 cancel false false
 errs []

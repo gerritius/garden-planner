@@ -21,10 +21,10 @@ const U = 'http://localhost:8765/';
   await pg.evaluate(id => taskDialog(S.tasks.find(t => t.id === id)), tid); await pg.waitForTimeout(200);
   await pg.fill('#tf input[name=due]', '2026-09-28'); await pg.click('#tf button.primary'); await pg.waitForTimeout(400);
   console.log('edited', await pg.evaluate(() => planting('hk').thinDoneOn));
-  // germ task: tick, pick custom date
+  // germ task: tick → how many are up, and the day you looked
   const gid = await pg.evaluate(() => S.tasks.find(t => t.plantingId === 'hk' && t.kind === 'germ')?.id);
-  if (gid) { await pg.check(`input[data-task="${gid}"]`); await pg.waitForTimeout(300); await pg.fill('#wdf input[name=d]', '2026-09-03'); await pg.click('#wdf button:not([data-x])'); await pg.waitForTimeout(700); await pg.click('[data-g=good]'); await pg.waitForTimeout(300);
-    console.log('germ', await pg.evaluate(() => [planting('hk').germ, S.tasks.find(t => t.kind === 'germ').doneOn])); }
+  if (gid) { await pg.click(`input[data-task="${gid}"]`); await pg.waitForTimeout(300); await pg.click('#gcf [data-pct="100"]'); await pg.fill('#gcf input[name=date]', '2026-09-03'); await pg.click('#gcf button.primary'); await pg.waitForTimeout(700);
+    console.log('germ', await pg.evaluate(() => [planting('hk').germ.result, planting('hk').germ.date, S.tasks.find(t => t.kind === 'germ').doneOn, S.tasks.filter(t => t.kind === 'germ' && !t.done).length])); }
   // cancel path
   await pg.evaluate(async () => { S.tasks.push({ id: 'cx', plantingId: 'hk', kind: 'custom', title: 'Old job', due: '2026-10-01', done: false }); await save(); render(); });
   await pg.waitForTimeout(300); await pg.check('input[data-task="cx"]'); await pg.waitForTimeout(200); await pg.click('#wdf [data-x=no]'); await pg.waitForTimeout(400);

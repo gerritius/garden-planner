@@ -7,6 +7,7 @@ import { container, isPlanned } from '../garden/garden.js';
 import { yearOfD } from '../garden/rotation.js';
 import { harvestTotal } from '../records/log.js';
 import { crop, ic } from './crops.js';
+import { germText } from './germination.js';
 import { pestName } from './problems.js';
 
 const varKey = (c, v) => c + '|' + (v || '');
@@ -23,7 +24,7 @@ export function pageVariety(q) {
   const row = p => {
     const c = container(p.containerId), fh = first(p), pests = [...new Set((p.diary || []).flatMap(d => d.tags || []))].map(pestName);
     return `<li><a href="#/plant/${p.id}"><span class="grow"><b>${shortDate(p.sowDate)} ${yearOfD(p.sowDate)}</b> · ${esc(c ? c.name : '')}${isPlanned(p) ? ' · planned' : ''}
-      <small>${p.method === 'seed' ? 'sown' : 'planted'}${p.germ ? ` · came up ${p.germ.result}${p.germ.date ? ` in ${daysBetween(p.sowDate, p.germ.date)} days` : ''}` : ''}${fh ? ` · first pick after ${daysBetween(p.sowDate, fh)} days` : ''}${harvestTotal(p) ? ` · ${harvestTotal(p)} picked` : ''}</small>
+      <small>${p.method === 'seed' ? 'sown' : 'planted'}${p.germ ? ` · ${esc(germText(p, true))}` : ''}${fh ? ` · first pick after ${daysBetween(p.sowDate, fh)} days` : ''}${harvestTotal(p) ? ` · ${harvestTotal(p)} picked` : ''}</small>
       ${pests.length ? `<small>Problems: ${esc(pests.join(', '))}</small>` : ''}</span>›</a></li>`;
   };
   const html = `<section><h3>Grow again?</h3><div class="seg">${[['yes', '👍 Yes'], ['maybe', '🤔 Maybe'], ['no', '👎 No']].map(([r, l]) => `<button type="button" data-act="rate" data-r="${r}" class="${note.rating === r ? 'on' : ''}">${l}</button>`).join('')}</div>

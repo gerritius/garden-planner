@@ -7,6 +7,7 @@ import { $, daysBetween, esc, shortDate, todayStr, uid } from '../core/util.js';
 import { HANDFUL_G } from '../data/catalog.js';
 import { container, planting } from '../garden/garden.js';
 import { crop, cropName, ic } from '../plants/crops.js';
+import { germText } from '../plants/germination.js';
 import { pestName } from '../plants/problems.js';
 import { libList, productByName } from '../products/library.js';
 import { harvestTotal, KIND_ICON } from './log.js';
@@ -32,7 +33,7 @@ export function pageReview(q) {
         <div class="rvh">${ic(p.cropId, 30)}<b>${esc(crop(p.cropId).en)}</b>${p.variety ? `<span>${esc(p.variety)}</span>` : ''}</div>
         <div class="rvg"><div><small>${p.method === 'seed' ? 'Sown' : 'Planted'}</small>${shortDate(p.sowDate)}</div><div><small>First pick</small>${st.first ? `${shortDate(st.first)} <small>(${st.toFirst} d)</small>` : '—'}</div>
         <div><small>Picked</small>${st.total || '—'}</div><div><small>Status</small>${p.status === 'harvested' ? 'done ' + shortDate(p.harvestedOn) : 'growing'}</div></div>
-        ${p.germ ? `<div class="rvx">Germination: ${p.germ.result}</div>` : ''}${st.pests.length ? `<div class="rvx">Problems: ${st.pests.map(pestName).join(', ')}</div>` : ''}${p.notes ? `<div class="rvx">${esc(p.notes)}</div>` : ''}</a>`; }).join('')}
+        ${p.germ ? `<div class="rvx">Germination: ${esc(germText(p))}</div>` : ''}${st.pests.length ? `<div class="rvx">Problems: ${st.pests.map(pestName).join(', ')}</div>` : ''}${p.notes ? `<div class="rvx">${esc(p.notes)}</div>` : ''}</a>`; }).join('')}
         ${notes.length ? `<ul class="plist">${notes.map(n => `<li><span class="grow"><small>${shortDate(n.date)}</small>${esc(n.text)}</span></li>`).join('')}</ul>` : ''}</section>`;
     }).join('') || '<p class="muted center">Nothing recorded for this year.</p>'}
     <a class="btn wide" href="#/compare">Compare a crop across years →</a>`;
@@ -48,7 +49,7 @@ export function pageCompare(q) {
   const html = `<label class="form"><select id="cmpSel">${used.map(x => `<option value="${x}"${x === id ? ' selected' : ''}>${esc(cropName(x))}</option>`).join('')}</select></label>
     ${ps.map(p => { const st = plantingStats(p), c = container(p.containerId); return `<a class="rvcard" href="#/plant/${p.id}">
       <div class="rvh"><b>${yearOf(p)}</b><span>${esc(p.variety || 'no variety')}</span><span class="muted">${esc(c ? c.name : '')}</span></div>
-      <div class="rvg"><div><small>Sown</small>${shortDate(p.sowDate)}</div><div><small>To first pick</small>${st.toFirst != null ? st.toFirst + ' days' : '—'}</div>${p.method === 'seed' ? `<div><small>Germination</small>${p.germ ? p.germ.result : '—'}</div>` : ''}</div>
+      <div class="rvg"><div><small>Sown</small>${shortDate(p.sowDate)}</div><div><small>To first pick</small>${st.toFirst != null ? st.toFirst + ' days' : '—'}</div>${p.method === 'seed' ? `<div><small>Germination</small>${p.germ ? esc(germText(p, true)) : '—'}</div>` : ''}</div>
       <div class="cbar"><span style="width:${(st.total / maxT) * 100}%"></span><b>${st.total} picked</b></div>
       ${st.pests.length ? `<div class="rvx">Problems: ${st.pests.map(pestName).join(', ')}</div>` : ''}</a>`; }).join('')}`;
   return { html, after: () => $('#cmpSel').addEventListener('change', e => location.replace('#/compare?crop=' + e.target.value)) };

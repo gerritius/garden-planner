@@ -1,0 +1,22 @@
+sown, not looked at yet: {"thinDate":"2026-12-06","harvestDate":"2026-12-16","jobs":[["thin","2026-12-06","Thin to 10 cm"],["germ","2026-11-18","Check seedlings are up (expected 13 Nov–18 Nov)"]]}
+look on 14 Nov: none yet
+  asks: How many of the spinach have come up? Sown 8 Nov (10 days ago) · expected 13 Nov–18 Nov None yetA fewA quarterHalfMostAll Roughly what share has come up? (a guess is fine
+  then: Nothing up yetNothing up yet after 10 days. Spinach can take a while, especially in cold soil — keep it moist, and the app will remind you to look again ~17 Nov. Thinning waits until they're up. Keep waiting — look again ~17 NovRe-sow today (dates start again)Stop checking — nothing will come up
+  → {"germ":{"result":"none","pct":0,"cameUp":null,"over":false},"thinDate":"2026-12-10","harvestDate":"2026-12-21","jobs":[["germ","2026-11-17","Check whether the spinach is up yet (nothing on 14 Nov)"]]}
+look on 17 Nov: about 4%
+  asks: How many of the spinach have come up? Sown 8 Nov (10 days ago) · expected 13 Nov–18 NovSo far: 14 Nov none up yet None yetA fewA quarterHalfMostAll Roughly what share has
+  then: Patchy so farAbout 4% up. More may still come — the app will remind you to look again ~21 Nov. If that's all that will come up, re-sow the gaps. Keep checking — look again ~21 NovThat’s all — I re-sowed the gaps todayThat’s all — leave it as it isRe-sow everything today (dates start again)
+  → {"germ":{"result":"patchy","pct":4,"cameUp":"2026-11-16","over":false},"thinDate":"2026-12-06","harvestDate":"2026-12-16","jobs":[["thin","2026-12-06","Thin to 10 cm"],["germ","2026-11-21","Check how many spinach have come up (about 4% on 17 Nov)"]]}
+page: Germinationexpected 13 Nov–18 Nov · about 4% · coming up ~16 Nov14 Nov none up yet · 17 Nov about 4% up add a look
+count hint: (of about 85 spots sown)
+count → share: 18
+look on 18 Nov: about 18% → {"germ":{"result":"patchy","pct":18,"cameUp":"2026-11-17","over":false},"thinDate":"2026-12-07","harvestDate":"2026-12-17","jobs":[["thin","2026-12-07","Thin to 10 cm"],["germ","2026-11-22","Check how many spinach have come up (about 18% on 18 Nov)"]]}
+page: Germinationexpected 13 Nov–18 Nov · about 18% · coming up ~17 Nov14 Nov none up yet · 17 Nov about 4% up · 18 Nov about 18% up add a look
+thinning: Thinning10 cm · around 7 Dec (from when they came up (17 Nov)
+log: [["2026-11-18","Spinach: about 18% up"],["2026-11-17","Spinach: about 4% up"],["2026-11-14","Spinach: none up yet"]]
+that’s all: Patchy so farAbout 18% up. More may still come — the app will remind you to look again ~22 Nov. If that's all that will come up, re-sow the gaps. Keep checking 
+  → {"germ":{"result":"patchy","pct":18,"cameUp":"2026-11-17","over":true},"thinDate":"2026-12-07","harvestDate":"2026-12-17","jobs":[["thin","2026-12-07","Thin to 10 cm"]]}
+untick the 14 Nov look: 2026-11-17 4, 2026-11-18 18
+radish sown 1 Oct, nothing: Nothing up yetStill nothing after 48 days — longer than radish usually takes, even in cold soil. The seed may not have taken. Keep waiting — look again ~21 NovRe-sow today (dates start again)Stop chec | first choice: Re-sow today (dates start again)
+  re-sown → {"germ":null,"thinDate":"2026-12-07","harvestDate":"2026-12-22","jobs":[["thin","2026-12-07","Thin to 5 cm"],["germ","2026-11-23","Check seedlings are up (expected 20 Nov–23 Nov)"]]}
+errs []

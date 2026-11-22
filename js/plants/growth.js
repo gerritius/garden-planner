@@ -5,12 +5,13 @@ import { dayTemp, growUnits, normalT, tempFor } from '../climate/climate.js';
 import { render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
-import { addDays, daysBetween, esc, pd, shortDate, todayStr, uid } from '../core/util.js';
+import { addDays, daysBetween, esc, pd, shortDate, todayStr } from '../core/util.js';
 import { container, isLive, isPlanned } from '../garden/garden.js';
 import { raisable, syncPlanTasks } from '../garden/planning.js';
 import { SOIL_T, soilTempFor, soilTemps } from '../garden/soil.js';
 import { syncTasks, upsertAuto } from '../garden/tasks.js';
 import { crop } from './crops.js';
+import { germChecks, notUpYet, syncGermTask } from './germination.js';
 import { ddBetween, learnedFactor, learnedText } from './learning.js';
 import { startsGrowing, syncStartTasks, tpDays, TRANSPLANT, trayDateOf } from './seedlings.js';
 
@@ -20,7 +21,10 @@ export function emergeDate(p) {
   if (p.germ && p.germ.date && p.germ.result !== 'none') return { d: p.germ.date, known: true };
   const gw = germWindow(Object.assign({}, p, { method: 'seed' }));
   const mid = gw ? daysBetween(p.sowDate, gw[0]) + daysBetween(gw[0], gw[1]) / 2 : 7;
-  return { d: addDays(p.sowDate, Math.round(mid * (p.cropId ? learnedFactor(p.cropId, 'germ') : 1))), known: false };
+  const d = addDays(p.sowDate, Math.round(mid * (p.cropId ? learnedFactor(p.cropId, 'germ') : 1)));
+  // looked and nothing up yet: they come up tomorrow at the earliest (not on the expected day that has gone by)
+  if (notUpYet(p)) { const tm = addDays(todayStr(), 1); return { d: d > tm ? d : tm, known: false, notUp: true }; }
+  return { d, known: false };
 }
 // growth rate per day in "good-weather days": 0 below the base temperature, 1 at the reference temperature
 // hardy winter crops (brassicas, spinach, peas & beans, alliums, shungiku) keep growing slowly just above freezing
@@ -132,6 +136,7 @@ export function harvestNote(p) {
 }
 // keep thinning dates up to date as germination is recorded and the weather comes in
 export function syncThin() {
+  for (const p of S.plantings) if (isLive(p) && p.method === 'seed') syncGermTask(p);   // the next look at seeds not up yet
   for (const p of S.plantings) {
     if (!isLive(p) || p.method !== 'seed' || p.thinned || p.thinFixed || !(+p.thinSp > 0) || !crop(p.cropId).daysThin) continue;
     const nd = thinEstimate(p);
@@ -142,7 +147,9 @@ export function thinNote(p) {
   if (p.thinFixed) return 'date set by you';
   const e = emergeDate(p), L = lastLeaves(p), l = learnedText(p.cropId, 'thin');
   const anch = L && leafAnchored(p, p.cropId, e.d, leafTarget(p.thinStage || crop(p.cropId).thinStage), tempFor(p.containerId));
-  return anch ? `from your leaf count on ${shortDate(L.date)}` : `from ${e.known ? 'when they came up (' + shortDate(e.d) + ')' : 'expected germination'} and the temperatures${l ? '; ' + l : ''}`;
+  if (anch) return `from your leaf count on ${shortDate(L.date)}`;
+  if (e.notUp) { const k = germChecks(p).pop(); return `not up yet when you looked on ${shortDate(k.date)} — counted from tomorrow at the earliest, and moves on until they're up`; }
+  return `from ${e.known ? 'when they came up (' + shortDate(e.d) + ')' : 'expected germination'} and the temperatures${l ? '; ' + l : ''}`;
 }
 
 // ---------- germination & pick-by ----------
@@ -153,41 +160,10 @@ function pickBy(p) {
   return { date: w.keep, mature: w.mature, late: cr.late, cont: !!cr.cont };
 }
 export function syncCareTasks(p) {
-  const gw = germWindow(p);
-  upsertAuto(p, 'germ', !!gw && !p.no_germ, gw && gw[1], gw ? `Check seedlings are up (expected ${shortDate(gw[0])}–${shortDate(gw[1])})` : '');
+  syncGermTask(p);
   const pb = pickBy(p);
   upsertAuto(p, 'pickby', !!pb && !pb.cont && !p.no_pickby, pb && pb.date, pb ? `Pick by now – after this ${pb.late}` : '');
 }
-export function germDialog(p, when) {
-  modal(`<h3>How did the ${esc(crop(p.cropId).en)} come up?</h3>
-    <div class="btns col"><button class="btn" data-g="good">🌱 Good, even rows</button><button class="btn" data-g="patchy">🌿 Patchy</button><button class="btn" data-g="none">🚫 Nothing came up</button></div>`, (m, close) => {
-    m.querySelectorAll('[data-g]').forEach(b => b.onclick = async () => {
-      const g = b.dataset.g;
-      p.germ = { result: g, date: when || todayStr() };
-      await save(); close();
-      if (g === 'good') return render();
-      modal(`<h3>${g === 'patchy' ? 'Patchy germination' : 'Nothing came up'}</h3>
-        <p class="msg">${g === 'patchy' ? 'Re-sow the gaps today? This keeps the planting and just notes it.' : 'Re-sow today? Dates, thinning and harvest will be recalculated from today.'}</p>
-        <div class="btns col">${g === 'patchy' ? '<button class="btn primary" data-r="gaps">Re-sowed the gaps today</button>' : ''}<button class="btn ${g === 'none' ? 'primary' : ''}" data-r="all">Re-sow ${g === 'patchy' ? 'everything' : ''} today (reset dates)</button><button class="btn" data-r="no">Leave it</button></div>`, (m2, close2) => {
-        m2.querySelectorAll('[data-r]').forEach(bb => bb.onclick = async () => {
-          const r = bb.dataset.r, td = todayStr();
-          if (r === 'gaps') S.tasks.push({ id: uid(), plantingId: p.id, kind: 'custom', title: 'Re-sowed gaps (patchy germination)', due: td, done: true, doneOn: td });
-          if (r === 'all') {
-            const cr = crop(p.cropId);
-            S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && ['germ', 'thin', 'harvest', 'pickby'].includes(t.kind)));
-            S.tasks.push({ id: uid(), plantingId: p.id, kind: 'custom', title: `Re-sown (was sown ${shortDate(p.sowDate)})`, due: td, done: true, doneOn: td });
-            p.sowDate = td; p.thinned = false; p.thinDoneOn = null; p.germ = null;
-            if (cr.daysThin && p.thinSp) p.thinDate = thinEstimate(p);
-            if (cr.daysHarvest) p.harvestDate = harvestEstimate(p);
-            syncTasks(p);
-          }
-          await save(); close2(); render();
-        });
-      });
-    });
-  });
-}
-
 // ---------- true-leaf counts ----------
 // data version 7: thinning advice saved on plantings from when it was in Japanese, in English
 const THIN_EN = {"芽かき – leave 2–3 stems at 10–15 cm tall": "Remove extra shoots: keep 2–3 stems when they're 10–15 cm tall", "本葉2–3枚 then 5–6枚": "At 2–3 true leaves, then again at 5–6", "本葉3–4枚": "At 3–4 true leaves", "初生葉が開いたら 2本立ち": "Down to 2 plants once the first leaves open", "本葉5–6枚で1本立ち": "Down to 1 plant at 5–6 true leaves", "本葉2–3枚": "At 2–3 true leaves", "本葉2–3枚 then 5枚": "At 2–3 true leaves, then again at 5", "本葉2–3枚で2本立ち": "Down to 2 plants at 2–3 true leaves", "本葉3–4枚で1本立ち": "Down to 1 plant at 3–4 true leaves", "本葉4–5枚": "At 4–5 true leaves", "本葉2枚で1本立ち": "Down to 1 plant at 2 true leaves"};

@@ -63,7 +63,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url || steps.deployment2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -93,8 +93,20 @@ jobs:
         if: steps.pages.outputs.mode == 'workflow'
         with:
           path: _site
+      # GitHub sometimes doesn't list a just-uploaded site for a few seconds ("No artifacts named github-pages"):
+      # give it a moment, and try once more if publishing still can't find it
+      - name: Give the uploaded site a moment
+        if: steps.pages.outputs.mode == 'workflow'
+        run: sleep 10
       - id: deployment
         if: steps.pages.outputs.mode == 'workflow'
+        continue-on-error: true
+        uses: actions/deploy-pages@v5
+      - name: Wait before trying again
+        if: steps.pages.outputs.mode == 'workflow' && steps.deployment.outcome == 'failure'
+        run: sleep 45
+      - id: deployment2
+        if: steps.pages.outputs.mode == 'workflow' && steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v5
 
   release:

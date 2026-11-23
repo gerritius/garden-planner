@@ -9,7 +9,7 @@ import { S, save } from '../core/state.js';
 import { confirmBox, modal } from '../core/ui.js';
 import { esc, todayStr, uid } from '../core/util.js';
 import { CATALOG } from '../data/catalog.js';
-import { allCrops, crop, ic, likeSelect, newCropDialog, ownCropFields, readOwnCropFields } from './crops.js';
+import { crop, cropOptions, ic, likeSelect, newCropDialog, ownCropFields, readOwnCropFields } from './crops.js';
 
 export const seedList = () => S.seeds || [];
 export const seedFor = (cropId, variety) => seedList().find(s => s.cropId === cropId && (s.variety || '') === (variety || ''));
@@ -54,9 +54,8 @@ export function seedDialog(entry, opts = {}) {
   modal('<div></div>', (m, close) => {
     const read = () => { const f = m.querySelector('#sdf'); if (!f) return; for (const n of ['variety', 'maker', 'notes']) d[n] = f[n].value.trim(); if (f.cropId.value !== '__new') d.cropId = f.cropId.value; d.cen = f.cen ? f.cen.value.trim() : ''; d.cja = f.cja ? f.cja.value.trim() : ''; d.clike = f.like ? f.like.value : d.clike; d.cdays = f.cdays ? f.cdays.value : ''; if (f.tempLo) { d.tempLo = f.tempLo.value; d.tempHi = f.tempHi.value; d.tpDays = f.tpDays.value; } };
     const draw = () => {
-      const crops = allCrops().slice().sort((a, b) => a.en.localeCompare(b.en));
       m.querySelector('.sheet').innerHTML = `<h3>${isNew ? 'Add seeds or plants' : 'Edit ' + esc(crop(d.cropId).en + (d.variety ? ' · ' + d.variety : ''))}</h3><form id="sdf" class="form">
-        <label>Crop<select name="cropId"><option value="">Choose a crop…</option>${crops.map(c => `<option value="${c.id}"${!newCrop && c.id === d.cropId ? ' selected' : ''}>${esc(c.en)}${c.ja ? ' ' + esc(c.ja) : ''}</option>`).join('')}<option value="__new"${newCrop ? ' selected' : ''}>＋ A crop that isn’t listed…</option></select></label>
+        <label>Crop<select name="cropId"><option value="">Choose a crop…</option>${cropOptions(newCrop ? '' : d.cropId, true)}<option value="__new"${newCrop ? ' selected' : ''}>＋ A crop that isn’t listed…</option></select></label>
         ${newCrop ? `<div class="two"><label>Crop name<input name="cen" value="${esc(d.cen || '')}" placeholder="e.g. Okahijiki"></label><label>Japanese name <small>(optional)</small><input name="cja" value="${esc(d.cja || '')}"></label></div>
           ${likeSelect(d.clike)}
           <label>Days to first harvest <small>(packet)</small><input name="cdays" type="number" inputmode="numeric" value="${esc(d.cdays || '')}" placeholder="as the crop it’s like"></label>${ownCropFields({ tempLo: d.tempLo, tempHi: d.tempHi, tpDays: d.tpDays })}` : ''}

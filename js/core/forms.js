@@ -7,15 +7,17 @@ import { esc } from './util.js';
 // ---------- the drop-down panel ----------
 let ddOpen = null;
 function ddClose() { if (ddOpen) { ddOpen.panel.remove(); ddOpen.anchor.classList.remove('dd-on'); ddOpen = null; } }
-// items: [{ v, l, sub? }]; pick(v) when chosen; filter: show a search box (long lists)
+// items: [{ v, l, sub? }] — or { head } for a group heading (a select's optgroup); pick(v) when chosen; filter: show a search box (long lists)
 function ddShow(anchor, items, current, pick, opts = {}) {
   ddClose();
   const panel = document.createElement('div'); panel.className = 'dd-panel';
   const list = document.createElement('div'); list.className = 'dd-list';
   const draw = q => {
     const ql = (q || '').trim().toLowerCase();
-    const shown = items.filter(it => !ql || (it.l + ' ' + (it.sub || '') + ' ' + it.v).toLowerCase().includes(ql));
-    list.innerHTML = shown.length ? shown.map(it => `<button type="button" class="dd-item${String(it.v) === String(current) ? ' on' : ''}" data-v="${esc(String(it.v))}">${esc(it.l)}${it.sub ? `<small>${esc(it.sub)}</small>` : ''}</button>`).join('')
+    const hit = it => !ql || (it.l + ' ' + (it.sub || '') + ' ' + it.v).toLowerCase().includes(ql);
+    // headings stay only above items that are shown
+    const shown = items.filter((it, i) => it.head == null ? hit(it) : (() => { for (let j = i + 1; j < items.length && items[j].head == null; j++) if (hit(items[j])) return true; return false; })());
+    list.innerHTML = shown.some(it => it.head == null) ? shown.map(it => it.head != null ? `<div class="dd-head">${esc(it.head)}</div>` : `<button type="button" class="dd-item${String(it.v) === String(current) ? ' on' : ''}" data-v="${esc(String(it.v))}">${esc(it.l)}${it.sub ? `<small>${esc(it.sub)}</small>` : ''}</button>`).join('')
       : `<p class="muted small dd-none">${opts.typed ? 'No matches — keep typing to use your own.' : 'No matches.'}</p>`;
     list.querySelectorAll('.dd-item').forEach(b => b.addEventListener('pointerdown', e => e.preventDefault()));   // keep focus in a typed field
     list.querySelectorAll('.dd-item').forEach(b => b.onclick = e => { e.preventDefault(); e.stopPropagation(); const v = b.dataset.v; ddClose(); pick(v); });
@@ -65,8 +67,12 @@ function enhanceSelect(sel) {
   btn.onclick = e => {
     e.preventDefault();
     if (ddOpen && ddOpen.anchor === btn) return ddClose();
-    const items = [...sel.options].filter(o => !o.disabled && !o.hidden).map(o => ({ v: o.value, l: o.textContent }));
-    ddShow(btn, items, sel.value, v => { SEL_VALUE.set.call(sel, v); label(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }, { filter: items.length > 12 });
+    const items = [];
+    for (const el of sel.children) {
+      if (el.tagName === 'OPTGROUP') { const os = [...el.children].filter(o => !o.disabled && !o.hidden); if (os.length) items.push({ head: el.label }, ...os.map(o => ({ v: o.value, l: o.textContent }))); }
+      else if (!el.disabled && !el.hidden) items.push({ v: el.value, l: el.textContent });
+    }
+    ddShow(btn, items, sel.value, v => { SEL_VALUE.set.call(sel, v); label(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); }, { filter: items.filter(it => it.head == null).length > 12 });
   };
 }
 

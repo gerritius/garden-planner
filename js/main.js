@@ -45,10 +45,13 @@ if (IS_TEST) { document.body.classList.add('site-test'); $('#top .bar').insertAd
   try {
     const { state, from } = upgrade(raw == null ? blank() : raw);
     setState(state);
+    if (raw == null) S.firstRun = true;   // a new garden: the welcome steps (until they're finished or skipped)
     if (raw != null && from < DATA_VERSION) await DB.set('state.v' + from, raw).catch(e => console.warn('could not keep the old format', e));
     allowSaving();
     if (raw != null && from < DATA_VERSION) await save();
   } catch (e) { return showRecovery({ kind: 'data', error: e }); }
+  // a new garden opens on the welcome steps (not over a link to somewhere else; the tests skip them)
+  if (S.firstRun && !window.__noWelcome && (!location.hash || location.hash === '#/')) location.replace('#/welcome');
   try { applyTheme(); render(); }
   catch (e) { console.error(e); return showRecovery({ kind: 'start', error: e }); }
   // new versions: what changed in this one (once), and a notice when a newer one is out

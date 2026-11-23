@@ -29,7 +29,7 @@ export function pageSettings() {
   const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
   const html = `<h3 class="grp">Plan &amp; grow</h3><div class="tiles">
       ${tile('#/plan', '📅', 'Season plan')}${tile('#/rotation', '🔄', 'Rotation')}${tile('#/seedlings', '🌱', 'Seedlings')}${tile('#/sow', '🗓️', 'Sowing calendar')}
-      ${tile('#/products', '📦', 'Products &amp; seeds')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
+      ${tile('#/mycrops', '🧺', 'My crops')}${tile('#/products', '📦', 'Products &amp; seeds')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
     <h3 class="grp">Records</h3><div class="tiles">
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     ${IS_TEST ? `<section><h3>🧪 Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>

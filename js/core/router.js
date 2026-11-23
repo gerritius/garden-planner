@@ -5,6 +5,7 @@ import { failure, pageRecovery, showRecovery } from '../backup/recovery.js';
 import { driveTick } from '../backup/drive.js';
 import { applyClimate, ensureClimate } from '../climate/climate.js';
 import { pageSow } from '../climate/sowing.js';
+import { pageMyCrops, pageWelcome } from '../pages/welcome.js';
 import { pageSprayDay, syncFrost, syncWx } from '../climate/weather.js';
 import { syncFeedPlans } from '../feeding/plans.js';
 import { container, planting } from '../garden/garden.js';
@@ -107,7 +108,7 @@ export function render() {
     else if (a === 'container') ({ html, after } = pageContainer(container(b)));
     else if (a === 'plant' && b === 'new') ({ html, after } = pagePlantForm(null, container(c), q));
     else if (a === 'plant' && c === 'edit') ({ html, after } = pagePlantForm(planting(b)));
-    else if (a === 'sow') ({ html, after } = pageSow());
+    else if (a === 'sow') ({ html, after } = pageSow(q));
     else if (a === 'seedlings') ({ html, after } = pageSeedlings());
     else if (a === 'plan') ({ html, after } = pagePlan());
     else if (a === 'doctor') ({ html, after } = pageDoctor(q));
@@ -124,6 +125,8 @@ export function render() {
     else if (a === 'plant' && c === 'arrange') ({ html, after } = pageArrange(planting(b)));
     else if (a === 'plant') ({ html, after } = pagePlant(planting(b)));
     else if (a === 'recovery') ({ html, after } = pageRecovery());
+    else if (a === 'welcome') ({ html, after } = pageWelcome(q));
+    else if (a === 'mycrops') ({ html, after } = pageMyCrops());
     else html = notFound();
   } catch (e) { console.error(e); html = `<div class="empty-state">Something went wrong: ${esc(e.message)}<br><a href="#/">Home</a> · <a href="#/recovery">Recovery</a></div>`; }
   if (!savingAllowed()) html = `<p class="banner warn">Changes aren’t being saved: this phone’s storage couldn’t be opened. <a href="#/recovery">Recovery</a></p>` + html;

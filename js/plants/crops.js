@@ -20,6 +20,19 @@ function linked(c) {
 }
 export const allCrops = () => CATALOG.concat((S.customCrops || []).map(linked)).map(dispCrop);
 export const crop = id => allCrops().find(c => c.id === id) || (String(id).startsWith('x:') ? { id, en: String(id).slice(2), ja: '', color: '#8a9a7b', family: 'other' } : { id, en: 'Unknown crop', ja: '', color: '#6a9' });
+// your crops (chosen when you start, or in Tools): shown first in crop lists, and what ideas and the sowing calendar are
+// about. Crops of your own, and anything you're growing or have seeds of, always count. No choice made: every crop.
+export const inUse = id => (S.plantings || []).some(p => p.cropId === id) || (S.starts || []).some(s => s.cropId === id && s.status === 'growing') || (S.seeds || []).some(s => s.cropId === id);
+export const isMine = id => !Array.isArray(S.myCrops) || S.myCrops.includes(id) || (S.customCrops || []).some(c => c.id === id) || inUse(id);
+export const myCrops = () => allCrops().filter(c => isMine(c.id));
+// a crop drop-down's options: yours, then the rest under "Other crops" (all of them in one list until you've chosen)
+export function cropOptions(selected, sort) {
+  const opt = c => `<option value="${c.id}"${c.id === selected ? ' selected' : ''}>${esc(c.en)}${c.ja ? ' ' + esc(c.ja) : ''}</option>`;
+  let all = allCrops(); if (sort) all = all.slice().sort((a, b) => a.en.localeCompare(b.en));
+  if (!Array.isArray(S.myCrops)) return all.map(opt).join('');
+  const mine = all.filter(c => isMine(c.id)), rest = all.filter(c => !isMine(c.id));
+  return `<optgroup label="Your crops">${mine.map(opt).join('')}</optgroup>${rest.length ? `<optgroup label="Other crops">${rest.map(opt).join('')}</optgroup>` : ''}`;
+}
 export const cropName = id => { const c = crop(id); return c.ja ? `${c.en} (${c.ja})` : c.en; };
 export const varieties = id => [...new Set([...(crop(id).varieties || []), ...(S.seeds || []).filter(s => s.cropId === id && s.variety).map(s => s.variety)])];
 export const ic = (id, size = 22) => Icons.crop(kin(id), size, crop(id).color);

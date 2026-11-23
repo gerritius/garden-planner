@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.34.0",
+    "date": "2026-11-24",
+    "notes": [
+      "A new garden starts with a few welcome steps: what the app does (and that your garden stays on your phone), restoring a backup, where your garden is, which crops you grow, your first bed or pot, and how to keep a backup. All can be skipped and changed later.",
+      "My crops (Tools): choose the crops you grow. They come first in every crop list (the rest are under “Other crops”), and the sowing calendar and crop ideas are about them. Until you choose, everything is shown as before.",
+      "Drop-down lists show headings where a list is grouped."
+    ]
+  },
+  {
     "version": "1.33.1",
     "date": "2026-11-24",
     "notes": [

@@ -109,6 +109,21 @@ const CROP_EXTRA = {
   strawberry: ['rose', [10]], nanohana: ['brassica', [9, 10]],
 };
 for (const c of CATALOG) { const x = CROP_EXTRA[c.id] || ['other', []]; c.family = x[0]; c.sow = x[1]; c.tender = !!x[2]; }
+// How crops are grouped when you choose yours (what you'd look under, not botany).
+export const GROUPS = {
+  leaves: ['Leafy greens', '葉物野菜'], heads: ['Cabbages & broccoli', 'キャベツ・ブロッコリー類'], roots: ['Roots', '根菜'],
+  fruit: ['Fruiting vegetables', '果菜'], beans: ['Beans & peas', '豆類'], onions: ['Onions & garlic', 'ネギ類'],
+  tubers: ['Potatoes & other tubers', 'イモ類'], herbs: ['Herbs', 'ハーブ・香味野菜'], berries: ['Fruit', '果物'],
+};
+const CROP_GROUP = {
+  leaves: ['komatsuna', 'mizuna', 'chingensai', 'spinach', 'lettuce', 'shungiku', 'nanohana', 'celery'], heads: ['cabbage', 'hakusai', 'broccoli', 'cauliflower'],
+  roots: ['daikon', 'hatsuka', 'kabu', 'carrot'], fruit: ['tomato', 'minitomato', 'nasu', 'piman', 'chilli', 'shishito', 'kyuri', 'zucchini', 'corn'],
+  beans: ['edamame', 'ingen', 'snappea', 'sayaendo', 'soramame'], onions: ['naganegi', 'hatamanegi', 'onion', 'garlic'],
+  tubers: ['potato', 'satoimo', 'satsumaimo'], berries: ['strawberry'],
+};
+for (const [g, ids] of Object.entries(CROP_GROUP)) for (const id of ids) { const c = CATALOG.find(x => x.id === id); if (c) c.group = g; }
+// the crops most home gardens grow — a quick start when choosing yours
+export const COMMON_CROPS = ['tomato', 'minitomato', 'kyuri', 'nasu', 'piman', 'edamame', 'komatsuna', 'spinach', 'lettuce', 'daikon', 'hatsuka', 'carrot', 'potato', 'naganegi', 'cabbage', 'broccoli', 'snappea', 'ingen'];
 // Fertiliser / amendment units. A handful (一握り) of granular fertiliser is roughly 30 g.
 export const UNITS = ['g', 'kg', 'handful', 'mL', 'L'];
 export const HANDFUL_G = 30;

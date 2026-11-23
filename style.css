@@ -703,3 +703,21 @@ button.banner { width: 100%; text-align: left; font: inherit; font-size: 14px; c
 #gcf .sowchips .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 .pctin { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
 .pctin input { width: 6.5em; flex: none; }
+.dd-head { padding: 8px 12px 3px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+/* the welcome steps and choosing your crops */
+.welcome { max-width: 560px; margin: 0 auto; }
+.wl-dots { display: flex; justify-content: center; gap: 8px; margin: 4px 0 14px; }
+.wl-dots span { width: 9px; height: 9px; border-radius: 50%; background: var(--line); }
+.wl-dots span.done { background: var(--green); opacity: .45; }
+.wl-dots span.on { background: var(--green); }
+.wl-hero { display: flex; justify-content: center; gap: 10px; margin: 6px 0 2px; }
+.wl-points { list-style: none; padding: 0; margin: 12px 0; display: grid; gap: 8px; }
+.wl-points li { background: var(--card); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+.btncol { display: grid; gap: 8px; margin: 14px 0; }
+.btncol label.btn { text-align: center; cursor: pointer; }
+.pickgrp h4 { margin: 14px 0 6px; }
+.pickgrp h4 small { color: var(--muted); font-weight: 400; }
+.chip.pick { padding: 4px 10px 4px 4px; }
+.chip.pick small { color: var(--muted); margin-left: 2px; }
+.chip.pick.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+.chip.pick.on small { color: inherit; opacity: .8; }

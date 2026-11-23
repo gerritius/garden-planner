@@ -58,6 +58,7 @@ export function pageHome() {
     <section class="today"><h2>Today’s jobs</h2>
       ${today.length ? `<ul class="tasks">${jobsList(today)}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}
       ${soon ? `<a class="more" href="#/cal">${soon} more in the next 7 days →</a>` : ''}</section>
+    ${S.firstRun ? `<a class="banner" href="#/welcome?s=2">🌱 <b>Finish setting up</b> — where your garden is and which crops you grow ›</a>` : ''}
     ${!S.containers.length ? `<div class="empty-state"><p>No beds or pots yet.</p><a class="btn primary" href="#/container/new">＋ Add a bed or pot</a></div>` : ''}
     ${S.containers.length ? `<div class="viewtog seg"><button type="button" data-act="hv" data-v="cards" class="${S.homeView !== 'map' ? 'on' : ''}">▦ Cards</button><button type="button" data-act="hv" data-v="map" class="${S.homeView === 'map' ? 'on' : ''}">🗺 Map</button></div>` : ''}
     ${S.homeView === 'map' && S.containers.length ? homeMap() : `

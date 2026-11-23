@@ -11,7 +11,7 @@ import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
 import { addDays, daysBetween, esc, go, hashStr, iso, pd, queueIdle, shortDate, todayStr } from '../core/util.js';
 import { Draw } from '../draw.js';
-import { allCrops, crop, cropName, ic } from '../plants/crops.js';
+import { crop, cropName, ic, myCrops } from '../plants/crops.js';
 import { harvestEstimate, harvestWindow } from '../plants/growth.js';
 import { gapStartChips, start, startLeft, startsGrowing, startWhere, tpDays, traySowFor } from '../plants/seedlings.js';
 import { container, endOf, isLive, isPlanned } from './garden.js';
@@ -57,7 +57,7 @@ function cropIdeasUncached(c, a, b, s, clearBy) {
   const lastTry = clearBy && daysBetween(s, clearBy) < 150 ? clearBy : addDays(s, 150);
   const dates = [s]; for (let i = 1; i <= 12; i++) { const x = pd(s); const ds = iso(new Date(x.getFullYear(), x.getMonth() + Math.ceil(i / 2), i % 2 ? 1 : 15)); if (ds > s && ds <= lastTry) dates.push(ds); }
   const outdoor = !c.indoor, warm = d => !outdoor || normalT(d) >= 13;
-  for (const cr of allCrops()) {
+  for (const cr of myCrops()) {   // (your crops — or all of them until you've chosen)
     if (!(cr.sow || []).length || !cr.daysHarvest || cr.id === 'strawberry') continue;
     if ((cr.spread || 20) > width + 20) continue;
     const opts = [];

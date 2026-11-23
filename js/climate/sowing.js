@@ -10,7 +10,7 @@ import { addDays, esc, daysBetween } from '../core/util.js';
 import { Draw } from '../draw.js';
 import { gaps, sizeLabel } from '../garden/garden.js';
 import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
-import { allCrops, crop, cropName, ic, kin } from '../plants/crops.js';
+import { allCrops, crop, cropName, ic, kin, myCrops } from '../plants/crops.js';
 import { frostEnd, harvestModel } from '../plants/growth.js';
 import { applyClimate, growUnits, NORMAL_T, normalT } from './climate.js';
 
@@ -107,17 +107,18 @@ export function applySowWindows() {
 
 // ---------- the sowing calendar page ----------
 // sowing calendar: worked out for your climate, every crop's months editable
-export function pageSow() {
+export function pageSow(q) {
   setChrome('Sowing calendar', { back: true, kicker: S.climate ? `For ${S.climate.name || 'your location'}` : 'Western Tokyo (built-in climate)', sub: sekki() });
   const m = new Date().getMonth() + 1;
-  const list = allCrops().filter(c => c.daysHarvest || (c.sow || []).length).slice().sort((a, b) => a.en.localeCompare(b.en));
+  const chosen = Array.isArray(S.myCrops), all = !chosen || (q && q.get('all') === '1');   // your crops, or all of them
+  const list = (all ? allCrops() : myCrops()).filter(c => c.daysHarvest || (c.sow || []).length).slice().sort((a, b) => a.en.localeCompare(b.en));
   A.sowCrop = el => sowPick(el.dataset.id);
   A.sowEdit = el => sowMonthsDialog(crop(el.dataset.id));
   const st = soilTemps();
   const html = `<p class="hint">Months to sow or plant out, worked out from each crop’s temperature needs and the usual weather ${S.climate ? `in ${esc(S.climate.name || 'your area')}` : 'in western Tokyo'}. ✎ marks months you’ve set yourself — tap ✎ on any crop to change them. Tap a crop to plant it.${st ? ` Soil this week ~${Math.round(st.week ?? st.now)}° at 6 cm: ✓ good for sowing · ◐ slow · ❄ too cold.` : ''}</p>
     <div class="sowtable"><div class="sowrow head"><span></span>${MONTHS.map((x, i) => `<i class="${i + 1 === m ? 'now' : ''}">${x[0]}</i>`).join('')}<b></b></div>
     ${list.map(c => `<div class="sowrow"><span data-act="sowCrop" data-id="${c.id}">${ic(c.id, 20)}${esc(c.en)}${c.method === 'seed' ? soilBadge(c.id) : ''}</span>${MONTHS.map((x, i) => `<i data-act="sowCrop" data-id="${c.id}" class="${(c.sow || []).includes(i + 1) ? 'on' : ''}${i + 1 === m ? ' now' : ''}"></i>`).join('')}<button type="button" class="link sowed${c.sowOwn ? ' own' : ''}" data-act="sowEdit" data-id="${c.id}" aria-label="Change months">✎</button></div>`).join('')}
-    </div>${!S.climate && S.weather && S.weather.lat != null ? '<p class="hint">Fetching the climate for your location…</p>' : ''}`;
+    </div>${chosen ? `<p class="hint center">${all ? `Showing every crop. <a href="#/sow" onclick="location.replace(this.href);return false;">Just my crops</a>` : `Your crops. <a href="#/sow?all=1" onclick="location.replace(this.href);return false;">Show all crops</a> · <a href="#/mycrops">Change my crops</a>`}</p>` : ''}${!S.climate && S.weather && S.weather.lat != null ? '<p class="hint">Fetching the climate for your location…</p>' : ''}`;
   return { html };
 }
 function sowMonthsDialog(cr) {
@@ -145,7 +146,7 @@ function sowMonthsDialog(cr) {
 export const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 export function sowNowSection() {
   const m = new Date().getMonth() + 1;
-  const list = allCrops().filter(c => (c.sow || []).includes(m));
+  const list = myCrops().filter(c => (c.sow || []).includes(m));
   const mn = new Date().toLocaleDateString('en-GB', { month: 'long' });
   return `<section><h3>Sow &amp; plant in ${mn}</h3>
     ${list.length ? `<div class="sowchips">${list.map(c => `<button class="chip big" data-act="sowCrop" data-id="${c.id}">${ic(c.id, 26)}${esc(c.en)}${c.method === 'seed' ? soilBadge(c.id) : ''}</button>`).join('')}</div>` : '<p class="muted">Nothing in the catalogue for this month.</p>'}

@@ -129,4 +129,5 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `watering-all-crops` | Watering jobs for pots, each bed, indoor pots and seedlings; they follow the latest forecast when it changes |
 | `watering-and-rain` | The watering job's timing from rain and your ticks |
 | `watering-skip-frost-thin` | Skipping a watering, removing frost and thinning jobs |
+| `welcome-first-run` | A new garden's welcome steps: location, choosing your crops, first bed; your crops first in lists and the sowing calendar; existing gardens skip it |
 | `weather-jobs-and-planning` | Weather-based jobs; planning a crop with tray-raised seedlings |

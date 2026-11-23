@@ -16,7 +16,7 @@ import { linkedStart, planFormBits } from '../garden/planning.js';
 import { rotationNote } from '../garden/rotation.js';
 import { soilAdvice, soilLine, soilReadingAdvice } from '../garden/soil.js';
 import { syncTasks } from '../garden/tasks.js';
-import { allCrops, crop, newCropDialog, varieties } from '../plants/crops.js';
+import { crop, cropOptions, newCropDialog, varieties } from '../plants/crops.js';
 import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import {
@@ -79,7 +79,7 @@ export function pagePlantForm(p, c, q) {
   const cr = d.cropId ? crop(d.cropId) : null;
   const seed = d.method === 'seed';
   const rowish = ['rows', 'continuous', 'staggered'].includes(d.layout);
-  const cropOpts = `<option value="">Choose a crop…</option>` + allCrops().map(x => `<option value="${x.id}"${x.id === d.cropId ? ' selected' : ''}>${esc(x.en)}${x.ja ? ' ' + esc(x.ja) : ''}</option>`).join('') + `<option value="__new">＋ Add a new crop…</option>`;
+  const cropOpts = `<option value="">Choose a crop…</option>` + cropOptions(d.cropId) + `<option value="__new">＋ Add a new crop…</option>`;
   const ph = slot => {
     const nb = d.newPhotos[slot], id = d.photos[slot];
     const img = nb ? `<img src="${URL.createObjectURL(nb)}">` : id && !d.removePhotos[slot] ? `<img data-photo="${id}">` : `<span>＋ ${slot === 'front' ? 'Front' : 'Back'}</span>`;

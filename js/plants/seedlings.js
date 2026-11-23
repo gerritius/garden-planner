@@ -10,7 +10,7 @@ import { activatePlan, linkedStart } from '../garden/planning.js';
 import { BED_ICON, syncTasks } from '../garden/tasks.js';
 import { Draw } from '../draw.js';
 import { applyCrop, recalc } from '../pages/planting-form.js';
-import { allCrops, crop, ic, varieties } from './crops.js';
+import { crop, cropOptions, ic, varieties } from './crops.js';
 import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
 import { KEPT, keptText, lastLeaves, leafDialog, moveKept, startReady } from './growth.js';
 
@@ -202,7 +202,7 @@ export function startDialog(s, preset) {
   modal(`<h3>${isNew ? 'Start seedlings' : 'Edit seedlings'}</h3>
     ${plan ? `<p class="msg small">📅 For the planned ${esc(crop(plan.cropId).en)} in ${esc((container(plan.containerId) || {}).name || '')} on ${shortDate(plan.sowDate)}.</p>` : ''}
     <form id="sdf" class="form">
-      <label>Crop<select name="cropId" required><option value="">Choose a crop…</option>${allCrops().map(x => `<option value="${x.id}"${x.id === d.cropId ? ' selected' : ''}>${esc(x.en)}${x.ja ? ' ' + esc(x.ja) : ''}</option>`).join('')}</select></label>
+      <label>Crop<select name="cropId" required><option value="">Choose a crop…</option>${cropOptions(d.cropId)}</select></label>
       <label>Variety<input name="variety" list="svars" value="${esc(d.variety || '')}" autocomplete="off"><datalist id="svars"></datalist></label>
       <label>Raised in<select name="where">${choices.map(c => `<option value="${c.v}"${c.v === now ? ' selected' : ''}>${esc(c.label)}${c.sub ? ' · ' + esc(c.sub) : ''}</option>`).join('')}<option value="add">＋ Another size of tray or pot…</option></select></label>
       ${newSizeFields}

@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.33.0",
+    "date": "2026-11-23",
+    "notes": [
+      "A crop of your own now says which crop it's most like (tatsoi → komatsuna, okahijiki → spinach…). Everything you don't give — spacing, sowing months, growth, time to planting out, feeding, care jobs, pests, even its icon — comes from that crop, and what you give from the packet wins.",
+      "Crops of your own you added before show \"not linked\" in Products & seeds → Seeds & plants: edit one to choose what it's like.",
+      "Spray registrations don't carry over from the crop it's like: a spray registered for komatsuna isn't registered for tatsoi."
+    ]
+  },
+  {
     "version": "1.32.1",
     "date": "2026-11-23",
     "notes": [

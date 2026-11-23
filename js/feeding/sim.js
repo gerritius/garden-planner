@@ -6,7 +6,7 @@ import { dayTemp, growUnits, normalRain, normalT, tempFor } from '../climate/cli
 import { S } from '../core/state.js';
 import { addDays, daysBetween, esc, pd, shortDate, todayStr } from '../core/util.js';
 import { potWater, rainByDay, waterInterval } from '../garden/watering.js';
-import { crop } from '../plants/crops.js';
+import { crop, kin } from '../plants/crops.js';
 import { gN, relOf } from './nutrients.js';
 import { feedEnd } from './plans.js';
 import { feedSeason, leanWhy, nextGrowing, restartTemp, SIDE_STAGES, stageAnchor } from './stages.js';
@@ -99,7 +99,7 @@ export function fateLine(sim, L, p) {
 }
 // crops with a last feed (止め肥): feeding later gives split bulbs and poor keeping
 export function lastFeedDate(p) {
-  const s = (SIDE_STAGES[p.cropId] || []).find(x => x.last); if (!s) return null;
+  const s = (SIDE_STAGES[kin(p.cropId)] || []).find(x => x.last); if (!s) return null;
   const se = feedSeason(p); if (!se || !s.w) return null;   // no winter → no fixed last feed; the harvest date limits it as usual
   return addDays(stageAnchor(se, s.w), s.off || 0);
 }

@@ -7,7 +7,7 @@ import { $, addDays, daysBetween, esc, niceDate, pd, todayStr, uid } from '../co
 import { Icons } from '../data/icons.js';
 import { container, isLive } from '../garden/garden.js';
 import { coveredText, plantingCover } from '../plants/covers.js';
-import { crop } from '../plants/crops.js';
+import { crop, kin } from '../plants/crops.js';
 import { startsGrowing } from '../plants/seedlings.js';
 import { beeNote, sprayAlerts } from '../products/sprays.js';
 
@@ -110,7 +110,7 @@ export function frostRisk() {
   const out = [];
   for (const d of days) {
     if (d.min > 2) continue;
-    const hit = act.filter(p => (crop(p.cropId).tender || (d.min <= -1 && HALF_HARDY.includes(p.cropId))) && !(d.min > -2 && plantingCover(p, ['fushokufu'])));
+    const hit = act.filter(p => (crop(p.cropId).tender || (d.min <= -1 && HALF_HARDY.includes(kin(p.cropId)))) && !(d.min > -2 && plantingCover(p, ['fushokufu'])));
     out.push({ d, hit, hard: d.min <= -2 });
   }
   return out;
@@ -203,7 +203,7 @@ export function syncWx() {
 export function wxAdvice(t) {
   const live = S.plantings.filter(p => isLive(p) && !(container(p.containerId) || {}).indoor), td = todayStr();
   const names = f => [...new Set(live.filter(f).map(p => crop(p.cropId).en))].join(', ');
-  const tall = names(p => TALL.includes(p.cropId)), net = names(p => NETTED.includes(p.cropId)), young = names(p => p.sowDate && daysBetween(p.sowDate, td) <= 21);
+  const tall = names(p => TALL.includes(kin(p.cropId))), net = names(p => NETTED.includes(kin(p.cropId))), young = names(p => p.sowDate && daysBetween(p.sowDate, td) <= 21);
   const ready = names(p => p.harvestDate && p.harvestDate <= addDays(td, 7)), trays = startsGrowing().length > 0;
   const L = {
     wind: [tall && `Tie in stems and check stakes are firm: ${tall}`, coveredText() ? `Check tunnel hoops, pegs and the edges of: ${coveredText()}` : net && `Netted crops — check pegs and edges: ${net}`, `Move light pots${trays ? ', seedling trays' : ''} and anything loose somewhere sheltered`, ready && `Pick what’s ready first: ${ready}`,

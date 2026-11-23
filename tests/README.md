@@ -59,6 +59,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `bee-warning` | Bee-harmful ingredients recognised in any product (names, brands, registry); the spray days page lists your sprays that have them |
 | `climate-from-location` | Fetching the climate for a location (simulated), the sowing calendar following it, editing a crop's months |
 | `copy-planting-to-pots` | "Same in other pots": copying a planting, its jobs and feedings to other pots |
+| `crops-like` | A crop of your own must say which crop it's most like; it then takes everything it doesn't give from it (not spray registrations) |
 | `crop-ideas` | "What could go here?": stop-gap crops for empty space, clear-by dates, same-family warnings |
 | `dialog-field-alignment` | Date fields line up with the fields next to them in every dialog |
 | `drive-backup` | Google Drive backup end to end against a simulated Google: connect, daily backup, photos once, tidy-up, restore |

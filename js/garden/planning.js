@@ -7,7 +7,7 @@ import { S, save } from '../core/state.js';
 import { addDays, daysBetween, esc, niceDate, pd, shortDate, todayStr, uid } from '../core/util.js';
 import { Draw } from '../draw.js';
 import { amtFor } from '../feeding/nutrients.js';
-import { crop, cropName, ic } from '../plants/crops.js';
+import { crop, cropName, ic, kin } from '../plants/crops.js';
 import { harvestEstimate, KEPT } from '../plants/growth.js';
 import {
   planStartLinks, startLeft, startPlanted, startWhere, syncStartTasks, tpDays, traySowFor, traySowPlan
@@ -179,9 +179,9 @@ function shopItems(weeks) {
     const c = container(p.containerId), cr = crop(p.cropId), where = (c ? c.name : '') + (sectionOf(p) ? ' ' + sectionOf(p) : ''), n = count(p);
     if (p.method === 'seedling' && (p.raise || 'buy') === 'buy' && !linkedStart(p)) items.push({ key: 'sl:' + p.id, cat: 'seedlings', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seedlings${n ? ' × ' + n : ''}`, sub: `for ${where} · plant ${shortDate(p.sowDate)}`, by: addDays(p.sowDate, -1) });
     else { const sowBy = p.raise === 'tray' || p.raise === 'pot' ? traySowFor(p.cropId, p.sowDate) : p.sowDate; items.push({ key: 'sd:' + p.id, cat: 'seeds', title: `${cr.en}${p.variety ? ' · ' + p.variety : ''} seed`, sub: `have enough? sow ${shortDate(sowBy)} · ${where}`, by: sowBy }); }
-    if (NETTED.includes(p.cropId) && c) { const w = c.type === 'bed' ? c.width : c.diameter || c.width, l = c.type === 'bed' ? p.to - p.from : c.diameter || c.length;
+    if (NETTED.includes(kin(p.cropId)) && c) { const w = c.type === 'bed' ? c.width : c.diameter || c.width, l = c.type === 'bed' ? p.to - p.from : c.diameter || c.length;
       items.push({ key: 'net:' + p.id, cat: 'netting', title: `Insect netting for ${cr.en}`, sub: `${where} · about ${((w + 90) / 100).toFixed(1)} × ${((l + 90) / 100).toFixed(1)} m with hoops (0.8 mm mesh or finer)`, by: p.sowDate }); }
-    if (TALL.includes(p.cropId)) items.push({ key: 'sup:' + p.id, cat: 'supports', title: `Supports for ${cr.en}`, sub: `${where} · ${['snappea', 'sayaendo', 'kyuri', 'ingen'].includes(p.cropId) ? 'poles + climbing net (きゅうりネット)' : 'stakes (支柱) and ties'}`, by: p.sowDate });
+    if (TALL.includes(kin(p.cropId))) items.push({ key: 'sup:' + p.id, cat: 'supports', title: `Supports for ${cr.en}`, sub: `${where} · ${['snappea', 'sayaendo', 'kyuri', 'ingen'].includes(kin(p.cropId)) ? 'poles + climbing net (きゅうりネット)' : 'stakes (支柱) and ties'}`, by: p.sowDate });
   }
   // fertiliser / compost / lime needed for planned crops, totalled by product
   const tot = {};

@@ -8,7 +8,7 @@ import { modal } from '../core/ui.js';
 import { addDays, daysBetween, esc, num, shortDate, todayStr, uid } from '../core/util.js';
 import { Draw } from '../draw.js';
 import { activeIn, container } from '../garden/garden.js';
-import { crop } from './crops.js';
+import { crop, kin } from './crops.js';
 
 const COVER_TYPES = [
   ['insect', '🕸️', 'Insect net tunnel', '防虫ネット'], ['fushokufu', '🧣', 'Fushokufu tunnel', '不織布'], ['shade', '🕶️', 'Shade cloth', '寒冷紗・遮光'],
@@ -76,7 +76,7 @@ export function coverNotes() {
     if (!under.length && daysBetween(x.on, td) > 1) { out.push({ c, x, text: `${coverType(x.type)[2]} still on ${where} — nothing is growing under it.` }); continue; }
     if (x.type === 'fushokufu' && warm) out.push({ c, x, text: `${dayName(warm.date) === 'Today' ? 'Today' : dayName(warm.date)} reaches ${Math.round(warm.max)}° — open up the ends of the ${coverType(x.type)[2].toLowerCase()} on ${where} so ${names || 'the crop'} doesn’t cook.` });
     else if (x.type === 'fushokufu' && noFrost && warming(td) && normalT(td) >= 10) out.push({ c, x, text: `No frost in the forecast — the fushokufu on ${where} can probably come off.` });
-    const flowering = under.filter(p => NEEDS_BEES.includes(p.cropId) && p.harvestDate && td >= addDays(p.harvestDate, -21));
+    const flowering = under.filter(p => NEEDS_BEES.includes(kin(p.cropId)) && p.harvestDate && td >= addDays(p.harvestDate, -21));
     if (x.type === 'insect' && flowering.length) out.push({ c, x, text: `${[...new Set(flowering.map(p => crop(p.cropId).en))].join(', ')} under the net on ${where} should be flowering — lift it in the mornings for bees, or hand-pollinate.` });
   }
   return out;

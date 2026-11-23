@@ -9,7 +9,7 @@ import { PESTS } from '../data/catalog.js';
 import { container, isLive, planting } from '../garden/garden.js';
 import { myProducts } from '../products/library.js';
 import { dilsEn, maxUses, phiDays, regRows } from '../products/sprays.js';
-import { crop, cropName, ic } from './crops.js';
+import { crop, cropName, ic, kin } from './crops.js';
 
 // ---------- problem finder ----------
 const SIGNS = [
@@ -86,7 +86,7 @@ const PROBLEMS = [
     ['Water steadily (pots especially)', 'Oyster shell lime or a calcium foliar feed for the next fruits; remove affected fruit']],
 ];
 const famOf = id => crop(id).family || 'other';
-const probFits = (pr, cropId) => pr[3].includes('all') || pr[3].includes(cropId) || pr[3].includes(famOf(cropId));
+const probFits = (pr, cropId) => pr[3].includes('all') || pr[3].includes(cropId) || pr[3].includes(kin(cropId)) || pr[3].includes(famOf(cropId));
 function problemMatches(cropId, signs) {
   const m = new Date().getMonth() + 1;
   return PROBLEMS.filter(pr => probFits(pr, cropId)).map(pr => { const hit = pr[4].filter(s => signs.includes(s)).length; return { pr, hit, score: hit * 3 + (pr[5].includes(m) ? 1 : 0) - (pr[3].includes('all') ? 0.5 : 0) }; })
@@ -147,13 +147,13 @@ export function qualityWarnings(only) {
   const rainy = days.find(d => d.rain >= 20), dryBefore = Object.entries(S.rainHist || {}).filter(([k]) => k >= addDays(td, -6) && k < td).every(([, v]) => v < 2);
   for (const p of live) {
     const n = crop(p.cropId).en;
-    if (HEAT_BOLT.includes(p.cropId) && hot.length && (near(p) || normalT(td) >= 17))
+    if (HEAT_BOLT.includes(kin(p.cropId)) && hot.length && (near(p) || normalT(td) >= 17))
       out.push([p, 'bolt', `${n}: ${hot.length > 1 ? 'warm days' : 'a warm day'} ahead (${Math.round(Math.max(...hot.map(d => d.max)))}°) — ${near(p) ? 'pick soon, it may bolt or turn bitter' : 'keep it watered; it may bolt early'}.`]);
-    else if (DAY_BOLT.includes(p.cropId) && warming(td) && normalT(td) >= 8 && p.harvestDate && p.harvestDate <= td)
+    else if (DAY_BOLT.includes(kin(p.cropId)) && warming(td) && normalT(td) >= 8 && p.harvestDate && p.harvestDate <= td)
       out.push([p, 'bolt', `${n}: lengthening days make it flower now — pick ${p.cropId === 'naganegi' ? 'before the flower buds (ネギ坊主) open' : 'before it bolts'}.`]);
-    if (SPLITTERS.includes(p.cropId) && rainy && dryBefore && near(p) && outdoors(p))
+    if (SPLITTERS.includes(kin(p.cropId)) && rainy && dryBefore && near(p) && outdoors(p))
       out.push([p, 'split', `${n}: ${Math.round(rainy.rain)} mm of rain ${dayName(rainy.date) === 'Today' ? 'today' : 'on ' + dayName(rainy.date)} after a dry week — pick what’s ready first, it may split.`]);
-    if (FROST_HEADS.includes(p.cropId) && cold && near(p) && outdoors(p))
+    if (FROST_HEADS.includes(kin(p.cropId)) && cold && near(p) && outdoors(p))
       out.push([p, 'frost', `${n}: hard frost ${dayName(cold.date)} (${Math.round(cold.min)}°) can blacken the ${p.cropId === 'lettuce' ? 'outer leaves' : 'heads'} — pick or cover.`]);
   }
   return out;

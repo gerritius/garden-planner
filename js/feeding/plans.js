@@ -12,7 +12,7 @@ import { container, isLive, planting } from '../garden/garden.js';
 import { feedOf, gramsFor, limeRate, soilAdvice, soilM2, soilReadingAdvice } from '../garden/soil.js';
 import { finishToggle } from '../garden/tasks.js';
 import { waterPots } from '../garden/watering.js';
-import { crop } from '../plants/crops.js';
+import { crop, kin } from '../plants/crops.js';
 import { growthDate, harvestWindow } from '../plants/growth.js';
 import { libList, myProducts, pickRole, productByName } from '../products/library.js';
 import { pestEn, regSummary } from '../products/sprays.js';
@@ -107,7 +107,7 @@ export function careJobs(cropId) {
   const cr = crop(cropId);
   // feeding is planned from the Feeding card, so side-dressing isn't a plain job any more (earthing up stays)
   const jobs = (cr.jobs || []).map(j => j.slice()).filter(j => !/追肥|side-dress|止め肥/i.test(j[0]) || /earth up|土寄せ/i.test(j[0])).map(j => /追肥|side-dress/i.test(j[0]) ? ['Earth up (土寄せ)', ...j.slice(1)] : j);
-  if (FRUITING.includes(cropId) || cr.family === 'brassica' || ['strawberry', 'soramame', 'edamame', 'lettuce'].includes(cropId))
+  if (FRUITING.includes(kin(cropId)) || cr.family === 'brassica' || ['strawberry', 'soramame', 'edamame', 'lettuce'].includes(kin(cropId)))
     jobs.push(['Pest check (害虫チェック) – undersides & new growth', 7, 1, 'week']);
   return jobs;
 }
@@ -245,7 +245,7 @@ export function baseFertNote(cropId, c, sowDate) {
   if (base) bits.push(`${base.en}: ${whenIn(base)}`);
   if (cropId === 'potato') bits.push('no lime for potatoes (scab)');
   if (cropId === 'satsumaimo') bits.push('no nitrogen fertiliser for sweet potato — rich soil gives leaves, not tubers (つるぼけ)');
-  if (['carrot', 'daikon', 'hatsuka', 'kabu'].includes(cropId)) bits.push('keep compost well mixed and at least 3 weeks old for root crops');
+  if (['carrot', 'daikon', 'hatsuka', 'kabu'].includes(kin(cropId))) bits.push('keep compost well mixed and at least 3 weeks old for root crops');
   return bits.join(' · ');
 }
 // pests: organic sprays allowed on this crop first, others as a last resort — from your sprays, not fixed names

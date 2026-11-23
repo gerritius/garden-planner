@@ -8,7 +8,7 @@ import { modal } from '../core/ui.js';
 import { addDays, daysBetween, esc, num, shortDate, todayStr, uid } from '../core/util.js';
 import { Draw } from '../draw.js';
 import { areaOf } from '../feeding/nutrients.js';
-import { crop } from '../plants/crops.js';
+import { crop, kin } from '../plants/crops.js';
 import { pickRole } from '../products/library.js';
 import { activeIn } from './garden.js';
 import { lastCropIn } from './rotation.js';
@@ -18,7 +18,7 @@ const PH_RANGE = {
   spinach: [6.5, 7.2], snappea: [6.2, 7.0], sayaendo: [6.2, 7.0], onion: [6.0, 6.8], naganegi: [6.0, 6.8], hatamanegi: [6.0, 6.8], garlic: [6.0, 6.8],
   potato: [5.0, 6.0], satsumaimo: [5.5, 6.2], daikon: [5.5, 6.5], carrot: [5.5, 6.5], kyuri: [5.5, 6.5], ingen: [5.5, 6.5], corn: [5.5, 6.5], strawberry: [5.5, 6.5], satoimo: [5.5, 6.5],
 };
-export const phRange = id => PH_RANGE[id] || [6.0, 6.5];
+export const phRange = id => PH_RANGE[kin(id)] || [6.0, 6.5];
 // the space as m² of bed: a bed section's area; for a pot, its soil volume (about 150 L of mix ≈ 1 m² of dug bed)
 export function soilM2(c, from, to) {
   if (c.type === 'bed') { const L = Draw.dims(c).L; return Draw.dims(c).W * ((to ?? L) - (from ?? 0)) / 1e4; }
@@ -28,7 +28,7 @@ export const gramsFor = (perM2, c, from, to) => { if (!(perM2 > 0)) return 0; co
 const spaceName = c => c.type === 'bed' ? 'this section' : `this ${c.type === 'round' ? 'pot' : 'container'} (~${Math.round(potVolume(c) || 40)} L)`;
 // lime for a crop in this space, in g/m²: the crop's usual rate, more if a reading shows the soil too acid, none if it's already high
 export function limeRate(cropId, ph) {
-  const usual = cropId ? (LIME_M2[cropId] ?? (['brassica', 'legume'].includes(crop(cropId).family) ? 150 : 100)) : 100;
+  const usual = cropId ? (LIME_M2[kin(cropId)] ?? (['brassica', 'legume'].includes(crop(cropId).family) ? 150 : 100)) : 100;
   if (ph == null) return usual;
   const [lo, hi] = cropId ? phRange(cropId) : [6.0, 6.5];
   if (ph >= hi - 0.1) return 0;                                                        // at the top of its range or above: no lime
@@ -119,7 +119,7 @@ const FEED = {
   edamame: 'legume', snappea: 'legume', ingen: 'legume', sayaendo: 'legume', soramame: 'legume',
 };
 export const FEED_LABEL = { heavy: 'heavy feeder', medium: 'medium feeder', light: 'light feeder', legume: 'legume (adds nitrogen)' };
-export const feedOf = (cropId, h) => (h && h.feed) || FEED[cropId] || (crop(cropId).family === 'legume' ? 'legume' : crop(cropId).feed) || '';
+export const feedOf = (cropId, h) => (h && h.feed) || FEED[kin(cropId)] || (crop(cropId).family === 'legume' ? 'legume' : crop(cropId).feed) || '';
 const NO_FRESH_COMPOST = ['carrot', 'daikon', 'hatsuka', 'kabu', 'satsumaimo'];
 // returns { level: 'warn'|'note', text, base: multiplier for base fertiliser, compost: multiplier } or null
 export function soilAdvice(c, from, to, nextCropId, beforeDate, excludeId) {
@@ -163,7 +163,7 @@ export function soilTemps() {
   return days.length ? { days, now: (days.find(x => x.d === td) || days[days.length - 1]).mean, week: week.length ? week.reduce((a, b) => a + b.mean, 0) / week.length : null } : null;
 }
 export function soilVerdict(cropId, t) {
-  const r = SOIL_T[cropId]; if (!r || t == null) return null;
+  const r = SOIL_T[kin(cropId)]; if (!r || t == null) return null;
   const v = Math.round(t);
   if (t < r[0]) return { ok: 0, txt: `too cold to sow (soil ~${v}°, needs ${r[0]}°+)` };
   if (r[2] && t > r[2]) return { ok: 1, txt: `soil warm (~${v}°) — germination can be patchy above ${r[2]}°; sow in the cool of evening and keep moist` };

@@ -10,7 +10,7 @@ import { addDays, esc } from '../core/util.js';
 import { Draw } from '../draw.js';
 import { gaps, sizeLabel } from '../garden/garden.js';
 import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
-import { allCrops, crop, cropName, ic } from '../plants/crops.js';
+import { allCrops, crop, cropName, ic, kin } from '../plants/crops.js';
 import { growParams } from '../plants/growth.js';
 import { applyClimate, growUnits, NORMAL_T, normalT } from './climate.js';
 
@@ -44,13 +44,13 @@ const minT = (a, b) => { let m = 99; for (let d = a; d <= b; d = addDays(d, 3)) 
 const coldDays = (a, b) => { let n = 0; for (let d = a; d <= b; d = addDays(d, 1)) if (normalT(d) < 8) n++; return n; };
 const isWarming = d => normalT(addDays(d, 30)) > normalT(d);
 // crops that bolt (or spoil) when they mature in the heat
-export const boltsInHeat = id => !!(SOW_PROFILE[id] || {}).heat;
+export const boltsInHeat = id => !!(SOW_PROFILE[kin(id)] || {}).heat;
 // does sowing / planting on this day work for this crop, in this climate?
 function sowDayOK(cr, d) {
-  const pr = SOW_PROFILE[cr.id] || {}, T = normalT(d), warm = isWarming(d), coldest = Math.min(...NORMAL_T);
+  const pr = SOW_PROFILE[kin(cr.id)] || {}, T = normalT(d), warm = isWarming(d), coldest = Math.min(...NORMAL_T);
   if (pr.winter) return coldest >= -2 ? !warm && T >= pr.winter[0] && T <= pr.winter[1] : !!(pr.spring && warm && T >= pr.spring[0] && T <= pr.spring[1]);
   if (pr.rising || pr.falling) return !!((warm && pr.rising && T >= pr.rising[0] && T <= pr.rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]));
-  const seedT = SOIL_T[cr.id], seedling = cr.method !== 'seed';
+  const seedT = SOIL_T[kin(cr.id)], seedling = cr.method !== 'seed';
   const lo = pr.plant ? pr.plant[0] : cr.tender ? (seedling ? 14 : (seedT ? seedT[0] : 14)) : Math.max(7, seedT && !seedling ? seedT[0] + 2 : 7);
   const hi = pr.plant ? pr.plant[1] : seedT && seedT[2] ? seedT[2] - 1 : cr.tender ? 29 : 26;
   if (warm && pr.warmLo && T < pr.warmLo) return false;
@@ -74,7 +74,7 @@ export function sowWindow(cr) {
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
 const SOW_RULES_VER = 2;   // bump when the rules change, so stored windows are worked out again
 export function applySowWindows() {
-  const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), crops.map(c => c.id + ':' + (c.daysHarvest || 0)).join(',')].join('|');
+  const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
   const cache = S.sowCache && S.sowCache.key === key ? S.sowCache.m : null, worked = {};
   for (const c of crops) {
     if (c.sowRef === undefined) c.sowRef = (c.sow || []).slice();

@@ -5,7 +5,7 @@ import { normalT } from '../climate/climate.js';
 import { S } from '../core/state.js';
 import { addDays, daysBetween, shortDate, todayStr } from '../core/util.js';
 import { container } from '../garden/garden.js';
-import { crop } from '../plants/crops.js';
+import { crop, kin } from '../plants/crops.js';
 import { growParams, harvestWindow, isWarmCrop } from '../plants/growth.js';
 import { productByName } from '../products/library.js';
 import { gN, leadText } from './nutrients.js';
@@ -52,7 +52,7 @@ export function feedSeason(p) {
   let ws = null; for (let d = p.sowDate; d < hv; d = addDays(d, 1)) if (normalT(d) < thr) { ws = d; break; }
   if (!ws) return (_season[k] = null);
   let we = ws; for (let i = 0; i < 200 && normalT(we) < thr; i++) we = addDays(we, 1);
-  const bolt = BOLT_IF_BIG.includes(p.cropId);
+  const bolt = BOLT_IF_BIG.includes(kin(p.cropId));
   // lean stretch: heading brassicas from ~5 weeks before winter, others the last 3 weeks before it
   return (_season[k] = { ws, we, bolt, leanFrom: addDays(ws, bolt ? -35 : -21), leanTo: ws, mainAt: we });
 }
@@ -67,22 +67,22 @@ export function sideStages(p) {
   const td = todayStr(), cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60), se = feedSeason(p), skipped = [];
   const start = p.method === 'seed' ? (p.thinDoneOn || p.thinDate || addDays(p.sowDate, 20)) : p.sowDate;
   let raw = [];
-  if (FRUIT_EVERY.includes(p.cropId)) { const keep = (harvestWindow(p) || {}).keep || addDays(hv, 60); for (let d = addDays(hv, -10), i = 1; d < keep && i <= 5; d = addDays(d, 18), i++) raw.push({ date: d, t: i === 1 ? 'as the first fruits swell' : 'every 2–3 weeks while picking' }); }
+  if (FRUIT_EVERY.includes(kin(p.cropId))) { const keep = (harvestWindow(p) || {}).keep || addDays(hv, 60); for (let d = addDays(hv, -10), i = 1; d < keep && i <= 5; d = addDays(d, 18), i++) raw.push({ date: d, t: i === 1 ? 'as the first fruits swell' : 'every 2–3 weeks while picking' }); }
   else {
-    let defs = (SIDE_STAGES[p.cropId] || []).filter(s => !s.w || se);   // winter-tied stages only when it goes through a winter
+    let defs = (SIDE_STAGES[kin(p.cropId)] || []).filter(s => !s.w || se);   // winter-tied stages only when it goes through a winter
     if (!defs.length) defs = [{ d: 21, t: 'about 3 weeks in' }, { f: 0.6, t: 'mid-season' }];
     for (const s of defs) {
       const date = s.w ? addDays(stageAnchor(se, s.w), s.off || 0) : s.d != null ? addDays(start, s.d) : addDays(p.sowDate, Math.round(daysBetween(p.sowDate, hv) * s.f));
       raw.push({ date, t: s.t, w: s.w });
     }
   }
-  if (se && !FRUIT_EVERY.includes(p.cropId) && se.we < addDays(hv, -14) && !raw.some(r => r.date && Math.abs(daysBetween(r.date, se.we)) <= 21))
+  if (se && !FRUIT_EVERY.includes(kin(p.cropId)) && se.we < addDays(hv, -14) && !raw.some(r => r.date && Math.abs(daysBetween(r.date, se.we)) <= 21))
     raw.push({ date: se.we, t: se.bolt ? 'as growth restarts — the main feed for spring heads' : 'as growth restarts in spring' });
   const out = [];
   for (const r of raw) {
     let { date, t } = r, why = '';
     const orig = date;
-    if (!FRUIT_EVERY.includes(p.cropId) && orig > addDays(hv, -14)) continue;   // too close to harvest to help
+    if (!FRUIT_EVERY.includes(kin(p.cropId)) && orig > addDays(hv, -14)) continue;   // too close to harvest to help
     let light = false;
     if (date < td) {
       if (daysBetween(date, td) > 21) continue;

@@ -10,7 +10,7 @@ import { container, isLive, isPlanned } from '../garden/garden.js';
 import { raisable, syncPlanTasks } from '../garden/planning.js';
 import { SOIL_T, soilTempFor, soilTemps } from '../garden/soil.js';
 import { syncTasks, upsertAuto } from '../garden/tasks.js';
-import { crop } from './crops.js';
+import { crop, kin } from './crops.js';
 import { germChecks, notUpYet, syncGermTask } from './germination.js';
 import { ddBetween, learnedFactor, learnedText } from './learning.js';
 import { startsGrowing, syncStartTasks, tpDays, transplantOf, trayDateOf } from './seedlings.js';
@@ -58,7 +58,11 @@ export function ownGrow(cr) {
   if (!(lo > 0 && hi > lo)) return { tb: 0, tref: 1, tcap: 1, plain: true };
   return lo >= 18 ? { tb: lo - 10, tref: lo + 4, tcap: hi, warm: [lo - 11, lo + 1] } : { tb: Math.max(0, lo - 14), tref: lo + 2, tcap: hi };
 }
-export const growParams = id => GROW[id] || ownGrow(crop(id));
+export const growParams = id => {
+  const own = (S.customCrops || []).find(c => c.id === id);
+  if (own && +own.tempLo > 0 && +own.tempHi > +own.tempLo) return ownGrow(own);   // your packet's temperatures win
+  return GROW[kin(id)] || ownGrow(crop(id));                                     // else the crop it's like (or plain days)
+};
 export const isWarmCrop = id => !!growParams(id).warm;
 // heading brassicas almost stop growing in midwinter (that's why autumn-planted cabbage heads in spring)
 export const HEADING = ['cabbage', 'hakusai', 'broccoli', 'cauliflower'];
@@ -287,7 +291,7 @@ export function harvestWindowText(p) {
 export function germWindow(p) {
   const cr = crop(p.cropId);
   if (p.method !== 'seed' || !cr.germ || !p.sowDate) return null;
-  const r = SOIL_T[p.cropId] || [5, 15], c = p.containerId && container(p.containerId);
+  const r = SOIL_T[kin(p.cropId)] || [5, 15], c = p.containerId && container(p.containerId);
   const slow = t => t >= r[1] ? 1 : t >= r[0] ? 1 + (r[1] - t) / Math.max(1, r[1] - r[0]) * 0.9 : 2.2;
   let f = c && c.indoor ? 1 : slow(normalT(p.sowDate) + 1);   // soil runs a little warmer than the air mean
   if (Math.abs(daysBetween(p.sowDate, todayStr())) <= 7 && !(c && c.indoor)) {

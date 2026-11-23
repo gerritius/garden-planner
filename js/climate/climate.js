@@ -11,6 +11,7 @@ import { container } from '../garden/garden.js';
 import { _ideaCache } from '../garden/ideas.js';
 import { _need, growParams, HEADING } from '../plants/growth.js';
 import { applySowWindows, MONTHS } from './sowing.js';
+import { kin } from '../plants/crops.js';
 
 // ---------- usual temperature and rain for each month ----------
 // Catalogue "days to thin" assume good growing weather (~18 °C for cool-season crops, ~24 °C for warm-season).
@@ -90,7 +91,7 @@ const climateName = () => S.climate ? `${S.climate.name || 'your location'} (${S
 export function growUnits(id, T) {
   const { tb, tref, tcap, warm, plain } = growParams(id);
   if (plain) return 1;   // a crop of your own without its temperatures: plain days
-  if (HEADING.includes(id) && T < 6) return 0;
+  if (HEADING.includes(kin(id)) && T < 6) return 0;
   if (warm) { const [lo, opt] = warm; return T <= lo ? 0 : (tref - tb) * (T >= opt ? 1 : Math.pow((T - lo) / (opt - lo), 0.6)); }
   return Math.max(0, Math.min(T, tcap) - tb);
 }

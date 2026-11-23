@@ -8,7 +8,7 @@ import { addDays, daysBetween, esc, shortDate, todayStr } from '../core/util.js'
 import { container, isLive, planting } from '../garden/garden.js';
 import { lastCropIn } from '../garden/rotation.js';
 import { feedOf, soilReadingAdvice } from '../garden/soil.js';
-import { crop } from '../plants/crops.js';
+import { crop, kin } from '../plants/crops.js';
 import { productByName } from '../products/library.js';
 import { mixFert, mixRow, mixSort, mixState } from './mix.js';
 import { amtFor, feedArea, feedGrams, gN, K_NEED, N_NEED, NAME_N, P_NEED, usable3 } from './nutrients.js';
@@ -20,7 +20,7 @@ import { actsOn, feedSeason, inLean, leanWhy } from './stages.js';
 export function feedLedger(p) {
   const c = container(p.containerId); if (!c || !p.sowDate) return null;
   const td = todayStr(), bag = c.type !== 'bed', A2 = feedArea(c, p), bedA = feedArea(c), lines = [];
-  const need = N_NEED[p.cropId] ? N_NEED[p.cropId] * A2 : null, needP = P_NEED[p.cropId] ? P_NEED[p.cropId] * A2 : null, needK = K_NEED[p.cropId] ? K_NEED[p.cropId] * A2 : null;
+  const need = N_NEED[kin(p.cropId)] ? N_NEED[kin(p.cropId)] * A2 : null, needP = P_NEED[kin(p.cropId)] ? P_NEED[kin(p.cropId)] * A2 : null, needK = K_NEED[kin(p.cropId)] ? K_NEED[kin(p.cropId)] * A2 : null;
   const L3 = (o, u) => Object.assign(o, u ? { n: u.n, p: u.p, k: u.k } : { n: null, p: null, k: null });
   // 1. starting soil
   if (bag) {

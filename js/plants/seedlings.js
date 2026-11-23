@@ -71,7 +71,7 @@ export const TRANSPLANT = {
 export function transplantOf(id) {
   if (TRANSPLANT[id]) return TRANSPLANT[id];
   const own = (S.customCrops || []).find(c => c.id === id);
-  return own && +own.tpDays > 0 ? [+own.tpDays, own.tpSign || ''] : null;
+  return own && +own.tpDays > 0 ? [+own.tpDays, own.tpSign || ''] : own && own.like && TRANSPLANT[own.like] ? TRANSPLANT[own.like] : null;   // (else the crop it's like)
 }
 export const tpDays = id => (transplantOf(id) || [])[0] || 0;
 const DISCARD = ['Spare / too many', 'Weak or leggy', 'Pests or disease', 'Died / dried out'];
@@ -222,7 +222,7 @@ export function startDialog(s, preset) {
     const ownCrop = id => (S.customCrops || []).find(c => c.id === id);
     const hint = () => {
       const id = f.cropId.value; m.querySelector('#svars').innerHTML = id ? varieties(id).map(v => `<option value="${esc(v)}">`).join('') : '';
-      const own = ownCrop(id), ask = !!own && !TRANSPLANT[id], tpL = m.querySelector('#ownTpL');
+      const own = ownCrop(id), ask = !!own && !TRANSPLANT[id] && !(own.like && TRANSPLANT[own.like]), tpL = m.querySelector('#ownTpL');
       tpL.hidden = !ask; if (ask && !f.tpd.value && own.tpDays) f.tpd.value = own.tpDays;
       const tp = ask ? (+f.tpd.value > 0 ? [+f.tpd.value, own.tpSign || ''] : null) : transplantOf(id);
       const prev = own && own.tpDays; if (ask) own.tpDays = tp ? tp[0] : 0;   // (just for working it out: kept only when you save)

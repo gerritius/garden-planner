@@ -33,6 +33,7 @@ const U = 'http://localhost:8765/';
   await pg.goto(U + '#/products?t=seeds'); await pg.waitForTimeout(300);
   console.log('seeds tab:', (await pg.$eval('[data-act=editCrop]', b => b.closest('section').textContent.replace(/\s+/g, ' ').trim())).slice(0, 160));
   await pg.click('[data-act=editCrop]'); await pg.waitForTimeout(200);
+  await pg.selectOption('#ncf select[name=like]', 'spinach');   // (it has to say what it's like)
   await pg.fill('#ncf input[name=tempLo]', '20'); await pg.fill('#ncf input[name=tempHi]', '30'); await pg.click('#ncf button.primary'); await pg.waitForTimeout(300);
   console.log('crop now:', JSON.stringify(await pg.evaluate(() => { const c = S.customCrops[0]; return [c.tempLo, c.tempHi, c.tpDays, growParams(c.id)]; })));
   await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);

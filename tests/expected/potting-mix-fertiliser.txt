@@ -1,4 +1,4 @@
-celery: soil line "Fertiliser in the potting mix (Touikawa Peace Farm vegetable soil, filled fresh 10 Sept)" N 1.87 P 11.19 K 1.87 | need N 10.3 P 8.8 | fed until 2026-11-18 | base plan []
+celery: soil line "Fertiliser in the potting mix (Touikawa Peace Farm vegetable soil, filled fresh 10 Sept)" N 1.85 P 11.11 K 1.85 | need N 10.3 P 8.8 | fed until 2026-11-18 | base plan []
 lettuce: soil line "Fertiliser in the potting mix (Iris Ohyama Golden Granular Soil, filled fresh 1 Oct)" N 3.28 P 3.28 K 3.28 | need N 3.5 P 3.5 | fed until 2026-11-18 | base plan []
 komatsuna: soil line "Potting mix (Iris Ohyama Golden Granular Soil) — its built-in fertiliser is used up" N 0.30 P 0.30 K 0.30 | need N 3.5 P 2.9 | fed until 2026-11-18 | base plan [{"product":"Cow manure compost","amount":4,"unit":"L"},{"product":"Chemical fertiliser 8-8-8","amount":45,"unit":"g"},{"product":"Oyster shell lime","amount":45,"unit":"g"}]
 re-used potting mix: Cow manure compost plus Chemical fertiliser 8-8-8 mixed through before planting

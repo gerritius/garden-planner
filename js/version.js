@@ -1,3 +1,3 @@
 // The app version, shown in Tools. Bump it (and CACHE in sw.js) with every release.
 
-export const APP_VERSION = '1.31.4';
+export const APP_VERSION = '1.32.0';

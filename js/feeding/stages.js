@@ -6,7 +6,7 @@ import { S } from '../core/state.js';
 import { addDays, daysBetween, shortDate, todayStr } from '../core/util.js';
 import { container } from '../garden/garden.js';
 import { crop } from '../plants/crops.js';
-import { growParams, harvestWindow, WARM_LEAF } from '../plants/growth.js';
+import { growParams, harvestWindow, isWarmCrop } from '../plants/growth.js';
 import { productByName } from '../products/library.js';
 import { gN, leadText } from './nutrients.js';
 
@@ -34,7 +34,7 @@ const LEAD = { kasei888: [0, 'fast — works within days'], bokashi: [7, 'fairly
   aburakasu: [21, 'slow — 2–3 weeks, slower in cold soil'], neem: [14, 'slow — about 2 weeks'], woodAsh: [0, 'fast (potash only)'] };
 export const leadOf = pr => { if (!pr) return [7, '']; const d = pr.lead != null ? pr.lead : (LEAD[pr.id] || [7])[0]; return [d, leadText(d)]; };
 // growth restarts when the usual daily mean gets back above this
-export const restartTemp = id => WARM_LEAF.includes(id) ? 15 : growParams(id).tb === 0 ? 5 : 8;   // hardy crops (garlic, onion, spinach…) keep growing slowly through winter
+export const restartTemp = id => { const g = growParams(id); return g.plain ? 8 : g.warm ? Math.max(15, g.warm[0] + 7) : g.tb + 5; };   // hardy crops (garlic, onion, spinach…) keep growing slowly through winter
 export function nextGrowing(id, d) { const thr = restartTemp(id); for (let i = 0; i < 200; i++) { if (normalT(addDays(d, i)) >= thr) return addDays(d, i); } return d; }
 // Where this planting's season sits: does it go through a winter (growth stopped) before harvest?
 // Overwintering crops are kept on the lean side going into winter (soft growth is frost-tender), and heading brassicas
@@ -48,7 +48,7 @@ export function feedSeason(p) {
   const cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60), k = [p.cropId, p.sowDate, hv].join('|');
   if (_season[k] !== undefined) return _season[k];
   // winter here = the usual daily mean below ~8 °C (15 °C for warm-season crops): growth all but stops
-  const thr = WARM_LEAF.includes(p.cropId) ? 15 : 8;
+  const thr = isWarmCrop(p.cropId) ? 15 : 8;
   let ws = null; for (let d = p.sowDate; d < hv; d = addDays(d, 1)) if (normalT(d) < thr) { ws = d; break; }
   if (!ws) return (_season[k] = null);
   let we = ws; for (let i = 0; i < 200 && normalT(we) < thr; i++) we = addDays(we, 1);

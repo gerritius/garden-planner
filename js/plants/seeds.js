@@ -9,7 +9,7 @@ import { S, save } from '../core/state.js';
 import { confirmBox, modal } from '../core/ui.js';
 import { esc, todayStr, uid } from '../core/util.js';
 import { CATALOG } from '../data/catalog.js';
-import { allCrops, crop, ic } from './crops.js';
+import { allCrops, crop, ic, newCropDialog, ownCropFields, readOwnCropFields } from './crops.js';
 
 export const seedList = () => S.seeds || [];
 export const seedFor = (cropId, variety) => seedList().find(s => s.cropId === cropId && (s.variety || '') === (variety || ''));
@@ -52,13 +52,13 @@ export function seedDialog(entry, opts = {}) {
     return `<label class="phslot ph">${img}<input type="file" accept="image/*" data-slot="${k}" hidden></label>${fresh[k] || (d[k] && !gone[k]) ? `<button type="button" class="link" data-rm="${k}">remove</button>` : ''}`;
   };
   modal('<div></div>', (m, close) => {
-    const read = () => { const f = m.querySelector('#sdf'); if (!f) return; for (const n of ['variety', 'maker', 'notes']) d[n] = f[n].value.trim(); if (f.cropId.value !== '__new') d.cropId = f.cropId.value; d.cen = f.cen ? f.cen.value.trim() : ''; d.cja = f.cja ? f.cja.value.trim() : ''; d.cmethod = f.cmethod ? f.cmethod.value : 'seed'; d.cdays = f.cdays ? f.cdays.value : ''; };
+    const read = () => { const f = m.querySelector('#sdf'); if (!f) return; for (const n of ['variety', 'maker', 'notes']) d[n] = f[n].value.trim(); if (f.cropId.value !== '__new') d.cropId = f.cropId.value; d.cen = f.cen ? f.cen.value.trim() : ''; d.cja = f.cja ? f.cja.value.trim() : ''; d.cmethod = f.cmethod ? f.cmethod.value : 'seed'; d.cdays = f.cdays ? f.cdays.value : ''; if (f.tempLo) { d.tempLo = f.tempLo.value; d.tempHi = f.tempHi.value; d.tpDays = f.tpDays.value; } };
     const draw = () => {
       const crops = allCrops().slice().sort((a, b) => a.en.localeCompare(b.en));
       m.querySelector('.sheet').innerHTML = `<h3>${isNew ? 'Add seeds or plants' : 'Edit ' + esc(crop(d.cropId).en + (d.variety ? ' · ' + d.variety : ''))}</h3><form id="sdf" class="form">
         <label>Crop<select name="cropId"><option value="">Choose a crop…</option>${crops.map(c => `<option value="${c.id}"${!newCrop && c.id === d.cropId ? ' selected' : ''}>${esc(c.en)}${c.ja ? ' ' + esc(c.ja) : ''}</option>`).join('')}<option value="__new"${newCrop ? ' selected' : ''}>＋ A crop that isn’t listed…</option></select></label>
         ${newCrop ? `<div class="two"><label>Crop name<input name="cen" value="${esc(d.cen || '')}" placeholder="e.g. Okahijiki"></label><label>Japanese name <small>(optional)</small><input name="cja" value="${esc(d.cja || '')}"></label></div>
-          <div class="two"><label>Grown from<select name="cmethod"><option value="seed"${d.cmethod !== 'seedling' ? ' selected' : ''}>Seed, sown where it grows</option><option value="seedling"${d.cmethod === 'seedling' ? ' selected' : ''}>Seedlings / plants</option></select></label><label>Days to first harvest<input name="cdays" type="number" inputmode="numeric" value="${esc(d.cdays || '')}" placeholder="from the packet"></label></div>` : ''}
+          <div class="two"><label>Grown from<select name="cmethod"><option value="seed"${d.cmethod !== 'seedling' ? ' selected' : ''}>Seed, sown where it grows</option><option value="seedling"${d.cmethod === 'seedling' ? ' selected' : ''}>Seedlings / plants</option></select></label><label>Days to first harvest<input name="cdays" type="number" inputmode="numeric" value="${esc(d.cdays || '')}" placeholder="from the packet"></label></div>${ownCropFields({ tempLo: d.tempLo, tempHi: d.tempHi, tpDays: d.tpDays })}` : ''}
         <div class="two"><label>Variety<input name="variety" value="${esc(d.variety)}" placeholder="as on the packet"></label><label>Seed company <small>(optional)</small><input name="maker" value="${esc(d.maker)}" placeholder="e.g. Takii, Sakata"></label></div>
         <label>Seed packet<div class="phrow">${slot('front')}${slot('back')}</div><small>Front and back: used again for every planting of this variety.</small></label>
         <label>Notes <small>(optional)</small><textarea name="notes" rows="2">${esc(d.notes)}</textarea></label>
@@ -81,6 +81,7 @@ export function seedDialog(entry, opts = {}) {
         if (newCrop) {
           if (!d.cen) return alert('Give the crop a name.');
           const cr = { id: 'c_' + uid(), en: d.cen, ja: d.cja || '', color: '#7a9a5b', method: d.cmethod, layout: 'rows', depth: 1, rowSp: 20, sowSp: d.cmethod === 'seed' ? 5 : 30, thinStage: '', thinSp: null, daysThin: null, daysHarvest: +d.cdays || 60, spread: 25, varieties: [], family: 'other' };
+          if (!readOwnCropFields(m.querySelector('#sdf'), cr)) return;
           (S.customCrops = S.customCrops || []).push(cr); d.cropId = cr.id;
         }
         if (!d.cropId) return alert('Choose the crop.');
@@ -105,6 +106,7 @@ export function seedDialog(entry, opts = {}) {
 export function seedsTab() {
   A.addSeed = () => seedDialog(null);
   A.editSeed = el => seedDialog(seedList().find(s => s.id === el.dataset.id));
+  A.editCrop = el => newCropDialog(() => render(), (S.customCrops || []).find(c => c.id === el.dataset.id));
   A.delCrop = async el => {
     const id = el.dataset.id, n = S.plantings.filter(p => p.cropId === id).length;
     if (n) return alert(`${crop(id).en} is used in ${n} planting${n > 1 ? 's' : ''} — remove those first.`);
@@ -118,6 +120,6 @@ export function seedsTab() {
     <button class="btn primary wide" data-act="addSeed">＋ Add seeds or plants</button>
     ${crops.length ? crops.map(c => { const ss = seedList().filter(s => s.cropId === c.id); return `<section><h3>${ic(c.id)} ${esc(c.en)}${c.ja ? ` <small>${esc(c.ja)}</small>` : ''}${own(c.id) ? ' <small class="muted">· your crop</small>' : ''}</h3>
       ${ss.length ? `<ul class="plist">${ss.map(s => { const n = usedBy(s).length; return `<li data-act="editSeed" data-id="${s.id}">${thumb(s)}<span class="grow"><b>${esc(s.variety || 'No variety named')}</b><small>${[s.maker, n ? `${n} planting${n > 1 ? 's' : ''}` : '', s.front || s.back ? 'packet ✓' : 'no packet photo yet'].filter(Boolean).map(esc).join(' · ')}</small></span>›</li>`; }).join('')}</ul>` : ''}
-      ${own(c.id) ? `<button class="link danger" data-act="delCrop" data-id="${c.id}" data-own-confirm>delete this crop</button>` : ''}</section>`; }).join('') : '<p class="muted">Nothing yet — add the seeds you have, or they’re added as you plant them.</p>'}
+      ${own(c.id) ? `<button class="link" data-act="editCrop" data-id="${c.id}">edit this crop</button>${!(c.tempLo > 0) ? ' <small class="muted">· no growing temperatures yet: its dates count plain days</small>' : ''} <button class="link danger" data-act="delCrop" data-id="${c.id}" data-own-confirm>delete this crop</button>` : ''}</section>`; }).join('') : '<p class="muted">Nothing yet — add the seeds you have, or they’re added as you plant them.</p>'}
     <details class="fold"><summary>📚 Built-in crops <small>${CATALOG.length}, with about 5 varieties each</small></summary><ul class="plist">${CATALOG.map(c => `<li>${ic(c.id)}<span class="grow">${esc(c.en)} ${esc(c.ja)}<small>${c.varieties.map(esc).join('、')}</small></span></li>`).join('')}</ul><p class="hint">Values are typical starting points — always check the packet.</p></details>`;
 }

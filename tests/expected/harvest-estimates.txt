@@ -10,7 +10,7 @@ Tomato seedlings, 10 Apr (early)                 new 2027-06-21  old 2027-06-19
 Snap pea direct, 25 Oct                          new 2027-04-08  old 2027-04-03
 Snap pea direct, 1 Nov (up 16 Nov)               new 2027-04-18  old 2027-04-10
 Garlic cloves, 1 Oct                             new 2027-05-09  old 2027-05-09
-Potato, 1 Mar                                    new 2027-06-20  old 2027-06-04
+Potato, 1 Mar                                    new 2027-06-19  old 2027-06-04
 Daikon, 5 Sep                                    new 2026-10-31  old 2026-11-04
 Tray: hakusai sown 1 Sep → ready                 new 2026-09-20  old 2026-09-23
 Tray: lettuce sown 15 Nov, outside               new 2027-02-09  old 2026-12-13

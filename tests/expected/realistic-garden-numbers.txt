@@ -1,6 +1,6 @@
 my products: aburakasu,benicaNatural,bokashi,chickenManure,cowCompost,cowHuskCompost,cust_k,iris,kasei888,kuntan,neem,other,oysterLime,paiBenicaV,spinoace,stochu,toshoAburakasu,touikawa,woodAsh
 plenty: aburakasu,chickenManure
-celery: total N 7.04 P 18.11 K 15.55 | lines Fertiliser in the potting mix (Touikawa =1.81; Previous crop: Cucumber=0.00; 化成肥料 8-8-8 40 g=3.20; Cow manure compost 4 L=1.40; Kincho Liquid 6-6-7 10 mL per 5 L (stron=0.63 | short 2027-03-06
+celery: total N 7.04 P 18.11 K 15.55 | lines Fertiliser in the potting mix (Touikawa =1.81; Previous crop: Cucumber=0.00; 化成肥料 8-8-8 40 g=3.20; Cow manure compost 4 L=1.40; Kincho Liquid 6-6-7 10 mL per 5 L (stron=0.63 | short 2027-03-22
 lettuce: total N 3.05 P 3.05 K 3.05 | lines Fertiliser in the potting mix (Iris Ohya=3.05 | short 2026-11-18
 cabbage: total N 18.64 P 21.98 K 41.54 | lines The bed’s own soil=12.00; Previous crop: Tomato (large)=0.00; Chicken manure 4 handfuls (~120 g)=2.16; 牛ふん堆肥 4 kg=2.80; oyster lime 200 g=0.00; Bokashi 2 handfuls (~60 g)=1.68; Wood ash 1 handful (~30 g)=0.00 | short 2027-03-23
 base g1 lettuce: [{"product":"Cow manure compost","amount":7,"unit":"L"},{"product":"Chemical fertiliser 8-8-8","amount":45,"unit":"g"},{"product":"Oyster shell lime","amount":30,"unit":"g"}] — re-used potting mix: Cow manure compost plus Chemical fertiliser 8-8-8 mixed through before planting

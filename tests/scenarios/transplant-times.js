@@ -1,5 +1,6 @@
 // Every crop has its own time to planting out (and the sign it's ready), or says it isn't raised in trays — no
-// stand-in figure. A crop of your own asks for its days; until then there's no plant-out date at all.
+// stand-in figure. A crop of your own asks for its days; until then there's no plant-out date at all. Its growing
+// temperatures come from the packet too: without them its dates count plain days, with them they follow the weather.
 const { newContext } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
@@ -28,5 +29,13 @@ const U = 'http://localhost:8765/';
   console.log('with 28 days:', await pg.textContent('#tpHint'));
   await pg.click('#sdf button.primary'); await pg.waitForTimeout(400);
   console.log('saved:', await pg.evaluate(() => S.customCrops[0].tpDays), '|', await card(), '| plant-out job:', await pg.evaluate(() => S.tasks.find(t => t.startId === 'ok' && t.kind === 'transplant')?.due));
+  // its growing temperatures, from the packet (a warm-season crop: 20–30 °C), through "edit this crop"
+  await pg.goto(U + '#/products?t=seeds'); await pg.waitForTimeout(300);
+  console.log('seeds tab:', (await pg.$eval('[data-act=editCrop]', b => b.closest('section').textContent.replace(/\s+/g, ' ').trim())).slice(0, 160));
+  await pg.click('[data-act=editCrop]'); await pg.waitForTimeout(200);
+  await pg.fill('#ncf input[name=tempLo]', '20'); await pg.fill('#ncf input[name=tempHi]', '30'); await pg.click('#ncf button.primary'); await pg.waitForTimeout(300);
+  console.log('crop now:', JSON.stringify(await pg.evaluate(() => { const c = S.customCrops[0]; return [c.tempLo, c.tempHi, c.tpDays, growParams(c.id)]; })));
+  await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);
+  console.log('warm-season, sown in November:', await card());
   console.log('errs', errs); await b.close();
 })();

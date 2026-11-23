@@ -9,7 +9,7 @@ import { $, addDays, daysBetween, esc, pd, todayStr } from '../core/util.js';
 import { _season } from '../feeding/stages.js';
 import { container } from '../garden/garden.js';
 import { _ideaCache } from '../garden/ideas.js';
-import { _need, growParams, HEADING, WARM_LEAF } from '../plants/growth.js';
+import { _need, growParams, HEADING } from '../plants/growth.js';
 import { applySowWindows, MONTHS } from './sowing.js';
 
 // ---------- usual temperature and rain for each month ----------
@@ -86,11 +86,12 @@ const climateName = () => S.climate ? `${S.climate.name || 'your location'} (${S
 // barely grow below ~8 °C, then pick up quickly and are close to full speed from a ~21 °C daily average (days in the mid-20s).
 // A straight line up to 24 °C made cool-summer places (London, Hokkaido) look far too slow. Cool-season crops keep the
 // straight line, which fits them. Units stay on the same scale (full speed = tref − tb a day), so 'days × (tref − tb)' still holds.
-const WARM_LO = 8, WARM_OPT = 21;
+// Each crop has its own [lo, opt] for that curve (see GROW in growth.js).
 export function growUnits(id, T) {
-  const { tb, tref, tcap } = growParams(id);
+  const { tb, tref, tcap, warm, plain } = growParams(id);
+  if (plain) return 1;   // a crop of your own without its temperatures: plain days
   if (HEADING.includes(id) && T < 6) return 0;
-  if (WARM_LEAF.includes(id)) return T <= WARM_LO ? 0 : (tref - tb) * (T >= WARM_OPT ? 1 : Math.pow((T - WARM_LO) / (WARM_OPT - WARM_LO), 0.6));
+  if (warm) { const [lo, opt] = warm; return T <= lo ? 0 : (tref - tb) * (T >= opt ? 1 : Math.pow((T - lo) / (opt - lo), 0.6)); }
   return Math.max(0, Math.min(T, tcap) - tb);
 }
 

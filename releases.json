@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.32.0",
+    "date": "2026-11-23",
+    "notes": [
+      "Every crop has its own response to temperature — the cold below which it stops growing and the warmth at which it grows at full speed — instead of three groups. Eggplant, peppers and cucumbers now need more warmth than tomatoes and beans; celery and potatoes stop sooner in the cold than lettuce.",
+      "Crops of your own take their growing temperatures from the packet (生育適温, e.g. 15–25 °C) — when you add one, or with \"edit this crop\" in Products & seeds → Seeds & plants. Without them, their dates count plain days, and the crop says so."
+    ]
+  },
+  {
     "version": "1.31.4",
     "date": "2026-11-23",
     "notes": [

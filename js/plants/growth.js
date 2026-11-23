@@ -16,7 +16,6 @@ import { ddBetween, learnedFactor, learnedText } from './learning.js';
 import { startsGrowing, syncStartTasks, tpDays, transplantOf, trayDateOf } from './seedlings.js';
 
 // ---------- thinning: counted from when seedlings came up, at the speed the temperature allows ----------
-export const WARM_LEAF = ['corn', 'edamame', 'ingen', 'kyuri', 'zucchini', 'nasu', 'piman', 'tomato', 'minitomato', 'shishito', 'chilli', 'satoimo', 'satsumaimo'];
 export function emergeDate(p) {
   if (p.germ && p.germ.date && p.germ.result !== 'none') return { d: p.germ.date, known: true };
   const gw = germWindow(Object.assign({}, p, { method: 'seed' }));
@@ -26,13 +25,43 @@ export function emergeDate(p) {
   if (notUpYet(p)) { const tm = addDays(todayStr(), 1); return { d: d > tm ? d : tm, known: false, notUp: true }; }
   return { d, known: false };
 }
-// growth rate per day in "good-weather days": 0 below the base temperature, 1 at the reference temperature
-// hardy winter crops (brassicas, spinach, peas & beans, alliums, shungiku) keep growing slowly just above freezing
-const HARDY_FAM = ['brassica', 'allium', 'legume'], HARDY_IDS = ['spinach', 'shungiku', 'strawberry'];
+// ---------- growth speed: each crop's own response to temperature ----------
+// From the daily mean (°C): no growth at or below tb, the packet's speed at tref, no faster above tcap (a straight line in
+// between). Warm-season crops follow a curve instead — `warm: [lo, opt]`: nothing at or below lo, picking up quickly and
+// close to full speed from opt — which fits them better than a straight line (see growUnits). The values are checked
+// against how each crop is known to behave here: komatsuna ~25 days in summer and ~80–90 sown in December, spring
+// cabbage heading in spring, eggplant and peppers needing more heat than tomatoes, and sweet potato and taro planted in May dug in autumn.
+export const GROW = {
+  // warm-season: tb/tref only set the scale; the curve is what counts
+  tomato: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, minitomato: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, zucchini: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
+  ingen: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, edamame: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
+  kyuri: { tb: 10, tref: 24, tcap: 28, warm: [9, 22] }, corn: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
+  nasu: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] }, piman: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] },
+  chilli: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] }, shishito: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] },
+  satoimo: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, satsumaimo: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
+  // hardy: keep growing slowly a little above freezing
+  komatsuna: { tb: 0, tref: 16, tcap: 20 }, mizuna: { tb: 0, tref: 16, tcap: 20 }, chingensai: { tb: 0, tref: 16, tcap: 20 }, nanohana: { tb: 0, tref: 16, tcap: 20 },
+  hakusai: { tb: 0, tref: 16, tcap: 20 }, cabbage: { tb: 0, tref: 16, tcap: 20 }, broccoli: { tb: 0, tref: 16, tcap: 20 }, cauliflower: { tb: 0, tref: 16, tcap: 20 },
+  daikon: { tb: 0, tref: 16, tcap: 20 }, kabu: { tb: 0, tref: 16, tcap: 20 }, hatsuka: { tb: 0, tref: 16, tcap: 20 },
+  spinach: { tb: 0, tref: 16, tcap: 20 }, shungiku: { tb: 0, tref: 16, tcap: 20 },
+  onion: { tb: 0, tref: 16, tcap: 20 }, naganegi: { tb: 0, tref: 16, tcap: 20 }, hatamanegi: { tb: 0, tref: 16, tcap: 20 }, garlic: { tb: 0, tref: 16, tcap: 20 },
+  snappea: { tb: 0, tref: 16, tcap: 20 }, sayaendo: { tb: 0, tref: 16, tcap: 20 }, soramame: { tb: 0, tref: 16, tcap: 20 },
+  strawberry: { tb: 0, tref: 16, tcap: 20 },
+  // cool-season but stopping sooner in the cold
+  lettuce: { tb: 3, tref: 18, tcap: 22 }, carrot: { tb: 3, tref: 18, tcap: 22 },
+  celery: { tb: 5, tref: 20, tcap: 24 }, potato: { tb: 5, tref: 18, tcap: 22 },
+};
+// a crop of your own: from the growing temperatures on its packet (生育適温, e.g. 15–25 °C) — or, without them, plain
+// days (calendar days, not stretched by the cold or sped up by warmth) rather than a guess
+export function ownGrow(cr) {
+  const lo = +cr.tempLo, hi = +cr.tempHi;
+  if (!(lo > 0 && hi > lo)) return { tb: 0, tref: 1, tcap: 1, plain: true };
+  return lo >= 18 ? { tb: lo - 10, tref: lo + 4, tcap: hi, warm: [lo - 11, lo + 1] } : { tb: Math.max(0, lo - 14), tref: lo + 2, tcap: hi };
+}
+export const growParams = id => GROW[id] || ownGrow(crop(id));
+export const isWarmCrop = id => !!growParams(id).warm;
 // heading brassicas almost stop growing in midwinter (that's why autumn-planted cabbage heads in spring)
 export const HEADING = ['cabbage', 'hakusai', 'broccoli', 'cauliflower'];
-export const growParams = id => WARM_LEAF.includes(id) ? { tb: 10, tref: 24, tcap: 28 }
-  : HARDY_IDS.includes(id) || HARDY_FAM.includes(crop(id).family) ? { tb: 0, tref: 16, tcap: 20 } : { tb: 3, tref: 18, tcap: 22 };
 function ddUntil(from, need, id, tempFn) {
   const daily = S.weather && S.weather.daily, T = tempFn || (x => dayTemp(x, daily));
   let d = from, acc = 0;

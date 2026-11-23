@@ -52,15 +52,30 @@ export function thinEstimate(p) {
 // seedlings in trays/pots: ready to plant out
 export function startEmerge(s) {
   if (s.upOn) return s.upOn;
-  const est = (s.kept || 'out') === 'in' ? addDays(s.sowDate, Math.round(germAvg(s.cropId)))   // a warm room: warm-soil speed
+  const est = keptAt(s, s.sowDate) === 'in' ? addDays(s.sowDate, Math.round(germAvg(s.cropId)))   // sown in a warm room: warm-soil speed
     : emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d;
   if (notUpYet(s)) { const tm = addDays(todayStr(), 1); return est > tm ? est : tm; }   // looked, nothing up yet
   return est;
 }
 export const KEPT = [['out', 'Outside', 0], ['cover', 'Under cover / cold frame', 3], ['in', 'Indoors / heated', 8]];
-const keptBoost = s => (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[2];
-// temperature the seedlings see: outside, under cover (a few degrees warmer), or indoors (heated room — at least ~18 °C)
-export const keptTemp = s => { const b = keptBoost(s), daily = S.weather && S.weather.daily; return !b ? null : (s.kept === 'in' ? (x => Math.max(dayTemp(x, daily) + b, 18)) : (x => dayTemp(x, daily) + b)); };
+// where seedlings were on a given day: s.keptLog records moves ([{ date, kept }], the first from sowing); without one, s.kept
+export const keptAt = (s, d) => { const log = s.keptLog || []; let k = log.length ? log[0].kept : s.kept; for (const e of log) if (e.date <= d) k = e.kept; return k || 'out'; };
+const keptBoost = k => (KEPT.find(x => x[0] === k) || KEPT[0])[2];
+// temperature the seedlings see each day: outside, under cover (a few degrees warmer), or indoors (heated room — at least
+// ~18 °C) — wherever they were that day (null: outside all along)
+export const keptTemp = s => {
+  if (![s.kept, ...(s.keptLog || []).map(e => e.kept)].some(k => k && k !== 'out')) return null;
+  const daily = S.weather && S.weather.daily;
+  return x => { const k = keptAt(s, x), t = dayTemp(x, daily) + keptBoost(k); return k === 'in' ? Math.max(t, 18) : t; };
+};
+// moved somewhere else (outside, under cover, indoors) on `date`
+export function moveKept(s, kept, date) {
+  if ((s.kept || 'out') === kept) return;
+  const before = (s.keptLog && s.keptLog.length ? s.keptLog : [{ date: s.sowDate, kept: s.kept || 'out' }]).filter(e => e.date < date);
+  s.keptLog = before.length ? before.concat({ date, kept }) : [{ date: s.sowDate, kept }];   // (moved the day they were sown: there all along)
+  s.kept = kept;
+}
+export const keptText = s => { const l = (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[1].toLowerCase(), log = s.keptLog || []; return log.length > 1 ? `${l} since ${shortDate(log[log.length - 1].date)}` : l; };
 export function startReady(s) {
   const tf = keptTemp(s), e = startEmerge(s);
   return leafAnchored(s, s.cropId, e, leafTarget((TRANSPLANT[s.cropId] || [])[1]), tf) || leafDate(s.cropId, e, Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)), tf, learnedFactor(s.cropId, 'out'));

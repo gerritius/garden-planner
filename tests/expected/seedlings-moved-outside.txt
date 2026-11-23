@@ -1,0 +1,10 @@
+komatsuna before: 20 cells · Tray 1 · 3 seeds each · indoors / heated | ready 2026-11-26 (indoors all along 2026-11-26, outside all along 2026-12-06) · plant-out job 2026-11-26 · indoors / heated · log null
+  ko → out today: dialog says "Plant out in about 23 days at this time of year — at 本葉3枚."
+komatsuna moved out today: 20 cells · Tray 1 · 3 seeds each · outside since 18 Nov | ready 2026-12-03 (indoors all along 2026-11-26, outside all along 2026-12-06) · plant-out job 2026-12-03 · outside since 18 Nov · log [{"date":"2026-11-10","kept":"in"},{"date":"2026-11-18","kept":"out"}]
+  sp → out on 2026-11-14: dialog says "Plant out in about 41 days at this time of year."
+spinach moved out 14 Nov: 20 cells · Tray 2 · 3 seeds each · outside since 14 Nov | ready 2026-12-21 (indoors all along 2026-12-03, outside all along 2026-12-21) · plant-out job 2026-12-21 · outside since 14 Nov · log [{"date":"2026-11-10","kept":"in"},{"date":"2026-11-14","kept":"out"}]
+  sp → cover on 2026-11-17: dialog says "Plant out in about 31 days at this time of year."
+spinach under cover 17 Nov: 20 cells · Tray 2 · 3 seeds each · under cover / cold frame since 17 Nov | ready 2026-12-11 (indoors all along 2026-12-03, outside all along 2026-12-21) · plant-out job 2026-12-11 · under cover / cold frame since 17 Nov · log [{"date":"2026-11-10","kept":"in"},{"date":"2026-11-14","kept":"out"},{"date":"2026-11-17","kept":"cover"}]
+  ko → in on 2026-11-10: dialog says "Plant out in about 16 days at this time of year — at 本葉3枚."
+komatsuna "moved" on the day sown (indoors all along): 20 cells · Tray 1 · 3 seeds each · indoors / heated | ready 2026-11-26 (indoors all along 2026-11-26, outside all along 2026-12-06) · plant-out job 2026-11-26 · indoors / heated · log [{"date":"2026-11-10","kept":"in"}]
+errs []

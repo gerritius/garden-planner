@@ -15,7 +15,7 @@ import { Draw } from '../draw.js';
 import { container } from '../garden/garden.js';
 import { syncTasks } from '../garden/tasks.js';
 import { crop } from './crops.js';
-import { germWindow, harvestEstimate, thinEstimate } from './growth.js';
+import { germWindow, harvestEstimate, keptAt, thinEstimate } from './growth.js';
 import { startLeft, syncStartTasks, unitOf } from './seedlings.js';
 
 export const MOSTLY = 70;   // % up that counts as come up well: no more looks
@@ -33,7 +33,7 @@ const isStart = o => o.kind === 'tray' || o.kind === 'pot';
 function gwOf(o) {
   if (!isStart(o)) return germWindow(o);
   const g = crop(o.cropId).germ;
-  if ((o.kept || 'out') === 'in' && g) return [addDays(o.sowDate, g[0]), addDays(o.sowDate, g[1])];
+  if (keptAt(o, o.sowDate) === 'in' && g) return [addDays(o.sowDate, g[0]), addDays(o.sowDate, g[1])];
   return germWindow({ cropId: o.cropId, method: 'seed', sowDate: o.sowDate });
 }
 const resync = o => isStart(o) ? syncStartTasks(o) : syncTasks(o);

@@ -12,7 +12,7 @@ import { Draw } from '../draw.js';
 import { applyCrop, recalc } from '../pages/planting-form.js';
 import { allCrops, crop, ic, varieties } from './crops.js';
 import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
-import { KEPT, lastLeaves, leafDialog, startReady } from './growth.js';
+import { KEPT, keptText, lastLeaves, leafDialog, moveKept, startReady } from './growth.js';
 
 // ---------- your trays and pots ----------
 // The kinds of tray and pot you raise seedlings in (S.nursery.items): a tray type has cells (and how many across), a pot
@@ -120,7 +120,7 @@ export function pageSeedlings() {
   const card = s => {
     const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = startReady(s), n = daysBetween(td, ready), tp = TRANSPLANT[s.cropId];
     return `<li class="start"><div class="srow"><span class="lic">${ic(s.cropId, 28)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}
-      <small>${left} ${unitOf(s)}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${perOf(s) > 1 ? ` · ${perOf(s)} plants each (${plantsOf(s)} in all)` : s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${s.kept && s.kept !== 'out' ? ' · ' + (KEPT.find(k => k[0] === s.kept) || [, ''])[1].toLowerCase() : ''}</small>
+      <small>${left} ${unitOf(s)}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${perOf(s) > 1 ? ` · ${perOf(s)} plants each (${plantsOf(s)} in all)` : s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${' · ' + esc(keptText(s))}</small>
       <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.germ ? ` · ${esc(germText(s))}` : s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
       ${s.from ? `<small>Replanted from ${start(s.from) ? esc(startWhere(start(s.from))) : 'a tray'} on ${shortDate(s.movedOn || s.pottedOn)}</small>` : ''}${s.notes ? `<small>${esc(s.notes)}</small>` : ''}</span><button class="tmore" data-act="editStart" data-id="${s.id}" aria-label="Edit">⋯</button></div>
       <div class="btnrow"><button class="btn small primary" data-act="replant" data-id="${s.id}">🌱 Replant</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn || (s.germ && !s.germ.over) ? `<button class="btn small" data-act="upStart" data-id="${s.id}">${s.germ ? 'Look again' : 'How many are up?'}</button>` : `<button class="btn small" data-act="leafStart" data-id="${s.id}">🌿 ${lastLeaves(s) ? lastLeaves(s).n + ' leaves' : 'Leaves'}</button>`}</div></li>`;
@@ -194,14 +194,17 @@ export function startDialog(s, preset) {
       <label><span id="perL">Plants kept in each ${d.kind === 'pot' ? 'pot' : 'cell'}</span> <small>(after thinning; usually 1)</small><input name="per" type="number" inputmode="numeric" min="1" value="${d.per || ''}" placeholder="1"></label>
       <label>Sown on<input name="sowDate" type="date" value="${d.sowDate}" max="${td}"></label>
       <label>Kept<div class="seg wrap">${KEPT.map(([k, l]) => `<button type="button" data-kept="${k}" class="${(d.kept || 'out') === k ? 'on' : ''}">${l}</button>`).join('')}</div></label>
+      ${isNew ? '' : `<label id="movedL" hidden>Moved there on <small>(earlier days count where they were before)</small><input name="moved" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label>`}
       <p class="hint" id="tpHint"></p>
       <label>Notes<input name="notes" value="${esc(d.notes || '')}" placeholder="e.g. heat mat, under cover"></label>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del" data-own-confirm>Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#sdf'), newType = wireNewSize(m, f);
+    // these seedlings as the form has them: moved (when editing) on the day given
+    const asKept = id => { const o = Object.assign({}, s || {}, { cropId: id, sowDate: f.sowDate.value || todayStr() }); if (!s) o.kept = d.kept; else moveKept(o, d.kept, (f.moved && f.moved.value) || td); return o; };
     const hint = () => {
       const id = f.cropId.value; m.querySelector('#svars').innerHTML = id ? varieties(id).map(v => `<option value="${esc(v)}">`).join('') : '';
       const tp = TRANSPLANT[id];
-      m.querySelector('#tpHint').innerHTML = !id ? '' : tp && !tp[0] ? `⚠ ${esc(crop(id).en)}: ${esc(tp[1])}.` : `Plant out in about <b>${daysBetween(f.sowDate.value || todayStr(), startReady({ cropId: id, sowDate: f.sowDate.value || todayStr(), kept: d.kept }))} days</b> at this time of year${tp && tp[1] ? ` — at ${esc(tp[1])}` : ''}.`;
+      m.querySelector('#tpHint').innerHTML = !id ? '' : tp && !tp[0] ? `⚠ ${esc(crop(id).en)}: ${esc(tp[1])}.` : `Plant out in about <b>${daysBetween(f.sowDate.value || todayStr(), startReady(asKept(id)))} days</b> at this time of year${tp && tp[1] ? ` — at ${esc(tp[1])}` : ''}.`;
     };
     f.cropId.onchange = hint; f.sowDate.onchange = hint; hint();
     const where = () => {
@@ -210,7 +213,7 @@ export function startDialog(s, preset) {
       m.querySelector('#cntL').textContent = pot ? 'Number of pots' : 'Cells used'; m.querySelector('#seedL').textContent = `Seeds per ${pot ? 'pot' : 'cell'}`; m.querySelector('#perL').textContent = `Plants kept in each ${pot ? 'pot' : 'cell'}`;
     };
     f.where.onchange = where; m.querySelectorAll('[data-nk]').forEach(b => b.addEventListener('click', where));
-    m.querySelectorAll('[data-kept]').forEach(b => b.onclick = () => { d.kept = b.dataset.kept; m.querySelectorAll('[data-kept]').forEach(x => x.classList.toggle('on', x === b)); hint(); });
+    m.querySelectorAll('[data-kept]').forEach(b => b.onclick = () => { d.kept = b.dataset.kept; m.querySelectorAll('[data-kept]').forEach(x => x.classList.toggle('on', x === b)); const ml = m.querySelector('#movedL'); if (ml) { ml.hidden = d.kept === (s.kept || 'out'); f.moved.onchange = hint; } hint(); });
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const del = m.querySelector('[data-x=del]');
     if (del) del.onclick = async () => { close(); if (!await confirmBox('Delete these seedlings and their history?', 'Delete', true)) return; S.starts = S.starts.filter(x => x !== s); S.tasks = S.tasks.filter(t => t.startId !== s.id); await save(); render(); };
@@ -228,7 +231,11 @@ export function startDialog(s, preset) {
         s = Object.assign({ id: uid(), status: 'growing', created: new Date().toISOString(), events: [] }, o, plan ? { planId: plan.id } : {}); (S.starts = S.starts || []).push(s);
         if (plan) { const t = S.tasks.find(t => t.plantingId === plan.id && t.kind === 'plan_tray' && !t.done); if (t) { t.done = true; t.doneOn = o.sowDate; } }
       }
-      else { if (o.sowDate !== s.sowDate) s.no_transplant = false; Object.assign(s, o); }
+      else {
+        if (o.sowDate !== s.sowDate) s.no_transplant = false;
+        const kept = o.kept; delete o.kept; Object.assign(s, o);
+        moveKept(s, kept, f.moved && f.moved.value && f.moved.value >= s.sowDate ? f.moved.value : td);   // where they are now, and since when
+      }
       if (startLeft(s) <= 0 && s.status === 'growing') s.status = 'done';
       syncStartTasks(s); await save(); close(); render();
     };
@@ -326,7 +333,7 @@ export function moveSeedlings(s, n, date, at, per = 1) {
   const plants = plantsOf(s, n), pots = Math.max(1, Math.ceil(plants / per));   // n of s's pots or cells hold `plants` seedlings
   if (at && at.nid && !at.kind) at = Object.assign({ kind: ntype(at.nid).kind }, at, ntype(at.nid).kind === 'tray' ? { tray: at.tray || nextTrayNo() } : { tray: null });
   const ns = { id: uid(), status: 'growing', created: new Date().toISOString(), events: [], cropId: s.cropId, variety: s.variety || '', kind: at.kind, nid: at.nid, tray: at.kind === 'tray' ? at.tray : null, count: pots, seeds: null, per: per > 1 ? per : null,
-    sowDate: s.sowDate, upOn: s.upOn || null, kept: s.kept, leaves: (s.leaves || []).slice(), from: s.id, movedOn: date };
+    sowDate: s.sowDate, upOn: s.upOn || null, kept: s.kept, keptLog: s.keptLog ? s.keptLog.map(e => Object.assign({}, e)) : undefined, leaves: (s.leaves || []).slice(), from: s.id, movedOn: date };
   if (s.germ) ns.germ = Object.assign(JSON.parse(JSON.stringify(s.germ)), { stopped: true, over: true });
   (S.starts = S.starts || []).push(ns);
   (s.events = s.events || []).push({ id: uid(), type: 'move', date, n, to: ns.id });

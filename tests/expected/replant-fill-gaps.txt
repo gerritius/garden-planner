@@ -12,7 +12,7 @@ merged: #/plant/sp {"plantings":["sp"],"fills":["1 2026-11-18","1 2026-11-18"],"
 log: ["Filled gaps in the snap pea with 1 seedling · Tray 1 → Pea bag","Filled gaps in the snap pea with 1 seedling · Tray 1 → Pea bag"]
 older fill: 1 seedling 17 Nov (from Tray 1) show it in the drawing
   shown: 5.9 5.9 3.3 3.3 3.3
-pots: Snap pea 1 cell · Tray 1 · 1 seed each Sown 5 Nov (13 days) · up 12 Nov · ready in ~7 days || Snap pea 2 pots · 9 cm pots · 2 plants each (4 in all) Sown 5 Nov (13 days) · up 12 Nov · 
+pots: Snap pea 1 cell · Tray 1 · 1 seed each · outside Sown 5 Nov (13 days) · up 12 Nov · ready  || Snap pea 2 pots · 9 cm pots · 2 plants each (4 in all) · outside Sown 5 Nov (13 days) · up
 replant from them asks: How many pots? (2 plants each)
 form: 🌱 Planting out 2 Snap pea seedlings from 9 cm pots — set the section and spacing to fit them. | placed: free 2
 errs []

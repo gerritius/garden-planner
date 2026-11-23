@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.31.3",
+    "date": "2026-11-23",
+    "notes": [
+      "Moving seedlings (indoors, under cover, outside): the card says where they are and since when — \"outside since 23 Nov\" — and editing asks the day you moved them.",
+      "The plant-out date counts the days they spent indoors as indoor days, instead of working it out as if they'd been in their new spot all along."
+    ]
+  },
+  {
     "version": "1.31.2",
     "date": "2026-11-23",
     "notes": [

@@ -1,0 +1,2 @@
+real app: opened http://localhost/garden-planner/ → address now http://localhost/garden-planner/index.html | installable: yes | page inside its scope: true
+test site: opened http://localhost/garden-planner/test/ → address now http://localhost/garden-planner/test/index.html | installable: yes | page inside its scope: true

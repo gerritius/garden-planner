@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.36.1",
+    "date": "2026-11-24",
+    "notes": [
+      "Opening the app at its folder address (…/garden-planner/ or …/garden-planner/test/) moves to its own page, so Chrome sees it as the app it belongs to — for installing the test site next to the real one."
+    ]
+  },
+  {
     "version": "1.36.0",
     "date": "2026-11-24",
     "notes": [

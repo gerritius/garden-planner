@@ -13,9 +13,10 @@ import { freshenWeather } from './climate/weather.js';
 import { $, go, todayStr } from './core/util.js';
 import { taskDialog, toggleTask } from './garden/tasks.js';
 
-// installed, the app lives at …/index.html (its scope — so the test site under test/ is an app of its own): arriving at
-// the folder's address (coming back from Google sign-in) switches to it, without reloading. (In a browser tab either is fine.)
-if (/\/$/.test(location.pathname) && window.matchMedia && matchMedia('(display-mode: standalone)').matches) history.replaceState(history.state, '', location.pathname + 'index.html' + location.search + location.hash);
+// The app lives at …/index.html — its install scope, so the test site under test/ is an app of its own. Arriving at the
+// folder's address (typed in, an old link, back from Google sign-in) switches to it without reloading: a page outside its
+// own scope can't be installed. (The tests keep the address they open.)
+if (/\/$/.test(location.pathname) && location.protocol.startsWith('http') && !window.__keepAddress) history.replaceState(history.state, '', location.pathname + 'index.html' + location.search + location.hash);
 
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');

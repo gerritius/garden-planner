@@ -78,6 +78,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `germination-and-thinning-dates` | When seedlings come up and when to thin, from temperatures |
 | `harvest-estimates` | Harvest dates for crops sown at different times of year |
 | `history-past-crops-and-log` | Adding past crops, bed history, logging feeds and sprays |
+| `install-chrome` | Chrome's own verdict: the real app and the test site, opened at their folder addresses, are each installable, inside their own scope |
 | `install-scopes` | The real app and the test site install as two separate apps; the real app keeps its identity |
 | `large-beds-and-ruler` | A 100 m bed never freezes the app (plants counted, drawn as a pattern); size limits in the bed form; map zoom; the ruler |
 | `lime-amounts` | Lime from a pH reading, sized to the bed section or pot, the same everywhere |

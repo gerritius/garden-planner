@@ -1,6 +1,6 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
 // The same file serves the real site and the test site (…/test/): each keeps its own offline copy and database.
-const VERSION = '1.36.0';   // the app's version: the same as js/version.js and releases.json (a test checks)
+const VERSION = '1.36.1';   // the app's version: the same as js/version.js and releases.json (a test checks)
 const SCOPE = new URL(self.registration.scope).pathname, SITE = /\/test\/$/.test(SCOPE) ? 'test' : 'main';
 const PREFIX = SITE === 'test' ? 'garden-planner-test-' : 'garden-planner-main-', CACHE = PREFIX + VERSION;
 const DB_NAME = SITE === 'test' ? 'garden-planner-test' : 'garden-planner';

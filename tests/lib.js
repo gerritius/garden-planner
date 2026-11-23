@@ -29,11 +29,12 @@ window.__bridged = true;
 }
 
 async function newContext(browser, extra = {}) {
-  const { openFolds, bridge: useBridge = true, welcome = false, ...opts } = extra;   // bridge: false for an old version of the app (plain scripts, no modules)
+  const { openFolds, bridge: useBridge = true, welcome = false, realAddress = false, ...opts } = extra;   // bridge: false for an old version of the app (plain scripts, no modules)
   const ctx = await browser.newContext(Object.assign({}, devices['Pixel 7'], { timezoneId: 'Asia/Tokyo' }, opts));
   await ctx.clock.setFixedTime(FIXED_NOW);
   await ctx.route(u => !['localhost', '127.0.0.1'].includes(u.hostname), r => r.abort());
   if (!welcome) await ctx.addInitScript(() => { window.__noWelcome = true; });   // a new garden's welcome steps: only where a scenario asks for them
+  if (!realAddress) await ctx.addInitScript(() => { window.__keepAddress = true; });   // the app moves …/ to …/index.html; scenarios keep the address they open
   if (openFolds) await ctx.addInitScript(() => setInterval(() => document.querySelectorAll('#pf details:not([open])').forEach(d => { d.open = true; }), 30));
   if (!useBridge) return ctx;
   const bridge = bridgeSource();

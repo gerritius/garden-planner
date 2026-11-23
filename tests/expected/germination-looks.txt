@@ -1,7 +1,7 @@
 sown, not looked at yet: {"thinDate":"2026-12-06","harvestDate":"2026-12-16","jobs":[["thin","2026-12-06","Thin to 10 cm"],["germ","2026-11-18","Check seedlings are up (expected 13 Nov–18 Nov)"]]}
 look on 14 Nov: none yet
   asks: How many of the spinach have come up? Sown 8 Nov (10 days ago) · expected 13 Nov–18 Nov None yetA fewA quarterHalfMostAll Roughly what share has come up? (a guess is fine
-  then: Nothing up yetNothing up yet after 10 days. Spinach can take a while, especially in cold soil — keep it moist, and the app will remind you to look again ~17 Nov. Thinning waits until they're up. Keep waiting — look again ~17 NovRe-sow today (dates start again)Stop checking — nothing will come up
+  then: Nothing up yetNothing up yet after 6 days. Spinach can take a while, especially in cold soil — keep it moist, and the app will remind you to look again ~17 Nov. Thinning waits until they're up. Keep waiting — look again ~17 NovRe-sow today (dates start again)Stop checking — nothing will come up
   → {"germ":{"result":"none","pct":0,"cameUp":null,"over":false},"thinDate":"2026-12-10","harvestDate":"2026-12-21","jobs":[["germ","2026-11-17","Check whether the spinach is up yet (nothing on 14 Nov)"]]}
 look on 17 Nov: about 4%
   asks: How many of the spinach have come up? Sown 8 Nov (10 days ago) · expected 13 Nov–18 NovSo far: 14 Nov none up yet None yetA fewA quarterHalfMostAll Roughly what share has
@@ -22,4 +22,6 @@ radish sown 1 Oct, nothing: Nothing up yetStill nothing after 48 days — longer
 drill page: Continuous line (drill) · 10 rows · about 170 plants once thinned to 5 cm
 drill count: …or count the seedlings along 10 cm of row (about 10 seeds sown there — one every 1 cm) up
 2 seedlings there → share: 20
+drill drawn as: 0 plant dots, 10 sowing lines | arrange button: false
+arrange page: Sown in a continuous line: the line shows where you sowed, so there are no single plants to place yet.Once they’re thinned, you can arrange the plants by hand.B
 errs []

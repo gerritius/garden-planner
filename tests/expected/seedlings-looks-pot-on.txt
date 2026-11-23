@@ -1,0 +1,20 @@
+sown 4 Nov: {"left":20,"ready":"2026-12-06","jobs":[["sgerm","2026-11-09","Check seedlings are up (expected 6 Nov–9 Nov)"],["transplant","2026-12-06","Plant out seedlings (本葉4–5枚)"]]}
+look 11 Nov: none
+  asks:  None yetA fewA quarterHalfMostAll Roughly what share has come up? (a guess is fine) % …or count the cells with a seedling up (of 20 cells sown) up Looked on CancelSave
+  then: Nothing up yetNothing up yet after 7 days. Hakusai can take a while, especially in cold soil — keep it moist, and the app will remind you to look again ~14 Nov. Planting out waits until they're up. Keep waiting — look again ~14 NovRe-sow today (dates start aga
+  → {"up":null,"germ":["none",0,false],"left":20,"ready":"2026-12-23","jobs":[["transplant","2026-12-23","Plant out seedlings (本葉4–5枚)"],["sgerm","2026-11-14","Check whether the hakusai is up yet (nothing on 11 Nov — 14 days since sowing, slow in the cold)"]]}
+look 14 Nov: 9 of 20 cells
+  asks:  None yetA fewA quarterHalfMostAll Roughly what share has come up? (a guess is fine) % …or count the cells with a seedling up (of 20 cells sown) up Looked on CancelSave
+  then: Patchy so farAbout 45% up. More may still come — the app will remind you to look again ~18 Nov. If that's all that will come up, re-sow the empty cells. Keep checking — look again ~18 NovThat’s all — I re-sowed the empty cells todayThat’s all — leave it as it 
+  → {"up":"2026-11-13","germ":["patchy",45,false],"left":20,"ready":"2026-12-14","jobs":[["transplant","2026-12-14","Plant out seedlings (本葉4–5枚)"],["sgerm","2026-11-18","Check how many hakusai have come up (about 45% on 14 Nov)"]]}
+look 18 Nov: 17 of 20 cells
+  asks:  None yetA fewA quarterHalfMostAll Roughly what share has come up? (a guess is fine) % …or count the cells with a seedling up (of 20 cells sown) up Looked on CancelSave
+  then: 
+  → {"up":"2026-11-14","germ":["good",85,true],"left":20,"ready":"2026-12-15","jobs":[["transplant","2026-12-15","Plant out seedlings (本葉4–5枚)"]]}
+plant out says: Next you’ll mark where they go, like any new planting. Any you don’t plant stay here — plant out again to put some in another bed, bag or pot.
+groups: [["tray",20,12,"growing","2026-11-14","",["pot 5","out 2","bin 1"]],["pot",5,5,"growing","2026-11-14","st",[]]]
+grow bag: [["hakusai","g1","st","seedling","2026-11-04"]]
+page: Hakusai 12 cells · Tray 1 · 2 seeds each Sown 4 Nov (14 days) · came up well, ~14 Nov · ready in ~27 days (本葉4–5枚) ⋯ 🌱 Plant out🗑 Discard🪴 Pot on🌿 Leaves || Hakusai 5 pots · 9 cm pots · 1 seed each Sown 4 Nov (14 days) · came up well, ~14 Nov · ready in ~27 days (本葉4–5枚) Potted on from tray 1 on 18 Nov⋯ 🌱 Plant out🗑 Discard🌿 Leaves
+log: [["2026-11-04","Sowed Hakusai in 20 cells","Tray 1"],["2026-11-11","Hakusai seedlings: none up yet","Tray 1"],["2026-11-14","Hakusai seedlings: about 45% up","Tray 1"],["2026-11-18","Hakusai seedlings: about 85% up","Tray 1"],["2026-11-18","Planted out 2 Hakusai seedlings","Tray 1 → Grow bag 1"],["2026-11-18","Discarded 1 Hakusai seedlings","Tray 1 · Weak or leggy"],["2026-11-18","Potted on 5 Hakusai seedlings","Tray 1 → 9 cm pots"]]
+tray 1 free cells: 37
+errs []

@@ -52,8 +52,10 @@ export function thinEstimate(p) {
 // seedlings in trays/pots: ready to plant out
 export function startEmerge(s) {
   if (s.upOn) return s.upOn;
-  if ((s.kept || 'out') === 'in') { return addDays(s.sowDate, Math.round(germAvg(s.cropId))); }   // a warm room: warm-soil speed
-  return emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d;
+  const est = (s.kept || 'out') === 'in' ? addDays(s.sowDate, Math.round(germAvg(s.cropId)))   // a warm room: warm-soil speed
+    : emergeDate({ cropId: s.cropId, sowDate: s.sowDate, method: 'seed' }).d;
+  if (notUpYet(s)) { const tm = addDays(todayStr(), 1); return est > tm ? est : tm; }   // looked, nothing up yet
+  return est;
 }
 export const KEPT = [['out', 'Outside', 0], ['cover', 'Under cover / cold frame', 3], ['in', 'Indoors / heated', 8]];
 const keptBoost = s => (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[2];

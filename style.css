@@ -158,6 +158,7 @@ svg.plot { display: block; overflow: visible; }
 .plot .sec { fill: var(--c); opacity: .18; }
 .plot .cut { stroke: rgba(255,245,225,.85); stroke-width: 1.5; stroke-dasharray: 5 3; }
 .plot .drill { stroke: var(--c); stroke-width: 2; opacity: .55; }
+.plot .drillband { stroke: var(--c); stroke-linecap: butt; opacity: .45; }
 .plot .plant { fill: var(--c); stroke: rgba(30,18,6,.55); stroke-width: .8; opacity: .93; }
 .plot .plant.drag { stroke: #fff; stroke-width: 2; cursor: grab; }
 .plot .dim { opacity: .35; }

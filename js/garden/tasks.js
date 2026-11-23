@@ -76,7 +76,7 @@ export function syncTasks(p) {
 function redate(t, p, d) {
   if (t.kind === 'thin' && p) p.thinDoneOn = d;
   if (t.kind === 'germ' && p && t.look) { moveGermCheck(p, t.look, d); t.look = d; }
-  if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = d;
+  if (t.kind === 'sgerm' && t.startId && start(t.startId)) { const s = start(t.startId); if (t.look) { moveGermCheck(s, t.look, d); t.look = d; } else s.upOn = d; }
   if (t.spawned && p) {
     const nt = S.tasks.find(x => x.id === t.spawned && !x.done), s = (p.series || []).find(x => x.id === t.seriesId);
     if (nt && s && +s.every > 0) nt.due = addInterval(d, +s.every, s.per);
@@ -89,6 +89,7 @@ export function toggleTask(id, done) {
   if (done && t.kind === 'transplant' && t.startId && start(t.startId)) { render(); return plantOutDialog(start(t.startId)); }
   if (done && feedTaskProduct(t)) { render(); return tickFeedTask(t); }
   if (done && t.kind === 'plan_tray' && planting(t.plantingId)) { render(); return startDialog(null, planTrayPreset(planting(t.plantingId))); }
+  if (done && t.kind === 'sgerm' && start(t.startId)) { render(); return germDialog(start(t.startId), { task: t }); }
   if (done && t.kind === 'germ' && planting(t.plantingId)) { render(); return germDialog(planting(t.plantingId), { task: t }); }   // how many are up, and when you looked
   if (done && due && due < td && t.kind !== 'water') return whenDone(t, due, td);
   finishToggle(t, done, td);
@@ -130,7 +131,7 @@ export function finishToggle(t, done, td) {
     if (t.kind === 'water') { const g = groupOf(t); S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t && groupOf(x) === g)); setLastWatered(g, t.prevLast || null); }
     if (t.kind === 'germ' && p) { if (t.look) removeGermCheck(p, t.look); t.look = null; S.tasks = S.tasks.filter(x => !(x !== t && x.plantingId === p.id && x.kind === 'germ' && !x.done)); }
     if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; }
-    if (t.kind === 'sgerm' && t.startId && start(t.startId)) start(t.startId).upOn = null;
+    if (t.kind === 'sgerm' && t.startId && start(t.startId)) { const s = start(t.startId); if (t.look) removeGermCheck(s, t.look); else s.upOn = null; t.look = null; S.tasks = S.tasks.filter(x => !(x !== t && x.startId === s.id && x.kind === 'sgerm' && !x.done)); }
     if (t.kind === 'plan_sow' && p && isLive(p)) undoActivate(p);
     if (t.spawned) { S.tasks = S.tasks.filter(x => !(x.id === t.spawned && !x.done)); t.spawned = null; }
   }

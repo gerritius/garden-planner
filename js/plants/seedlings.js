@@ -10,9 +10,10 @@ import { activatePlan, linkedStart } from '../garden/planning.js';
 import { BED_ICON, syncTasks } from '../garden/tasks.js';
 import { applyCrop, recalc } from '../pages/planting-form.js';
 import { allCrops, crop, ic, varieties } from './crops.js';
-import { germWindow, KEPT, lastLeaves, leafDialog, startReady } from './growth.js';
+import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
+import { KEPT, lastLeaves, leafDialog, startReady } from './growth.js';
 
-const NURSERY = {
+export const NURSERY = {
   tray: { en: '49-cell tray', unit: 'cell', size: '28.5 × 28.5 cm · 7 × 7 cells · 3.5 cm deep', cells: 49, cols: 7 },
   pot: { en: '9 cm pots', unit: 'pot', size: '⌀9 × 7.5 cm deep' },
 };
@@ -46,8 +47,7 @@ export function syncStartTasks(s) {
     if (!want) { if (open) S.tasks = S.tasks.filter(x => x !== open); return; }
     if (open) Object.assign(open, { due, title }); else if (!anyDone) S.tasks.push({ id: uid(), startId: s.id, kind, title, due, done: false });
   };
-  const gw = germWindow({ cropId: s.cropId, method: 'seed', sowDate: s.sowDate });
-  upsert('sgerm', !!gw && !s.upOn && !s.no_sgerm, gw && gw[1], gw ? `Check seedlings are up (expected ${shortDate(gw[0])}–${shortDate(gw[1])})` : '');
+  syncStartGerm(s);   // looks at how many are up, until they are
   const tp = TRANSPLANT[s.cropId];
   const pp = s.planId && planting(s.planId);
   upsert('transplant', !s.no_transplant && !(pp && isPlanned(pp)), startReady(s), `Plant out seedlings${tp && tp[1] ? ` (${tp[1]})` : ''}`);
@@ -87,9 +87,9 @@ export function pageSeedlings() {
     const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = startReady(s), n = daysBetween(td, ready), tp = TRANSPLANT[s.cropId];
     return `<li class="start"><div class="srow"><span class="lic">${ic(s.cropId, 28)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}
       <small>${left} ${NURSERY[s.kind].unit}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${s.kept && s.kept !== 'out' ? ' · ' + (KEPT.find(k => k[0] === s.kept) || [, ''])[1].toLowerCase() : ''}</small>
-      <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
+      <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.germ ? ` · ${esc(germText(s))}` : s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
       ${s.notes ? `<small>${esc(s.notes)}</small>` : ''}</span><button class="tmore" data-act="editStart" data-id="${s.id}" aria-label="Edit">⋯</button></div>
-      <div class="btnrow"><button class="btn small primary" data-act="plantOut" data-id="${s.id}">🌱 Plant out</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn ? `<button class="btn small" data-act="upStart" data-id="${s.id}">They’re up</button>` : `<button class="btn small" data-act="leafStart" data-id="${s.id}">🌿 ${lastLeaves(s) ? lastLeaves(s).n + ' leaves' : 'Leaves'}</button>`}</div></li>`;
+      <div class="btnrow"><button class="btn small primary" data-act="plantOut" data-id="${s.id}">🌱 Plant out</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${s.kind === 'tray' ? `<button class="btn small" data-act="potOn" data-id="${s.id}">🪴 Pot on</button>` : ''}${!s.upOn || (s.germ && !s.germ.over) ? `<button class="btn small" data-act="upStart" data-id="${s.id}">${s.germ ? 'Look again' : 'How many are up?'}</button>` : `<button class="btn small" data-act="leafStart" data-id="${s.id}">🌿 ${lastLeaves(s) ? lastLeaves(s).n + ' leaves' : 'Leaves'}</button>`}</div></li>`;
   };
   const trays = trayNos(), pots = grow.filter(s => s.kind === 'pot');
   const past = (S.starts || []).filter(s => s.status !== 'growing').sort((a, b) => (a.sowDate < b.sowDate ? 1 : -1)).slice(0, 30);
@@ -98,7 +98,8 @@ export function pageSeedlings() {
   A.plantOut = el => plantOutDialog(start(el.dataset.id));
   A.binStart = el => discardDialog(start(el.dataset.id));
   A.leafStart = el => { const s = start(el.dataset.id); leafDialog(s, crop(s.cropId).en + ' seedlings'); };
-  A.upStart = async el => { const s = start(el.dataset.id); s.upOn = td; syncStartTasks(s); await save(); render(); };
+  A.upStart = el => germDialog(start(el.dataset.id));
+  A.potOn = el => potOnDialog(start(el.dataset.id));
   const html = `
     ${!grow.length ? `<div class="empty-state"><p>No seedlings on the go.</p></div>` : ''}
     ${trays.map(no => `<section><h3>Tray ${no} <small class="muted">· ${trayFree(no)} of 49 cells free</small></h3><div class="traywrap">${traySVG(no)}</div>
@@ -106,7 +107,7 @@ export function pageSeedlings() {
     ${pots.length ? `<section><h3>9 cm pots <small class="muted">· ${pots.reduce((a, s) => a + startLeft(s), 0)} in use</small></h3><div class="traywrap">${potsSVG(pots)}</div><ul class="plist starts">${pots.map(card).join('')}</ul></section>` : ''}
     <div class="btnrow"><button class="btn primary" data-act="newStart">＋ Start seedlings</button></div>
     <p class="hint">Tray: ${NURSERY.tray.en}${NURSERY.tray.size ? ` (${NURSERY.tray.size})` : ''}. Pots: ${NURSERY.pot.size}. <button type="button" class="link" data-act="nursery">Change sizes</button> Small cells dry out fast — check them every day, and harden seedlings off outside for a few days before planting out.</p>
-    ${past.length ? `<details><summary>Finished (${past.length})</summary><ul class="plist log">${past.map(s => `<li class="logi"><div class="lrow"><span class="lic">${ic(s.cropId)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}<small>${s.count} ${NURSERY[s.kind].unit}s sown ${shortDate(s.sowDate)} · ${(s.events || []).map(e => e.type === 'out' ? `${e.n} planted in ${esc((container((planting(e.pid) || {}).containerId) || {}).name || 'a bed')} ${shortDate(e.date)}` : `${e.n} discarded ${shortDate(e.date)}${e.reason ? ` (${esc(e.reason.toLowerCase())})` : ''}`).join(' · ')}</small></span></div></li>`).join('')}</ul></details>` : ''}`;
+    ${past.length ? `<details><summary>Finished (${past.length})</summary><ul class="plist log">${past.map(s => `<li class="logi"><div class="lrow"><span class="lic">${ic(s.cropId)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}<small>${s.count} ${NURSERY[s.kind].unit}s sown ${shortDate(s.sowDate)} · ${(s.events || []).map(eventText).join(' · ')}</small></span></div></li>`).join('')}</ul></details>` : ''}`;
   return { html };
 }
 export function seedlingsHomeSection() {
@@ -171,7 +172,7 @@ export function plantOutDialog(s) {
   modal(`<h3>Plant out ${esc(crop(s.cropId).en)}</h3><p class="muted small">${left} ${NURSERY[s.kind].unit}${left === 1 ? '' : 's'} in ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
     <form id="pof" class="form"><label>How many are you planting?<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label></form>
     ${(() => { const pp = s.planId && planting(s.planId); return pp && isPlanned(pp) ? `<p class="small">Planned spot</p><ul class="plist pick"><li><a href="#" data-plan="${pp.id}">📅 <span class="grow"><b>${esc((container(pp.containerId) || {}).name || '')}${sectionOf(pp) ? ' · ' + sectionOf(pp) : ''}</b><small>planned for ${shortDate(pp.sowDate)}</small></span>›</a></li></ul><p class="small">Somewhere else?</p>` : '<p class="small">Where to?</p>'; })()}<ul class="plist pick">${spots.map(c => `<li><a href="#" data-c="${c.id}">${c.type === 'bed' ? BED_ICON(22) : '🪴'} <span class="grow"><b>${esc(c.name)}</b><small>${activeIn(c.id).map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small></span>›</a></li>`).join('') || '<li class="muted">Add a bed or bag first.</li>'}</ul>
-    <p class="hint">Next you’ll mark where they go in the bed, like any new planting. Any you don’t plant stay here.</p>
+    <p class="hint">Next you’ll mark where they go, like any new planting. Any you don’t plant stay here — plant out again to put some in another bed, bag or pot.</p>
     <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button></div>`, (m, close) => {
     m.querySelector('[data-x=no]').onclick = close;
     const pl = m.querySelector('[data-plan]');
@@ -182,6 +183,35 @@ export function plantOutDialog(s) {
       e.preventDefault(); const n = Math.max(1, Math.min(left, +m.querySelector('#pof').n.value || left));
       close(); location.hash = `#/plant/new/${a.dataset.c}?crop=${encodeURIComponent(s.cropId)}&start=${s.id}&n=${n}`;
     });
+  });
+}
+// what happened to some of them, in a few words
+function eventText(e) {
+  if (e.type === 'out') return `${e.n} planted in ${esc((container((planting(e.pid) || {}).containerId) || {}).name || 'a bed')} ${shortDate(e.date)}`;
+  if (e.type === 'pot') return `${e.n} potted on ${shortDate(e.date)}`;
+  if (e.type === 'resow') return e.gaps ? `empty cells re-sown ${shortDate(e.date)}` : `re-sown ${shortDate(e.date)} (first sown ${shortDate(e.was)})`;
+  return `${e.n} discarded ${shortDate(e.date)}${e.reason ? ` (${esc(e.reason.toLowerCase())})` : ''}`;
+}
+// moving some from a tray into small pots to grow on: they become their own group of seedlings in pots
+export function potOnDialog(s) {
+  if (!s) return;
+  const left = startLeft(s), td = todayStr();
+  modal(`<h3>Pot on ${esc(crop(s.cropId).en)} seedlings</h3><p class="muted small">${left} ${NURSERY.tray.unit}${left === 1 ? '' : 's'} in ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
+    <form id="ptf" class="form"><div class="two"><label>How many<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label><label>When<input name="date" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label></div>
+      <p class="hint">Into ${esc(NURSERY.pot.en)} (${esc(NURSERY.pot.size)}). They’re kept as their own group, so you can plant them out later; the rest stay in the tray.</p>
+      <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Pot on</button></div></form>`, (m, close) => {
+    const f = m.querySelector('#ptf'); m.querySelector('[data-x=no]').onclick = close;
+    f.onsubmit = async e => {
+      e.preventDefault();
+      const n = Math.max(1, Math.min(left, +f.n.value || left)), date = f.date.value && f.date.value <= td ? f.date.value : td;
+      const ns = { id: uid(), status: 'growing', created: new Date().toISOString(), events: [], cropId: s.cropId, variety: s.variety || '', kind: 'pot', tray: null, count: n, seeds: 1,
+        sowDate: s.sowDate, upOn: s.upOn || null, kept: s.kept, leaves: (s.leaves || []).slice(), from: s.id, pottedOn: date, notes: `Potted on from ${startWhere(s).toLowerCase()} on ${shortDate(date)}` };
+      if (s.germ) ns.germ = Object.assign(JSON.parse(JSON.stringify(s.germ)), { stopped: true, over: true });   // up already: no more looks for these
+      (S.starts = S.starts || []).push(ns);
+      (s.events = s.events || []).push({ id: uid(), type: 'pot', date, n, to: ns.id });
+      if (startLeft(s) <= 0) s.status = 'done';
+      syncStartTasks(s); syncStartTasks(ns); await save(); close(); render();
+    };
   });
 }
 export function discardDialog(s) {
@@ -227,12 +257,16 @@ export function startLogItems() {
   const out = [];
   for (const s of S.starts || []) {
     const n = crop(s.cropId).en, where = startWhere(s), href = '#/seedlings';
-    out.push({ date: s.sowDate, kind: 'sow', title: `Sowed ${n}${s.variety ? ' · ' + s.variety : ''} in ${s.count} ${NURSERY[s.kind].unit}${s.count > 1 ? 's' : ''}`, sub: where, href, cids: [], pids: [] });
-    if (s.upOn) out.push({ date: s.upOn, kind: 'note', title: `${n} seedlings came up`, sub: where, href, cids: [], pids: [] });
+    if (!s.from) out.push({ date: s.sowDate, kind: 'sow', title: `Sowed ${n}${s.variety ? ' · ' + s.variety : ''} in ${s.count} ${NURSERY[s.kind].unit}${s.count > 1 ? 's' : ''}`, sub: where, href, cids: [], pids: [] });
+    const looks = s.from ? [] : germChecks(s);   // (a potted-on group carries its tray's looks: they're logged there)
+    if (looks.length) for (const k of looks) out.push({ date: k.date, kind: 'note', title: `${n} seedlings: ${pctText(k)}`, sub: where, href, cids: [], pids: [] });
+    else if (s.upOn && !s.from) out.push({ date: s.upOn, kind: 'note', title: `${n} seedlings came up`, sub: where, href, cids: [], pids: [] });
+    if (s.from && s.pottedOn) out.push({ date: s.pottedOn, kind: 'sow', title: `Potted on ${s.count} ${n} seedlings`, sub: `${startWhere(start(s.from) || { kind: 'tray' })} → ${where}`, href, cids: [], pids: [] });
     for (const e of s.events || []) {
       const p = e.pid && planting(e.pid), c = p && container(p.containerId);
       if (e.type === 'out') out.push({ date: e.date, kind: 'sow', title: `Planted out ${e.n} ${n} seedlings`, sub: `${where} → ${c ? c.name : 'bed'}`, href: p ? '#/plant/' + p.id : href, cids: c ? [c.id] : [], pids: p ? [p.id] : [] });
-      else out.push({ date: e.date, kind: 'done', title: `Discarded ${e.n} ${n} seedlings`, sub: where + (e.reason ? ' · ' + e.reason : ''), href, cids: [], pids: [] });
+      else if (e.type === 'resow') out.push({ date: e.date, kind: 'sow', title: e.gaps ? `Re-sowed the empty cells of ${n}` : `Re-sowed ${n} (first sown ${shortDate(e.was)})`, sub: where, href, cids: [], pids: [] });
+      else if (e.type === 'bin') out.push({ date: e.date, kind: 'done', title: `Discarded ${e.n} ${n} seedlings`, sub: where + (e.reason ? ' · ' + e.reason : ''), href, cids: [], pids: [] });
     }
   }
   return out;

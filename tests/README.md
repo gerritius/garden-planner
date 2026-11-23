@@ -106,6 +106,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `soil-readings-and-feeding` | Soil readings feeding into the feeding advice |
 | `sowing-windows` | Sowing months worked out from temperature: matches the Japanese chart for Tokyo; other climates |
 | `split-bed-sections` | Splitting a bed into sections for several crops |
+| `seedlings-looks-pot-on` | A 49-cell tray: looks at how many cells are up, potting some on into 9 cm pots, planting two into a grow bag, throwing one away |
 | `spray-days` | Good spraying days from the forecast |
 | `spray-mixing-and-legality` | Spray dilution helper and the registered-crop legality check |
 | `spray-registry-table` | What the pesticide registry allows for each crop |

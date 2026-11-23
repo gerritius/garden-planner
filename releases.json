@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.30.0",
+    "date": "2026-11-23",
+    "notes": [
+      "Seedlings in trays and pots get the same looks as seeds in a bed: how many cells are up (or count them), again every few days until they're up — and planting out waits until they are.",
+      "Pot on: move some seedlings from a tray into 9 cm pots. They become their own group on the Seedlings page, to plant out later; the rest stay in the tray.",
+      "Plant out a few at a time into different beds, bags or pots — each lot becomes its own planting, and what's left stays in the tray. Discarding some keeps a note of why.",
+      "Crops sown in a continuous line are drawn as their sowing lines, widening as they grow, without a dot for every seed. Arranging plants by hand comes once they're thinned."
+    ]
+  },
+  {
     "version": "1.29.1",
     "date": "2026-11-22",
     "notes": [

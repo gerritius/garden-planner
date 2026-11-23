@@ -106,7 +106,7 @@ export function pagePlant(p) {
     ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = myProducts(['spray']).filter(pr => { const r = regSummary(pr.id, p.cropId, p.variety); return r && r.ok; }).length; return `<details class="fold"><summary>💦 Sprays you can use <small>${n} allowed</small></summary>${sp}</details>`; })()}
     ${harvested || isPlanned(p) ? '' : `<details class="fold"><summary>📝 Running log <small>${logFeed().filter(x => (x.pids || []).includes(p.id)).length} entries</small></summary>${logSection(null, p)}</details>`}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id)), today: isPlanned(p) ? p.sowDate : undefined })}</a>
-      ${harvested || isPlanned(p) || (p.layout !== 'free' && plantsNow > Draw.MAX_ARRANGE) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
+      ${harvested || isPlanned(p) || (p.layout === 'continuous' && !p.thinned) || (p.layout !== 'free' && plantsNow > Draw.MAX_ARRANGE) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
     ${(() => { const KEY = ['Germination', 'Thinning', 'Harvest estimate', 'Soil test', 'Fed so far', 'Soil'], key = dl.filter(r => KEY.includes(r[0])), rest = dl.filter(r => !KEY.includes(r[0]));
       const t = rows => `<dl class="details">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
       return `${!harvested && !isPlanned(p) ? feedingSection(p) : ''}<section><h3>How it’s going</h3>${key.length ? t(key) : '<p class="muted">Nothing to report yet.</p>'}</section><details class="fold"><summary>🌱 Planting details</summary><section>${t(rest)}`; })()}
@@ -132,6 +132,7 @@ export function pageArrange(p) {
   const c = container(p.containerId);
   setChrome('Arrange plants', { back: true, kicker: crop(p.cropId).en + (c ? ' · ' + c.name : '') });
   if (!c) return { html: notFound() };
+  if (p.layout === 'continuous' && !p.thinned) return { html: `<div class="empty-state">Sown in a continuous line: the line shows where you sowed, so there are no single plants to place yet.<br>Once they’re thinned, you can arrange the plants by hand.<br><a class="btn" href="#/plant/${p.id}">Back</a></div>` };
   const n = p.layout === 'free' ? (p.positions || []).length : Draw.count(c, p);
   if (n > Draw.MAX_ARRANGE) return { html: `<div class="empty-state">This planting has about ${n.toLocaleString('en-AU')} plants — too many to place one by one.<br>Its layout (rows, spacing) sets where they go.<br><a class="btn" href="#/plant/${p.id}">Back</a></div>` };
   if (!draft) setDraft({ pts: p.layout === 'free' ? (p.positions || []).map(q => q.slice()) : Draw.layout(c, p).pts.map(q => q.slice()), mode: 'move' });

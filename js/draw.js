@@ -89,8 +89,13 @@ export const Draw = (() => {
     const { W } = dims(c), s = Math.max(0.5, spacingNow(p));
     return Math.max(1, Math.round((W * band(c, p).h) / (s * s)));
   }
-  // How many plants a planting has, by its layout (cheap, even for a huge bed).
+  // A drill (sown in a continuous line) that hasn't been thinned: the line is the sowing — how many seeds went in isn't
+  // known, so it has no single plants to draw or place.
+  const unthinnedDrill = p => p.layout === 'continuous' && !(p.thinned && p.method === 'seed');
+  // How many plants a planting has, by its layout (cheap, even for a huge bed). For a drill not yet thinned: how many
+  // it'll be once thinned (at the sowing spacing when there's no thinning distance).
   function count(c, p) {
+    if (unthinnedDrill(p) && p.method === 'seed' && +p.thinSp > 0) return count(c, Object.assign({}, p, { thinned: true }));
     if (p.layout === 'free') return (p.positions || []).length;
     if (p.layout === 'center') return 1;
     if (p.layout === 'diamond') return 4;
@@ -112,6 +117,11 @@ export const Draw = (() => {
       const d = Math.min(s * 0.7, W * 0.3, (p.to - p.from) * 0.3);
       return { pts: [[W / 2, midY - d], [W / 2 + d, midY], [W / 2, midY + d], [W / 2 - d, midY]], lines };
     }
+    const along = p.dir === 'along';
+    if (unthinnedDrill(p)) {   // just the lines
+      for (const { r, a, b } of rowsOf(c, p)) lines.push(along ? [r, a, r, b] : [a, r, b, r]);
+      return { pts: [], lines, drill: true };
+    }
     const n = count(c, p);
     if (n > MAX_DRAWN) return { pts: [], lines, many: n };
     if (p.layout === 'scatter') {
@@ -125,13 +135,10 @@ export const Draw = (() => {
       }
       return { pts, lines };
     }
-    const along = p.dir === 'along';
-    const drill = p.layout === 'continuous' && !(p.thinned && p.method === 'seed');
     const pts = [];
     for (const { r, a, b, full, stag } of rowsOf(c, p)) {
       let pos = even(a, b, full);
       if (stag) pos = pos.slice(1).map((v, k) => (v + pos[k]) / 2);
-      if (drill) lines.push(along ? [r, a, r, b] : [a, r, b, r]);
       pos.forEach(v => pts.push(along ? [r, v] : [v, r]));
     }
     return { pts, lines };
@@ -224,14 +231,16 @@ export const Draw = (() => {
       const dim = o.highlight && o.highlight !== p.id;
       s += `<g class="pl${dim ? ' dim' : ''}" data-pid="${p.id}" style="--c:${p._color}">`;
       s += `<rect x="0" y="${p.from}" width="${W}" height="${p.to - p.from}" class="sec"/>`;
-      const { pts, lines, many } = layout(c, p);
+      const { pts, lines, many, drill } = layout(c, p);
       let r = Math.max(minR, radius(p, o.today));
       if (many) { s += manyPlants(c, p, `${key}m${pi}`, r) + `</g>`; return; }
       if (pts.length > 1) {   // crowded plants: draw each no wider than its share, so they don't swallow the pot
         let nn = Infinity; for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) nn = Math.min(nn, Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]));
         if (nn < Infinity) r = Math.max(minR, Math.min(r, nn * 0.5));
       }
-      for (const ln of lines) s += `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drill" ${ns}/>`;
+      // a drill: the sowing line, widening into a band as the crop grows (no wider than its rows allow)
+      const band = drill ? Math.min(2 * r, (+p.rowSp || 2 * r) * 0.9) : 0;
+      for (const ln of lines) s += (band > 1.5 / px ? `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drillband" stroke-width="${band.toFixed(2)}"/>` : '') + `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drill" ${ns}/>`;
       const editing = o.edit === p.id;
       pts.forEach((q, i) => {
         s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(r, 6 / px) : r}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;

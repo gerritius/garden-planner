@@ -110,7 +110,7 @@ export const Draw = (() => {
     const { W } = dims(c), m = +c.margin || 0;
     const s = Math.max(0.5, spacingNow(p));
     const lines = [];
-    if (p.layout === 'free') return { pts: (p.positions || []).map(q => [q[0], q[1]]), lines };
+    if (p.layout === 'free') return { pts: (p.positions || []).map(q => q.slice(0, 3)), lines };   // [x, y] — or [x, y, sown] for a plant younger than the rest (a gap filled later)
     const midY = (+p.from + +p.to) / 2;
     if (p.layout === 'center') return { pts: [[W / 2, midY]], lines };
     if (p.layout === 'diamond') {
@@ -234,18 +234,20 @@ export const Draw = (() => {
       s += `<g class="pl${dim ? ' dim' : ''}" data-pid="${p.id}" style="--c:${p._color}">`;
       s += `<rect x="0" y="${p.from}" width="${W}" height="${p.to - p.from}" class="sec"/>`;
       const { pts, lines, many, drill } = layout(c, p);
-      let r = Math.max(minR, radius(p, o.today));
+      let r = Math.max(minR, radius(p, o.today)), cap = Infinity;
       if (many) { s += manyPlants(c, p, `${key}m${pi}`, r) + `</g>`; return; }
       if (pts.length > 1) {   // crowded plants: draw each no wider than its share, so they don't swallow the pot
         let nn = Infinity; for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) nn = Math.min(nn, Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]));
-        if (nn < Infinity) r = Math.max(minR, Math.min(r, nn * 0.5));
+        if (nn < Infinity) { cap = nn * 0.5; r = Math.max(minR, Math.min(r, cap)); }
       }
+      // a plant put in later (filling a gap) grows from its own sowing
+      const rOf = q => q[2] ? Math.max(minR, Math.min(cap, radius(Object.assign({}, p, { method: 'seed', sowDate: q[2], seededOn: null, thinSp: null }), o.today))) : r;
       // a drill: the sowing line, widening into a band as the crop grows (no wider than its rows allow)
       const band = drill ? Math.min(2 * r, (+p.rowSp || 2 * r) * 0.9) : 0;
       for (const ln of lines) s += (band > 1.5 / px ? `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drillband" stroke-width="${band.toFixed(2)}"/>` : '') + `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drill" ${ns}/>`;
       const editing = o.edit === p.id;
       pts.forEach((q, i) => {
-        s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(r, 6 / px) : r}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;
+        s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(rOf(q), 6 / px) : rOf(q)}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;
       });
       s += `</g>`;
     });

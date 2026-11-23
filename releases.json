@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.31.2",
+    "date": "2026-11-23",
+    "notes": [
+      "Seedlings that fill gaps now show in the planting's drawing, at their own (younger) size — move them to where they really are, and take out any that didn't make it, with Arrange plants by hand. A gap filled before this shows a \"show it in the drawing\" button.",
+      "Seedlings two (or more) to a pot or cell: say how many plants go in each new pot when you replant, and how many each holds when you start seedlings. Planting out a pot then plants all of its seedlings."
+    ]
+  },
+  {
     "version": "1.31.1",
     "date": "2026-11-23",
     "notes": [

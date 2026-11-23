@@ -95,7 +95,7 @@ export function pagePlantForm(p, c, q) {
     if (nj) bits.push(`${nj} job${nj > 1 ? 's' : ''}`);
     return bits.filter(Boolean).join(' · ');
   };
-  const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${d.startN > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
+  const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startPlants || d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${(d.startPlants || d.startN) > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
     <div class="preview big" id="pprev"></div>
     <fieldset><legend>Crop</legend>
       ${isNew && !d.startId ? startChooser(d) : ''}
@@ -184,7 +184,7 @@ export function pagePlantForm(p, c, q) {
     tmp.thinned = p ? p.thinned : false;
     if (tmp.layout === 'free' && !(tmp.positions || []).length) {
       // placing by hand: start from the seedlings you're planting out (that many), or else from rows at this spacing
-      const n = d.startN || (d.useStart && start(d.useStart) ? startLeft(start(d.useStart)) : 0), rows = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
+      const n = d.startPlants || d.startN || (d.useStart && start(d.useStart) ? startLeft(start(d.useStart)) : 0), rows = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
       tmp.positions = n ? fewSpots(c, d, n) || rows.slice(0, n) : rows;
       if (n) d.positions = tmp.positions.map(q => q.slice());
     }

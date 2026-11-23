@@ -17,7 +17,7 @@ import { crop, cropName, ic } from '../plants/crops.js';
 import { germChecks, germDialog, germText, pctText } from '../plants/germination.js';
 import { germWindow, harvestNote, harvestWindowText, lastLeaves, leafDialog, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
-import { fillTarget, mergeAsFill, start, startWhere } from '../plants/seedlings.js';
+import { drawFill, fillTarget, mergeAsFill, start, startWhere } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
 import { regSummary, sprayBanner, spraySection } from '../products/sprays.js';
 import { pastCropDialog } from '../records/history.js';
@@ -47,7 +47,8 @@ export function pagePlant(p) {
     p.startId || p.seededOn ? ['Raised from seed', `in ${p.raisedName ? (p.raisedIn === 'pot' ? '' : 'a ') + esc(p.raisedName) : p.raisedIn === 'pot' ? 'small pots' : 'a cell tray'}, sown ${shortDate(p.seededOn)}${p.sowDate ? ` (${daysBetween(p.seededOn, p.sowDate)} days before planting out)` : ''}`] : null,
     c && (p.from > 0 || p.to < L) ? ['Section', `${p.from}–${p.to} cm from top`] : null,
     ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && p.layout !== 'continuous' ? ` · ${plantsNow.toLocaleString('en-AU')} plants` : '') + (thinnedTo ? ` · about ${thinnedTo.toLocaleString('en-AU')} plants once thinned to ${p.thinSp} cm` : '')],
-    (p.fills || []).length ? ['Gaps filled', p.fills.map(f => `${f.n} seedling${f.n === 1 ? '' : 's'} ${shortDate(f.date)}${start(f.startId) ? ` <small class="muted">(from ${esc(startWhere(start(f.startId)))})</small>` : ''}`).join('<br>')] : null,
+    (p.fills || []).length ? ['Gaps filled', p.fills.map((f, i) => `${f.n} seedling${f.n === 1 ? '' : 's'} ${shortDate(f.date)}${start(f.startId) ? ` <small class="muted">(from ${esc(startWhere(start(f.startId)))})</small>` : ''}${!f.drawn && !harvested ? ` <button class="link" data-act="drawFill" data-i="${i}">show ${f.n === 1 ? 'it' : 'them'} in the drawing</button>` : ''}`).join('<br>')
+      + (p.fills.some(f => f.drawn) && !harvested ? `<br><small class="muted">Move them to where they are — and take out any that didn’t make it — with <a href="#/plant/${p.id}/arrange">Arrange plants by hand</a>.</small>` : '')] : null,
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
@@ -68,6 +69,7 @@ export function pagePlant(p) {
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.drawFill = async el => { const f = p.fills[+el.dataset.i], s = start(f.startId); drawFill(p, f, s ? s.sowDate : f.date); await save(); render(); };
   A.mergeFill = async el => {
     const into = planting(el.dataset.id); if (!into) return;
     if (!await confirmBox(`Add these ${esc(cr.en.toLowerCase())} seedlings to the ${esc(cr.en.toLowerCase())} sown ${shortDate(into.sowDate)}, as filling its gaps? This separate planting goes.`, 'Add them')) return;
@@ -157,7 +159,7 @@ export function pageArrange(p) {
   A.mode = el => { d.mode = el.dataset.v; $$('[data-act=mode]').forEach(b => b.classList.toggle('on', b.dataset.v === d.mode)); };
   A.reset = () => { d.pts = Draw.layout(c, Object.assign({}, p, { layout: p.layout === 'free' ? 'rows' : p.layout })).pts.map(q => q.slice()); draw(); };
   A.clear = () => { d.pts = []; draw(); };
-  A.save = async () => { p.layout = 'free'; p.positions = d.pts.map(q => [Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10]); await save(); setDraft(null); history.back(); };
+  A.save = async () => { p.layout = 'free'; p.positions = d.pts.map(q => [Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10].concat(q[2] ? [q[2]] : [])); await save(); setDraft(null); history.back(); };
   const html = `<p class="hint">Drag plants to where they really are. Switch to “Add” and tap to add a plant, or “Remove” and tap one to remove it.</p>
     <div class="seg">${[['move', '✥ Move'], ['add', '＋ Add'], ['remove', '✕ Remove']].map(([v, l]) => `<button type="button" data-act="mode" data-v="${v}" class="${d.mode === v ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div class="plotwrap" id="arr"></div><p class="center muted" id="cnt"></p>
@@ -185,7 +187,7 @@ export function pageArrange(p) {
     const dz = dragZone(box, t => d.mode !== 'move' || !!t.closest('circle[data-i]') || !!t.closest('.cover'));
     const mv = e => {
       if (drag == null) return;
-      const q = clampIn(toCm(e)); d.pts[drag] = q;
+      const q = clampIn(toCm(e)); if (d.pts[drag][2]) q[2] = d.pts[drag][2]; d.pts[drag] = q;   // (a later plant keeps its own sowing date)
       const el = box.querySelector(`circle[data-i="${drag}"]`); if (el) { el.setAttribute('cx', q[0]); el.setAttribute('cy', q[1]); }
     };
     box.addEventListener('pointermove', e => { if (drag == null) return; mv(e); dz.move(e, mv); });

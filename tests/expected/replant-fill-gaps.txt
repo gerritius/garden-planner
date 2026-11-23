@@ -1,11 +1,18 @@
 offers: 🩹 Pea bag · fill gaps in the snap pea theresown 20 Oct — replacing ones that didn’t make it› | 🪴 Pea bag · as a new plantingSnap pea› | 🌱 A new 49-cell trayTray 2› | 🌱 9 cm pots7.5 cm deep› | ＋ Another size of tray or pot…›
-filled: #/plant/sp {"plantings":1,"fills":[{"date":"2026-11-18","n":1,"startId":"st"}],"left":2}
-page: 1 seedling 18 Nov (from Tray 1)
+filled: #/plant/sp {"plantings":1,"fills":[{"date":"2026-11-18","n":1,"startId":"st","drawn":true}],"left":6}
+drawn (cm across each): 5.9 5.9 3.3
+page: 1 seedling 18 Nov (from Tray 1)Move them to where they are — and take out any that didn’t make it — with Arrange plants by hand.
 form layout: center
 by hand: plants to place 1
 saved: ["free",1,"2026-11-05","2026-11-18"]
 drawn size today (cm across): older peas 5.9 | seedling 3
 banner: 🩹 Snap pea sown 20 Oct is already growing here. Were these seedlings to fill its gaps? Yes — add them to it
+drawn after adding them: 5.9 5.9 3.3 3.3
 merged: #/plant/sp {"plantings":["sp"],"fills":["1 2026-11-18","1 2026-11-18"],"events":["out 1 sp fill","out 1 sp fill"]}
 log: ["Filled gaps in the snap pea with 1 seedling · Tray 1 → Pea bag","Filled gaps in the snap pea with 1 seedling · Tray 1 → Pea bag"]
+older fill: 1 seedling 17 Nov (from Tray 1) show it in the drawing
+  shown: 5.9 5.9 3.3 3.3 3.3
+pots: Snap pea 1 cell · Tray 1 · 1 seed each Sown 5 Nov (13 days) · up 12 Nov · ready in ~7 days || Snap pea 2 pots · 9 cm pots · 2 plants each (4 in all) Sown 5 Nov (13 days) · up 12 Nov · 
+replant from them asks: How many pots? (2 plants each)
+form: 🌱 Planting out 2 Snap pea seedlings from 9 cm pots — set the section and spacing to fit them. | placed: free 2
 errs []

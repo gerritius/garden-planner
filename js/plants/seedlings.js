@@ -27,6 +27,9 @@ export function ntype(o) {
   return all.find(t => t.id === id) || all.find(t => t.kind === kind) || all[0];
 }
 export const unitOf = s => s.kind === 'pot' ? 'pot' : 'cell';
+// seedlings growing in each pot or cell (once thinned) — usually one
+export const perOf = s => Math.max(1, Math.round(+s.per || 1));
+export const plantsOf = (s, n = startLeft(s)) => n * perOf(s);
 export function addNurseryType(t) {
   addNurseryType.ensure();
   const o = t.kind === 'pot' ? { id: 'nt_' + uid(), kind: 'pot', cm: +t.cm, size: t.size || '' } : { id: 'nt_' + uid(), kind: 'tray', cells: +t.cells, cols: +t.cols > 0 ? +t.cols : Math.round(Math.sqrt(+t.cells)), size: t.size || '' };
@@ -117,7 +120,7 @@ export function pageSeedlings() {
   const card = s => {
     const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = startReady(s), n = daysBetween(td, ready), tp = TRANSPLANT[s.cropId];
     return `<li class="start"><div class="srow"><span class="lic">${ic(s.cropId, 28)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}
-      <small>${left} ${unitOf(s)}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${s.kept && s.kept !== 'out' ? ' · ' + (KEPT.find(k => k[0] === s.kept) || [, ''])[1].toLowerCase() : ''}</small>
+      <small>${left} ${unitOf(s)}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${perOf(s) > 1 ? ` · ${perOf(s)} plants each (${plantsOf(s)} in all)` : s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${s.kept && s.kept !== 'out' ? ' · ' + (KEPT.find(k => k[0] === s.kept) || [, ''])[1].toLowerCase() : ''}</small>
       <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.germ ? ` · ${esc(germText(s))}` : s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
       ${s.from ? `<small>Replanted from ${start(s.from) ? esc(startWhere(start(s.from))) : 'a tray'} on ${shortDate(s.movedOn || s.pottedOn)}</small>` : ''}${s.notes ? `<small>${esc(s.notes)}</small>` : ''}</span><button class="tmore" data-act="editStart" data-id="${s.id}" aria-label="Edit">⋯</button></div>
       <div class="btnrow"><button class="btn small primary" data-act="replant" data-id="${s.id}">🌱 Replant</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn || (s.germ && !s.germ.over) ? `<button class="btn small" data-act="upStart" data-id="${s.id}">${s.germ ? 'Look again' : 'How many are up?'}</button>` : `<button class="btn small" data-act="leafStart" data-id="${s.id}">🌿 ${lastLeaves(s) ? lastLeaves(s).n + ' leaves' : 'Leaves'}</button>`}</div></li>`;
@@ -188,6 +191,7 @@ export function startDialog(s, preset) {
       ${newSizeFields}
       <div class="two"><label><span id="cntL">${d.kind === 'pot' ? 'Number of pots' : 'Cells used'}</span><input name="count" type="number" inputmode="numeric" min="1" value="${d.count || ''}" required></label>
         <label><span id="seedL">Seeds per ${d.kind === 'pot' ? 'pot' : 'cell'}</span><input name="seeds" type="number" inputmode="numeric" min="1" value="${d.seeds || ''}" placeholder="optional"></label></div>
+      <label><span id="perL">Plants kept in each ${d.kind === 'pot' ? 'pot' : 'cell'}</span> <small>(after thinning; usually 1)</small><input name="per" type="number" inputmode="numeric" min="1" value="${d.per || ''}" placeholder="1"></label>
       <label>Sown on<input name="sowDate" type="date" value="${d.sowDate}" max="${td}"></label>
       <label>Kept<div class="seg wrap">${KEPT.map(([k, l]) => `<button type="button" data-kept="${k}" class="${(d.kept || 'out') === k ? 'on' : ''}">${l}</button>`).join('')}</div></label>
       <p class="hint" id="tpHint"></p>
@@ -203,7 +207,7 @@ export function startDialog(s, preset) {
     const where = () => {
       const add = f.where.value === 'add'; m.querySelector('#ntNew').hidden = !add;
       const pot = add ? !!m.querySelector('[data-nk=pot].on') : f.where.value.startsWith('p:');
-      m.querySelector('#cntL').textContent = pot ? 'Number of pots' : 'Cells used'; m.querySelector('#seedL').textContent = `Seeds per ${pot ? 'pot' : 'cell'}`;
+      m.querySelector('#cntL').textContent = pot ? 'Number of pots' : 'Cells used'; m.querySelector('#seedL').textContent = `Seeds per ${pot ? 'pot' : 'cell'}`; m.querySelector('#perL').textContent = `Plants kept in each ${pot ? 'pot' : 'cell'}`;
     };
     f.where.onchange = where; m.querySelectorAll('[data-nk]').forEach(b => b.addEventListener('click', where));
     m.querySelectorAll('[data-kept]').forEach(b => b.onclick = () => { d.kept = b.dataset.kept; m.querySelectorAll('[data-kept]').forEach(x => x.classList.toggle('on', x === b)); hint(); });
@@ -215,7 +219,7 @@ export function startDialog(s, preset) {
       let v = f.where.value;
       if (v === 'add') { const t = newType(); if (!t) return; v = (t.kind === 'tray' ? 'n:' : 'p:') + t.id; }
       const at = placeOf(v);
-      const o = { cropId: f.cropId.value, variety: f.variety.value.trim(), kind: at.kind, nid: at.nid, tray: at.tray, count: +f.count.value || 1, seeds: num(f.seeds.value), sowDate: f.sowDate.value || td, notes: f.notes.value.trim(), kept: d.kept || 'out' };
+      const o = { cropId: f.cropId.value, variety: f.variety.value.trim(), kind: at.kind, nid: at.nid, tray: at.tray, count: +f.count.value || 1, seeds: num(f.seeds.value), per: +f.per.value > 1 ? Math.round(+f.per.value) : null, sowDate: f.sowDate.value || td, notes: f.notes.value.trim(), kept: d.kept || 'out' };
       if (o.kind === 'tray') {
         const known = trayNos().includes(o.tray), free = known ? trayFree(o.tray, s && s.id) : ntype(o.nid).cells, need = o.count - (s && s.kind === 'tray' && (s.tray || 1) === o.tray ? s.count - startLeft(s) : 0);
         if (need > free && !confirm(`Tray ${o.tray} only has ${free} free cells. Save anyway?`)) return;
@@ -237,7 +241,7 @@ export function replantDialog(s) {
   const left = startLeft(s), td = todayStr(), spots = S.containers.filter(c => c.type !== 'nursery'), pp = s.planId && planting(s.planId);
   const nursery = nurseryChoices(s);
   modal(`<h3>Replant ${esc(crop(s.cropId).en)} seedlings</h3><p class="muted small">${left} ${unitOf(s)}${left === 1 ? '' : 's'} in ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
-    <form id="pof" class="form"><div class="two"><label>How many?<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label><label>When<input name="date" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label></div></form>
+    <form id="pof" class="form"><div class="two"><label>${perOf(s) > 1 ? `How many ${unitOf(s)}s? <small>(${perOf(s)} plants each)</small>` : 'How many?'}<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label><label>When<input name="date" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label></div></form>
     ${pp && isPlanned(pp) ? `<p class="small">Planned spot</p><ul class="plist pick"><li><a href="#" data-plan="${pp.id}">📅 <span class="grow"><b>${esc((container(pp.containerId) || {}).name || '')}${sectionOf(pp) ? ' · ' + sectionOf(pp) : ''}</b><small>planned for ${shortDate(pp.sowDate)}</small></span>›</a></li></ul>` : ''}
     <p class="small">Into the garden</p><ul class="plist pick">${spots.map(c => {
       // the same crop growing there already: these can fill its gaps (one that never came up, one that died) instead
@@ -245,7 +249,8 @@ export function replantDialog(s) {
       return same.map(p => `<li><a href="#" data-fill="${p.id}">🩹 <span class="grow"><b>${esc(c.name)} · fill gaps in the ${esc(crop(p.cropId).en.toLowerCase())} there</b><small>${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}${sectionOf(p) ? ' · ' + esc(sectionOf(p)) : ''} — replacing ones that didn’t make it</small></span>›</a></li>`).join('')
         + `<li><a href="#" data-c="${c.id}">${c.type === 'bed' ? BED_ICON(22) : '🪴'} <span class="grow"><b>${esc(c.name)}${same.length ? ' · as a new planting' : ''}</b><small>${activeIn(c.id).map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small></span>›</a></li>`;
     }).join('') || '<li class="muted">No beds, bags or pots yet.</li>'}</ul>
-    <p class="small">Into a tray or pots, to grow on</p><ul class="plist pick">${nursery.map(c => `<li><a href="#" data-nt="${c.v}">🌱 <span class="grow"><b>${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</span>›</a></li>`).join('')}<li><a href="#" data-nt="add">＋ <span class="grow"><b>Another size of tray or pot…</b></span>›</a></li></ul>
+    <p class="small">Into a tray or pots, to grow on</p>
+    <form id="poper" class="form"><label>Plants in each new pot or cell<input name="per" type="number" inputmode="numeric" min="1" value="1"></label></form><ul class="plist pick">${nursery.map(c => `<li><a href="#" data-nt="${c.v}">🌱 <span class="grow"><b>${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</span>›</a></li>`).join('')}<li><a href="#" data-nt="add">＋ <span class="grow"><b>Another size of tray or pot…</b></span>›</a></li></ul>
     <form id="pon" class="form">${newSizeFields}<div class="btns" id="ponGo" hidden><button class="btn primary">Replant here</button></div></form>
     <p class="hint">The rest stay in ${esc(startWhere(s))} — replant again to put some somewhere else.</p>
     <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button></div>`, (m, close) => {
@@ -260,7 +265,7 @@ export function replantDialog(s) {
       e.preventDefault(); const n = howMany(), date = when();
       close(); location.hash = `#/plant/new/${a.dataset.c}?crop=${encodeURIComponent(s.cropId)}&start=${s.id}&n=${n}${date !== td ? '&date=' + date : ''}`;
     });
-    const go = async v => { moveSeedlings(s, howMany(), when(), placeOf(v)); await save(); close(); render(); };
+    const go = async v => { moveSeedlings(s, howMany(), when(), placeOf(v), +m.querySelector('#poper').per.value || 1); await save(); close(); render(); };
     m.querySelectorAll('[data-fill]').forEach(a => a.onclick = async e => { e.preventDefault(); const p = planting(a.dataset.fill); fillGaps(s, howMany(), when(), p); await save(); close(); location.hash = '#/plant/' + p.id; });
     m.querySelectorAll('[data-nt]').forEach(a => a.onclick = e => {
       e.preventDefault();
@@ -274,26 +279,53 @@ export const plantOutDialog = replantDialog;   // the "plant out" job opens it t
 // n seedlings from group s fill gaps in planting p (the same crop): they become part of it, no new planting
 export function fillGaps(s, n, date, p) {
   (s.events = s.events || []).push({ id: uid(), type: 'out', date, n, pid: p.id, fill: true });
-  (p.fills = p.fills || []).push({ date, n, startId: s.id });
+  const f = { date, n: plantsOf(s, n), startId: s.id }; (p.fills = p.fills || []).push(f);
+  drawFill(p, f, s.sowDate);
   if (startLeft(s) <= 0) s.status = 'done';
   const tt = S.tasks.find(t => t.startId === s.id && t.kind === 'transplant' && !t.done);
   if (tt && s.status === 'done') { tt.done = true; tt.doneOn = date; }
   syncStartTasks(s);
 }
+// filled-in seedlings in the planting's drawing: added as plants of their own age, near the middle (arrange them by
+// hand where they really are — and take out any that died). The planting's other plants stay where they were.
+export function drawFill(p, f, sown, pts) {
+  const c = container(p.containerId); if (!c || f.drawn) return;
+  const L = Draw.layout(c, p); if (L.many || L.drill) return;   // too many to place one by one, or a drill
+  // where: the spots round the middle furthest from the plants already there
+  let add = pts;
+  if (!add) {
+    const have = L.pts, cand = fewSpots(c, p, Math.min(12, have.length + f.n)) || [];
+    add = []; for (let k = 0; k < f.n && cand.length; k++) {
+      const far = q => Math.min(Infinity, ...have.concat(add).map(h => Math.hypot(h[0] - q[0], h[1] - q[1])));
+      cand.sort((a, b) => far(b) - far(a)); add.push(cand.shift());
+    }
+  }
+  add = add.map(q => [q[0], q[1], sown || f.date]);
+  if (!add.length) return;
+  p.positions = L.pts.map(q => q.slice()).concat(add); p.layout = 'free'; f.drawn = true;
+}
 // seedlings planted out as a planting of their own where the same crop already grows, that were really filling its
-// gaps: they join it, and the extra planting goes
+// gaps: they join it — where they were placed — and the extra planting goes
 export function mergeAsFill(dup, into) {
-  for (const s of S.starts || []) for (const e of s.events || []) if (e.type === 'out' && e.pid === dup.id) { e.pid = into.id; e.fill = true; (into.fills = into.fills || []).push({ date: e.date, n: e.n, startId: s.id }); }
+  const c = container(dup.containerId), placed = c ? Draw.layout(c, dup).pts : [];
+  let first = true;
+  for (const s of S.starts || []) for (const e of s.events || []) if (e.type === 'out' && e.pid === dup.id) {
+    e.pid = into.id; e.fill = true;
+    const f = { date: e.date, n: first && placed.length ? placed.length : e.n, startId: s.id }; (into.fills = into.fills || []).push(f);
+    drawFill(into, f, dup.seededOn || s.sowDate, first && placed.length ? placed : null); first = false;
+  }
   S.tasks = S.tasks.filter(t => t.plantingId !== dup.id);
   S.plantings = S.plantings.filter(x => x !== dup);
-  const c = container(dup.containerId); if (c) c.history = (c.history || []).filter(h => h.plantingId !== dup.id);
+  if (c) c.history = (c.history || []).filter(h => h.plantingId !== dup.id);
 }
 // the planting this one could have been filling gaps in: the same crop, already growing in the same space when these were planted out
 export const fillTarget = p => p.startId && activeIn(p.containerId).find(x => x.id !== p.id && x.cropId === p.cropId && x.sowDate <= p.sowDate && x.from < p.to - 0.01 && x.to > p.from + 0.01);
 // n seedlings from group s into another tray or pots: their own group from then on (up already: no more looks for them)
-export function moveSeedlings(s, n, date, at) {
+export function moveSeedlings(s, n, date, at, per = 1) {
+  per = Math.max(1, Math.round(+per || 1));
+  const plants = plantsOf(s, n), pots = Math.max(1, Math.ceil(plants / per));   // n of s's pots or cells hold `plants` seedlings
   if (at && at.nid && !at.kind) at = Object.assign({ kind: ntype(at.nid).kind }, at, ntype(at.nid).kind === 'tray' ? { tray: at.tray || nextTrayNo() } : { tray: null });
-  const ns = { id: uid(), status: 'growing', created: new Date().toISOString(), events: [], cropId: s.cropId, variety: s.variety || '', kind: at.kind, nid: at.nid, tray: at.kind === 'tray' ? at.tray : null, count: n, seeds: null,
+  const ns = { id: uid(), status: 'growing', created: new Date().toISOString(), events: [], cropId: s.cropId, variety: s.variety || '', kind: at.kind, nid: at.nid, tray: at.kind === 'tray' ? at.tray : null, count: pots, seeds: null, per: per > 1 ? per : null,
     sowDate: s.sowDate, upOn: s.upOn || null, kept: s.kept, leaves: (s.leaves || []).slice(), from: s.id, movedOn: date };
   if (s.germ) ns.germ = Object.assign(JSON.parse(JSON.stringify(s.germ)), { stopped: true, over: true });
   (S.starts = S.starts || []).push(ns);
@@ -332,14 +364,14 @@ export function discardDialog(s) {
 export function prefillFromStart(d, q) {
   const s = start(q.get('start')); if (!s) return;
   const cr = crop(s.cropId);
-  d.startId = s.id; d.startN = Math.min(+q.get('n') || startLeft(s), startLeft(s));
+  d.startId = s.id; d.startN = Math.min(+q.get('n') || startLeft(s), startLeft(s)); d.startPlants = plantsOf(s, d.startN);
   d.method = 'seedling'; d.variety = s.variety || d.variety;
   if (cr.method === 'seed') {   // seed crops raised in a tray: final spacing, and harvest still counts from sowing
     if (cr.thinSp) d.plantSp = Math.max(+cr.sowSp || 0, +cr.thinSp);
     d.seededOn = s.sowDate; d.harvestManual = false; recalc(d);
   }
   d.notes = d.notes || `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
-  placeFew(d, d.startN);
+  placeFew(d, d.startPlants);
 }
 // where n seedlings go in a bag or pot: spaced round the middle of the section (one in the middle) — null in a bed
 export function fewSpots(c, d, n) {

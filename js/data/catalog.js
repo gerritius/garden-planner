@@ -34,7 +34,8 @@ export const FAMILIES = {
   brassica: ['Brassica (cabbage family)', 'アブラナ科'], nightshade: ['Nightshade (tomato family)', 'ナス科'], legume: ['Legume (bean family)', 'マメ科'],
   allium: ['Allium (onion family)', 'ヒガンバナ科'], cucurbit: ['Cucurbit (gourd family)', 'ウリ科'], umbellifer: ['Umbellifer (carrot family)', 'セリ科'],
   aster: ['Aster (daisy family)', 'キク科'], amaranth: ['Amaranth (spinach family)', 'ヒユ科'], grass: ['Grass family', 'イネ科'],
-  morningglory: ['Morning glory family', 'ヒルガオ科'], aroid: ['Aroid (taro family)', 'サトイモ科'], rose: ['Rose family', 'バラ科'], other: ['Other', 'その他'],
+  morningglory: ['Morning glory family', 'ヒルガオ科'], aroid: ['Aroid (taro family)', 'サトイモ科'], rose: ['Rose family', 'バラ科'],
+  mallow: ['Mallow family (okra)', 'アオイ科'], ginger: ['Ginger family', 'ショウガ科'], mint: ['Mint family (shiso, basil)', 'シソ科'], other: ['Other', 'その他'],
 };
 // How crops are grouped when you choose yours (what you'd look under, not botany).
 export const GROUPS = {

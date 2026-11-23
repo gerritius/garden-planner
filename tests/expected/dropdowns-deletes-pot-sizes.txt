@@ -1,8 +1,8 @@
 Pot 20 L: base ["3L","20g","13g"] | Kincho 5 mL/5 L → 2.0 mL conc | lime@pH5.5 19 g
 Pot 44 L: base ["7L","45g","30g"] | Kincho 5 mL/5 L → 4.4 mL conc | lime@pH5.5 40 g
 Pot 80 L: base ["12L","80g","55g"] | Kincho 5 mL/5 L → 8.0 mL conc | lime@pH5.5 75 g
-crop panel: search box true | items 40
-filtered: [ 'Spinach ほうれん草' ]
+crop panel: search box true | items 60
+filtered: [ 'Spinach ほうれん草', 'Water spinach (kangkong) 空心菜' ]
 crop now spinach | field shows Spinach ほうれん草
 variety panel items: [ '強力オーライ', 'ブレード10', 'ミストラル' ]
 variety now 強力オーライ | panel closed true

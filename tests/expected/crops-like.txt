@@ -1,5 +1,5 @@
 without "most like": Choose the crop it’s most like — it’s grown the same way, so the app knows how to plan it. | saved: 0
-"most like" offers: Brassica 11, Nightshade 7, Legume 5, Allium 4, Cucurbit 2, Umbellifer 2, Aster 2, Amaranth 1, Grass family 1, Morning glory family 1, Aroid 1, Rose family 1
+"most like" offers: Brassica 13, Nightshade 7, Legume 6, Allium 5, Cucurbit 6, Umbellifer 5, Aster 3, Amaranth 3, Grass family 1, Morning glory family 2, Aroid 1, Rose family 1, Mallow family 2, Ginger family 1, Mint family 2
 stored (only what was entered): {"id":"ID","varieties":[],"custom":true,"like":"komatsuna","tempLo":null,"tempHi":null,"tpDays":null,"en":"Tatsoi","ja":"ターサイ"}
 same as komatsuna: {"spacing":true,"family":true,"sowMonths":true,"germ":true,"growth":true,"plantOut":true,"careJobs":true,"icon":true,"harvest":"2026-10-15"}
 sprays registered for it: 0 | for komatsuna: 3

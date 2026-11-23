@@ -5,7 +5,7 @@ import { dayName, Weather } from '../climate/weather.js';
 import { A, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { addDays, esc, todayStr, uid } from '../core/util.js';
-import { DAY_BOLT, FROST_HEADS, HEAT_BOLT, PESTS, SPLITTERS } from '../data/catalog.js';
+import { CATALOG, DAY_BOLT, FROST_HEADS, HEAT_BOLT, PESTS, SPLITTERS } from '../data/catalog.js';
 import { container, isLive, planting } from '../garden/garden.js';
 import { myProducts } from '../products/library.js';
 import { dilsEn, maxUses, phiDays, regRows } from '../products/sprays.js';
@@ -85,6 +85,11 @@ const PROBLEMS = [
   ['ber', 'Blossom-end rot', '尻腐れ', ['tomato', 'minitomato', 'piman', 'shishito'], ['ber'], [6, 7, 8, 9], [], 'other', 'A calcium uptake problem, mostly from uneven watering.',
     ['Water steadily (pots especially)', 'Oyster shell lime or a calcium foliar feed for the next fruits; remove affected fruit']],
 ];
+// crops join the problems their records name (pests), and a linked crop the ones of the crop it's like
+for (const c of CATALOG) {
+  for (const id of c.pests || []) { const pr = PROBLEMS.find(x => x[0] === id); if (!pr) throw new Error(`crop ${c.id}: no problem '${id}'`); if (!pr[3].includes(c.id)) pr[3].push(c.id); }
+  if (c.like) for (const pr of PROBLEMS) if (pr[3].includes(c.like) && !pr[3].includes(c.id)) pr[3].push(c.id);
+}
 const famOf = id => crop(id).family || 'other';
 const probFits = (pr, cropId) => pr[3].includes('all') || pr[3].includes(cropId) || pr[3].includes(kin(cropId)) || pr[3].includes(famOf(cropId));
 function problemMatches(cropId, signs) {

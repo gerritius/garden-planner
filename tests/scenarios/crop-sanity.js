@@ -18,7 +18,7 @@ const CLIMATES = {
   // the records themselves: every crop complete and every number in a sensible range
   console.log('records:', await pg.evaluate(() => {
     const probs = [], ids = new Set(), FLAGS = ['fruiting', 'heading', 'boltIfBig', 'heatBolt', 'dayBolt', 'splits', 'frostHeads', 'halfHardy', 'tall', 'netted', 'bees', 'noFreshCompost'];
-    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'reg', 'varieties', 'like', 'icon'];
+    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'reg', 'varieties', 'like', 'icon', 'pests'];
     for (const r of CROPS) {
       const bad = m => probs.push(`${r.id}: ${m}`);
       if (ids.has(r.id)) bad('duplicate id'); ids.add(r.id);
@@ -66,7 +66,8 @@ const CLIMATES = {
           if (!h) { probs.push(`${cr.id} sown ${m}/${day}: no harvest date`); continue; }
           const n = daysBetween(sd, h), dh = cr.daysHarvest || 60; days.push(n);
           // (a crop usually grown through winter, sown in spring where winters are hard, skips the winter its packet days include)
-          const max = overwinter(cr.id) ? 300 : Math.max(dh * 2.3, dh + 50), min = overwinter(cr.id) ? Math.min(60, dh * 0.35) : dh * 0.6;
+          // (long crops have less room: a 140-day crop at 240+ days has gone through a winter it shouldn't — winter-sown carrots in Kagoshima, ~1.7×, are real)
+          const max = overwinter(cr.id) ? 300 : dh > 100 ? Math.max(dh * 1.7, dh + 60) : Math.max(dh * 2.3, dh + 50), min = overwinter(cr.id) ? Math.min(60, dh * 0.35) : dh * 0.6;
           if (n > max) probs.push(`${cr.id} sown ${m}/${day}: ${n} days to harvest (packet ${dh}) — too slow`);
           if (n < min) probs.push(`${cr.id} sown ${m}/${day}: ${n} days to harvest (packet ${dh}) — too fast`);
           if (n > 330) probs.push(`${cr.id} sown ${m}/${day}: over a year (${n} days)`);

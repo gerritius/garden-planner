@@ -1,6 +1,6 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
 // The same file serves the real site and the test site (…/test/): each keeps its own offline copy and database.
-const VERSION = '1.32.0';   // the app's version: the same as js/version.js and releases.json (a test checks)
+const VERSION = '1.32.1';   // the app's version: the same as js/version.js and releases.json (a test checks)
 const SCOPE = new URL(self.registration.scope).pathname, SITE = /\/test\/$/.test(SCOPE) ? 'test' : 'main';
 const PREFIX = SITE === 'test' ? 'garden-planner-test-' : 'garden-planner-main-', CACHE = PREFIX + VERSION;
 const DB_NAME = SITE === 'test' ? 'garden-planner-test' : 'garden-planner';
@@ -64,12 +64,12 @@ async function morningJobs(force) {
   const order = t => t.kind === 'wx' || t.kind === 'frost' ? 0 : t.kind === 'water' ? 1 : 2;
   const lines = jobs.sort((a, b) => order(a) - order(b)).slice(0, 5).map(t => '• ' + t.title);
   await self.registration.showNotification(jobs.length ? `${jobs.length} garden job${jobs.length > 1 ? 's' : ''} today` : 'Nothing to do in the garden today', {
-    body: lines.join('\n') + (jobs.length > 5 ? `\n…and ${jobs.length - 5} more` : ''), tag: 'morning', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: './#/' } });
+    body: lines.join('\n') + (jobs.length > 5 ? `\n…and ${jobs.length - 5} more` : ''), tag: 'morning', icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', data: { url: 'index.html#/' } });
   await idbSet('notified', td);
 }
 self.addEventListener('periodicsync', e => { if (e.tag === 'morning') e.waitUntil(morningJobs(false)); });
 self.addEventListener('message', e => { if (e.data === 'testMorning') e.waitUntil ? e.waitUntil(morningJobs(true)) : morningJobs(true); });
 self.addEventListener('notificationclick', e => {
   e.notification.close();
-  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => { for (const c of cs) if ('focus' in c) { c.navigate && c.navigate(e.notification.data && e.notification.data.url || './'); return c.focus(); } return self.clients.openWindow(e.notification.data && e.notification.data.url || './'); }));
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(cs => { for (const c of cs) if ('focus' in c) { c.navigate && c.navigate(e.notification.data && e.notification.data.url || 'index.html'); return c.focus(); } return self.clients.openWindow(e.notification.data && e.notification.data.url || './'); }));
 });

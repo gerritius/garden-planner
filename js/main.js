@@ -13,6 +13,10 @@ import { freshenWeather } from './climate/weather.js';
 import { $, go, todayStr } from './core/util.js';
 import { taskDialog, toggleTask } from './garden/tasks.js';
 
+// installed, the app lives at …/index.html (its scope — so the test site under test/ is an app of its own): arriving at
+// the folder's address (coming back from Google sign-in) switches to it, without reloading. (In a browser tab either is fine.)
+if (/\/$/.test(location.pathname) && window.matchMedia && matchMedia('(display-mode: standalone)').matches) history.replaceState(history.state, '', location.pathname + 'index.html' + location.search + location.hash);
+
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (!el) return;

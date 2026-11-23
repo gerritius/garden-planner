@@ -13,7 +13,9 @@ copy(mainDir, out);
 if (testDir !== '-') {
   const t = path.join(out, 'test'); copy(testDir, t);
   const mf = path.join(t, 'manifest.webmanifest'), m = JSON.parse(fs.readFileSync(mf, 'utf8'));
-  Object.assign(m, { name: 'Garden Planner (test)', short_name: 'Garden test', theme_color: '#4b3866' });
+  // its own app, not part of the real one: its own identity (the real app's scope is just its index.html, so the test
+  // folder is outside it — Chrome offers to install the test site separately)
+  Object.assign(m, { id: (m.id || '/garden-planner/').replace(/\/?$/, '/') + 'test/', name: 'Garden Planner (test)', short_name: 'Garden test', theme_color: '#4b3866' });
   fs.writeFileSync(mf, JSON.stringify(m, null, 2) + '\n');
   const ix = path.join(t, 'index.html');
   fs.writeFileSync(ix, fs.readFileSync(ix, 'utf8').replace('<title>Garden Planner</title>', '<title>Garden Planner (test)</title>').replace(/(<meta name="theme-color" content=")[^"]*/, '$1#4b3866'));

@@ -1,0 +1,6 @@
+real app: {"name":"Garden Planner","id":"https://gerritius.github.io/garden-planner/","start":"https://gerritius.github.io/garden-planner/index.html","scope":"https://gerritius.github.io/garden-planner/index.html"}
+test site: {"name":"Garden Planner (test)","id":"https://gerritius.github.io/garden-planner/test/","start":"https://gerritius.github.io/garden-planner/test/index.html","scope":"https://gerritius.github.io/garden-planner/test/index.html"}
+real app keeps its identity (as before: the folder address): true
+test site has its own identity: true
+test site is outside the real app (so Chrome offers to install it): true
+the real app's own pages are inside it: true

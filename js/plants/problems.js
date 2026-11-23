@@ -5,7 +5,7 @@ import { dayName, Weather } from '../climate/weather.js';
 import { A, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { addDays, esc, todayStr, uid } from '../core/util.js';
-import { PESTS } from '../data/catalog.js';
+import { DAY_BOLT, FROST_HEADS, HEAT_BOLT, PESTS, SPLITTERS } from '../data/catalog.js';
 import { container, isLive, planting } from '../garden/garden.js';
 import { myProducts } from '../products/library.js';
 import { dilsEn, maxUses, phiDays, regRows } from '../products/sprays.js';
@@ -134,10 +134,6 @@ export function pageDoctor(q) {
 }
 
 // ---------- quality & bolting warnings ----------
-const HEAT_BOLT = ['lettuce', 'spinach', 'komatsuna', 'chingensai', 'mizuna', 'shungiku', 'celery'];
-const DAY_BOLT = ['spinach', 'lettuce', 'chingensai', 'komatsuna', 'hakusai', 'cabbage', 'daikon', 'kabu', 'naganegi', 'mizuna', 'shungiku', 'nanohana', 'broccoli'];
-const SPLITTERS = ['tomato', 'minitomato', 'cabbage', 'hakusai', 'carrot', 'daikon', 'kabu'];
-const FROST_HEADS = ['lettuce', 'broccoli', 'cauliflower'];
 export function qualityWarnings(only) {
   const td = todayStr(), days = Weather.days().slice(0, 5), out = [];
   const near = p => p.harvestDate && p.harvestDate <= addDays(td, 10);

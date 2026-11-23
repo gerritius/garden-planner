@@ -6,7 +6,7 @@ import { render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
 import { addDays, esc, num, todayStr, uid, unitOpts } from '../core/util.js';
-import { HANDFUL_G } from '../data/catalog.js';
+import { FRUITING, HANDFUL_G } from '../data/catalog.js';
 import { Draw } from '../draw.js';
 import { container, isLive, planting } from '../garden/garden.js';
 import { feedOf, gramsFor, limeRate, soilAdvice, soilM2, soilReadingAdvice } from '../garden/soil.js';
@@ -102,7 +102,6 @@ export function completeWaterFeeds(wt, date) {
 // planting the first crop into fresh mix while its own fertiliser is still working (Touikawa ~a year, others ~2 months)
 const freshMixFed = (ms, sowDate) => !!(ms && ms.fresh && ms.firstCrop && (sowDate || todayStr()) < addDays(ms.date, Math.max(60, mixFert(ms.kind).days)));
 // suggested jobs = catalogue jobs + top-dressing with my products + weekly pest check
-export const FRUITING = ['tomato', 'minitomato', 'nasu', 'piman', 'chilli', 'shishito', 'kyuri', 'zucchini'];
 export function careJobs(cropId) {
   const cr = crop(cropId);
   // feeding is planned from the Feeding card, so side-dressing isn't a plain job any more (earthing up stays)
@@ -257,3 +256,4 @@ export function pestPlan(p) {
   if (syn.length) steps.push('Last resort: ' + syn.map(x => x.pr.en).join(', ') + '.');
   return steps.join(' ');
 }
+export { FRUITING };   // (from the crop records)

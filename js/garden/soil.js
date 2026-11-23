@@ -12,12 +12,9 @@ import { crop, kin } from '../plants/crops.js';
 import { pickRole } from '../products/library.js';
 import { activeIn } from './garden.js';
 import { lastCropIn } from './rotation.js';
+import { FEED, LIME_M2, NO_FRESH_COMPOST, PH_RANGE, SOIL_T } from '../data/catalog.js';
 
 // ---------- meter readings ----------
-const PH_RANGE = {
-  spinach: [6.5, 7.2], snappea: [6.2, 7.0], sayaendo: [6.2, 7.0], onion: [6.0, 6.8], naganegi: [6.0, 6.8], hatamanegi: [6.0, 6.8], garlic: [6.0, 6.8],
-  potato: [5.0, 6.0], satsumaimo: [5.5, 6.2], daikon: [5.5, 6.5], carrot: [5.5, 6.5], kyuri: [5.5, 6.5], ingen: [5.5, 6.5], corn: [5.5, 6.5], strawberry: [5.5, 6.5], satoimo: [5.5, 6.5],
-};
 export const phRange = id => PH_RANGE[kin(id)] || [6.0, 6.5];
 // the space as m² of bed: a bed section's area; for a pot, its soil volume (about 150 L of mix ≈ 1 m² of dug bed)
 export function soilM2(c, from, to) {
@@ -110,17 +107,8 @@ export function bagMoistureToday(pots) {
 }
 
 // ---------- soil fertility from the last crop ----------
-const FEED = {
-  nasu: 'heavy', tomato: 'heavy', minitomato: 'heavy', piman: 'heavy', chilli: 'heavy', shishito: 'heavy', kyuri: 'heavy', zucchini: 'heavy', corn: 'heavy',
-  hakusai: 'heavy', cabbage: 'heavy', broccoli: 'heavy', cauliflower: 'heavy', celery: 'heavy', naganegi: 'heavy', onion: 'heavy', satoimo: 'heavy',
-  potato: 'medium', daikon: 'medium', kabu: 'medium', komatsuna: 'medium', spinach: 'medium', lettuce: 'medium', chingensai: 'medium', mizuna: 'medium',
-  shungiku: 'medium', garlic: 'medium', hatamanegi: 'medium', nanohana: 'medium', strawberry: 'medium',
-  carrot: 'light', hatsuka: 'light', satsumaimo: 'light',
-  edamame: 'legume', snappea: 'legume', ingen: 'legume', sayaendo: 'legume', soramame: 'legume',
-};
 export const FEED_LABEL = { heavy: 'heavy feeder', medium: 'medium feeder', light: 'light feeder', legume: 'legume (adds nitrogen)' };
 export const feedOf = (cropId, h) => (h && h.feed) || FEED[kin(cropId)] || (crop(cropId).family === 'legume' ? 'legume' : crop(cropId).feed) || '';
-const NO_FRESH_COMPOST = ['carrot', 'daikon', 'hatsuka', 'kabu', 'satsumaimo'];
 // returns { level: 'warn'|'note', text, base: multiplier for base fertiliser, compost: multiplier } or null
 export function soilAdvice(c, from, to, nextCropId, beforeDate, excludeId) {
   const prev = lastCropIn(c, from, to, beforeDate, excludeId);
@@ -147,13 +135,7 @@ export function soilAdvice(c, from, to, nextCropId, beforeDate, excludeId) {
 }
 
 // ---------- soil temperature for sowing ----------
-// [minimum for germination, comfortable from, too warm above] °C at ~6 cm
-export const SOIL_T = {
-  ingen: [12, 18], edamame: [15, 20], corn: [12, 18], kyuri: [15, 20], zucchini: [15, 20], tomato: [13, 20], minitomato: [13, 20], nasu: [15, 22], piman: [15, 22], shishito: [15, 22], chilli: [15, 22],
-  carrot: [7, 15, 30], daikon: [5, 15, 30], hatsuka: [5, 15, 30], komatsuna: [5, 15, 30], chingensai: [5, 15, 30], mizuna: [5, 15, 30], kabu: [5, 15, 30], hakusai: [5, 18, 30],
-  cabbage: [5, 15, 30], broccoli: [5, 15, 30], cauliflower: [5, 15, 30], spinach: [4, 12, 25], lettuce: [4, 15, 25], shungiku: [10, 15, 25], celery: [10, 15, 25],
-  onion: [5, 15, 25], naganegi: [7, 15, 30], snappea: [5, 12, 25], sayaendo: [5, 12, 25], soramame: [5, 15, 25], potato: [7, 12], satsumaimo: [15, 18], satoimo: [15, 20],
-};
+// soil °C at ~6 cm for coming up: [minimum, comfortable from, too warm above] — each crop's soilT, in its record (data/crops.js)
 export function soilTemps() {
   const h = S.weather && S.weather.hourly; if (!h || !h.soil_temperature_6cm) return null;
   const td = todayStr(), by = {};
@@ -224,4 +206,4 @@ export function prepDialog(c) {
     };
   });
 }
-const LIME_M2 = { potato: 0, satsumaimo: 50, strawberry: 50, spinach: 200, garlic: 150, onion: 150, hatamanegi: 150, naganegi: 150 };
+export { SOIL_T };   // (from the crop records)

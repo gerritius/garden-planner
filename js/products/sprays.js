@@ -9,23 +9,11 @@ import { pestPlan } from '../feeding/plans.js';
 import { container, isLive } from '../garden/garden.js';
 import { crop, ic } from '../plants/crops.js';
 import { myProducts, product } from './library.js';
+import { CROP_REG } from '../data/catalog.js';
 
 // ---------- legal registration lookup ----------
-// which registered crop names / crop groups cover each crop in the app (most specific first)
+// which registered crop names / crop groups cover each crop in the app (most specific first): each crop's reg, in its record (data/crops.js)
 const VEG = ['野菜類'];
-export const CROP_REG = {
-  nasu: [['なす'], VEG], celery: [['セルリー'], VEG], potato: [['ばれいしょ'], VEG], minitomato: [['ミニトマト'], VEG], tomato: [['トマト'], VEG],
-  naganegi: [['ねぎ'], VEG], hatamanegi: [['葉たまねぎ'], VEG], carrot: [['にんじん'], VEG],
-  komatsuna: [['こまつな'], ['非結球あぶらな科葉菜類', ...VEG]], edamame: [['えだまめ'], VEG], hakusai: [['はくさい'], ['結球あぶらな科葉菜類', ...VEG]],
-  daikon: [['だいこん'], VEG], hatsuka: [['はつかだいこん'], VEG], cabbage: [['キャベツ'], ['結球あぶらな科葉菜類', ...VEG]], spinach: [['ほうれんそう'], VEG],
-  kabu: [['かぶ'], VEG], piman: [['ピーマン'], VEG], chilli: [['とうがらし'], ['とうがらし類', ...VEG]], snappea: [['さやえんどう'], VEG],
-  kyuri: [['きゅうり'], VEG], onion: [['たまねぎ'], VEG], broccoli: [['ブロッコリー'], ['あぶらな科野菜(花蕾及び茎)', ...VEG]],
-  satoimo: [['さといも'], VEG], satsumaimo: [['かんしょ'], VEG], shungiku: [['しゅんぎく'], VEG], mizuna: [['みずな'], ['非結球あぶらな科葉菜類', ...VEG]],
-  zucchini: [['ズッキーニ'], VEG], corn: [['とうもろこし'], VEG], ingen: [['さやいんげん', 'いんげんまめ'], VEG],
-  chingensai: [['チンゲンサイ'], ['非結球あぶらな科葉菜類', ...VEG]], garlic: [['にんにく'], VEG], shishito: [['ししとう'], ['とうがらし類', ...VEG]],
-  sayaendo: [['さやえんどう'], VEG], soramame: [['そらまめ'], VEG], cauliflower: [['カリフラワー'], ['あぶらな科野菜(花蕾及び茎)', ...VEG]],
-  strawberry: [['いちご'], VEG], nanohana: [['なばな類', 'なばな'], ['非結球あぶらな科葉菜類', ...VEG]],
-};
 const HEAD_LETTUCE = /シスコ|結球|玉レタス|head|iceberg/i;
 function regNames(cropId, variety) {
   if (cropId === 'lettuce') return HEAD_LETTUCE.test(variety || '') ? [['レタス'], VEG] : [['リーフレタス', '非結球レタス'], VEG];
@@ -199,3 +187,4 @@ export function beeNote() {
   const mine = myProducts('spray').map(p => ({ p, h: beeHarm(p) })).filter(x => x.h.length);
   return `<li>Many insecticides harm bees: neonicotinoids (e.g. imidacloprid, clothianidin, dinotefuran), pyrethroids and pyrethrins, organophosphates, carbamates, spinosad and fipronil among them. Spray early in the morning or late in the afternoon, never onto open flowers, and not when bees are about.${mine.length ? `<br>Of your sprays: ${mine.map(x => `<b>${esc(x.p.en)}</b> (${[...new Set(x.h.map(h => h.name))].join(', ')} — ${esc(x.h[0].why)})`).join('; ')}.` : ''}</li>`;
 }
+export { CROP_REG };   // (from the crop records)

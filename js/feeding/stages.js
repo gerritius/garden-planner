@@ -9,26 +9,12 @@ import { crop, kin } from '../plants/crops.js';
 import { growParams, harvestWindow, isWarmCrop } from '../plants/growth.js';
 import { productByName } from '../products/library.js';
 import { gN, leadText } from './nutrients.js';
+import { BOLT_IF_BIG, FRUITING as FRUIT_EVERY, SIDE_STAGES } from '../data/catalog.js';
 
 // usual side-dressing (追肥) stages. d: days after planting (or thinning for sown crops); f: fraction of the way to harvest;
 // w: tied to this planting's own winter — 'start' (as it sets in), 'mid' (a third of the way through), 'restart' (growth picks up), off: days from there.
-// w-stages only apply to plantings that actually go through a winter; last: the last feed (止め肥) — nothing after it
-export const SIDE_STAGES = {
-  hakusai: [{ d: 18, t: '2–3 weeks after planting / final thinning' }, { f: 0.5, t: 'as heads start to form (結球始め)' }],
-  cabbage: [{ d: 25, t: '3–4 weeks after planting' }, { f: 0.55, t: 'as heads start to form (結球始め)' }],
-  broccoli: [{ d: 21, t: '3 weeks after planting' }, { f: 0.65, t: 'when the buds appear' }], cauliflower: [{ d: 21, t: '3 weeks after planting' }, { f: 0.65, t: 'when the curd appears' }],
-  daikon: [{ d: 5, t: 'at the last thinning (本葉5–6枚)' }, { d: 25, t: 'as roots start to thicken' }], kabu: [{ d: 5, t: 'after the last thinning' }], carrot: [{ d: 5, t: 'after thinning' }, { d: 30, t: 'as roots thicken' }],
-  komatsuna: [{ d: 5, t: 'after thinning (only if leaves look pale)' }], chingensai: [{ d: 7, t: 'after thinning' }], mizuna: [{ d: 10, t: 'after thinning' }], spinach: [{ d: 7, t: 'after thinning' }],
-  shungiku: [{ d: 10, t: 'after thinning, and after each cut' }], lettuce: [{ d: 18, t: '2–3 weeks after planting' }],
-  onion: [{ w: 'mid', t: 'mid-winter — lightly' }, { w: 'restart', t: 'as growth restarts — the last feed (止め肥); none after it', last: true }],
-  garlic: [{ w: 'start', t: 'as winter sets in' }, { w: 'restart', t: 'as growth restarts — the last feed (止め肥)', last: true }],
-  naganegi: [{ d: 30, t: 'with the first earthing-up (土寄せ)' }, { d: 60, t: 'with the second earthing-up' }, { d: 90, t: 'with the third earthing-up' }],
-  snappea: [{ w: 'restart', t: 'when growth restarts in spring' }, { f: 0.8, t: 'when flowering starts — lightly' }], sayaendo: [{ w: 'restart', t: 'when growth restarts in spring' }, { f: 0.8, t: 'at flowering — lightly' }],
-  soramame: [{ w: 'restart', t: 'when growth restarts in spring' }], strawberry: [{ w: 'restart', t: 'as growth restarts' }],
-  potato: [{ d: 25, t: 'when removing extra shoots (芽かき) and earthing up' }], corn: [{ d: 30, t: 'at 7–8 leaves' }, { d: 50, t: 'when tassels appear' }],
-  edamame: [{ d: 30, t: 'at flowering — lightly, only if pale' }], ingen: [{ d: 30, t: 'at flowering' }],
-};
-const FRUIT_EVERY = ['tomato', 'minitomato', 'nasu', 'piman', 'shishito', 'chilli', 'kyuri', 'zucchini'];
+// w-stages only apply to plantings that actually go through a winter; last: the last feed (止め肥) — nothing after it.
+// Each crop's stages are in its record (data/crops.js).
 // how early a product needs to go on before plants can use it, and how fast it works
 const LEAD = { kasei888: [0, 'fast — works within days'], bokashi: [7, 'fairly fast — about a week'], toshoAburakasu: [7, 'fairly fast — about a week'], chickenManure: [10, 'medium — 1–2 weeks'],
   aburakasu: [21, 'slow — 2–3 weeks, slower in cold soil'], neem: [14, 'slow — about 2 weeks'], woodAsh: [0, 'fast (potash only)'] };
@@ -40,7 +26,6 @@ export function nextGrowing(id, d) { const thr = restartTemp(id); for (let i = 0
 // Overwintering crops are kept on the lean side going into winter (soft growth is frost-tender), and heading brassicas
 // grown for spring (spring cabbage, overwintered broccoli/cauliflower) much more so: big plants in the cold bolt (トウ立ち)
 // instead of heading. Their main feed is when growth restarts.
-const BOLT_IF_BIG = ['cabbage', 'broccoli', 'cauliflower', 'hakusai'];
 export const _season = {};
 export function feedSeason(p) {
   if (!p || !p.sowDate) return null;
@@ -108,3 +93,4 @@ export function previewBars(L, add) {
   return `<div class="npk">${row('n', 'N', L.total, L.plannedN, add.n, L.need)}${row('p', 'P', L.totalP, L.plannedP, add.p, L.needP)}${row('k', 'K', L.totalK, L.plannedK, add.k, L.needK)}</div>
     <p class="hint">Solid: counted so far · striped: jobs already planned · bright: this plan.</p>`;
 }
+export { SIDE_STAGES };   // (from the crop records)

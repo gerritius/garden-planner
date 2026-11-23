@@ -13,6 +13,7 @@ import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
 import { allCrops, crop, cropName, ic, kin, myCrops } from '../plants/crops.js';
 import { frostEnd, harvestModel } from '../plants/growth.js';
 import { applyClimate, growUnits, NORMAL_T, normalT } from './climate.js';
+import { SOW_PROFILE } from '../data/catalog.js';
 
 // ---------- sowing windows from temperature ----------
 // per crop, where the general rules need a hand. heat: mean °C above which it bolts/spoils when maturing.
@@ -20,17 +21,7 @@ import { applyClimate, growUnits, NORMAL_T, normalT } from './climate.js';
 // winter: grown through winter — planted as it cools within [low, high] °C if winters are mild; spring: otherwise, as it warms.
 // pick: days of picking after the first harvest that need frost-free weather (crops picked over a season).
 // plant: [low, high] mean °C to sow / plant out, where the general rule doesn't fit. warmLo: when warming, wait for this much warmth (young plants
-// that get cold bolt later, e.g. hakusai).
-const SOW_PROFILE = {
-  lettuce: { heat: 22 }, spinach: { heat: 21, hardy: true }, shungiku: { heat: 22, plant: [9, 24] }, hakusai: { heat: 21, warmLo: 14 }, broccoli: { heat: 22 }, cauliflower: { heat: 22 },
-  cabbage: { heat: 23 }, daikon: { heat: 22 }, kabu: { heat: 23 }, hatsuka: { heat: 24 }, komatsuna: { heat: 25 }, mizuna: { heat: 23 }, chingensai: { heat: 24 },
-  carrot: { heat: 25 },
-  potato: { rising: [6, 10], falling: [21, 25.5] }, satsumaimo: { plant: [17, 28] }, celery: { rising: [12, 19], falling: [21, 27] }, naganegi: { rising: [12, 26] }, satoimo: { rising: [13, 19] },
-  garlic: { winter: [15, 23] }, onion: { winter: [10, 15], spring: [6, 12] }, hatamanegi: { winter: [11, 18] },
-  soramame: { winter: [11, 18], spring: [5, 10] }, snappea: { winter: [11, 18], spring: [6, 12] }, sayaendo: { winter: [11, 18], spring: [6, 12] },
-  strawberry: { winter: [14, 20] }, nanohana: { winter: [15, 23] },
-  tomato: { pick: 90 }, minitomato: { pick: 90 }, nasu: { pick: 100 }, piman: { pick: 100 }, shishito: { pick: 100 }, chilli: { pick: 90 }, kyuri: { pick: 50 }, zucchini: { pick: 60 }, ingen: { pick: 30 },
-};
+// that get cold bolt later, e.g. hakusai). Each crop's profile is in its record (data/crops.js).
 const monthDays = (y, m) => [5, 15, 25].map(d => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
 // days of growth to harvest, using the usual temperatures from a sowing date (null if it never gets there within a year)
 // — the harvest estimate's own model (coming up first, then the packet's growth), so the months it offers and the dates it

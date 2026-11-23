@@ -10,6 +10,7 @@ import { coveredText, plantingCover } from '../plants/covers.js';
 import { crop, kin } from '../plants/crops.js';
 import { startsGrowing } from '../plants/seedlings.js';
 import { beeNote, sprayAlerts } from '../products/sprays.js';
+import { HALF_HARDY, NETTED, TALL } from '../data/catalog.js';
 
 // ---------- weather (Open-Meteo, free, no key) ----------
 export const dayName = d => { const n = daysBetween(todayStr(), d); return n === 0 ? 'Today' : n === 1 ? 'Tmrw' : pd(d).toLocaleDateString('en-GB', { weekday: 'short' }); };
@@ -103,7 +104,6 @@ export function weatherSettings() {
 }
 
 // ---------- frost jobs ----------
-const HALF_HARDY = ['lettuce', 'celery', 'shungiku', 'strawberry'];
 export function frostRisk() {
   const days = Weather.days().slice(0, 5);
   const act = S.plantings.filter(p => isLive(p) && !(container(p.containerId) || {}).indoor && (!p.sowDate || p.sowDate <= addDays(todayStr(), 4)));
@@ -175,8 +175,6 @@ export function pageSprayDay() {
 }
 
 // ---------- weather alert jobs ----------
-export const TALL = ['tomato', 'minitomato', 'nasu', 'piman', 'shishito', 'chilli', 'kyuri', 'corn', 'snappea', 'sayaendo', 'ingen', 'soramame', 'zucchini', 'edamame'];
-export const NETTED = ['cabbage', 'hakusai', 'broccoli', 'cauliflower', 'komatsuna', 'chingensai', 'mizuna', 'kabu', 'daikon', 'hatsuka', 'nanohana'];
 const gustOf = d => d.gust != null ? d.gust : (d.wind || 0) * 1.6;
 export const WX = {
   wind: { icon: '💨', test: d => gustOf(d) >= 50, val: d => `gusts ${Math.round(gustOf(d))} km/h`, severe: d => gustOf(d) >= 75,
@@ -240,3 +238,4 @@ export function frostTaskDialog(t) {
     };
   });
 }
+export { TALL, NETTED };   // (from the crop records)

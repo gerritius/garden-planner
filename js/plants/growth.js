@@ -14,6 +14,7 @@ import { crop, kin } from './crops.js';
 import { germChecks, notUpYet, syncGermTask } from './germination.js';
 import { ddBetween, learnedFactor, learnedText } from './learning.js';
 import { startsGrowing, syncStartTasks, tpDays, transplantOf, trayDateOf } from './seedlings.js';
+import { GROW, HEADING } from '../data/catalog.js';
 
 // ---------- thinning: counted from when seedlings came up, at the speed the temperature allows ----------
 export function emergeDate(p) {
@@ -30,27 +31,7 @@ export function emergeDate(p) {
 // between). Warm-season crops follow a curve instead — `warm: [lo, opt]`: nothing at or below lo, picking up quickly and
 // close to full speed from opt — which fits them better than a straight line (see growUnits). The values are checked
 // against how each crop is known to behave here: komatsuna ~25 days in summer and ~80–90 sown in December, spring
-// cabbage heading in spring, eggplant and peppers needing more heat than tomatoes, and sweet potato and taro planted in May dug in autumn.
-export const GROW = {
-  // warm-season: tb/tref only set the scale; the curve is what counts
-  tomato: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, minitomato: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, zucchini: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
-  ingen: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, edamame: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
-  kyuri: { tb: 10, tref: 24, tcap: 28, warm: [9, 22] }, corn: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
-  nasu: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] }, piman: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] },
-  chilli: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] }, shishito: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] },
-  satoimo: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] }, satsumaimo: { tb: 10, tref: 24, tcap: 28, warm: [8, 21] },
-  // hardy: keep growing slowly a little above freezing
-  komatsuna: { tb: 0, tref: 16, tcap: 20 }, mizuna: { tb: 0, tref: 16, tcap: 20 }, chingensai: { tb: 0, tref: 16, tcap: 20 }, nanohana: { tb: 0, tref: 16, tcap: 20 },
-  hakusai: { tb: 0, tref: 16, tcap: 20 }, cabbage: { tb: 0, tref: 16, tcap: 20 }, broccoli: { tb: 0, tref: 16, tcap: 20 }, cauliflower: { tb: 0, tref: 16, tcap: 20 },
-  daikon: { tb: 0, tref: 16, tcap: 20 }, kabu: { tb: 0, tref: 16, tcap: 20 }, hatsuka: { tb: 0, tref: 16, tcap: 20 },
-  spinach: { tb: 0, tref: 16, tcap: 20 }, shungiku: { tb: 0, tref: 16, tcap: 20 },
-  onion: { tb: 0, tref: 16, tcap: 20 }, naganegi: { tb: 0, tref: 16, tcap: 20 }, hatamanegi: { tb: 0, tref: 16, tcap: 20 }, garlic: { tb: 0, tref: 16, tcap: 20 },
-  snappea: { tb: 0, tref: 16, tcap: 20 }, sayaendo: { tb: 0, tref: 16, tcap: 20 }, soramame: { tb: 0, tref: 16, tcap: 20 },
-  strawberry: { tb: 0, tref: 16, tcap: 20 },
-  // cool-season but stopping sooner in the cold
-  lettuce: { tb: 3, tref: 18, tcap: 22 }, carrot: { tb: 3, tref: 18, tcap: 22 },
-  celery: { tb: 5, tref: 20, tcap: 24 }, potato: { tb: 5, tref: 18, tcap: 22 },
-};
+// cabbage heading in spring, eggplant and peppers needing more heat than tomatoes, and sweet potato and taro planted in May dug in autumn. Each crop's values are its grow, in its record (data/crops.js).
 // a crop of your own: from the growing temperatures on its packet (生育適温, e.g. 15–25 °C) — or, without them, plain
 // days (calendar days, not stretched by the cold or sped up by warmth) rather than a guess
 export function ownGrow(cr) {
@@ -64,8 +45,6 @@ export const growParams = id => {
   return GROW[kin(id)] || ownGrow(crop(id));                                     // else the crop it's like (or plain days)
 };
 export const isWarmCrop = id => !!growParams(id).warm;
-// heading brassicas almost stop growing in midwinter (that's why autumn-planted cabbage heads in spring)
-export const HEADING = ['cabbage', 'hakusai', 'broccoli', 'cauliflower'];
 function ddUntil(from, need, id, tempFn) {
   const daily = S.weather && S.weather.daily, T = tempFn || (x => dayTemp(x, daily));
   let d = from, acc = 0;
@@ -311,3 +290,4 @@ export function germWindow(p) {
   }
   return [addDays(p.sowDate, Math.round(cr.germ[0] * f)), addDays(p.sowDate, Math.round(cr.germ[1] * f))];
 }
+export { GROW, HEADING };   // (from the crop records)

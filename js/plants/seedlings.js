@@ -13,6 +13,7 @@ import { applyCrop, recalc } from '../pages/planting-form.js';
 import { crop, cropOptions, ic, varieties } from './crops.js';
 import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
 import { KEPT, keptText, lastLeaves, leafDialog, moveKept, startReady } from './growth.js';
+import { TRANSPLANT } from '../data/catalog.js';
 
 // ---------- your trays and pots ----------
 // The kinds of tray and pot you raise seedlings in (S.nursery.items): a tray type has cells (and how many across), a pot
@@ -50,23 +51,6 @@ export function migrateNursery() {
 // Raising each crop in a cell tray or small pot: typical days from sowing to planting out (in mild weather — the cold
 // stretches them), and the sign it's ready, which is what really counts. 0: not raised in trays (sown where it grows, or
 // planted from tubers, slips or cloves), with why. Every crop has its own; a crop of your own gets its days from you.
-export const TRANSPLANT = {
-  nasu: [70, 'At 7–8 true leaves, first flower bud showing'], celery: [70, 'At 6–8 true leaves'],
-  tomato: [55, 'When the first flower truss is opening'], minitomato: [55, 'When the first flower truss is opening'],
-  piman: [70, 'Around 10 true leaves, first flower bud showing'], chilli: [70, 'Around 10 true leaves'], shishito: [70, 'Around 10 true leaves'],
-  kyuri: [28, 'At 3–4 true leaves'], zucchini: [28, 'At 3–4 true leaves'], corn: [20, 'At 3 true leaves'],
-  edamame: [14, 'When the first pair of leaves has opened'], ingen: [14, 'When the first pair of leaves has opened'],
-  snappea: [21, 'At 3–4 true leaves'], sayaendo: [21, 'At 3–4 true leaves'], soramame: [25, 'At 2–3 true leaves'],
-  hakusai: [22, 'At 4–5 true leaves'], cabbage: [30, 'At 5–6 true leaves'], broccoli: [30, 'At 5–6 true leaves'], cauliflower: [30, 'At 5–6 true leaves'],
-  komatsuna: [18, 'At 3 true leaves'], mizuna: [20, 'At 3–4 true leaves'], chingensai: [20, 'At 3–4 true leaves'], nanohana: [25, 'At 4–5 true leaves'],
-  spinach: [21, 'At 2–3 true leaves — plant out young: its roots resent disturbance'], lettuce: [28, 'At 4–5 true leaves'], shungiku: [25, 'At 4–5 true leaves'],
-  naganegi: [55, 'About 20 cm tall'], hatamanegi: [55, 'About 20 cm tall'], onion: [55, '20–25 cm tall, about as thick as a pencil'],
-  strawberry: [40, 'At 3 true leaves'],
-  daikon: [0, 'roots resent moving — sow it where it grows'], carrot: [0, 'roots resent moving — sow it where it grows'],
-  hatsuka: [0, 'roots resent moving — sow it where it grows'], kabu: [0, 'roots resent moving — sow it where it grows'],
-  potato: [0, 'grown from seed potatoes, planted where they grow'], satoimo: [0, 'grown from seed tubers, planted where they grow'],
-  satsumaimo: [0, 'grown from slips (rooted cuttings), planted where they grow'], garlic: [0, 'grown from cloves, planted where they grow'],
-};
 // a crop's [days, sign] — for a crop of your own, the days you gave (null: not known)
 export function transplantOf(id) {
   if (TRANSPLANT[id]) return TRANSPLANT[id];
@@ -557,3 +541,4 @@ export function traySowPlan(id, plantDate) {
   return last;   // even the warmest spot is slow: the earliest sensible date, kept as warm as possible
 }
 export function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
+export { TRANSPLANT };   // (from the crop records)

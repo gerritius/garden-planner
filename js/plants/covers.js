@@ -9,6 +9,7 @@ import { addDays, daysBetween, esc, num, shortDate, todayStr, uid } from '../cor
 import { Draw } from '../draw.js';
 import { activeIn, container } from '../garden/garden.js';
 import { crop, kin } from './crops.js';
+import { NEEDS_BEES } from '../data/catalog.js';
 
 const COVER_TYPES = [
   ['insect', '🕸️', 'Insect net tunnel', '防虫ネット'], ['fushokufu', '🧣', 'Fushokufu tunnel', '不織布'], ['shade', '🕶️', 'Shade cloth', '寒冷紗・遮光'],
@@ -67,7 +68,6 @@ export function coverSection(c) {
     ${past.length ? `<details class="donelog"><summary>Taken off (${past.length})</summary><ul class="plist">${past.map(x => `<li data-act="editCover" data-id="${x.id}"><span class="lic">${coverType(x.type)[1]}</span><span class="grow">${coverType(x.type)[2]}<small>${coverWhere(c, x)} · ${shortDate(x.on)} – ${shortDate(x.off)}</small></span></li>`).join('')}</ul></details>` : ''}</section>`;
 }
 // reminders: lift fushokufu when frosts are over or it's warm, nets on crops that need pollinating, covers over nothing
-const NEEDS_BEES = ['kyuri', 'zucchini', 'strawberry', 'nasu', 'piman', 'shishito', 'chilli', 'tomato', 'minitomato', 'ingen', 'snappea', 'sayaendo', 'soramame', 'edamame'];
 export function coverNotes() {
   const td = todayStr(), days = Weather.days().slice(0, 7), out = [];
   const noFrost = days.length >= 5 && days.every(d => d.min > 3), warm = days.slice(0, 3).find(d => d.max >= 25);

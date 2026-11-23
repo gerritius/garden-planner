@@ -4,30 +4,18 @@
 import { potVolume } from '../climate/climate.js';
 import { S } from '../core/state.js';
 import { fmtAmt } from '../core/util.js';
-import { HANDFUL_G } from '../data/catalog.js';
+import { HANDFUL_G, K_NEED, N_NEED, P_NEED } from '../data/catalog.js';
 import { Draw } from '../draw.js';
 import { defAvail, defStart, libByName } from '../products/library.js';
 
 // ---------- what crops need ----------
-// typical nitrogen for the whole crop, g per m² (= kg/10a in Japanese 施肥基準), incl. side-dressing
-export const N_NEED = {
-  hakusai: 25, cabbage: 25, broccoli: 22, cauliflower: 22, daikon: 12, carrot: 12, komatsuna: 12, chingensai: 12, mizuna: 12, kabu: 12, hatsuka: 6,
-  spinach: 15, lettuce: 12, shungiku: 15, celery: 35, tomato: 22, minitomato: 22, nasu: 30, piman: 28, shishito: 28, chilli: 25, kyuri: 28, zucchini: 20,
-  potato: 10, satsumaimo: 3, satoimo: 20, edamame: 3, ingen: 8, snappea: 8, sayaendo: 8, soramame: 10, onion: 22, naganegi: 25, hatamanegi: 15, garlic: 20,
-  corn: 22, strawberry: 20, nanohana: 18,
-};
+// typical nitrogen (n), P as P₂O₅ (p) and K as K₂O (k) for the whole crop, g per m² (= kg/10a in Japanese 施肥基準),
+// incl. side-dressing — each crop's, in its record (data/crops.js)
 export const areaOf = (c, p) => c.type === 'bed' ? (p ? Draw.dims(c).W * (p.to - p.from) / 1e4 : Draw.dims(c).W * Draw.dims(c).L / 1e4) : (c.type === 'round' ? Math.PI * (c.diameter / 200) ** 2 : c.width * c.length / 1e4);
 
 // ---------- how much of each nutrient plants can use ----------
 // how much of each nutrient plants can use this season
 function availPK(npk) { return npk[3] >= 1 ? [0.8, 1] : npk[0] === 0 ? [0.6, 1] : npk[3] < 0.2 ? [0.3, 0.7] : [0.6, 0.8]; }
-// typical P (as P₂O₅) and K (as K₂O) per m² over the season (Japanese 施肥基準, kg/10a = g/m²)
-export const P_NEED = { hakusai: 20, cabbage: 20, broccoli: 20, cauliflower: 20, daikon: 10, carrot: 12, komatsuna: 10, chingensai: 10, mizuna: 10, kabu: 10, hatsuka: 6, spinach: 12, lettuce: 12, shungiku: 12, celery: 30,
-  tomato: 20, minitomato: 20, nasu: 25, piman: 25, shishito: 25, chilli: 20, kyuri: 25, zucchini: 20, potato: 15, satsumaimo: 8, satoimo: 20, edamame: 8, ingen: 10, snappea: 10, sayaendo: 10, soramame: 10,
-  onion: 20, naganegi: 15, hatamanegi: 10, garlic: 15, corn: 20, strawberry: 20, nanohana: 15 };
-export const K_NEED = { hakusai: 25, cabbage: 25, broccoli: 20, cauliflower: 20, daikon: 12, carrot: 15, komatsuna: 10, chingensai: 10, mizuna: 10, kabu: 12, hatsuka: 6, spinach: 12, lettuce: 12, shungiku: 12, celery: 30,
-  tomato: 25, minitomato: 25, nasu: 25, piman: 25, shishito: 25, chilli: 20, kyuri: 25, zucchini: 20, potato: 15, satsumaimo: 20, satoimo: 20, edamame: 10, ingen: 10, snappea: 10, sayaendo: 10, soramame: 12,
-  onion: 20, naganegi: 20, hatamanegi: 12, garlic: 15, corn: 20, strawberry: 20, nanohana: 15 };
 export const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 export const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
 export const isLiquid = n => { const p = libByName(n); return p ? p.form === 'liquid' : /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || ''); };
@@ -98,3 +86,4 @@ export function relOf(name) {
   const npk = npkOf(name); return npk && npk[3] >= 1 ? [0, 30] : [7, 55];
 }
 export const leadText = d => d <= 0 ? 'fast — works within days' : d <= 7 ? 'fairly fast — about a week' : d <= 14 ? 'medium — 1–2 weeks' : 'slow — 2–3 weeks, slower in cold soil';
+export { N_NEED, P_NEED, K_NEED };   // (from the crop records)

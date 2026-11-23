@@ -3,7 +3,7 @@
 import { setChrome } from '../core/router.js';
 import { S } from '../core/state.js';
 import { esc, shortDate } from '../core/util.js';
-import { FAMILIES } from '../data/catalog.js';
+import { FAMILIES, REST } from '../data/catalog.js';
 import { crop, cropName } from '../plants/crops.js';
 import { histWhen } from '../records/history.js';
 import { isPlanned, spanTraces } from './garden.js';
@@ -29,12 +29,7 @@ export function rotationNote(c, from, to, cropId, beforeDate, excludeId) {
 }
 
 // ---------- rotation plan: blocks and families ----------
-// years to leave before the same family goes back in the same spot (common Japanese 連作障害 guidance)
-const REST = {
-  tomato: 4, minitomato: 4, nasu: 4, piman: 3, shishito: 3, chilli: 3, potato: 3, kyuri: 2, zucchini: 2, snappea: 4, sayaendo: 4, soramame: 4,
-  edamame: 2, ingen: 2, hakusai: 2, cabbage: 2, broccoli: 2, cauliflower: 2, daikon: 1, kabu: 1, komatsuna: 1, chingensai: 1, mizuna: 1, nanohana: 1,
-  hatsuka: 0, onion: 1, naganegi: 1, garlic: 1, hatamanegi: 1, carrot: 1, celery: 2, lettuce: 1, shungiku: 1, spinach: 1, corn: 0, satsumaimo: 0, satoimo: 3, strawberry: 2,
-};
+// years to leave before the same family goes back in the same spot (common Japanese 連作障害 guidance): each crop's rest, in its record (data/crops.js)
 export const yearOfD = d => +String(d || '').slice(0, 4) || null;
 function grownIn(c) {   // [{cropId, family, year, from, to}]
   const out = [];

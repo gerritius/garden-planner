@@ -15,6 +15,40 @@ const CLIMATES = {
   await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto(U); await pg.waitForTimeout(400);
+  // the records themselves: every crop complete and every number in a sensible range
+  console.log('records:', await pg.evaluate(() => {
+    const probs = [], ids = new Set(), FLAGS = ['fruiting', 'heading', 'boltIfBig', 'heatBolt', 'dayBolt', 'splits', 'frostHeads', 'halfHardy', 'tall', 'netted', 'bees', 'noFreshCompost'];
+    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'reg', 'varieties', 'like', 'icon'];
+    for (const r of CROPS) {
+      const bad = m => probs.push(`${r.id}: ${m}`);
+      if (ids.has(r.id)) bad('duplicate id'); ids.add(r.id);
+      for (const k of Object.keys(r)) if (!KEYS.includes(k)) bad(`unknown field ${k}`);
+      if (r.like && !CROPS.some(x => x.id === r.like)) bad(`like '${r.like}' isn't a crop`);
+      if (!r.en || !r.ja) bad('needs English and Japanese names');
+    }
+    const num = (c, k, lo, hi) => { const v = c[k]; if (v == null || !(v >= lo && v <= hi)) probs.push(`${c.id}: ${k} ${JSON.stringify(v)} not in ${lo}–${hi}`); };
+    for (const c of CATALOG) {
+      const bad = m => probs.push(`${c.id}: ${m}`);
+      if (!GROUPS[c.group]) bad(`group ${c.group}`); if (!FAMILIES[c.family] || c.family === 'other') bad(`family ${c.family}`);
+      if (!['seed', 'seedling'].includes(c.method)) bad(`method ${c.method}`);
+      num(c, 'daysHarvest', 15, 400); num(c, 'rowSp', 5, 300); num(c, 'sowSp', 0.5, 300); num(c, 'spread', 3, 400); num(c, 'win', 2, 400);
+      if (c.method === 'seed' && c.depth != null) num(c, 'depth', 0, 20);
+      if (!Array.isArray(c.sow) || !c.sow.length || c.sow.some(m => !(m >= 1 && m <= 12))) bad(`sow ${JSON.stringify(c.sow)}`);
+      const g = c.grow; if (!g || !(g.tb < g.tref && g.tref <= g.tcap) || g.tb < -2 || g.tcap > 35 || (g.warm && !(g.warm[0] < g.warm[1]))) bad(`grow ${JSON.stringify(g)}`);
+      if (c.germ && !(c.germ[0] >= 1 && c.germ[0] <= c.germ[1] && c.germ[1] <= 60)) bad(`germ ${JSON.stringify(c.germ)}`);
+      if (c.soilT && !(c.soilT[0] < c.soilT[1] && (c.soilT[2] == null || c.soilT[1] < c.soilT[2]))) bad(`soilT ${JSON.stringify(c.soilT)}`);
+      const tp = c.transplant; if (!Array.isArray(tp) || !(tp[0] >= 0) || !tp[1]) bad(`transplant ${JSON.stringify(tp)}`);
+      else if (c.method === 'seed' && tp[0] && tp[0] >= c.daysHarvest) bad(`plant-out ${tp[0]} d not before harvest ${c.daysHarvest} d`);
+      if (c.thinSp != null && c.thinSp > 0 && !(c.daysThin > 0 && c.daysThin < c.daysHarvest)) bad(`daysThin ${c.daysThin}`);
+      for (const f of c.flags || []) if (!FLAGS.includes(f)) bad(`flag ${f}`);
+      if (!['heavy', 'medium', 'light', 'legume'].includes(c.feed)) bad(`feed ${c.feed}`);
+      for (const k of ['n', 'p', 'k']) if (c[k] != null) num(c, k, 0, 60);
+      if (c.ph && !(c.ph[0] >= 4.5 && c.ph[0] < c.ph[1] && c.ph[1] <= 8)) bad(`ph ${JSON.stringify(c.ph)}`);
+      if (c.rest == null || !(c.rest >= 0 && c.rest <= 7)) bad(`rest ${c.rest}`);
+      if ((c.jobs || []).some(j => !Array.isArray(j) || typeof j[0] !== 'string' || !(j[1] >= 0))) bad('jobs');
+    }
+    return probs.length ? `${probs.length} problems\n  ✗ ` + probs.join('\n  ✗ ') : `${CATALOG.length} crops, problems: none`;
+  }));
   for (const [name, t] of Object.entries(CLIMATES)) {
     const r = await pg.evaluate(({ name, t }) => {
       S.climate = t ? { lat: 0, lon: 0, name, t, rain: [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51], years: 'test', fetched: '2026-01-01' } : null;

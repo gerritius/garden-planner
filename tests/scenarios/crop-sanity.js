@@ -18,7 +18,7 @@ const CLIMATES = {
   // the records themselves: every crop complete and every number in a sensible range
   console.log('records:', await pg.evaluate(() => {
     const probs = [], ids = new Set(), FLAGS = ['fruiting', 'heading', 'boltIfBig', 'heatBolt', 'dayBolt', 'splits', 'frostHeads', 'halfHardy', 'tall', 'netted', 'bees', 'noFreshCompost'];
-    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'reg', 'varieties', 'like', 'icon', 'pests'];
+    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'reg', 'regAs', 'varieties', 'like', 'icon', 'pests'];
     for (const r of CROPS) {
       const bad = m => probs.push(`${r.id}: ${m}`);
       if (ids.has(r.id)) bad('duplicate id'); ids.add(r.id);
@@ -54,7 +54,7 @@ const CLIMATES = {
       S.climate = t ? { lat: 0, lon: 0, name, t, rain: [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51], years: 'test', fetched: '2026-01-01' } : null;
       applyClimate(true);
       const probs = [], summary = [];
-      const overwinter = id => { const pr = (typeof SOW_PROFILE_OF === 'function' ? SOW_PROFILE_OF(id) : null); return ['garlic', 'onion', 'hatamanegi', 'soramame', 'snappea', 'sayaendo', 'strawberry', 'nanohana'].includes(kin(id)) || (pr && pr.winter); };
+      const overwinter = id => !!(SOW_PROFILE[id] || {}).winter;   // grown through winter (garlic, onions, peas, broad beans…)
       for (const cr of CATALOG) {
         const months = cr.sow || [];
         if (!months.length) { if (name === 'Tokyo') probs.push(`${cr.id}: no sowing months`); summary.push(`${cr.id} —`); continue; }

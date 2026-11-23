@@ -20,7 +20,8 @@
 //   flags: fruiting (picked over a long season), heading (heads stop in midwinter), boltIfBig (big plants bolt after
 //          cold), heatBolt / dayBolt (bolts in heat / lengthening days), splits, frostHeads (heads damaged by frost),
 //          halfHardy, tall (needs support), netted (insect net), bees (needs pollinators), noFreshCompost (roots fork)
-//   reg: names in the pesticide register (legal per crop: never carried over to a linked crop)
+//   reg: names in the pesticide register (legal per crop: never carried over to a linked crop) · regAs: legally the same
+//        crop as that one (red cabbage → cabbage), so its registrations apply — only where that's certain
 //   pests: problems (plants/problems.js) it gets besides those of its family
 //   like: a linked entry — everything it doesn't give comes from that crop (not reg, varieties or names)
 
@@ -458,4 +459,82 @@ export const CROPS = [
     transplant: [25, 'At 3–4 true leaves'], win: 120, cont: 1, late: 'leaves get big and tough', jobs: [['Pick outer leaves', 50, 1, 'week']],
     feed: 'medium', n: 15, p: 10, k: 12, stages: [{ d: 30, t: 'monthly while picking' }], ph: [6.5, 7.5], lime: 200, rest: 1,
     reg: [['ふだんそう'], ['野菜類']], varieties: ['ブライトライツ', 'アイデアル', 'うまい菜', '西洋フダンソウ'] },
+  // ======== linked entries: grown like the crop named in like, with what differs ========
+  // ---- greens of the cabbage family ----
+  { id: 'tatsoi', en: 'Tatsoi', ja: 'ターサイ', color: '#2f6f35', like: 'chingensai', daysHarvest: 50, thinSp: 20, spread: 30, sow: [3, 4, 9, 10],
+    late: 'leaves toughen and it bolts in spring', varieties: ['ターサイ', '緑彩2号'] },
+  { id: 'mibuna', en: 'Mibuna', ja: '壬生菜', color: '#4f9a3a', like: 'mizuna', daysHarvest: 40, varieties: ['壬生菜', '京都中晩生'] },
+  { id: 'karashina', en: 'Mustard greens (karashina)', ja: 'からし菜', color: '#5f8f3a', like: 'komatsuna', daysHarvest: 40, thinSp: 10, spread: 25, sow: [3, 4, 9, 10],
+    late: 'leaves get hot and tough, and it bolts', varieties: ['葉からし菜', '黄からし菜', 'わさび菜', 'リアスからし菜'] },
+  { id: 'takana', en: 'Takana', ja: '高菜', color: '#3f6f35', like: 'komatsuna', layout: 'rows', rowSp: 45, sowSp: 5, thinStage: 'Down to one every 30–40 cm at 5–6 true leaves', thinSp: 35,
+    daysThin: 30, daysHarvest: 90, spread: 50, sow: [9, 10], profile: { falling: [12, 25] }, win: 60, late: 'bolts in spring — pick before the flower stalks rise', varieties: ['三池高菜', '紫高菜', '大葉高菜', 'かつお菜'] },
+  { id: 'nozawana', en: 'Nozawana', ja: '野沢菜', color: '#4f8f3a', like: 'komatsuna', rowSp: 30, thinSp: 10, daysHarvest: 60, spread: 30, sow: [8, 9],
+    late: 'leaves toughen after hard frosts', varieties: ['野沢菜'] },
+  { id: 'kosaitai', en: 'Purple choy sum (kosaitai)', ja: '紅菜苔', color: '#7a3f6a', like: 'nanohana', daysHarvest: 90, varieties: ['紅菜苔', '早生紅菜苔'] },
+  { id: 'kohlrabi', en: 'Kohlrabi', ja: 'コールラビ', color: '#9fbf6a', like: 'cabbage', rowSp: 30, sowSp: 25, daysHarvest: 55, spread: 30, win: 10,
+    late: 'the swollen stems go woody and split', jobs: [NET], varieties: ['グランデューク', 'サンバード', 'パープルバード'] },
+  { id: 'mekyabetsu', en: 'Brussels sprouts', ja: '芽キャベツ', color: '#4f7f3a', like: 'cabbage', rowSp: 60, sowSp: 50, daysHarvest: 100, spread: 60, sow: [7, 8],
+    win: 60, cont: 1, late: 'sprouts open up loosely', jobs: [NET, ['Strip the lower leaves as the sprouts form (下葉かき)', 60]], varieties: ['早生子持', 'ファミリーセブン'] },
+  { id: 'redcabbage', en: 'Red cabbage', ja: '紫キャベツ', color: '#7a3f7a', like: 'cabbage', daysHarvest: 90, regAs: 'cabbage', varieties: ['ルビーボール', 'レッドルーキー'] },
+  { id: 'romanesco', en: 'Romanesco', ja: 'ロマネスコ', color: '#9fbf4a', like: 'cauliflower', daysHarvest: 100, sow: [8, 9], profile: { heat: 20 }, varieties: ['ロマネスコ', 'ネオアート'] },
+  { id: 'stickbroc', en: 'Stem broccoli', ja: '茎ブロッコリー', color: '#3f7f3a', like: 'broccoli', daysHarvest: 60, win: 40, cont: 1, regAs: 'broccoli',
+    late: 'side shoots flower if not picked', varieties: ['スティックセニョール', 'グリーンスティック'] },
+  { id: 'kailan', en: 'Chinese broccoli (kailan)', ja: 'カイラン', color: '#3f6f3a', like: 'broccoli', rowSp: 30, sowSp: 25, daysHarvest: 50, spread: 35, win: 30, cont: 1,
+    late: 'stems toughen and flower', varieties: ['カイラン'] },
+  { id: 'minihakusai', en: 'Mini hakusai', ja: 'ミニ白菜', color: '#a8c86a', like: 'hakusai', rowSp: 30, sowSp: 25, thinSp: 25, daysHarvest: 55, spread: 30, regAs: 'hakusai',
+    varieties: ['タイニーシュシュ', '娃々菜', 'お黄にいり'] },
+  // ---- lettuces ----
+  { id: 'leaflettuce', en: 'Leaf lettuce', ja: 'リーフレタス', color: '#7fbf4a', like: 'lettuce', daysHarvest: 35, win: 30, cont: 1, flags: ['heatBolt', 'dayBolt', 'halfHardy'],
+    late: 'bolts and turns bitter', reg: [['リーフレタス', '非結球レタス'], ['野菜類']], varieties: ['グリーンリーフ', 'ロロロッサ', 'フリルアイス', 'レッドファイヤー'] },
+  { id: 'sunnylettuce', en: 'Red leaf lettuce (sunny lettuce)', ja: 'サニーレタス', color: '#9a4a3a', like: 'lettuce', daysHarvest: 35, win: 30, cont: 1, flags: ['heatBolt', 'dayBolt', 'halfHardy'],
+    late: 'bolts and turns bitter', reg: [['リーフレタス', '非結球レタス'], ['野菜類']], varieties: ['サニーレタス', 'レッドウェーブ'] },
+  { id: 'romaine', en: 'Romaine (cos) lettuce', ja: 'ロメインレタス', color: '#5f9f3a', like: 'lettuce', daysHarvest: 50, flags: ['heatBolt', 'dayBolt', 'halfHardy'], varieties: ['コスレタス', 'ロメインレタス'] },
+  { id: 'saladana', en: 'Butterhead lettuce', ja: 'サラダ菜', color: '#8fcf5a', like: 'lettuce', daysHarvest: 40, flags: ['heatBolt', 'dayBolt', 'halfHardy'], varieties: ['岡山サラダ菜', 'オーラム'] },
+  // ---- other greens ----
+  { id: 'okahijiki', en: 'Okahijiki (land seaweed)', ja: 'おかひじき', color: '#5f9f3a', icon: 'mizuna', like: 'spinach', layout: 'rows', rowSp: 20, sowSp: 2, thinSp: 5, daysHarvest: 40,
+    sow: [4, 5, 6], tender: true, soilT: [15, 22, 30], grow: { tb: 5, tref: 20, tcap: 26 }, profile: {}, flags: [], win: 21, cont: 1, late: 'stems get tough',
+    lime: 100, varieties: ['おかひじき'] },
+  { id: 'tsurumurasaki', en: 'Malabar spinach', ja: 'つるむらさき', color: '#6a3a5a', like: 'kushinsai', family: 'basella', rowSp: 60, sowSp: 30, thinSp: 30, daysHarvest: 60, spread: 60,
+    sow: [5, 6], flags: ['tall'], jobs: [['Put up net / trellis (ネット)', 20]], late: 'stems toughen and it flowers in autumn', varieties: ['緑茎つるむらさき', '赤茎つるむらさき'] },
+  // ---- herbs ----
+  { id: 'dill', en: 'Dill', ja: 'ディル', color: '#6aa05a', like: 'pakuchi', rowSp: 30, thinSp: 20, daysHarvest: 60, spread: 40, varieties: ['ディル', 'マンモス'] },
+  { id: 'egoma', en: 'Egoma (perilla)', ja: 'えごま', color: '#3f7a3a', like: 'shiso', varieties: ['えごま'] },
+  // ---- onions ----
+  { id: 'hanegi', en: 'Bunching onion (green onion)', ja: '葉ねぎ（小ねぎ）', color: '#4f9f3a', like: 'naganegi', method: 'seed', layout: 'continuous', depth: 0.5, rowSp: 15, sowSp: 1,
+    thinStage: 'Down to one every 1–2 cm (or small clumps)', thinSp: 2, daysThin: 30, daysHarvest: 80, spread: 5, sow: [3, 4, 5, 9], germ: [7, 12], profile: {},
+    regAs: 'naganegi', varieties: ['九条ねぎ', '万能ねぎ', '小春', '浅黄系九条'] },
+  { id: 'wakegi', en: 'Wakegi', ja: 'わけぎ', color: '#5aa040', like: 'rakkyo', daysHarvest: 60, sow: [8, 9], win: 150, cont: 1,
+    late: 'leaves yellow and it goes dormant in early summer', stages: [{ d: 30, t: 'after each cut' }], varieties: ['わけぎ'] },
+  { id: 'eshalot', en: 'Eshalot (young rakkyo)', ja: 'エシャレット', color: '#e0d8c0', like: 'rakkyo', daysHarvest: 200, win: 30, late: 'bulbs swell into ordinary rakkyo',
+    regAs: 'rakkyo', varieties: ['エシャレット'] },
+  { id: 'leek', en: 'Leek', ja: 'リーキ', color: '#7f9f5a', like: 'naganegi', daysHarvest: 150, rowSp: 60, sowSp: 15, spread: 15, varieties: ['リーキ', 'ポロねぎ'] },
+  // ---- peas and beans ----
+  { id: 'greenpea', en: 'Green peas (shelling)', ja: 'グリーンピース', color: '#5f9f3a', like: 'snappea', daysHarvest: 175, win: 14,
+    late: 'peas turn hard and starchy', varieties: ['ウスイ', '南海緑', 'つるなしグリーン'] },
+  { id: 'sasage', en: 'Yard-long bean (sasage)', ja: 'ささげ', color: '#4f8f3a', like: 'ingen', daysHarvest: 60, sow: [5, 6, 7], soilT: [15, 25, 35],
+    grow: { tb: 10, tref: 24, tcap: 28, warm: [10, 23] }, varieties: ['十六ささげ', '三尺ささげ'] },
+  { id: 'kuromame', en: 'Black soybean (edamame)', ja: '黒豆（枝豆）', color: '#3a3a3a', like: 'edamame', daysHarvest: 110, sow: [6], regAs: 'edamame',
+    varieties: ['丹波黒', '黒五葉'] },
+  { id: 'daizu', en: 'Soybean (dry beans)', ja: '大豆', color: '#c8b070', like: 'edamame', daysHarvest: 140, sow: [6, 7], win: 30,
+    late: 'pods split open and drop the beans', varieties: ['フクユタカ', 'エンレイ', 'タチナガハ'] },
+  { id: 'azuki', en: 'Azuki bean', ja: '小豆', color: '#8a2a2a', like: 'edamame', daysHarvest: 110, sow: [6, 7], win: 21,
+    late: 'pods split open and drop the beans', varieties: ['大納言', 'エリモショウズ', '丹波大納言'] },
+  // ---- gourds and melons ----
+  { id: 'makuwa', en: 'Oriental melon (makuwa)', ja: 'マクワウリ', color: '#d8c04a', like: 'melon', daysHarvest: 80, varieties: ['マクワウリ', '黄金まくわ', '銀泉まくわ'] },
+  { id: 'togan', en: 'Winter melon (tougan)', ja: '冬瓜', color: '#5f8f6a', like: 'kabocha', daysHarvest: 100, win: 60, late: 'keeps for months — pick before frost',
+    varieties: ['冬瓜', 'ミニ冬瓜', '琉球冬瓜'] },
+  { id: 'hechima', en: 'Luffa (hechima)', ja: 'へちま', color: '#4f8f3a', like: 'goya', daysHarvest: 70, late: 'fruit turn fibrous — fine for sponges, not for eating',
+    varieties: ['ナーベラー', '太へちま', '長へちま'] },
+  { id: 'spaghettisq', en: 'Spaghetti squash', ja: 'そうめんかぼちゃ', color: '#e0c050', like: 'kabocha', daysHarvest: 80, varieties: ['そうめんかぼちゃ', '金糸瓜'] },
+  // ---- tomatoes and peppers ----
+  { id: 'paprika', en: 'Bell pepper (paprika)', ja: 'パプリカ', color: '#d8402a', like: 'piman', daysHarvest: 80, win: 90,
+    late: 'over-ripe fruit soften and rot', varieties: ['ソニアミックス', 'セニョリータ', 'フルーピー'] },
+  { id: 'midtomato', en: 'Medium tomato', ja: '中玉トマト', color: '#d83a2a', like: 'tomato', daysHarvest: 65, varieties: ['フルティカ', 'シンディースイート', 'レッドオーレ'] },
+  // ---- tubers ----
+  { id: 'yacon', en: 'Yacon', ja: 'ヤーコン', color: '#b88a5a', icon: 'satsumaimo', like: 'satoimo', family: 'aster', method: 'seedling', rowSp: 100, sowSp: 60,
+    daysHarvest: 190, spread: 80, sow: [5], transplant: [0, 'grown from crowns or bought plants, planted where they grow'],
+    late: 'frost blackens the tops — dig soon after', varieties: ['サラダオカメ', 'アンデスの雪'] },
+  { id: 'nagaimo', en: 'Chinese yam (nagaimo)', ja: '長いも', color: '#c8b08a', icon: 'potato', like: 'satoimo', family: 'yam', rowSp: 100, sowSp: 30, depth: 10,
+    daysHarvest: 200, spread: 50, germ: [20, 30], soilT: [12, 20, 30], grow: { tb: 8, tref: 22, tcap: 28, warm: [8, 20] }, profile: { rising: [12, 20] }, flags: ['tall'], jobs: [['Put up tall supports for the vines (支柱)', 30]],
+    late: 'dig before the ground freezes', varieties: ['長いも', 'いちょういも', '大和いも'] },
 ];

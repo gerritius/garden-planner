@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.36.0",
+    "date": "2026-11-24",
+    "notes": [
+      "38 more crops, each grown like a close relative but with its own timings, spacing and season: tatsoi, mibuna, karashina, takana, nozawana, kosaitai, kohlrabi, Brussels sprouts, red cabbage, romanesco, stem broccoli, kailan, mini hakusai, leaf / sunny / romaine / butterhead lettuce, okahijiki, Malabar spinach, dill, egoma, bunching onion, wakegi, eshalot, leek, green peas, yard-long bean, black soybean, soybean, azuki, makuwa melon, winter melon, luffa, spaghetti squash, paprika, medium tomato, yacon and Chinese yam — 96 crops in all.",
+      "Spray registrations only show for a crop where they're certain to apply to it."
+    ]
+  },
+  {
     "version": "1.35.0",
     "date": "2026-11-24",
     "notes": [

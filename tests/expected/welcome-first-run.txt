@@ -9,9 +9,9 @@ step 3: Leafy greens 葉物野菜 | Cabbages & broccoli キャベツ・ブロッ
 step 4: Now add where things grow: a bed in the ground, or a pot, trough or grow bag. You draw what’s in it, and the jobs follow from that. ＋ Add my first bed or pot Later
 step 5: You’re set up 🌱 📋 Jobs for each day are on the home screen — tick them off as you go. 💾 Keep a backup. Your garden is only on this phone: Tools → Backup saves a copy as a file, or to Google Drive every day. 📱 Add it to your home screen to open it like an app: in Chrome’s ⋮ menu, “Add to Home screen” (or “Install app”). 🧺 Your crops, location and everything else can be changed in Tools. Go to my garden
 finished: #/ | first run: false | home says finish setting up: false
-crop list: Your crops / Other crops · 60 crops
-sowing calendar: 18 crops (of 58) · Your crops. Show all crops · Change my crops
-  show all: 58
+crop list: Your crops / Other crops · 98 crops
+sowing calendar: 18 crops (of 96) · Your crops. Show all crops · Change my crops
+  show all: 96
 Tools has My crops: true
 my crops page: 18 crops chosen — they come first in crop lists, and the sowing calendar and ideas are about them. The rest are still there under “Other crops”.
 existing garden opens on: (home)

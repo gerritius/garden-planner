@@ -50,7 +50,7 @@ export function sowDayOK(cr, d) {
     if (!((warm && pr.rising && T >= pr.rising[0] && T <= pr.rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]))) return false;
     // planted as it warms, the cold is behind it; planted as it cools, it has to be done before the cold — except crops
     // dug when frost takes the tops (autumn potatoes), which only need the growing weeks before that
-    if (warm) { const g = climGrow(cr, d); return !!g && g.days <= (cr.daysHarvest || 60) * 2; }
+    if (warm) { const g = climGrow(cr, d); return !!g && g.days <= (cr.daysHarvest || 60) * 1.5 && !(cr.tender && normalT(g.end) < 12); }
     const fe = cr.frostEnd ? frostEnd({ cropId: cr.id, sowDate: d }) : null;
     if (fe) return daysBetween(d, fe) >= (cr.daysHarvest || 60) * 0.7;
     const g = climGrow(cr, d); if (!g || g.days > (cr.daysHarvest || 60) * 2) return false;

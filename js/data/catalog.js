@@ -6,7 +6,7 @@ import { CROPS } from './crops.js';
 
 // fields a linked entry never takes from the crop it's like: its own name, colour, varieties — and spray registrations,
 // which are legal per crop
-const OWN_ONLY = ['id', 'en', 'ja', 'color', 'varieties', 'reg', 'like', 'icon'];
+const OWN_ONLY = ['id', 'en', 'ja', 'color', 'varieties', 'reg', 'regAs', 'like', 'icon'];
 const byIdRec = Object.fromEntries(CROPS.map(c => [c.id, c]));
 function resolve(r, seen = []) {
   if (!r.like) return r;
@@ -24,7 +24,8 @@ const flagged = f => CATALOG.filter(c => (c.flags || []).includes(f)).map(c => c
 export const GROW = table('grow'), TRANSPLANT = table('transplant'), SOW_PROFILE = table('profile'), SOIL_T = table('soilT');
 export const PH_RANGE = table('ph'), FEED = table('feed'), LIME_M2 = table('lime'), N_NEED = table('n'), P_NEED = table('p'), K_NEED = table('k');
 export const SIDE_STAGES = table('stages'), REST = table('rest');
-export const CROP_REG = Object.fromEntries(CROPS.filter(c => c.reg).map(c => [c.id, c.reg]));   // (only a crop's own)
+// (only a crop's own — or, where it's legally the same crop as another (red cabbage is キャベツ), that one's: regAs)
+export const CROP_REG = Object.fromEntries(CROPS.filter(c => c.reg || (c.regAs && byIdRec[c.regAs] && byIdRec[c.regAs].reg)).map(c => [c.id, c.reg || byIdRec[c.regAs].reg]));
 export const FRUITING = flagged('fruiting'), HEADING = flagged('heading'), BOLT_IF_BIG = flagged('boltIfBig'), HEAT_BOLT = flagged('heatBolt');
 export const DAY_BOLT = flagged('dayBolt'), SPLITTERS = flagged('splits'), FROST_HEADS = flagged('frostHeads'), HALF_HARDY = flagged('halfHardy');
 export const TALL = flagged('tall'), NETTED = flagged('netted'), NEEDS_BEES = flagged('bees'), NO_FRESH_COMPOST = flagged('noFreshCompost');
@@ -35,7 +36,8 @@ export const FAMILIES = {
   allium: ['Allium (onion family)', 'ヒガンバナ科'], cucurbit: ['Cucurbit (gourd family)', 'ウリ科'], umbellifer: ['Umbellifer (carrot family)', 'セリ科'],
   aster: ['Aster (daisy family)', 'キク科'], amaranth: ['Amaranth (spinach family)', 'ヒユ科'], grass: ['Grass family', 'イネ科'],
   morningglory: ['Morning glory family', 'ヒルガオ科'], aroid: ['Aroid (taro family)', 'サトイモ科'], rose: ['Rose family', 'バラ科'],
-  mallow: ['Mallow family (okra)', 'アオイ科'], ginger: ['Ginger family', 'ショウガ科'], mint: ['Mint family (shiso, basil)', 'シソ科'], other: ['Other', 'その他'],
+  mallow: ['Mallow family (okra)', 'アオイ科'], ginger: ['Ginger family', 'ショウガ科'], mint: ['Mint family (shiso, basil)', 'シソ科'],
+  basella: ['Basella family (Malabar spinach)', 'ツルムラサキ科'], yam: ['Yam family', 'ヤマノイモ科'], other: ['Other', 'その他'],
 };
 // How crops are grouped when you choose yours (what you'd look under, not botany).
 export const GROUPS = {

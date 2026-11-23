@@ -42,6 +42,11 @@ export function climateSection() {
 
 // ---------- climate from your location ----------
 export const TOKYO_T = NORMAL_T.slice(), TOKYO_RAIN = RAIN_MONTH.slice();
+// the climate packet days are written for (central Japan, 中間地): what a crop's catalogue days are worth in growth
+export function refNormalT(d) {
+  const x = pd(d), m = x.getMonth(), f = (x.getDate() - 15) / 30, n = f >= 0 ? (m + 1) % 12 : (m + 11) % 12;
+  return TOKYO_T[m] + (TOKYO_T[n] - TOKYO_T[m]) * Math.abs(f);
+}
 let _climKey = '', _climBusy = false;
 export function clearSeasonCaches() {
   for (const k in _need) delete _need[k];

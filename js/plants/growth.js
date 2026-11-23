@@ -1,7 +1,7 @@
 // How plants develop with the temperature they get: when seedlings come up, when to thin, true leaves, when the
 // harvest starts and how long the crop keeps (packet days, main harvest, holding in the ground).
 
-import { dayTemp, growUnits, normalT, tempFor } from '../climate/climate.js';
+import { dayTemp, growUnits, normalT, refNormalT, tempFor } from '../climate/climate.js';
 import { render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
@@ -119,17 +119,24 @@ export function startReady(s) {
 }
 // harvest: catalogue days hold for sowing at the crop's usual (best) time; colder sowings stretch out
 export const _need = {};
-// growth the catalogue days represent: normal temperatures from the usual sowing month nearest to this sowing
-function refMonth(id, effSow) {
-  const months = crop(id).sow || [], m = pd(effSow).getMonth() + 1;
-  if (!months.length || months.includes(m)) return m;
-  const dist = x => { const a = Math.abs(x - m); return Math.min(a, 12 - a); };
-  return months.slice().sort((a, b) => dist(a) - dist(b) || ((m - b + 12) % 12) - ((m - a + 12) % 12))[0];
+// Growth the catalogue days represent: packet days are for central Japan (中間地) at the crop's usual time there, so they
+// are worth the growth those days give with central-Japan temperatures from the usual sowing month nearest to this
+// sowing. Your own climate then decides how long that growth takes — cooler places slower, warmer ones faster — and a
+// crop sown in spring where it's usually autumn-sown (onions in Hokkaido) isn't counted as sitting through a winter.
+export function refMonth(id, effSow) {
+  const c = crop(id), months = (c.sowRef && c.sowRef.length ? c.sowRef : c.sow) || [], m = pd(effSow).getMonth() + 1;
+  if (!months.length) return m;
+  // the usual month whose central-Japan weather is most like this sowing's here: closest temperature, the same way
+  // (warming or cooling) — in central Japan that's the month itself; in Okinawa's January it's October, in Hokkaido's May, April
+  const T = normalT(effSow), up = normalT(addDays(effSow, 30)) > T;
+  const mid = mm => `2026-${String(mm).padStart(2, '0')}-15`;
+  const score = mm => Math.abs(refNormalT(mid(mm)) - T) + ((refNormalT(addDays(mid(mm), 30)) > refNormalT(mid(mm))) === up ? 0 : 6);
+  return months.slice().sort((a, b) => score(a) - score(b) || a - b)[0];
 }
-function calibratedNeed(id, days, offset, month) {
+export function calibratedNeed(id, days, offset, month) {
   const k = [id, days, offset, month].join('|'); if (_need[k] != null) return _need[k];
   const from = addDays(`2026-${String(month).padStart(2, '0')}-15`, offset), end = addDays(from, days);
-  let acc = 0; for (let d = from; d < end; d = addDays(d, 1)) acc += growUnits(id, normalT(d));
+  let acc = 0; for (let d = from; d < end; d = addDays(d, 1)) acc += growUnits(id, refNormalT(d));
   return (_need[k] = acc || days * 8);
 }
 export function harvestModel(p, raw) {
@@ -293,7 +300,11 @@ export function germWindow(p) {
   if (p.method !== 'seed' || !cr.germ || !p.sowDate) return null;
   const r = SOIL_T[kin(p.cropId)] || [5, 15], c = p.containerId && container(p.containerId);
   const slow = t => t >= r[1] ? 1 : t >= r[0] ? 1 + (r[1] - t) / Math.max(1, r[1] - r[0]) * 0.9 : 2.2;
-  let f = c && c.indoor ? 1 : slow(normalT(p.sowDate) + 1);   // soil runs a little warmer than the air mean
+  // the soil over the days they take to come up, not just the day they're sown: soil warming through spring brings
+  // them up sooner (taro planted in mid-April sprouts in late May), cooling through autumn later
+  const avgT = n => { let s = 0, k = 0; for (let i = 0; i <= n; i += 2) { s += normalT(addDays(p.sowDate, i)); k++; } return s / k; };
+  let f = 1;
+  if (!(c && c.indoor)) for (let i = 0; i < 3; i++) f = slow(avgT(Math.round(cr.germ[1] * f)) + 1);   // soil runs a little warmer than the air mean
   if (Math.abs(daysBetween(p.sowDate, todayStr())) <= 7 && !(c && c.indoor)) {
     const st = c ? soilTempFor(c, p.from, p.to) : soilTemps(), t = st && (st.week ?? st.now);
     if (t != null) f = slow(t);

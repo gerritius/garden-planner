@@ -3,5 +3,5 @@
 2026-09-15: emerge 2026-10-10 need 529 → harvest 2026-12-10
 2026-09-25: emerge 2026-10-20 need 529 → harvest 2026-12-10
 2026-10-05: emerge 2026-10-30 need 529 → harvest 2026-12-10
-2026-03-01: emerge 2026-04-12 need 886 → harvest 2026-06-19
+2026-03-01: emerge 2026-04-02 need 886 → harvest 2026-06-15
 errs []

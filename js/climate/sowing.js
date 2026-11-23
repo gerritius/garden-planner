@@ -6,12 +6,12 @@
 import { A, render, sekki, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
-import { addDays, esc } from '../core/util.js';
+import { addDays, esc, daysBetween } from '../core/util.js';
 import { Draw } from '../draw.js';
 import { gaps, sizeLabel } from '../garden/garden.js';
 import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
 import { allCrops, crop, cropName, ic, kin } from '../plants/crops.js';
-import { growParams } from '../plants/growth.js';
+import { frostEnd, harvestModel } from '../plants/growth.js';
 import { applyClimate, growUnits, NORMAL_T, normalT } from './climate.js';
 
 // ---------- sowing windows from temperature ----------
@@ -33,10 +33,12 @@ const SOW_PROFILE = {
 };
 const monthDays = (y, m) => [5, 15, 25].map(d => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
 // days of growth to harvest, using the usual temperatures from a sowing date (null if it never gets there within a year)
+// — the harvest estimate's own model (coming up first, then the packet's growth), so the months it offers and the dates it
+// gives can't disagree
 export function climGrow(cr, from) {
-  const g = growParams(cr.id), need = (cr.daysHarvest || 60) * Math.max(1, Math.min(g.tref, g.tcap) - g.tb);
-  let acc = 0, d = from;
-  for (let i = 1; i <= 365; i++) { d = addDays(d, 1); acc += growUnits(cr.id, normalT(d)); if (acc >= need) return { days: i, end: d }; }
+  const m = harvestModel({ cropId: cr.id, sowDate: from, method: cr.method === 'seed' ? 'seed' : 'seedling' }, true); if (!m) return null;
+  let acc = 0, d = m.from;
+  for (let i = 1; i <= 365; i++) { d = addDays(d, 1); acc += growUnits(cr.id, normalT(d)); if (acc >= m.need) return { days: daysBetween(from, d), end: d }; }
   return null;
 }
 const meanT = (a, b) => { let s = 0, n = 0; for (let d = a; d <= b; d = addDays(d, 3)) { s += normalT(d); n++; } return n ? s / n : normalT(a); };
@@ -46,10 +48,24 @@ const isWarming = d => normalT(addDays(d, 30)) > normalT(d);
 // crops that bolt (or spoil) when they mature in the heat
 export const boltsInHeat = id => !!(SOW_PROFILE[kin(id)] || {}).heat;
 // does sowing / planting on this day work for this crop, in this climate?
-function sowDayOK(cr, d) {
+export function sowDayOK(cr, d) {
   const pr = SOW_PROFILE[kin(cr.id)] || {}, T = normalT(d), warm = isWarming(d), coldest = Math.min(...NORMAL_T);
-  if (pr.winter) return coldest >= -2 ? !warm && T >= pr.winter[0] && T <= pr.winter[1] : !!(pr.spring && warm && T >= pr.spring[0] && T <= pr.spring[1]);
-  if (pr.rising || pr.falling) return !!((warm && pr.rising && T >= pr.rising[0] && T <= pr.rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]));
+  if (pr.winter) {   // grown through winter where winters are mild; sown in spring where they're hard (then it has to finish before the next winter)
+    if (coldest >= -2) return !warm && T >= pr.winter[0] && T <= pr.winter[1];
+    if (!(pr.spring && warm && T >= pr.spring[0] && T <= pr.spring[1])) return false;
+    const g = climGrow(cr, d); return !!g && g.days <= 240 && coldDays(d, g.end) <= 30;
+  }
+  if (pr.rising || pr.falling) {   // a set season — and then it still has to make it, like any other crop
+    if (!((warm && pr.rising && T >= pr.rising[0] && T <= pr.rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]))) return false;
+    // planted as it warms, the cold is behind it; planted as it cools, it has to be done before the cold — except crops
+    // dug when frost takes the tops (autumn potatoes), which only need the growing weeks before that
+    if (warm) { const g = climGrow(cr, d); return !!g && g.days <= (cr.daysHarvest || 60) * 2; }
+    const fe = cr.frostEnd ? frostEnd({ cropId: cr.id, sowDate: d }) : null;
+    if (fe) return daysBetween(d, fe) >= (cr.daysHarvest || 60) * 0.7;
+    const g = climGrow(cr, d); if (!g || g.days > (cr.daysHarvest || 60) * 2) return false;
+    if (cr.tender && minT(d, g.end) < 12) return false;
+    return pr.hardy || coldDays(d, g.end) <= 20;
+  }
   const seedT = SOIL_T[kin(cr.id)], seedling = cr.method !== 'seed';
   const lo = pr.plant ? pr.plant[0] : cr.tender ? (seedling ? 14 : (seedT ? seedT[0] : 14)) : Math.max(7, seedT && !seedling ? seedT[0] + 2 : 7);
   const hi = pr.plant ? pr.plant[1] : seedT && seedT[2] ? seedT[2] - 1 : cr.tender ? 29 : 26;
@@ -69,7 +85,10 @@ export function sowWindow(cr) {
   // crops picked over a season: the planting dates that give a good part of the longest picking season possible here
   const best = Math.max(0, ...res.flat().filter(v => typeof v === 'number'));
   const ok = v => v === true || (typeof v === 'number' && v >= Math.max(20, best * 0.6));
-  return res.map((r, i) => r.some(ok) ? i + 1 : 0).filter(Boolean);
+  // a month of the central-Japan chart counts if part of it works here; any other month only when most of it works (two
+  // of its early, middle and late days) — not because of one good day at its edge (mid-August corn in Tokyo)
+  const chart = cr.sowRef || [];
+  return res.map((r, i) => r.filter(ok).length >= (chart.includes(i + 1) ? 1 : 2) ? i + 1 : 0).filter(Boolean);
 }
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
 const SOW_RULES_VER = 2;   // bump when the rules change, so stored windows are worked out again

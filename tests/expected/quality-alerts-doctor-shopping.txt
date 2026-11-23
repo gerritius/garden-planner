@@ -1,7 +1,6 @@
 quality []
 sow chips [
   'Leaf onion',
-  'Radish◐',
   'Spinach◐',
   'Snap pea◐',
   'Onion',

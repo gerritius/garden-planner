@@ -18,7 +18,7 @@ that’s all: Patchy so farAbout 18% up. More may still come — the app will re
   → {"germ":{"result":"patchy","pct":18,"cameUp":"2026-11-17","over":true},"thinDate":"2026-12-07","harvestDate":"2026-12-17","jobs":[["thin","2026-12-07","Thin to 10 cm"]]}
 untick the 14 Nov look: 2026-11-17 4, 2026-11-18 18
 radish sown 1 Oct, nothing: Nothing up yetStill nothing after 48 days — longer than radish usually takes, even in cold soil. The seed may not have taken. Keep waiting — look again ~21 NovRe-sow today (dates start again)Stop chec | first choice: Re-sow today (dates start again)
-  re-sown → {"germ":null,"thinDate":"2026-12-07","harvestDate":"2026-12-22","jobs":[["thin","2026-12-07","Thin to 5 cm"],["germ","2026-11-23","Check seedlings are up (expected 20 Nov–23 Nov)"]]}
+  re-sown → {"germ":null,"thinDate":"2026-12-07","harvestDate":"2027-01-13","jobs":[["thin","2026-12-07","Thin to 5 cm"],["germ","2026-11-23","Check seedlings are up (expected 20 Nov–23 Nov)"]]}
 drill page: Continuous line (drill) · 10 rows · about 170 plants once thinned to 5 cm
 drill count: …or count the seedlings along 10 cm of row (about 10 seeds sown there — one every 1 cm) up
 2 seedlings there → share: 20

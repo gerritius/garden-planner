@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.33.1",
+    "date": "2026-11-24",
+    "notes": [
+      "Timings follow your climate properly: packet days are for central Japan, so cooler places now take longer and warmer ones less (they came out the same everywhere before). Crops usually grown through winter, sown in spring where winters are hard (onions, peas in Hokkaido), take months, not most of a year.",
+      "Taro planted in April is ready in about 6 months (it showed almost a year): sprouting time now follows the soil warming over the following weeks, not just the planting day.",
+      "Sowing months are only offered where the crop can finish in time: no taro in Hokkaido, no mid-August corn in Tokyo.",
+      "Behind the scenes: every crop is now checked automatically, sown in every month it's offered, in four climates (Tokyo, Sapporo, Kagoshima, Naha), for timings that don't make sense."
+    ]
+  },
+  {
     "version": "1.33.0",
     "date": "2026-11-23",
     "notes": [

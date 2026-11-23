@@ -1,8 +1,8 @@
 kicker: Western Tokyo (built-in climate) | tomato 4,5,6,7 | garlic 9,10 | timing N ms
 climate: ["Melbourne","2016–2025",[21.3,21.4,19.4],[47,48,50]] calls 1
-kicker: For Melbourne | tomato 1,9,10,11,12 | garlic 1,2,3,4 | normalT(Jul) 11
-after edit tomato 1,8,9,10,11 | own mark true {"tomato":[1,8,9,10,11]}
-after reset tomato 1,9,10,11,12
+kicker: For Melbourne | tomato 1,10,11,12 | garlic 2,3,4 | normalT(Jul) 11
+after edit tomato 1,8,10,11 | own mark true {"tomato":[1,8,10,11]}
+after reset tomato 1,10,11,12
 settings: ClimateSowing months, growth and harvest estimates, frost and watering use the usual weather for Melbourne (2016–2025 averages). J21°F21°M19°A17°M14°J12°J11°A12°S14°O16°N18°D20° ↻ Refresh climate for Melbourne | calls 1
 back to Tokyo normalT(Jul) 25 | tomato 4,5,6,7
 errs []

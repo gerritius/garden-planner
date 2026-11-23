@@ -16,7 +16,7 @@ import { container } from '../garden/garden.js';
 import { syncTasks } from '../garden/tasks.js';
 import { crop } from './crops.js';
 import { germWindow, harvestEstimate, thinEstimate } from './growth.js';
-import { NURSERY, startLeft, syncStartTasks } from './seedlings.js';
+import { startLeft, syncStartTasks, unitOf } from './seedlings.js';
 
 export const MOSTLY = 70;   // % up that counts as come up well: no more looks
 const AGAIN_NONE = 3, AGAIN_SOME = 4;   // days to the next look
@@ -133,7 +133,7 @@ export function germDialog(p, opts = {}) {
   const c = !st && container(p.containerId), drill = !st && p.layout === 'continuous' && !p.thinned;
   const sp = st ? 0 : Draw.spacingNow(p), stretch = sp >= 4 ? 30 : 10;
   const per = st ? startLeft(p) : drill ? Math.max(1, Math.round(stretch / sp)) : c ? Draw.count(c, p) : 0;
-  const unit = st ? NURSERY[p.kind].unit : '';
+  const unit = st ? unitOf(p) : '';
   const chips = [[0, 'None yet'], [5, 'A few'], [25, 'A quarter'], [50, 'Half'], [75, 'Most'], [100, 'All']];
   modal(`<h3>How many of the ${esc(lc(p))} have come up?</h3>
     <p class="muted small">Sown ${shortDate(p.sowDate)} (${since} day${since === 1 ? '' : 's'} ago)${gw ? ` · expected ${shortDate(gw[0])}–${shortDate(gw[1])}` : ''}${cs.length ? `<br>So far: ${cs.map(x => `${shortDate(x.date)} ${esc(pctText(x))}`).join(' · ')}` : ''}</p>
@@ -173,11 +173,11 @@ function afterLook(p) {
       : `Nothing up yet after ${since} days. ${esc(crop(p.cropId).en)} can take a while, especially in cold soil — keep it moist, and ${remind}. ${st ? 'Planting out' : 'Thinning'} waits until they're up.`;
     btns = [['keep', `Keep waiting — ${keep}`, !long], ['all', 'Re-sow today (dates start again)', long], ['stop', 'Stop checking — nothing will come up']];
   } else if (!g.over) {
-    msg = `${pctText(lastCheck(p)).replace(/^./, s => s.toUpperCase())}. More may still come — ${remind}. If that's all that will come up, re-sow the ${st ? 'empty ' + NURSERY[p.kind].unit + 's' : 'gaps'}.`;
-    btns = [['keep', `Keep checking — ${keep}`, true], ['gaps', `That’s all — I re-sowed the ${st ? 'empty ' + NURSERY[p.kind].unit + 's' : 'gaps'} today`], ['leave', 'That’s all — leave it as it is'], ['all', 'Re-sow everything today (dates start again)']];
+    msg = `${pctText(lastCheck(p)).replace(/^./, s => s.toUpperCase())}. More may still come — ${remind}. If that's all that will come up, re-sow the ${st ? 'empty ' + unitOf(p) + 's' : 'gaps'}.`;
+    btns = [['keep', `Keep checking — ${keep}`, true], ['gaps', `That’s all — I re-sowed the ${st ? 'empty ' + unitOf(p) + 's' : 'gaps'} today`], ['leave', 'That’s all — leave it as it is'], ['all', 'Re-sow everything today (dates start again)']];
   } else {
-    msg = `${pctText(lastCheck(p)).replace(/^./, s => s.toUpperCase())} — the same as last time, so that's probably all that will come up. Re-sow the ${st ? 'empty ' + NURSERY[p.kind].unit + 's' : 'gaps'}?`;
-    btns = [['gaps', `I re-sowed the ${st ? 'empty ' + NURSERY[p.kind].unit + 's' : 'gaps'} today`, true], ['leave', 'Leave it as it is'], ['all', 'Re-sow everything today (dates start again)']];
+    msg = `${pctText(lastCheck(p)).replace(/^./, s => s.toUpperCase())} — the same as last time, so that's probably all that will come up. Re-sow the ${st ? 'empty ' + unitOf(p) + 's' : 'gaps'}?`;
+    btns = [['gaps', `I re-sowed the ${st ? 'empty ' + unitOf(p) + 's' : 'gaps'} today`, true], ['leave', 'Leave it as it is'], ['all', 'Re-sow everything today (dates start again)']];
   }
   modal(`<h3>${g.result === 'none' ? 'Nothing up yet' : 'Patchy so far'}</h3><p class="msg">${msg}</p>
     <div class="btns col">${btns.map(([k, l, main]) => `<button class="btn${main ? ' primary' : ''}" data-r="${k}">${l}</button>`).join('')}</div>`, (m, close) => {

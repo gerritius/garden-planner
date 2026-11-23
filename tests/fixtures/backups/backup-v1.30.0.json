@@ -1,0 +1,1932 @@
+{
+ "app": "garden-planner",
+ "format": 1,
+ "exported": "2026-11-18T01:00:00.000Z",
+ "state": {
+  "format": 1,
+  "containers": [
+   {
+    "id": "bedA",
+    "type": "bed",
+    "name": "Plot A",
+    "width": 100,
+    "length": 200,
+    "margin": 10,
+    "history": [],
+    "notes": "North end of the community garden",
+    "created": "2026-03-01",
+    "covers": [
+     {
+      "id": "mwlezds0fawog",
+      "type": "insect",
+      "from": 80,
+      "to": 200,
+      "on": "2026-11-01",
+      "off": null
+     }
+    ],
+    "area": "a_mwlezds0gzp06",
+    "pos": [
+     0,
+     0
+    ]
+   },
+   {
+    "id": "bedB",
+    "type": "bed",
+    "name": "Plot B",
+    "width": 100,
+    "length": 200,
+    "margin": 10,
+    "history": [],
+    "created": "2026-03-01",
+    "soil": [
+     {
+      "id": "mwlezds0g49ka",
+      "date": "2026-11-14",
+      "from": 0,
+      "to": 200,
+      "ph": null,
+      "temp": 14,
+      "salt": "",
+      "moistLvl": "",
+      "note": ""
+     }
+    ],
+    "area": "a_mwlezds0gzp06",
+    "pos": [
+     130,
+     0
+    ]
+   },
+   {
+    "id": "g1",
+    "type": "round",
+    "name": "Bag 1",
+    "diameter": 40,
+    "depth": 35,
+    "margin": 2,
+    "history": [],
+    "created": "2026-03-01",
+    "mixLog": [
+     {
+      "id": "mwlezds0iz3ws",
+      "pid": "mwlezds0qdgg9",
+      "date": "2026-10-20",
+      "kind": "other",
+      "fresh": true
+     },
+     {
+      "id": "mwlezds0h8fwe",
+      "date": "2026-08-30",
+      "kind": "other",
+      "fresh": true
+     }
+    ],
+    "area": "a_mwlezds0gzp06",
+    "pos": [
+     260,
+     0
+    ]
+   },
+   {
+    "id": "g2",
+    "type": "round",
+    "name": "Bag 2",
+    "diameter": 40,
+    "depth": 35,
+    "margin": 2,
+    "history": [],
+    "created": "2026-03-01",
+    "mixLog": [
+     {
+      "id": "mwlezds096a1v",
+      "pid": "mwlezds00cnu7",
+      "date": "2026-09-01",
+      "kind": "other",
+      "fresh": true
+     }
+    ],
+    "area": "a_mwlezds0gzp06",
+    "pos": [
+     0,
+     240
+    ]
+   },
+   {
+    "id": "g3",
+    "type": "round",
+    "name": "Bag 3",
+    "diameter": 40,
+    "depth": 35,
+    "margin": 2,
+    "history": [],
+    "created": "2026-03-01",
+    "mixLog": [
+     {
+      "id": "mwlezds0j9i06",
+      "date": "2026-08-30",
+      "kind": "other",
+      "fresh": true
+     }
+    ],
+    "area": "a_mwlezds0gzp06",
+    "pos": [
+     70,
+     240
+    ]
+   },
+   {
+    "id": "r1",
+    "type": "rect",
+    "name": "Trough",
+    "width": 30,
+    "length": 65,
+    "depth": 25,
+    "margin": 2,
+    "history": [],
+    "created": "2026-03-01",
+    "mixLog": [
+     {
+      "id": "mwlezds0mn80e",
+      "pid": "mwlezds0hzdfd",
+      "date": "2026-10-25",
+      "kind": "other",
+      "fresh": true
+     }
+    ],
+    "area": "a_mwlezds0gzp06",
+    "pos": [
+     140,
+     240
+    ]
+   }
+  ],
+  "plantings": [
+   {
+    "id": "mwlezds08062r",
+    "containerId": "bedA",
+    "status": "active",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "garlic",
+    "variety": "Howaito Roppen",
+    "method": "seedling",
+    "layout": "staggered",
+    "dir": "across",
+    "sowDate": "2026-10-10",
+    "thinStage": "",
+    "thinDate": "",
+    "harvestDate": "2027-05-19",
+    "notes": "",
+    "daysFrom": 220,
+    "daysTo": 286,
+    "keepUntil": "",
+    "raise": "",
+    "from": 0,
+    "to": 80,
+    "depth": null,
+    "rowSp": 20,
+    "plantSp": 15,
+    "rows": null,
+    "thinSp": null,
+    "spread": 15,
+    "fert": [
+     {
+      "product": "Cow manure compost",
+      "amount": 1.6,
+      "unit": "kg"
+     },
+     {
+      "product": "Oyster shell lime",
+      "amount": 120,
+      "unit": "g"
+     },
+     {
+      "product": "Bokashi",
+      "amount": 4,
+      "unit": "handful"
+     }
+    ],
+    "series": [
+     {
+      "id": "mwlezds0yva4d",
+      "title": "Remove flower stalk (芽摘み)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2027-06-17",
+      "end": ""
+     }
+    ]
+   },
+   {
+    "id": "mwlezds00g5rk",
+    "containerId": "bedA",
+    "status": "active",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "cabbage",
+    "variety": "",
+    "method": "seedling",
+    "layout": "staggered",
+    "dir": "along",
+    "sowDate": "2026-09-25",
+    "thinStage": "",
+    "thinDate": "",
+    "harvestDate": "2027-01-02",
+    "notes": "",
+    "daysFrom": 80,
+    "daysTo": 104,
+    "keepUntil": "",
+    "raise": "",
+    "from": 80,
+    "to": 200,
+    "depth": null,
+    "rowSp": 45,
+    "plantSp": 45,
+    "rows": null,
+    "thinSp": null,
+    "spread": 45,
+    "fert": [
+     {
+      "product": "Cow manure compost",
+      "amount": 2.4,
+      "unit": "kg"
+     },
+     {
+      "product": "Oyster shell lime",
+      "amount": 180,
+      "unit": "g"
+     },
+     {
+      "product": "Bokashi",
+      "amount": 8,
+      "unit": "handful"
+     }
+    ],
+    "series": [
+     {
+      "id": "mwlezds0rohp1",
+      "title": "Cover with insect netting (防虫ネット)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-09-25",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0i9av6",
+      "title": "Earth up (土寄せ)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-10-13",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0kp2bf",
+      "title": "Pest check (害虫チェック) – undersides & new growth",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 1,
+      "per": "week",
+      "start": "2026-10-01",
+      "end": "2027-01-02"
+     }
+    ],
+    "diary": [
+     {
+      "id": "fixdiary1",
+      "date": "2026-11-10",
+      "note": "Hearts starting to form",
+      "photo": "fixphoto1",
+      "tags": []
+     }
+    ]
+   },
+   {
+    "id": "mwlezds0wri5w",
+    "containerId": "bedB",
+    "status": "active",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "daikon",
+    "variety": "",
+    "method": "seed",
+    "layout": "rows",
+    "dir": "across",
+    "sowDate": "2026-09-15",
+    "thinStage": "Down to 1 plant at 5–6 true leaves",
+    "thinDate": "2026-10-06",
+    "harvestDate": "2026-11-15",
+    "notes": "",
+    "daysFrom": 60,
+    "daysTo": 78,
+    "keepUntil": "",
+    "raise": "",
+    "from": 0,
+    "to": 100,
+    "depth": 1.5,
+    "rowSp": 60,
+    "plantSp": 30,
+    "rows": null,
+    "thinSp": 30,
+    "spread": 35,
+    "fert": [
+     {
+      "product": "Cow manure compost",
+      "amount": 2,
+      "unit": "kg"
+     },
+     {
+      "product": "Oyster shell lime",
+      "amount": 150,
+      "unit": "g"
+     },
+     {
+      "product": "Bokashi",
+      "amount": 5,
+      "unit": "handful"
+     }
+    ],
+    "series": [
+     {
+      "id": "mwlezds07ilqz",
+      "title": "Cover with insect netting (防虫ネット)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-09-15",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0bp6dm",
+      "title": "Earth up after thinning (土寄せ)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-10-08",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0d7kn7",
+      "title": "Pest check (害虫チェック) – undersides & new growth",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 1,
+      "per": "week",
+      "start": "2026-09-21",
+      "end": "2026-11-15"
+     }
+    ]
+   },
+   {
+    "id": "mwlezds03nj08",
+    "containerId": "bedB",
+    "status": "planned",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "tomato",
+    "variety": "",
+    "method": "seedling",
+    "layout": "rows",
+    "dir": "across",
+    "sowDate": "2027-05-03",
+    "thinStage": "",
+    "thinDate": "",
+    "harvestDate": "2027-07-14",
+    "notes": "",
+    "daysFrom": 70,
+    "daysTo": 91,
+    "keepUntil": "",
+    "raise": "buy",
+    "from": 100,
+    "to": 200,
+    "depth": null,
+    "rowSp": 60,
+    "plantSp": 50,
+    "rows": null,
+    "thinSp": null,
+    "spread": 50,
+    "fert": [
+     {
+      "product": "Cow manure compost",
+      "amount": 2,
+      "unit": "kg"
+     },
+     {
+      "product": "Oyster shell lime",
+      "amount": 100,
+      "unit": "g"
+     },
+     {
+      "product": "Bokashi",
+      "amount": 6.5,
+      "unit": "handful"
+     }
+    ],
+    "series": [
+     {
+      "id": "mwlezds0qczuu",
+      "title": "Put in stake / support (支柱)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2027-05-03",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0n2obb",
+      "title": "Remove side shoots (わき芽かき)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 1,
+      "per": "week",
+      "start": "2027-05-20",
+      "end": ""
+     },
+     {
+      "id": "mwlezds097gda",
+      "title": "Tie stems to support (誘引)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 1,
+      "per": "week",
+      "start": "2027-05-20",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0581ln",
+      "title": "Pest check (害虫チェック) – undersides & new growth",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 1,
+      "per": "week",
+      "start": "2027-05-12",
+      "end": ""
+     }
+    ]
+   },
+   {
+    "id": "mwlezds0qdgg9",
+    "containerId": "g1",
+    "status": "active",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "lettuce",
+    "variety": "",
+    "method": "seedling",
+    "layout": "staggered",
+    "dir": "across",
+    "sowDate": "2026-10-20",
+    "thinStage": "",
+    "thinDate": "",
+    "harvestDate": "2026-12-04",
+    "notes": "",
+    "daysFrom": 40,
+    "daysTo": 52,
+    "keepUntil": "",
+    "raise": "",
+    "from": 0,
+    "to": 40,
+    "depth": null,
+    "rowSp": 30,
+    "plantSp": 30,
+    "rows": null,
+    "thinSp": null,
+    "spread": 25,
+    "fert": [],
+    "series": [
+     {
+      "id": "mwlezds0t38c0",
+      "title": "Pest check (害虫チェック) – undersides & new growth",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 1,
+      "per": "week",
+      "start": "2026-10-29",
+      "end": "2026-12-04"
+     }
+    ],
+    "germ": {
+     "checks": [
+      {
+       "date": "2026-10-28",
+       "pct": 40
+      }
+     ],
+     "stopped": false,
+     "date": "2026-10-28",
+     "pct": 40,
+     "result": "patchy",
+     "over": false
+    }
+   },
+   {
+    "id": "mwlezds00cnu7",
+    "containerId": "g2",
+    "status": "active",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "potato",
+    "variety": "Dejima",
+    "method": "seed",
+    "layout": "center",
+    "dir": "across",
+    "sowDate": "2026-09-01",
+    "thinStage": "Remove extra shoots: keep 2–3 stems when they're 10–15 cm tall",
+    "thinDate": "",
+    "harvestDate": "2026-11-14",
+    "notes": "",
+    "daysFrom": 95,
+    "daysTo": 124,
+    "keepUntil": "",
+    "raise": "",
+    "from": 0,
+    "to": 40,
+    "depth": 8,
+    "rowSp": 60,
+    "plantSp": 30,
+    "rows": null,
+    "thinSp": null,
+    "spread": 50,
+    "fert": [],
+    "series": [
+     {
+      "id": "mwlezds0rxf26",
+      "title": "Remove extra stems, keep 2–3 (芽かき)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-09-21",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0z2fkw",
+      "title": "Earth up (土寄せ)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-09-25",
+      "end": ""
+     },
+     {
+      "id": "mwlezds0ed0h7",
+      "title": "Earth up again (土寄せ)",
+      "product": "",
+      "amount": null,
+      "unit": "",
+      "every": 0,
+      "per": "week",
+      "start": "2026-10-13",
+      "end": ""
+     }
+    ],
+    "harvests": [
+     {
+      "date": "2026-11-15",
+      "count": 4,
+      "note": "first dig"
+     }
+    ]
+   },
+   {
+    "id": "mwlezds0hzdfd",
+    "containerId": "r1",
+    "status": "active",
+    "created": "2026-11-18",
+    "thinned": false,
+    "photos": {},
+    "cropId": "spinach",
+    "variety": "",
+    "method": "seed",
+    "layout": "continuous",
+    "dir": "across",
+    "sowDate": "2026-10-25",
+    "thinStage": "At 2–3 true leaves",
+    "thinDate": "2026-12-09",
+    "harvestDate": "2027-01-12",
+    "notes": "",
+    "daysFrom": 40,
+    "daysTo": 52,
+    "keepUntil": "",
+    "raise": "",
+    "from": 0,
+    "to": 65,
+    "depth": 1,
+    "rowSp": 15,
+    "plantSp": 1,
+    "rows": null,
+    "thinSp": 5,
+    "spread": 15,
+    "fert": [],
+    "series": [],
+    "germ": {
+     "checks": [
+      {
+       "date": "2026-11-05",
+       "pct": 0
+      }
+     ],
+     "stopped": false,
+     "date": null,
+     "pct": 0,
+     "result": "none",
+     "over": false
+    }
+   }
+  ],
+  "tasks": [
+   {
+    "id": "mwlezds0p5v9e",
+    "plantingId": "mwlezds08062r",
+    "kind": "harvest",
+    "title": "Earliest harvest – check crop",
+    "due": "2027-05-19",
+    "done": false
+   },
+   {
+    "id": "mwlezds0nlvvd",
+    "plantingId": "mwlezds08062r",
+    "kind": "pickby",
+    "title": "Pick by now – after this bulbs split and skins rot",
+    "due": "2027-07-07",
+    "done": false
+   },
+   {
+    "id": "mwlezds0twwl8",
+    "plantingId": "mwlezds08062r",
+    "kind": "series",
+    "seriesId": "mwlezds0yva4d",
+    "title": "Remove flower stalk (芽摘み)",
+    "due": "2027-06-17",
+    "done": false
+   },
+   {
+    "id": "mwlezds0ljeps",
+    "kind": "water",
+    "plantingId": null,
+    "done": false,
+    "group": "bed:bedA",
+    "due": "2026-11-24",
+    "containerId": "bedA",
+    "title": "Water Plot A",
+    "note": "in the ground · about 24 L (12 L per m²) · every ~6 days without rain this time of year · rain counts: Sun 3 mm, Mon 3 mm, Tue 3 mm"
+   },
+   {
+    "id": "mwlezds0ylt61",
+    "plantingId": "mwlezds00g5rk",
+    "kind": "harvest",
+    "title": "Earliest harvest – check crop",
+    "due": "2027-01-02",
+    "done": false
+   },
+   {
+    "id": "mwlezds0j1j45",
+    "plantingId": "mwlezds00g5rk",
+    "kind": "pickby",
+    "title": "Pick by now – after this heads split open",
+    "due": "2027-03-29",
+    "done": false
+   },
+   {
+    "id": "mwlezds0cw48u",
+    "plantingId": "mwlezds00g5rk",
+    "kind": "series",
+    "seriesId": "mwlezds0rohp1",
+    "title": "Cover with insect netting (防虫ネット)",
+    "due": "2026-09-25",
+    "done": true,
+    "doneOn": "2026-09-25"
+   },
+   {
+    "id": "mwlezds0bufy4",
+    "plantingId": "mwlezds00g5rk",
+    "kind": "series",
+    "seriesId": "mwlezds0i9av6",
+    "title": "Earth up (土寄せ)",
+    "due": "2026-10-13",
+    "done": true,
+    "doneOn": "2026-10-13"
+   },
+   {
+    "id": "mwlezds04un3j",
+    "plantingId": "mwlezds00g5rk",
+    "kind": "series",
+    "seriesId": "mwlezds0kp2bf",
+    "title": "Pest check (害虫チェック) – undersides & new growth",
+    "due": "2026-10-01",
+    "done": false
+   },
+   {
+    "id": "mwlezds0flktr",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "thin",
+    "title": "Thin (Down to 1 plant at 5–6 true leaves) to 30 cm",
+    "due": "2026-10-06",
+    "done": false
+   },
+   {
+    "id": "mwlezds0vz4vu",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "harvest",
+    "title": "Earliest harvest – check crop",
+    "due": "2026-11-15",
+    "done": false
+   },
+   {
+    "id": "mwlezds0y5rkn",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "germ",
+    "title": "Check seedlings are up (expected 17 Sept–19 Sept)",
+    "due": "2026-09-19",
+    "done": false
+   },
+   {
+    "id": "mwlezds058mt6",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "pickby",
+    "title": "Pick by now – after this roots go pithy (す入り)",
+    "due": "2027-02-01",
+    "done": false
+   },
+   {
+    "id": "mwlezds031wxh",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "series",
+    "seriesId": "mwlezds07ilqz",
+    "title": "Cover with insect netting (防虫ネット)",
+    "due": "2026-09-15",
+    "done": false
+   },
+   {
+    "id": "mwlezds0q18ps",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "series",
+    "seriesId": "mwlezds0bp6dm",
+    "title": "Earth up after thinning (土寄せ)",
+    "due": "2026-10-08",
+    "done": false
+   },
+   {
+    "id": "mwlezds0195qg",
+    "plantingId": "mwlezds0wri5w",
+    "kind": "series",
+    "seriesId": "mwlezds0d7kn7",
+    "title": "Pest check (害虫チェック) – undersides & new growth",
+    "due": "2026-09-21",
+    "done": false
+   },
+   {
+    "id": "mwlezds0blkya",
+    "kind": "water",
+    "plantingId": null,
+    "done": false,
+    "group": "bed:bedB",
+    "due": "2026-11-24",
+    "containerId": "bedB",
+    "title": "Water Plot B",
+    "note": "in the ground · about 24 L (12 L per m²) · every ~6 days without rain this time of year · rain counts: Sun 3 mm, Mon 3 mm, Tue 3 mm"
+   },
+   {
+    "id": "mwlezds0u675o",
+    "plantingId": "mwlezds03nj08",
+    "plan": true,
+    "kind": "plan_prep",
+    "key": "prep:Cow manure compost",
+    "title": "Dig in Cow manure compost 2 kg — for Tomato (large) (Plot B 100–200 cm)",
+    "due": "2027-04-19",
+    "done": false
+   },
+   {
+    "id": "mwlezds0mfsq3",
+    "plantingId": "mwlezds03nj08",
+    "plan": true,
+    "kind": "plan_sow",
+    "key": "sow",
+    "title": "Plant out Tomato (large) — mix in Oyster shell lime 100 g + Bokashi 6.5 handfuls (~195 g) first",
+    "due": "2027-05-03",
+    "done": false
+   },
+   {
+    "id": "mwlezds0k5gkw",
+    "plantingId": "mwlezds0qdgg9",
+    "kind": "harvest",
+    "title": "Earliest harvest – check crop",
+    "due": "2026-12-04",
+    "done": false
+   },
+   {
+    "id": "mwlezds0i3egp",
+    "plantingId": "mwlezds0qdgg9",
+    "kind": "pickby",
+    "title": "Pick by now – after this bolts and turns bitter",
+    "due": "2027-01-26",
+    "done": false
+   },
+   {
+    "id": "mwlezds0kydyz",
+    "plantingId": "mwlezds0qdgg9",
+    "kind": "series",
+    "seriesId": "mwlezds0t38c0",
+    "title": "Pest check (害虫チェック) – undersides & new growth",
+    "due": "2026-10-29",
+    "done": false
+   },
+   {
+    "id": "mwlezds0a7mz0",
+    "kind": "water",
+    "plantingId": null,
+    "done": false,
+    "due": "2026-11-18",
+    "feeds": [],
+    "title": "Water pots & bags",
+    "note": "3 pots · every 3 days this time of year"
+   },
+   {
+    "id": "mwlezds0q6ei9",
+    "plantingId": "mwlezds00cnu7",
+    "kind": "harvest",
+    "title": "Earliest harvest – check crop",
+    "due": "2026-11-14",
+    "done": false
+   },
+   {
+    "id": "mwlezds0al83a",
+    "plantingId": "mwlezds00cnu7",
+    "kind": "germ",
+    "title": "Check seedlings are up (expected 21 Sept–1 Oct)",
+    "due": "2026-10-01",
+    "done": false
+   },
+   {
+    "id": "mwlezds0v6sfk",
+    "plantingId": "mwlezds00cnu7",
+    "kind": "pickby",
+    "title": "Pick by now – after this skins split, pests get in",
+    "due": "2026-12-31",
+    "done": false
+   },
+   {
+    "id": "mwlezds0cskpi",
+    "plantingId": "mwlezds00cnu7",
+    "kind": "series",
+    "seriesId": "mwlezds0rxf26",
+    "title": "Remove extra stems, keep 2–3 (芽かき)",
+    "due": "2026-09-21",
+    "done": false
+   },
+   {
+    "id": "mwlezds0qfjge",
+    "plantingId": "mwlezds00cnu7",
+    "kind": "series",
+    "seriesId": "mwlezds0z2fkw",
+    "title": "Earth up (土寄せ)",
+    "due": "2026-09-25",
+    "done": false
+   },
+   {
+    "id": "mwlezds0w8liw",
+    "plantingId": "mwlezds00cnu7",
+    "kind": "series",
+    "seriesId": "mwlezds0ed0h7",
+    "title": "Earth up again (土寄せ)",
+    "due": "2026-10-13",
+    "done": false
+   },
+   {
+    "id": "mwlezds07xo6m",
+    "plantingId": "mwlezds0hzdfd",
+    "kind": "harvest",
+    "title": "Earliest harvest – check crop",
+    "due": "2027-01-12",
+    "done": false
+   },
+   {
+    "id": "mwlezds0j6zqf",
+    "plantingId": "mwlezds0hzdfd",
+    "kind": "germ",
+    "title": "Check whether the spinach is up yet (nothing on 5 Nov — 24 days since sowing)",
+    "due": "2026-11-08",
+    "done": false
+   },
+   {
+    "id": "mwlezds0vizxd",
+    "plantingId": "mwlezds0hzdfd",
+    "kind": "pickby",
+    "title": "Pick by now – after this bolts as days lengthen",
+    "due": "2027-03-06",
+    "done": false
+   },
+   {
+    "id": "mwlezds00fo33",
+    "startId": "mwlezds0fi9y8",
+    "kind": "sgerm",
+    "title": "Check seedlings are up (expected 3 Nov–6 Nov)",
+    "due": "2026-11-06",
+    "done": false
+   },
+   {
+    "id": "mwlezds0lblru",
+    "startId": "mwlezds0fi9y8",
+    "kind": "transplant",
+    "title": "Plant out seedlings (本葉4–5枚)",
+    "due": "2026-12-02",
+    "done": false
+   },
+   {
+    "id": "mwlezds0jscea",
+    "kind": "water",
+    "plantingId": null,
+    "done": false,
+    "group": "seedlings",
+    "due": "2026-11-18",
+    "title": "Water seedlings",
+    "note": "2 lots of seedlings · every other day this time of year"
+   },
+   {
+    "id": "mwlezds0dzdwx",
+    "startId": "mwlezds0fjgde",
+    "kind": "sgerm",
+    "title": "Check seedlings are up (expected 3 Nov–6 Nov)",
+    "due": "2026-11-06",
+    "done": false
+   },
+   {
+    "id": "mwlezds0b98rb",
+    "startId": "mwlezds0fjgde",
+    "kind": "transplant",
+    "title": "Plant out seedlings (本葉4–5枚)",
+    "due": "2026-12-02",
+    "done": false
+   }
+  ],
+  "customCrops": [
+   {
+    "id": "c_mwlezds075m8e",
+    "en": "Okahijiki",
+    "ja": "おかひじき",
+    "color": "#5c9e48",
+    "method": "seed",
+    "layout": "rows",
+    "depth": 1,
+    "rowSp": 20,
+    "sowSp": 5,
+    "thinStage": "",
+    "thinSp": null,
+    "daysThin": null,
+    "daysHarvest": null,
+    "spread": null,
+    "varieties": [],
+    "custom": true,
+    "family": "other",
+    "sow": []
+   }
+  ],
+  "log": [
+   {
+    "id": "mwlezds0ncbss",
+    "date": "2026-10-08",
+    "kind": "fert",
+    "product": "Bokashi",
+    "amount": 300,
+    "unit": "g",
+    "text": "Dug in before planting garlic",
+    "cids": [
+     "bedA"
+    ],
+    "pids": [],
+    "productId": "bokashi",
+    "per": "each",
+    "phi": null
+   },
+   {
+    "id": "mwlezds0pq5ie",
+    "date": "2026-11-12",
+    "kind": "fert",
+    "product": "Kincho Liquid 6-6-7",
+    "amount": 10,
+    "unit": "mL",
+    "text": "per 5 L can",
+    "cids": [
+     "g1",
+     "g2"
+    ],
+    "pids": [],
+    "productId": null,
+    "per": "each",
+    "phi": null
+   },
+   {
+    "id": "mwlezds0szgux",
+    "date": "2026-11-05",
+    "kind": "spray",
+    "product": "Pai Benica V spray",
+    "amount": null,
+    "unit": "g",
+    "text": "Aphids on cabbage",
+    "cids": [],
+    "pids": [
+     "mwlezds00g5rk"
+    ],
+    "productId": "paiBenicaV",
+    "per": "each",
+    "phi": 1
+   }
+  ],
+  "created": "2026-11-18",
+  "lastBackup": null,
+  "hvMig": true,
+  "ownMigrated2": true,
+  "products": [
+   {
+    "notes": [
+     "Fast-acting: plants can use nearly all of it this season.",
+     "Mix it well into the soil as base fertiliser; as a side-dressing keep it a few cm from stems.",
+     "Not allowed in organic (JAS) growing."
+    ],
+    "uses": [
+     "base",
+     "side"
+    ],
+    "id": "kasei888",
+    "kind": "fert",
+    "en": "Chemical fertiliser 8-8-8",
+    "ja": "化成肥料 8-8-8",
+    "maker": "generic",
+    "organic": false,
+    "wait": 0,
+    "top": true,
+    "npk": "8-8-8",
+    "what": "Balanced quick-release granular fertiliser",
+    "form": "quick",
+    "npkv": [
+     8,
+     8,
+     8
+    ],
+    "avail": 1,
+    "start": 0,
+    "release": 30,
+    "lead": 0,
+    "density": 0.6,
+    "tpl": "kasei888",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Fermented, so it can go in on planting day as base fertiliser, or as a top-dressing."
+    ],
+    "uses": [
+     "base",
+     "side"
+    ],
+    "id": "bokashi",
+    "kind": "fert",
+    "en": "Bokashi",
+    "ja": "ぼかし肥料",
+    "maker": "サンアンドホープ (Sun & Hope)",
+    "organic": true,
+    "wait": 0,
+    "top": true,
+    "what": "Fermented organic fertiliser",
+    "form": "slow",
+    "npkv": [
+     4,
+     4,
+     2
+    ],
+    "avail": 0.7,
+    "start": 3,
+    "release": 40,
+    "lead": 7,
+    "density": 0.6,
+    "tpl": "bokashi",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Already fermented, so it can go in on planting day as base fertiliser or be used as a top-dressing."
+    ],
+    "uses": [
+     "base",
+     "side"
+    ],
+    "id": "toshoAburakasu",
+    "kind": "fert",
+    "en": "Tosho Super Fermented aburakasu",
+    "ja": "東商 超醗酵油かす",
+    "maker": "東商",
+    "organic": true,
+    "wait": 0,
+    "top": true,
+    "npk": "about 3-3-2",
+    "what": "Fermented oil cake — slow, gentle organic fertiliser",
+    "form": "slow",
+    "npkv": [
+     3,
+     3,
+     2
+    ],
+    "avail": 0.75,
+    "start": 3,
+    "release": 40,
+    "lead": 7,
+    "density": 0.6,
+    "tpl": "toshoAburakasu",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "As a top-dressing: use straight away, away from stems and leaves.",
+     "Dug in: leave about 2 weeks for fermented (発酵) pellets, 3–4 weeks for raw. It is strong — use less than compost."
+    ],
+    "uses": [
+     "base",
+     "side"
+    ],
+    "id": "chickenManure",
+    "kind": "fert",
+    "en": "Chicken manure",
+    "ja": "鶏ふん",
+    "maker": "generic",
+    "organic": true,
+    "wait": 14,
+    "top": true,
+    "npk": "about 3-5-3 (fermented)",
+    "what": "Quick-acting manure, rich in phosphate and calcium",
+    "form": "slow",
+    "npkv": [
+     3,
+     5,
+     3
+    ],
+    "avail": 0.6,
+    "start": 7,
+    "release": 55,
+    "lead": 10,
+    "density": 0.6,
+    "tpl": "chickenManure",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Sold as a fertiliser, not a registered pesticide — so the app treats it as a soil improver only.",
+     "Like other oil cakes: fine as a top-dressing; if you dig it in, leave about a week before sowing. Check the bag for its own rate."
+    ],
+    "uses": [
+     "base"
+    ],
+    "id": "neem",
+    "kind": "fert",
+    "en": "Pure Neem pellets",
+    "ja": "ピュアニーム ペレット",
+    "maker": "ダイコー (Daiko)",
+    "organic": true,
+    "wait": 7,
+    "top": true,
+    "npk": "neem seed cake",
+    "what": "Neem seed cake — organic fertiliser / soil improver",
+    "form": "slow",
+    "npkv": [
+     4,
+     1,
+     1
+    ],
+    "avail": 0.5,
+    "start": 14,
+    "release": 70,
+    "lead": 14,
+    "density": 0.6,
+    "tpl": "neem",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "As a top-dressing: use straight away, a little away from the stems.",
+     "Dug in: it ferments in the soil, giving off gas and heat and attracting seed-corn maggots (タネバエ) — leave 2–3 weeks before sowing or planting."
+    ],
+    "uses": [
+     "base",
+     "side"
+    ],
+    "id": "aburakasu",
+    "kind": "fert",
+    "en": "Aburakasu (oil cake)",
+    "ja": "油かす",
+    "maker": "generic",
+    "organic": true,
+    "wait": 21,
+    "top": true,
+    "npk": "about 5-2-1",
+    "what": "Unfermented rapeseed oil cake — slow nitrogen",
+    "form": "slow",
+    "npkv": [
+     5,
+     2,
+     1
+    ],
+    "avail": 0.7,
+    "start": 14,
+    "release": 70,
+    "lead": 21,
+    "density": 0.6,
+    "tpl": "aburakasu",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Dig in 2–3 weeks before planting (1 week if fully matured, 完熟)."
+    ],
+    "uses": [
+     "compost"
+    ],
+    "id": "cowCompost",
+    "kind": "compost",
+    "en": "Cow manure compost",
+    "ja": "牛ふん堆肥",
+    "maker": "generic",
+    "organic": true,
+    "wait": 14,
+    "top": false,
+    "what": "Soil improver with mild feeding value",
+    "npkv": [
+     0.7,
+     0.7,
+     0.7
+    ],
+    "avail": 0.1,
+    "start": 0,
+    "release": 180,
+    "lead": 14,
+    "density": 0.5,
+    "tpl": "cowCompost",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Dig in 2–3 weeks before planting."
+    ],
+    "uses": [
+     "compost"
+    ],
+    "id": "cowHuskCompost",
+    "kind": "compost",
+    "en": "Cow manure + rice husk compost",
+    "ja": "もみ殻入り牛ふん堆肥",
+    "maker": "generic",
+    "organic": true,
+    "wait": 14,
+    "top": false,
+    "what": "Soil improver — the husks open up heavy or wet soil",
+    "npkv": [
+     0.6,
+     0.7,
+     0.8
+    ],
+    "avail": 0.1,
+    "start": 0,
+    "release": 180,
+    "lead": 14,
+    "density": 0.5,
+    "tpl": "cowHuskCompost",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "If it’s fully matured (完熟), plant straight away; otherwise dig in a week or so before."
+    ],
+    "uses": [
+     "compost"
+    ],
+    "id": "barkCompost",
+    "kind": "compost",
+    "en": "Bark compost",
+    "ja": "バーク堆肥",
+    "maker": "generic",
+    "organic": true,
+    "wait": 7,
+    "top": false,
+    "what": "Soil improver — lightens soil, little feeding value",
+    "npkv": [
+     0.5,
+     0.3,
+     0.3
+    ],
+    "avail": 0.05,
+    "start": 0,
+    "release": 180,
+    "lead": 7,
+    "density": 0.5,
+    "tpl": "barkCompost",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Contact spray: kills what it hits and breaks down within a day or so in sunlight — good for aphids, stink bugs and beetles when you see them.",
+     "Spray the insects directly, including leaf undersides."
+    ],
+    "uses": [],
+    "id": "paiBenicaV",
+    "kind": "spray",
+    "en": "Pai Benica V spray",
+    "ja": "パイベニカVスプレー",
+    "maker": "KINCHO園芸",
+    "reg": "paiBenicaV",
+    "organic": true,
+    "what": "Pyrethrin (除虫菊 extract, 0.006%) — ready to use (原液)",
+    "organicNote": "Pyrethrin without piperonyl butoxide — allowed under organic JAS (別表2 ピレトリン乳剤).",
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "avail": 0.7,
+    "density": 0.6,
+    "wait": null,
+    "tpl": "paiBenicaV",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "BT only kills caterpillars that eat sprayed leaves — spray at the first sign of caterpillars, or before in butterfly season (Apr–Jun, Sep–Nov).",
+     "The oil and syrup smother aphids, mites and whitefly — they must be hit directly.",
+     "No limit on the number of uses and no waiting period before harvest on the registered crops."
+    ],
+    "uses": [],
+    "id": "benicaNatural",
+    "kind": "spray",
+    "en": "Benica Natural spray",
+    "ja": "ベニカナチュラルスプレー",
+    "maker": "KINCHO園芸",
+    "reg": "benicaNatural",
+    "organic": true,
+    "what": "BT (Bacillus thuringiensis) + vegetable oil + starch syrup (還元澱粉糖化物) — ready to use (原液)",
+    "organicNote": "All three ingredients are on the organic JAS permitted list (別表2: BT剤, 調合油, 還元澱粉糖化物).",
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "avail": 0.7,
+    "density": 0.6,
+    "wait": null,
+    "tpl": "benicaNatural",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Strong on caterpillars (diamondback moth, cabbage white, armyworms), thrips and leafminers.",
+     "Toxic to bees while wet — spray in the evening and not onto open flowers.",
+     "Make up only what you need and use it the same day."
+    ],
+    "uses": [],
+    "id": "spinoace",
+    "kind": "spray",
+    "en": "Spino Ace water granules",
+    "ja": "スピノエース顆粒水和剤",
+    "maker": "Corteva (コルテバ)",
+    "reg": "spinoace",
+    "organic": true,
+    "mix": true,
+    "what": "Spinosad 25% — granules to dilute in water",
+    "organicNote": "Spinosad (from a soil bacterium) — allowed under organic JAS (別表2 スピノサド水和剤).",
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "avail": 0.7,
+    "density": 0.6,
+    "wait": null,
+    "tpl": "spinoace",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Insecticide + fungicide in one, systemic — keep it as a last resort.",
+     "Registered for only a few vegetables (see below). Bought seedlings may already have had clothianidin — check the tag, as it counts towards the same limit.",
+     "Don’t spray onto open flowers."
+    ],
+    "uses": [],
+    "id": "benicaXnext",
+    "kind": "spray",
+    "en": "Benica X Next spray",
+    "ja": "ベニカXネクストスプレー",
+    "maker": "KINCHO園芸",
+    "reg": "benicaXnext",
+    "organic": false,
+    "what": "Clothianidin + pyridalyl + permethrin + mandestrobin + starch syrup — ready to use (原液)",
+    "organicNote": "Synthetic insecticides and fungicide — not organic. Clothianidin (a neonicotinoid) and permethrin are harmful to bees.",
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "avail": 0.7,
+    "density": 0.6,
+    "wait": null,
+    "tpl": "benicaXnext",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Unlike 苦土石灰 or 消石灰, it can go in with compost and fertiliser and you can plant the same day.",
+     "Skip it for potatoes (raises scab risk) and go light for sweet potato and strawberries."
+    ],
+    "uses": [
+     "lime"
+    ],
+    "id": "oysterLime",
+    "kind": "lime",
+    "en": "Oyster shell lime",
+    "ja": "有機石灰 (かき殻)",
+    "maker": "サンアンドホープ (Sun & Hope)",
+    "organic": true,
+    "wait": 0,
+    "top": false,
+    "what": "Ground oyster shell — gentle, slow lime with trace minerals",
+    "npkv": [
+     0,
+     0,
+     0
+    ],
+    "avail": 0,
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "density": 0.9,
+    "tpl": "oysterLime",
+    "plenty": false
+   },
+   {
+    "notes": [],
+    "uses": [],
+    "id": "stochu",
+    "kind": "homemade",
+    "en": "Stochu (home-made)",
+    "ja": "ストチュウ",
+    "maker": "home-made",
+    "organic": true,
+    "what": "Vinegar + wood vinegar + shōchū + a little Tabasco, diluted in water",
+    "organicNote": "Natural ingredients only.",
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "avail": 0.7,
+    "density": 0.6,
+    "wait": null,
+    "tpl": "stochu",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Mostly potash — good before fruiting crops, potatoes and onions.",
+     "Alkaline: it raises pH like lime, so count it as part of your liming.",
+     "Don’t mix it with nitrogen manures (chicken manure, aburakasu) at the same time — it drives off ammonia. Keep a week apart."
+    ],
+    "uses": [
+     "potash"
+    ],
+    "id": "woodAsh",
+    "kind": "lime",
+    "en": "Wood ash",
+    "ja": "草木灰",
+    "maker": "generic",
+    "organic": true,
+    "wait": 7,
+    "top": true,
+    "npk": "about 0-3-7",
+    "what": "Potash (K) and a little phosphate; alkaline like lime",
+    "npkv": [
+     0,
+     3,
+     7
+    ],
+    "avail": 0,
+    "start": 0,
+    "release": 30,
+    "lead": 0,
+    "density": 0.5,
+    "tpl": "woodAsh",
+    "plenty": false
+   },
+   {
+    "notes": [
+     "Mainly improves soil structure and drainage; its nutrient value is small.",
+     "Slightly alkaline.",
+     "Good mixed into seed and potting mixes, or around seedlings."
+    ],
+    "uses": [
+     "improver"
+    ],
+    "id": "kuntan",
+    "kind": "amend",
+    "en": "Kuntan (smoked rice husk charcoal)",
+    "ja": "もみ殻くん炭",
+    "maker": "generic",
+    "organic": true,
+    "wait": 0,
+    "top": true,
+    "npk": "about 0-0.2-0.5",
+    "what": "Soil conditioner — drainage, air and microbes; tiny amount of potash",
+    "npkv": [
+     0,
+     0.2,
+     0.5
+    ],
+    "avail": 0,
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "density": 0.15,
+    "tpl": "kuntan",
+    "plenty": false
+   },
+   {
+    "notes": [],
+    "uses": [],
+    "kind": "mix",
+    "maker": "",
+    "id": "other",
+    "en": "Potting mix (with starter fertiliser)",
+    "ja": "培養土",
+    "npkv": [
+     8,
+     8,
+     8
+    ],
+    "gPerL": 1,
+    "lasts": 30,
+    "what": "starter fertiliser for about a month",
+    "start": 7,
+    "release": 55,
+    "lead": 0,
+    "avail": 0.7,
+    "density": 0.6,
+    "wait": null,
+    "tpl": "other"
+   }
+  ],
+  "prodLib": 1,
+  "seeds": [
+   {
+    "id": "sd_mwlezds040z2i",
+    "cropId": "garlic",
+    "variety": "Howaito Roppen",
+    "maker": "Takii",
+    "front": "fixphoto1",
+    "back": null,
+    "notes": "",
+    "added": "2026-11-18"
+   },
+   {
+    "id": "sd_mwlezds0asw5a",
+    "cropId": "potato",
+    "variety": "Dejima",
+    "maker": "",
+    "front": null,
+    "back": null,
+    "notes": "",
+    "added": "2026-11-18"
+   }
+  ],
+  "sowCache": {
+   "key": "2|5.2,5.7,8.7,13.9,18.2,21.4,25,26.4,22.8,17.5,12.1,7.6|nasu:60,celery:90,potato:95,minitomato:60,tomato:70,naganegi:120,hatamanegi:120,carrot:110,komatsuna:35,edamame:80,hakusai:80,daikon:60,hatsuka:30,cabbage:80,spinach:40,kabu:50,piman:60,chilli:70,snappea:160,kyuri:35,onion:200,lettuce:40,broccoli:75,satoimo:180,satsumaimo:120,shungiku:45,mizuna:35,zucchini:45,corn:90,ingen:55,chingensai:45,garlic:220,shishito:50,sayaendo:160,soramame:200,cauliflower:80,strawberry:180,nanohana:100",
+   "m": {
+    "nasu": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "celery": [
+     4,
+     5,
+     7,
+     8,
+     9
+    ],
+    "potato": [
+     2,
+     3,
+     7,
+     8,
+     9
+    ],
+    "minitomato": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "tomato": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "naganegi": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "hatamanegi": [
+     10,
+     11
+    ],
+    "carrot": [
+     3,
+     4,
+     6,
+     7,
+     8
+    ],
+    "komatsuna": [
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10
+    ],
+    "edamame": [
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "hakusai": [
+     8,
+     9
+    ],
+    "daikon": [
+     3,
+     4,
+     5,
+     8,
+     9,
+     10
+    ],
+    "hatsuka": [
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10,
+     11
+    ],
+    "cabbage": [
+     3,
+     4,
+     7,
+     8,
+     9
+    ],
+    "spinach": [
+     3,
+     4,
+     5,
+     9,
+     10,
+     11
+    ],
+    "kabu": [
+     3,
+     4,
+     5,
+     8,
+     9,
+     10
+    ],
+    "piman": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "chilli": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "snappea": [
+     10,
+     11
+    ],
+    "kyuri": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "onion": [
+     11
+    ],
+    "lettuce": [
+     3,
+     4,
+     5,
+     9,
+     10
+    ],
+    "broccoli": [
+     3,
+     4,
+     8,
+     9
+    ],
+    "satoimo": [
+     4,
+     5
+    ],
+    "satsumaimo": [
+     5,
+     6,
+     7
+    ],
+    "shungiku": [
+     3,
+     4,
+     5,
+     9,
+     10
+    ],
+    "mizuna": [
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10
+    ],
+    "zucchini": [
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "corn": [
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "ingen": [
+     4,
+     5,
+     6,
+     7,
+     8
+    ],
+    "chingensai": [
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10
+    ],
+    "garlic": [
+     9,
+     10
+    ],
+    "shishito": [
+     4,
+     5,
+     6,
+     7
+    ],
+    "sayaendo": [
+     10,
+     11
+    ],
+    "soramame": [
+     10,
+     11
+    ],
+    "cauliflower": [
+     3,
+     4,
+     8,
+     9
+    ],
+    "strawberry": [
+     10
+    ],
+    "nanohana": [
+     9,
+     10
+    ]
+   }
+  },
+  "dataVersion": 8,
+  "lastEdit": "2026-11-18",
+  "phi": {
+   "Pai Benica V spray": 1
+  },
+  "starts": [
+   {
+    "id": "mwlezds0fi9y8",
+    "status": "growing",
+    "created": "2026-11-18T01:00:00.000Z",
+    "events": [
+     {
+      "id": "mwlezds00we45",
+      "type": "pot",
+      "date": "2026-11-15",
+      "n": 3,
+      "to": "mwlezds0fjgde"
+     }
+    ],
+    "cropId": "hakusai",
+    "variety": "",
+    "kind": "tray",
+    "tray": 1,
+    "count": 12,
+    "seeds": null,
+    "sowDate": "2026-11-01",
+    "notes": "",
+    "kept": "out"
+   },
+   {
+    "id": "mwlezds0fjgde",
+    "status": "growing",
+    "created": "2026-11-18T01:00:00.000Z",
+    "events": [],
+    "cropId": "hakusai",
+    "variety": "",
+    "kind": "pot",
+    "tray": null,
+    "count": 3,
+    "seeds": 1,
+    "sowDate": "2026-11-01",
+    "upOn": null,
+    "kept": "out",
+    "leaves": [],
+    "from": "mwlezds0fi9y8",
+    "pottedOn": "2026-11-15",
+    "notes": "Potted on from tray 1 on 15 Nov"
+   }
+  ],
+  "nursery": {
+   "cells": 72,
+   "cols": 12,
+   "traySize": "",
+   "potCm": 7.5
+  },
+  "weather": {
+   "lat": 35.75,
+   "lon": 139.42,
+   "name": "Higashiyamato"
+  },
+  "drive": {
+   "auto": true,
+   "clientId": "fixture-client-id.apps.googleusercontent.com",
+   "connected": false
+  },
+  "areas": [
+   {
+    "id": "a_mwlezds0gzp06",
+    "name": "Garden"
+   }
+  ],
+  "mapArea": "a_mwlezds0gzp06"
+ },
+ "photos": {
+  "fixphoto1": "data:image/png;base64,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lA8UodTtrPf19c6aM/uLT3z1v330kTc3vRErLh49evSEiROfe/YXq9bcsm3zZk3Xuzo7/+RTnzpx7Njly5c6OzomTLjh9rvuqqioyGQyP/y3J8PhyIXz5x792GOjxoz54fefzGZz4XD4A8uWzZ03zzTNlze+eOjAgcampvsfeCCVSr2yceOvn3323g9+cM7cub957leHDxycOXv2Bz/84V/+7GfxeH9xcfGRw4fPnD49dvz4eQsWXmu9suH55zVd6+/r+6NP/nEoFHrmqad6errvvf9+0zQvXbx0y9q1P/vpTz/62GObXnt17Lhxy5avsG1u6M6t6P4lVgKwTEvTtXNnz+zfty+dTo0ZO/aWW29LJ1O2Zb/4wguXL1+68cZJK1evfnH9C9lMNpVKfvihj5SWlgCylsuXX3/lFcbYujvuGDVmDBBteu21ixcuMI1daWl5c9ProXD4rrvvCYXCL724ITE4uGz58inTp7/04ob2a239/f3zFy5EBKZply5eeHPTJk3THnjooXQ6/epLGwHx9jvuqm9s2LB+/dUrLTNmzf7A0qXr1683TbO/v++hhz9SVlHBnRu+QVojIKE7KZbLm2rEWb8eQM84JAqBvEzkSizfdvMrs2BII2kp2/lMzDBCly9d+sUzTycSibHjxu3ZtfPypUvDQ0Nb39zc3dW14YXnq6qrL144//LGjWfOnN6xbduUqdN+9tOnz58/v3Xz5u6urldfftk0Tcu0fv6zn72yceOe3bvnzJv34voXrra2MsPo749/7zvfqa2rj0aLspmsZZnRoqhuGD/9yU/27N7982eeWb127frf/Hr71q27d+48d/bs3IVLxo4dN2bM2DFjxgBRMpn49XO/qqurP3P69GuvvPL0T/7zypWWufPm/9Pf/31fX99rr7x87OjRnz/z0yOHD7/68su6bmialhgY2LN79769e/ft3bN/7959e/fu3bvn4P4Dw8NDTNeuXbt6paXloY8+dvrUqVOnToZCIcs0K6urV65es2Xz5s7OzkMHDixfcXM4HNm/b69hhBDAMq1FS5aUlJa+9uqrzjNO5i9cOHXqtClTpv38Z89MmTpdY9qGF57f9PpruVxu1pw5v/zFzw8dOHDuzNkPfeRRsbta17RXX3mlsqpq0ZIllmU99+wvFixavGDRovUv/Gbfnj1dHR0feewPDu7ff/7c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"
+ }
+}

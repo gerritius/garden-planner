@@ -30,6 +30,7 @@ const files = fs.readdirSync(DIR).filter(f => f.endsWith('.json')).sort((a, b) =
       diaryPhoto: !!S.plantings.some(p => (p.diary || []).some(d => d.photo)), drive: !!(S.drive && S.drive.clientId),
       seeds: (S.seeds || []).map(s => `${s.cropId}${s.variety ? ' ' + s.variety : ''}${s.front || s.back ? ' (packet)' : ''}`).sort(), oldVarieties: 'customVarieties' in S,
       thin: [...new Set(S.plantings.map(p => p.thinStage).filter(Boolean))].sort(),
+      nursery: (typeof nurseryTypes === 'function' ? nurseryTypes().map(t => t.name).join(', ') : '') + ' | ' + (S.starts || []).map(s => `${s.cropId} ${s.count} in ${startWhere(s)}${s.from ? ' (replanted)' : ''}: ${startLeft(s)} left`).join(', '),
       germ: S.plantings.filter(p => p.germ).map(p => `${p.cropId}: ${germText(p)} [${germChecks(p).map(c => c.date + ' ' + c.pct + '%').join(', ')}]${S.tasks.some(t => t.plantingId === p.id && t.kind === 'germ' && !t.done) ? ' + a look to do' : ''}`).sort(),
     }));
     console.log(`== a backup saved by version ${ver(f).join('.')}`);   // (no "v" before it: the runner masks app versions written that way)
@@ -37,6 +38,7 @@ const files = fs.readdirSync(DIR).filter(f => f.endsWith('.json')).sort((a, b) =
     console.log(`  kept: ${r.containers}/${st.containers.length} beds & pots, ${r.plantings}/${st.plantings.length} plantings, ${r.done}/${st.tasks.filter(t => t.done).length} jobs done, ${r.log}/${(st.log || []).length} log entries, ${r.photos}/${Object.keys(fixture.photos || {}).length} photos, ${r.crops}/${(st.customCrops || []).length} own crops, ${r.starts}/${(st.starts || []).length} seedling trays, note photo ${r.diaryPhoto}${st.drive ? `, Drive settings ${r.drive}` : ''}`);
     console.log(`  converted: data version ${r.dataVersion}, covers ${JSON.stringify(r.covers)}, products: ${r.products.join(', ')}`);
     if (r.germ.length) console.log(`  germination: ${r.germ.join(' | ')}`);
+    if ((st.starts || []).length) console.log(`  seedlings: ${r.nursery}`);
     console.log(`  seeds: ${r.seeds.join(', ') || 'none'}${r.oldVarieties ? ' (old variety list still there!)' : ''} | thinning: ${r.thin.join(' / ') || 'none'}`);
     // every page, every bed and pot, every planting and its form
     const routes = ['#/', '#/cal', '#/log', '#/settings', '#/products', '#/map', '#/sow', '#/plan', '#/rotation', '#/seedlings', '#/review', '#/totals', '#/spend', '#/shop', '#/picksafe', '#/varieties', '#/timeline', '#/doctor']

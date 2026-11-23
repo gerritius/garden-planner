@@ -56,7 +56,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   console.log('start', JSON.stringify(await pg.evaluate(() => { const s = S.starts[0]; return [s.cropId, s.count, s.planId ? 'linked' : 'no', S.tasks.filter(t => t.startId === s.id && !t.done).map(t => t.kind), S.tasks.find(t => t.kind === 'plan_tray').done]; })));
   // plant out into planned spot
   await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);
-  await pg.click('[data-act=plantOut]'); await pg.waitForTimeout(200); await pg.screenshot({ path: SP + '/plantout_plan.png' });
+  await pg.click('[data-act=replant]'); await pg.waitForTimeout(200); await pg.screenshot({ path: SP + '/plantout_plan.png' });
   await pg.click('[data-plan]'); await pg.waitForTimeout(500);
   console.log('activated', JSON.stringify(await pg.evaluate(() => { const p = S.plantings.find(p => p.cropId === 'cabbage'); const s = S.starts[0]; return [p.status, p.sowDate, p.harvestDate, s.status, startLeft(s), S.tasks.filter(t => t.plantingId === p.id && !t.done).map(t => t.kind)]; })));
   console.log('errs', errs); await b.close();

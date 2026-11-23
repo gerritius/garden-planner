@@ -1,5 +1,6 @@
-// Seedlings in a 49-cell tray: looks at how many cells are up (as for seeds in a bed), then some potted on into 9 cm pots
-// as their own group, a couple planted out into a grow bag, one thrown away — each kept track of separately.
+// Seedlings in a 49-cell tray: looks at how many cells are up (as for seeds in a bed), then replanted a few at a time —
+// some into 9 cm pots, some into a new 9-cell tray (a size added there and then), two into a grow bag where snap peas
+// are already growing — and one thrown away, each kept track of separately.
 const { newContext } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
@@ -11,6 +12,7 @@ const U = 'http://localhost:8765/';
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
     S.containers.push({ id: 'g1', type: 'round', name: 'Grow bag 1', diameter: 40, depth: 35, margin: 2, history: [] });
+    S.plantings.push({ id: 'sn', containerId: 'g1', cropId: 'snappea', method: 'seed', layout: 'center', from: 0, to: 40, sowDate: '2026-10-20', status: 'active', photos: {}, series: [], harvests: [] });
     S.starts = [{ id: 'st', status: 'growing', created: '2026-11-04T09:00:00Z', events: [], cropId: 'hakusai', variety: '', kind: 'tray', tray: 1, count: 20, seeds: 2, sowDate: '2026-11-04', kept: 'out' }];
     syncStartTasks(start('st')); await save();
   });
@@ -30,25 +32,32 @@ const U = 'http://localhost:8765/';
   console.log('look 11 Nov: none'); await look({ pct: 0 }, '2026-11-11', 'keep');
   console.log('look 14 Nov: 9 of 20 cells'); await look({ cells: 9 }, '2026-11-14', 'keep');
   console.log('look 18 Nov: 17 of 20 cells'); await look({ cells: 17 }, '2026-11-18');
-  // pot on 5 into 9 cm pots
-  await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);
-  await pg.click('[data-act=potOn]'); await pg.waitForTimeout(200);
-  await pg.fill('#ptf input[name=n]', '5'); await pg.click('#ptf button.primary'); await pg.waitForTimeout(400);
-  // 2 into the grow bag
-  await pg.click('[data-act=plantOut][data-id=st]'); await pg.waitForTimeout(200);
-  console.log('plant out says:', await pg.textContent('#modal .hint'));
-  await pg.fill('#pof input[name=n]', '2'); await pg.click('#modal [data-c=g1]'); await pg.waitForTimeout(600);
+  const replant = async n => { await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300); await pg.click('[data-act=replant][data-id=st]'); await pg.waitForTimeout(200); await pg.fill('#pof input[name=n]', String(n)); };
+  // 5 into 9 cm pots
+  await replant(5);
+  console.log('replant offers:', (await pg.$$eval('#modal .pick a', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim()))).join(' | '));
+  await pg.click('#modal [data-nt="p:nt_pot"]'); await pg.waitForTimeout(400);
+  // 3 into a new 9-cell tray, a size typed in there and then
+  await replant(3); await pg.click('#modal [data-nt=add]'); await pg.waitForTimeout(100);
+  await pg.fill('#pon input[name=ncells]', '9'); await pg.fill('#pon input[name=ncols]', '3'); await pg.click('#pon button.primary'); await pg.waitForTimeout(400);
+  // 2 into the grow bag where snap peas grow: planting out goes where you say
+  await replant(2); await pg.click('#modal [data-c=g1]'); await pg.waitForTimeout(600);
+  console.log('form banner:', await pg.textContent('#view .banner'), '| layout:', await pg.evaluate(() => draft.layout + ' ' + (draft.positions || []).length));
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(600);
-  if (await pg.$('#modal [data-x=ok]')) { await pg.click('#modal [data-x=ok]'); await pg.waitForTimeout(400); }
+  console.log('after saving:', await pg.evaluate(() => location.hash.replace(/plant\/.+/, 'plant/…')), '| asked:', await pg.evaluate(() => !document.querySelector('#modal').hidden && document.querySelector('#modal').textContent.slice(0, 100)));
   // 1 thrown away
   await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);
   await pg.click('[data-act=binStart][data-id=st]'); await pg.waitForTimeout(200);
   await pg.fill('#dsf input[name=n]', '1'); await pg.click('#dsf label.chip:nth-of-type(2)'); await pg.click('#dsf button.danger'); await pg.waitForTimeout(400);
   console.log('groups:', JSON.stringify(await pg.evaluate(() => S.starts.map(s => [s.kind, s.count, startLeft(s), s.status, s.upOn, s.from || '', (s.events || []).map(e => e.type + ' ' + e.n)]))));
-  console.log('grow bag:', JSON.stringify(await pg.evaluate(() => S.plantings.map(p => [p.cropId, p.containerId, p.startId, p.method, p.seededOn]))));
+  console.log('grow bag:', JSON.stringify(await pg.evaluate(() => S.plantings.map(p => [p.cropId, p.containerId, p.startId || '', p.method, p.from + '–' + p.to, p.layout, (p.positions || []).length, p.raisedName || '']))));
+  console.log('tray & pot sizes:', JSON.stringify(await pg.evaluate(() => nurseryTypes().map(t => t.name))));
   console.log('page:', (await pg.$$eval('li.start', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim()))).join(' || '));
   console.log('log:', JSON.stringify(await pg.evaluate(() => startLogItems().sort((a, b) => a.date < b.date ? -1 : 1).map(x => [x.date, x.title, x.sub]))));
-  // tray drawing still adds up: 20 − 5 potted − 2 planted − 1 thrown = 12 cells
-  console.log('tray 1 free cells:', await pg.evaluate(() => trayFree(1)));
+  // the trays still add up: tray 1 has 20 − 5 − 3 − 2 − 1 = 9 cells used; tray 2 (9 cells) has 3
+  console.log('free cells:', await pg.evaluate(() => [trayFree(1), trayFree(2)]));
+  // starting more: every tray on the go, a new tray of each size, each pot size — or a size you don't have yet
+  await pg.evaluate(() => startDialog()); await pg.waitForTimeout(200);
+  console.log('start in:', await pg.$$eval('#sdf select[name=where] option', x => x.map(o => o.textContent).join(' | ')));
   console.log('errs', errs); await b.close();
 })();

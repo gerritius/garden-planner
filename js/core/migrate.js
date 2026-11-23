@@ -11,10 +11,11 @@ import { migrateCovers } from '../plants/covers.js';
 import { migrateGermChecks } from '../plants/germination.js';
 import { migrateHarvestDates, migrateThinningText } from '../plants/growth.js';
 import { migrateSeeds } from '../plants/seeds.js';
+import { migrateNursery } from '../plants/seedlings.js';
 import { migrateFeed, migrateOwnProducts, migrateProducts } from '../products/library.js';
 import { blank, S, setState } from './state.js';
 
-export const DATA_VERSION = 8;
+export const DATA_VERSION = 9;
 const STEPS = [
   { to: 2, what: 'harvest dates typed in by hand stay as they are', run: migrateHarvestDates },
   { to: 3, what: 'cover names: fleece and cloche → fushokufu, bird net → insect net', run: migrateCovers },
@@ -23,6 +24,7 @@ const STEPS = [
   { to: 6, what: 'all products become one editable library', run: migrateProducts },
   { to: 7, what: 'your varieties and packet photos become a seed library; thinning advice in English; care jobs timed by growth', run: () => { migrateSeeds(); migrateThinningText(); migrateCareJobTimes(); } },
   { to: 8, what: 'germination: looks every few days with roughly how many are up, instead of one answer', run: migrateGermChecks },
+  { to: 9, what: 'seedlings: a list of your tray and pot sizes instead of one of each', run: migrateNursery },
 ];
 
 const LISTS = { containers: 'beds and pots', plantings: 'plantings', tasks: 'jobs', log: 'log entries', customCrops: 'own crops', starts: 'seedling trays', products: 'products', seeds: 'seeds' };

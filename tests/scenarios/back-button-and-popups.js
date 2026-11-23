@@ -25,7 +25,7 @@ const U = 'http://localhost:8765/';
   await where('confirm open'); await pg.click('[data-x=ok]'); await pg.waitForTimeout(400);
   console.log('task deleted:', await pg.evaluate(() => !S.tasks.some(t => t.id === 'cj'))); await where('after delete');
   // modal that navigates: plant out from seedlings
-  await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300); await pg.click('[data-act=plantOut]'); await pg.waitForTimeout(200);
+  await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300); await pg.click('[data-act=replant]'); await pg.waitForTimeout(200);
   await pg.click('[data-c=g1]'); await pg.waitForTimeout(500); await where('plant-out navigated');
   console.log('errs', errs); await b.close();
 })();

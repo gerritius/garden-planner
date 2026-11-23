@@ -106,7 +106,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `soil-readings-and-feeding` | Soil readings feeding into the feeding advice |
 | `sowing-windows` | Sowing months worked out from temperature: matches the Japanese chart for Tokyo; other climates |
 | `split-bed-sections` | Splitting a bed into sections for several crops |
-| `seedlings-looks-pot-on` | A 49-cell tray: looks at how many cells are up, potting some on into 9 cm pots, planting two into a grow bag, throwing one away |
+| `seedlings-looks-replant` | A 49-cell tray: looks at how many cells are up, then replanting a few at a time — into 9 cm pots, a new 9-cell tray, a grow bag where snap peas grow — and throwing one away |
 | `spray-days` | Good spraying days from the forecast |
 | `spray-mixing-and-legality` | Spray dilution helper and the registered-crop legality check |
 | `spray-registry-table` | What the pesticide registry allows for each crop |
@@ -117,7 +117,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `thinning-sizes` | Plant sizes around thinning |
 | `tools-tabs` | Tools page tiles and the tabs between related pages |
 | `tray-seedlings-to-planting` | Seedlings in trays through to planting out |
-| `tray-sizes-and-bag-preset` | Seed tray / small pot sizes; the grow-bag preset |
+| `tray-sizes-and-bag-preset` | Your tray and pot sizes: changing one, adding more, two trays of different sizes side by side; the grow-bag preset |
 | `updates` | "What's new" once after an update; the notice when a newer version is out; Tools → What's new |
 | `warm-crops-cool-summers` | Warm-season crops in a cool-summer climate (e.g. London tomatoes) |
 | `watering-all-crops` | Watering jobs for pots, each bed, indoor pots and seedlings; they follow the latest forecast when it changes |

@@ -26,7 +26,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   // 3) plant out from the tray
   await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);
   console.log('tray ready line', (await pg.textContent('li.start')).replace(/\s+/g, ' ').match(/Sown.*?\)/)?.[0]);
-  await pg.click('[data-act=plantOut]'); await pg.waitForTimeout(200); await pg.click('[data-c=b1]'); await pg.waitForTimeout(400);
+  await pg.click('[data-act=replant]'); await pg.waitForTimeout(200); await pg.click('[data-c=b1]'); await pg.waitForTimeout(400);
   await pg.fill('#pf input[name=from]', '100'); await pg.dispatchEvent('#pf input[name=from]', 'input');
   const hv3 = await pg.inputValue('#pf input[name=harvestDate]'); await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(400);
   // 4) planned with tray, then a typed harvest date that must stick

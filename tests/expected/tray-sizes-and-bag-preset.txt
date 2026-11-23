@@ -1,4 +1,7 @@
-before: Tray: 49-cell tray (28.
-after: Tray: 72-cell tray (28.5 × 28. | free in tray 1: 72
+before: Your trays & pots: 49-cell tray, 9 cm pots.
+sizes: 72-cell tray (12 across), 9 cm pots, 9-cell tray (3 across), 12 cm pots | listed: 72-cell tray12 across · 28.5 × 28.5 cm · 3.5 cm deepchangeremove | 9 cm potspots · 7.5 cm deepchangeremove | 9-cell tray3 acrosschangeremove | 12 cm potspotschangeremove
+trays: Tray 1 · 72-cell tray · 42 of 72 cells free | Tray 2 · 9-cell tray · 0 of 9 cells free | free: [ 42, 0 ]
+cells drawn: 72, 9
+removable: 9 cm pots, 12 cm pots
 preset count: 1
 errs []

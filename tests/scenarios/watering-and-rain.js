@@ -34,13 +34,13 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.evaluate(() => startDialog()); await pg.waitForTimeout(200);
   await pg.selectOption('#sdf select[name=cropId]', 'lettuce'); await pg.fill('#sdf input[name=count]', '12'); await pg.click('#sdf button.primary'); await pg.waitForTimeout(300);
   await pg.evaluate(() => startDialog()); await pg.waitForTimeout(200);
-  await pg.selectOption('#sdf select[name=cropId]', 'broccoli'); await pg.click('[data-k=pot]'); await pg.fill('#sdf input[name=count]', '4'); await pg.fill('#sdf input[name=sowDate]', '2026-10-10'); await pg.click('#sdf button.primary'); await pg.waitForTimeout(300);
+  await pg.selectOption('#sdf select[name=cropId]', 'broccoli'); await pg.selectOption('#sdf select[name=where]', 'p:nt_pot'); await pg.fill('#sdf input[name=count]', '4'); await pg.fill('#sdf input[name=sowDate]', '2026-10-10'); await pg.click('#sdf button.primary'); await pg.waitForTimeout(300);
   console.log('tasks', JSON.stringify(await pg.evaluate(() => S.tasks.filter(t => t.startId).map(t => [t.kind, t.due, t.title]))));
   await pg.screenshot({ path: SP + '/home_seed.png', fullPage: true });
   await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300); await pg.screenshot({ path: SP + '/seedlings.png', fullPage: true });
   // plant out 15 hakusai into Bed 1
   const hid = await pg.evaluate(() => S.starts.find(s => s.cropId === 'hakusai').id);
-  await pg.click(`[data-act=plantOut][data-id="${hid}"]`); await pg.waitForTimeout(200); await pg.fill('#pof input[name=n]', '15'); await pg.click('[data-c=b1]'); await pg.waitForTimeout(500);
+  await pg.click(`[data-act=replant][data-id="${hid}"]`); await pg.waitForTimeout(200); await pg.fill('#pof input[name=n]', '15'); await pg.click('[data-c=b1]'); await pg.waitForTimeout(500);
   console.log('form', pg.url()); await pg.screenshot({ path: SP + '/plantform.png', fullPage: true });
   await pg.click('#pf button.primary'); await pg.waitForTimeout(500);
   console.log('planting', JSON.stringify(await pg.evaluate(() => { const p = S.plantings.find(p => p.cropId === 'hakusai'); return p && [p.method, p.sowDate, p.harvestDate, p.plantSp, p.startId && 'linked', p.seededOn]; })));

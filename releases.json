@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.31.0",
+    "date": "2026-11-23",
+    "notes": [
+      "Seedlings: one Replant button instead of \"Plant out\" and \"Pot on\". Choose how many and when, then where: a bed, bag or pot in the garden, or another tray or pots to grow on. The rest stay where they are.",
+      "Your own tray and pot sizes, as many as you use: a 49-cell and a 9-cell tray side by side, 9 cm and 12 cm pots… Add or change them on the Seedlings page, or add a new size right where you choose the tray.",
+      "Planting seedlings out into a bed, bag or pot where something is already growing works: they go where you say. (Other new plantings ask once instead of refusing.)",
+      "A few seedlings into a bag or pot are drawn as that many plants."
+    ]
+  },
+  {
     "version": "1.30.0",
     "date": "2026-11-23",
     "notes": [

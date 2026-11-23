@@ -257,8 +257,9 @@ export function pagePlantForm(p, c, q) {
         const occ = occupants(c.id, d.from, d.to, d.sowDate, hd, p && p.id);
         if (occ.length && !await confirmBox(`${occ.map(x => `<b>${esc(crop(x.cropId).en)}</b> (${x.from}–${x.to} cm) ${isPlanned(x) ? `is planned there from ${shortDate(x.sowDate)}` : `will probably be there until about ${shortDate(endOf(x))}`}`).join('<br>')}.<br>Save the plan anyway?`, 'Save plan')) return;
       } else {
+        // sharing space is up to you: seedlings you're planting out go where you put them; anything else asks once
         const clash = activeIn(c.id).find(x => (!p || x.id !== p.id) && x.from < d.to - 0.01 && x.to > d.from + 0.01);
-        if (clash) return alert(`That overlaps ${crop(clash.cropId).en} (${clash.from}–${clash.to} cm). Adjust From/To.`);
+        if (clash && !d.startId && !d.useStart && !await confirmBox(`<b>${esc(crop(clash.cropId).en)}</b> is already growing there (${clash.from}–${clash.to} cm).<br>Plant here too?`, 'Plant here too')) return;
       }
       await savePlanting(p, d, c);
     });
@@ -290,6 +291,7 @@ async function savePlanting(p, d, c) {
     const cj = careJobs(p.cropId);
     cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: careJobStart(p, j), end: /Pest check|Side-dress \(追肥\)$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
   }
+  if (isNew && p.layout === 'free' && (d.positions || []).length) p.positions = d.positions.map(q => q.slice());   // placed for you (e.g. seedlings planted out)
   if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;
   // photos
   p.photos = p.photos || {};

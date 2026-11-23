@@ -102,6 +102,7 @@ const serve = root => http.createServer((q, r) => {
     await dialog('cover', "coverDialog(container('bedA'))", { type: 'fleece', from: 80, to: 200, on: '2026-11-01' });
     await dialog('meter reading', "readingDialog(container('bedB'))", { ph: 6.1, temp: 14, date: '2026-11-14' });
     await dialog('seedlings in a tray', "startDialog()", { cropId: 'hakusai', count: 12, sowDate: '2026-11-01' });
+    await dialog('some potted on', "potOnDialog(S.starts[0])", { n: 3, date: '2026-11-15' });   // (versions with "Pot on")
     await dialog('own product (old list)', "ownProductDialog()", { en: 'Kincho Liquid 6-6-7', n: 6, p: 6, k: 7, form: 'liquid', per: 5, doses: '5, 10' });
     for (const id of ['g1', 'g3']) await dialog(`potting mix in ${id}`, `mixDialog(container('${id}'))`, { kind: id === 'g3' ? 'iris' : 'touikawa', fresh: true, date: '2026-08-30' });
 
@@ -127,6 +128,11 @@ const serve = root => http.createServer((q, r) => {
       if (has('PRODUCTS') && !S.prodLib && !Array.isArray(S.myProducts)) { S.myProducts = PRODUCTS.map(p => p.id).filter(id => ['bokashi', 'chickenManure', 'oysterLime', 'paiBenicaV', 'cowCompost'].includes(id)); out.push('ticked products'); }
       if (has('PRODUCTS') && !S.prodLib) { S.plenty = ['chickenManure']; out.push('plenty of chicken manure'); }
       if (has('COVER_TYPES') && COVER_TYPES.some(t => t[0] === 'fleece')) for (const c of S.containers) for (const x of c.covers || []) { x.type = 'fleece'; out.push('cover type fleece (renamed in later versions)'); }
+      // tray and pot sizes of your own; seedlings moved on into pots (versions with several sizes and "Replant")
+      if (has('nurseryTypes') && has('moveSeedlings')) {
+        const t9 = addNurseryType({ kind: 'tray', cells: 9, cols: 3 }), p12 = addNurseryType({ kind: 'pot', cm: 12 });
+        moveSeedlings(S.starts[0], 2, '2026-11-15', { nid: p12.id }); out.push('own tray & pot sizes (' + t9.name + ', ' + p12.name + '), 2 seedlings moved into pots');
+      } else if (has('nurseryDialog')) { S.nursery = { cells: 72, cols: 12, traySize: '', potCm: 7.5 }; out.push('own tray & pot sizes (old settings)'); }
       if (!S.weather) { S.weather = { lat: 35.75, lon: 139.42, name: 'Higashiyamato' }; out.push('weather location'); }
       if (has('driveSection')) { S.drive = { auto: true, clientId: 'fixture-client-id.apps.googleusercontent.com', connected: false }; out.push('Drive settings'); }
       await save();

@@ -43,7 +43,7 @@ export function pagePlant(p) {
   const thinnedTo = c && p.layout === 'continuous' && seed && !p.thinned && +p.thinSp > 0 ? Draw.count(c, Object.assign({}, p, { thinned: true })) : 0;
   const dl = [
     ['Planting', seed ? 'From seed' : 'Seedlings / tubers'],
-    p.startId || p.seededOn ? ['Raised from seed', `in ${p.raisedIn === 'pot' ? '9 cm pots' : 'a cell tray'}, sown ${shortDate(p.seededOn)}${p.sowDate ? ` (${daysBetween(p.seededOn, p.sowDate)} days before planting out)` : ''}`] : null,
+    p.startId || p.seededOn ? ['Raised from seed', `in ${p.raisedName ? (p.raisedIn === 'pot' ? '' : 'a ') + esc(p.raisedName) : p.raisedIn === 'pot' ? 'small pots' : 'a cell tray'}, sown ${shortDate(p.seededOn)}${p.sowDate ? ` (${daysBetween(p.seededOn, p.sowDate)} days before planting out)` : ''}`] : null,
     c && (p.from > 0 || p.to < L) ? ['Section', `${p.from}–${p.to} cm from top`] : null,
     ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && p.layout !== 'continuous' ? ` · ${plantsNow.toLocaleString('en-AU')} plants` : '') + (thinnedTo ? ` · about ${thinnedTo.toLocaleString('en-AU')} plants once thinned to ${p.thinSp} cm` : '')],
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,

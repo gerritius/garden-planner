@@ -21,7 +21,7 @@ import { pageSearch } from '../pages/search.js';
 import { groupTabs, pageSettings } from '../pages/tools.js';
 import { syncHarvest, syncThin } from '../plants/growth.js';
 import { pageDoctor } from '../plants/problems.js';
-import { applyNursery, nurseryDialog, pageSeedlings } from '../plants/seedlings.js';
+import { nurseryDialog, pageSeedlings } from '../plants/seedlings.js';
 import { pageVarieties, pageVariety } from '../plants/varieties.js';
 import { pageProductLib, pageProducts } from '../products/pages.js';
 import { pagePickSafe } from '../products/sprays.js';
@@ -76,7 +76,7 @@ export function render() {
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
   try { syncWx(); } catch (e) { console.warn(e); }
-  try { applyNursery(); applyClimate(); } catch (e) { console.warn(e); }
+  try { applyClimate(); } catch (e) { console.warn(e); }
   if (!bgStarted && savingAllowed()) {   // once per visit: check the Drive backup, fetch the climate, take the daily snapshot (never while not saving)
     bgStarted = true;
     setTimeout(() => driveTick().catch(e => console.warn('drive', e)), 300);

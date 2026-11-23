@@ -47,17 +47,33 @@ export function migrateNursery() {
   for (const s of S.starts || []) if (!s.nid) s.nid = s.kind === 'pot' ? 'nt_pot' : 'nt_tray';
 }
 
-// typical days from sowing to planting out (cell tray / 9 cm pot) — 本葉の枚数 is the real sign
+// Raising each crop in a cell tray or small pot: typical days from sowing to planting out (in mild weather — the cold
+// stretches them), and the sign it's ready, which is what really counts. 0: not raised in trays (sown where it grows, or
+// planted from tubers, slips or cloves), with why. Every crop has its own; a crop of your own gets its days from you.
 export const TRANSPLANT = {
-  hakusai: [22, '本葉4–5枚'], cabbage: [30, '本葉5–6枚'], broccoli: [30, '本葉5–6枚'], cauliflower: [30, '本葉5–6枚'], lettuce: [28, '本葉4–5枚'],
-  chingensai: [20, '本葉3–4枚'], komatsuna: [18, '本葉3枚'], mizuna: [20, '本葉3–4枚'], shungiku: [25, '本葉4–5枚'], nanohana: [25, '本葉4–5枚'],
-  naganegi: [55, '草丈20 cm'], hatamanegi: [55, '草丈20 cm'], onion: [55, '草丈20–25 cm, 鉛筆の太さ'], celery: [70, '本葉6–8枚'],
-  tomato: [55, '第1花房の開花前後'], minitomato: [55, '第1花房の開花前後'], nasu: [70, '本葉7–8枚, 一番花の蕾'], piman: [70, '本葉10枚前後, 一番花の蕾'],
-  shishito: [70, '本葉10枚前後'], chilli: [70, '本葉10枚前後'], kyuri: [28, '本葉3–4枚'], zucchini: [28, '本葉3–4枚'],
-  edamame: [14, '初生葉が開いた頃'], ingen: [14, '初生葉が開いた頃'], snappea: [21, '本葉3–4枚'], sayaendo: [21, '本葉3–4枚'],
-  soramame: [25, '本葉2–3枚'], corn: [20, '本葉3枚'], strawberry: [40, '本葉3枚'], daikon: [0, 'roots resent moving — sow direct'], carrot: [0, 'roots resent moving — sow direct'],
+  nasu: [70, 'At 7–8 true leaves, first flower bud showing'], celery: [70, 'At 6–8 true leaves'],
+  tomato: [55, 'When the first flower truss is opening'], minitomato: [55, 'When the first flower truss is opening'],
+  piman: [70, 'Around 10 true leaves, first flower bud showing'], chilli: [70, 'Around 10 true leaves'], shishito: [70, 'Around 10 true leaves'],
+  kyuri: [28, 'At 3–4 true leaves'], zucchini: [28, 'At 3–4 true leaves'], corn: [20, 'At 3 true leaves'],
+  edamame: [14, 'When the first pair of leaves has opened'], ingen: [14, 'When the first pair of leaves has opened'],
+  snappea: [21, 'At 3–4 true leaves'], sayaendo: [21, 'At 3–4 true leaves'], soramame: [25, 'At 2–3 true leaves'],
+  hakusai: [22, 'At 4–5 true leaves'], cabbage: [30, 'At 5–6 true leaves'], broccoli: [30, 'At 5–6 true leaves'], cauliflower: [30, 'At 5–6 true leaves'],
+  komatsuna: [18, 'At 3 true leaves'], mizuna: [20, 'At 3–4 true leaves'], chingensai: [20, 'At 3–4 true leaves'], nanohana: [25, 'At 4–5 true leaves'],
+  spinach: [21, 'At 2–3 true leaves — plant out young: its roots resent disturbance'], lettuce: [28, 'At 4–5 true leaves'], shungiku: [25, 'At 4–5 true leaves'],
+  naganegi: [55, 'About 20 cm tall'], hatamanegi: [55, 'About 20 cm tall'], onion: [55, '20–25 cm tall, about as thick as a pencil'],
+  strawberry: [40, 'At 3 true leaves'],
+  daikon: [0, 'roots resent moving — sow it where it grows'], carrot: [0, 'roots resent moving — sow it where it grows'],
+  hatsuka: [0, 'roots resent moving — sow it where it grows'], kabu: [0, 'roots resent moving — sow it where it grows'],
+  potato: [0, 'grown from seed potatoes, planted where they grow'], satoimo: [0, 'grown from seed tubers, planted where they grow'],
+  satsumaimo: [0, 'grown from slips (rooted cuttings), planted where they grow'], garlic: [0, 'grown from cloves, planted where they grow'],
 };
-export const tpDays = id => (TRANSPLANT[id] || [30])[0] || 25;
+// a crop's [days, sign] — for a crop of your own, the days you gave (null: not known)
+export function transplantOf(id) {
+  if (TRANSPLANT[id]) return TRANSPLANT[id];
+  const own = (S.customCrops || []).find(c => c.id === id);
+  return own && +own.tpDays > 0 ? [+own.tpDays, own.tpSign || ''] : null;
+}
+export const tpDays = id => (transplantOf(id) || [])[0] || 0;
 const DISCARD = ['Spare / too many', 'Weak or leggy', 'Pests or disease', 'Died / dried out'];
 export const start = id => (S.starts || []).find(s => s.id === id);
 export const startLeft = s => (s.count || 0) - (s.events || []).reduce((a, e) => a + (+e.n || 0), 0);
@@ -82,9 +98,10 @@ export function syncStartTasks(s) {
     if (open) Object.assign(open, { due, title }); else if (!anyDone) S.tasks.push({ id: uid(), startId: s.id, kind, title, due, done: false });
   };
   syncStartGerm(s);   // looks at how many are up, until they are
-  const tp = TRANSPLANT[s.cropId];
+  const tp = transplantOf(s.cropId);
   const pp = s.planId && planting(s.planId);
-  upsert('transplant', !s.no_transplant && !(pp && isPlanned(pp)), startReady(s), `Plant out seedlings${tp && tp[1] ? ` (${tp[1]})` : ''}`);
+  const ready = startReady(s);   // (none when the crop's days to planting out aren't known)
+  upsert('transplant', !!ready && !s.no_transplant && !(pp && isPlanned(pp)), ready, `Plant out seedlings${tp && tp[1] ? ` (${tp[1].replace(/^./, c => c.toLowerCase())})` : ''}`);
 }
 export function startTaskMeta(t) {
   const s = start(t.startId); if (!s) return '';
@@ -118,10 +135,10 @@ export function pageSeedlings() {
   setChrome('Seedlings', { back: true, kicker: 'Trays & small pots' });
   const td = todayStr(), grow = startsGrowing();
   const card = s => {
-    const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = startReady(s), n = daysBetween(td, ready), tp = TRANSPLANT[s.cropId];
+    const left = startLeft(s), age = daysBetween(s.sowDate, td), ready = startReady(s), n = daysBetween(td, ready), tp = transplantOf(s.cropId);
     return `<li class="start"><div class="srow"><span class="lic">${ic(s.cropId, 28)}</span><span class="grow"><b>${esc(crop(s.cropId).en)}</b>${s.variety ? ` · ${esc(s.variety)}` : ''}
       <small>${left} ${unitOf(s)}${left === 1 ? '' : 's'} · ${esc(startWhere(s))}${perOf(s) > 1 ? ` · ${perOf(s)} plants each (${plantsOf(s)} in all)` : s.seeds ? ` · ${s.seeds} seed${s.seeds > 1 ? 's' : ''} each` : ''}${' · ' + esc(keptText(s))}</small>
-      <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.germ ? ` · ${esc(germText(s))}` : s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1])})` : ''}</small>
+      <small>Sown ${shortDate(s.sowDate)} (${age} day${age === 1 ? '' : 's'})${s.germ ? ` · ${esc(germText(s))}` : s.upOn ? ` · up ${shortDate(s.upOn)}` : ''} · ${!ready ? 'ready to plant out: no estimate — add its days to planting out (⋯)' : n > 0 ? `ready in ~${n} days` : n === 0 ? 'ready about now' : 'ready to plant out'}${tp && tp[1] ? ` (${esc(tp[1].replace(/^./, c => c.toLowerCase()))})` : ''}</small>
       ${s.from ? `<small>Replanted from ${start(s.from) ? esc(startWhere(start(s.from))) : 'a tray'} on ${shortDate(s.movedOn || s.pottedOn)}</small>` : ''}${s.notes ? `<small>${esc(s.notes)}</small>` : ''}</span><button class="tmore" data-act="editStart" data-id="${s.id}" aria-label="Edit">⋯</button></div>
       <div class="btnrow"><button class="btn small primary" data-act="replant" data-id="${s.id}">🌱 Replant</button><button class="btn small" data-act="binStart" data-id="${s.id}">🗑 Discard</button>${!s.upOn || (s.germ && !s.germ.over) ? `<button class="btn small" data-act="upStart" data-id="${s.id}">${s.germ ? 'Look again' : 'How many are up?'}</button>` : `<button class="btn small" data-act="leafStart" data-id="${s.id}">🌿 ${lastLeaves(s) ? lastLeaves(s).n + ' leaves' : 'Leaves'}</button>`}</div></li>`;
   };
@@ -196,16 +213,26 @@ export function startDialog(s, preset) {
       <label>Kept<div class="seg wrap">${KEPT.map(([k, l]) => `<button type="button" data-kept="${k}" class="${(d.kept || 'out') === k ? 'on' : ''}">${l}</button>`).join('')}</div></label>
       ${isNew ? '' : `<label id="movedL" hidden>Moved there on <small>(earlier days count where they were before)</small><input name="moved" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label>`}
       <p class="hint" id="tpHint"></p>
+      <label id="ownTpL" hidden>Days from sowing to planting out <small>(from the packet: the app doesn’t know them for a crop of your own)</small><input name="tpd" type="number" inputmode="numeric" min="1" max="200"></label>
       <label>Notes<input name="notes" value="${esc(d.notes || '')}" placeholder="e.g. heat mat, under cover"></label>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del" data-own-confirm>Delete</button>'}<button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#sdf'), newType = wireNewSize(m, f);
     // these seedlings as the form has them: moved (when editing) on the day given
     const asKept = id => { const o = Object.assign({}, s || {}, { cropId: id, sowDate: f.sowDate.value || todayStr() }); if (!s) o.kept = d.kept; else moveKept(o, d.kept, (f.moved && f.moved.value) || td); return o; };
+    const ownCrop = id => (S.customCrops || []).find(c => c.id === id);
     const hint = () => {
       const id = f.cropId.value; m.querySelector('#svars').innerHTML = id ? varieties(id).map(v => `<option value="${esc(v)}">`).join('') : '';
-      const tp = TRANSPLANT[id];
-      m.querySelector('#tpHint').innerHTML = !id ? '' : tp && !tp[0] ? `⚠ ${esc(crop(id).en)}: ${esc(tp[1])}.` : `Plant out in about <b>${daysBetween(f.sowDate.value || todayStr(), startReady(asKept(id)))} days</b> at this time of year${tp && tp[1] ? ` — at ${esc(tp[1])}` : ''}.`;
+      const own = ownCrop(id), ask = !!own && !TRANSPLANT[id], tpL = m.querySelector('#ownTpL');
+      tpL.hidden = !ask; if (ask && !f.tpd.value && own.tpDays) f.tpd.value = own.tpDays;
+      const tp = ask ? (+f.tpd.value > 0 ? [+f.tpd.value, own.tpSign || ''] : null) : transplantOf(id);
+      const prev = own && own.tpDays; if (ask) own.tpDays = tp ? tp[0] : 0;   // (just for working it out: kept only when you save)
+      const ready = id && tp && tp[0] ? startReady(asKept(id)) : null;
+      if (ask) own.tpDays = prev;
+      m.querySelector('#tpHint').innerHTML = !id ? '' : tp && !tp[0] ? `⚠ ${esc(crop(id).en)}: ${esc(tp[1])}.`
+        : !ready ? `How long until they’re ready to plant out? Add the days from the packet below.`
+        : `Plant out in about <b>${daysBetween(f.sowDate.value || todayStr(), ready)} days</b> at this time of year${tp[1] ? ` — ${esc(tp[1].replace(/^./, c => c.toLowerCase()))}` : ''}.`;
     };
+    f.tpd.oninput = hint;
     f.cropId.onchange = hint; f.sowDate.onchange = hint; hint();
     const where = () => {
       const add = f.where.value === 'add'; m.querySelector('#ntNew').hidden = !add;
@@ -219,6 +246,7 @@ export function startDialog(s, preset) {
     if (del) del.onclick = async () => { close(); if (!await confirmBox('Delete these seedlings and their history?', 'Delete', true)) return; S.starts = S.starts.filter(x => x !== s); S.tasks = S.tasks.filter(t => t.startId !== s.id); await save(); render(); };
     f.onsubmit = async e => {
       e.preventDefault();
+      const own = ownCrop(f.cropId.value); if (own && !TRANSPLANT[own.id] && +f.tpd.value > 0) own.tpDays = Math.round(+f.tpd.value);   // your crop's days to planting out
       let v = f.where.value;
       if (v === 'add') { const t = newType(); if (!t) return; v = (t.kind === 'tray' ? 'n:' : 'p:') + t.id; }
       const at = placeOf(v);
@@ -510,6 +538,7 @@ export function traySowFor(id, plantDate) { return traySowPlan(id, plantDate).so
 // warmer if seedlings would barely grow there (e.g. tomatoes for Golden Week need to start indoors in late winter)
 export function traySowPlan(id, plantDate) {
   const usual = ((S.starts || []).slice(-1)[0] || {}).kept || 'out', tp = tpDays(id);
+  if (!tp) return { sow: plantDate, kept: usual, late: false, unknown: true };   // not raised in trays, or its days aren't known
   const order = KEPT.map(k => k[0]).slice(Math.max(0, KEPT.findIndex(k => k[0] === usual)));
   const lo = addDays(plantDate, -Math.round(tp * 2)), hi = addDays(plantDate, -7);
   let last = null;

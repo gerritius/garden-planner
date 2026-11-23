@@ -4,6 +4,7 @@
 // season plan fills its idea chips in just after it shows.
 
 import { normalT } from '../climate/climate.js';
+import { boltsInHeat } from '../climate/sowing.js';
 import { dataVer } from '../core/db.js';
 import { A } from '../core/router.js';
 import { S, save } from '../core/state.js';
@@ -25,7 +26,9 @@ const sowOK = (cr, m) => (cr.sow || []).includes(m);
 function plantOK(cr, m) {
   if (!raisable(cr.id)) return sowOK(cr, m);
   const k = Math.min(2, Math.round(tpDays(cr.id) / 30));
-  return sowOK(cr, m) || shiftM(cr.sow || [], k).includes(m);
+  // planting out later than the sowing months — but not on into the warming months for crops that bolt in the heat
+  const warming = normalT(`2026-${String(m).padStart(2, '0')}-15`) < normalT(`2026-${String(m % 12 + 1).padStart(2, '0')}-15`);
+  return sowOK(cr, m) || (shiftM(cr.sow || [], k).includes(m) && !(warming && boltsInHeat(cr.id)));
 }
 // quick hardy leaves (komatsuna, spinach, mizuna…) can go a couple of months past their window under a tunnel or Fushokufu
 const coverOK = (cr, m) => !cr.tender && ['brassica', 'amaranth', 'aster'].includes(cr.family) && cr.daysHarvest <= 70 && !sowOK(cr, m) && (shiftM(cr.sow || [], 1).includes(m) || shiftM(cr.sow || [], 2).includes(m));

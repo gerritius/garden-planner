@@ -10,7 +10,7 @@ import { amtFor } from '../feeding/nutrients.js';
 import { crop, cropName, ic } from '../plants/crops.js';
 import { harvestEstimate, KEPT } from '../plants/growth.js';
 import {
-  planStartLinks, startLeft, startPlanted, startWhere, syncStartTasks, TRANSPLANT, traySowFor, traySowPlan
+  planStartLinks, startLeft, startPlanted, startWhere, syncStartTasks, tpDays, traySowFor, traySowPlan
 } from '../plants/seedlings.js';
 import { productByName } from '../products/library.js';
 import { fmtTot, purchaseDialog, unitBase } from '../records/review.js';
@@ -19,7 +19,7 @@ import { gapLi } from './ideas.js';
 import { syncTasks, toggleTask } from './tasks.js';
 
 // ---------- planned plantings → jobs counted back from planting day ----------
-export const raisable = id => !!(TRANSPLANT[id] && TRANSPLANT[id][0] > 0);
+export const raisable = id => tpDays(id) > 0;
 export const linkedStart = p => (S.starts || []).find(s => s.planId === p.id && s.status === 'growing');
 function planItems(p) {
   const c = container(p.containerId), cr = crop(p.cropId), sd = p.sowDate, td = todayStr(), items = [], dayOf = [];

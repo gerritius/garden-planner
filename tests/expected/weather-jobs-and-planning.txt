@@ -1,9 +1,9 @@
 wx tasks [["wind","2026-11-19","Secure supports & nets before strong wind on Fri (gusts 62 km/h)"],["rain","2026-11-20","Prepare for heavy rain on Sat (55 mm)"]]
 spray line none
 gaps [
-  '0–100 cm free from 31 Dec · after Hakusai Spinach 🌱 done ~16 MarLettuce 🪴 done ~27 AprShungiku 🌱 done ~28 Apr💡 More ideas…',
+  '0–100 cm free from 31 Dec · after Hakusai Spinach 🪴 done ~13 FebLettuce 🪴 done ~27 AprShungiku 🌱 done ~28 Apr💡 More ideas…',
   '100–200 cm free from 10 Jun · after Snap pea Mizuna 🪴 done ~6 JulKomatsuna 🪴 done ~8 JulRadish 🌱 done ~19 JulBok choy 🪴 done ~19 Jul💡 More ideas…',
-  'Whole pot free now Mizuna 🪴 done ~24 DecKomatsuna 🪴 done ~27 DecRadish 🌱 done ~3 JanShungiku 🪴 done ~10 Jan💡 More ideas…'
+  'Whole pot free now Mizuna 🪴 done ~24 DecKomatsuna 🪴 done ~27 DecSpinach 🪴 done ~29 DecRadish 🌱 done ~3 Jan💡 More ideas…'
 ]
 cabbage chip null
 harvest 2027-05-19 rot Same family as the crop before it. Hakusai will be here until about 30 Dec — both are Brassica (cabbage family) アブラナ科. Consider a different spot or extra compost.

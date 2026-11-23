@@ -118,6 +118,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `thinning-done-date` | Ticking off thinning, and the date it was done |
 | `thinning-sizes` | Plant sizes around thinning |
 | `tools-tabs` | Tools page tiles and the tabs between related pages |
+| `transplant-times` | Every crop has its own time to planting out (or isn't raised in trays), in English; a crop of your own asks for its days |
 | `tray-seedlings-to-planting` | Seedlings in trays through to planting out |
 | `tray-sizes-and-bag-preset` | Your tray and pot sizes: changing one, adding more, two trays of different sizes side by side; the grow-bag preset |
 | `updates` | "What's new" once after an update; the notice when a newer version is out; Tools → What's new |

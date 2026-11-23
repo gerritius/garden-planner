@@ -43,6 +43,8 @@ const meanT = (a, b) => { let s = 0, n = 0; for (let d = a; d <= b; d = addDays(
 const minT = (a, b) => { let m = 99; for (let d = a; d <= b; d = addDays(d, 3)) m = Math.min(m, normalT(d)); return m; };
 const coldDays = (a, b) => { let n = 0; for (let d = a; d <= b; d = addDays(d, 1)) if (normalT(d) < 8) n++; return n; };
 const isWarming = d => normalT(addDays(d, 30)) > normalT(d);
+// crops that bolt (or spoil) when they mature in the heat
+export const boltsInHeat = id => !!(SOW_PROFILE[id] || {}).heat;
 // does sowing / planting on this day work for this crop, in this climate?
 function sowDayOK(cr, d) {
   const pr = SOW_PROFILE[cr.id] || {}, T = normalT(d), warm = isWarming(d), coldest = Math.min(...NORMAL_T);

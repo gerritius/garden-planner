@@ -4,10 +4,10 @@ clear by 2027-04-30
 Done by 30 Apr (11)
 Mizuna (水菜) 🪴 Plant seedlings now → ready ~7 Dec, done ~24 Dec · or sow now under a tunnel or Fushokufu, done ~7 Feb ›
 Komatsuna (小松菜) 🪴 Plant seedlings now → ready ~10 Dec, done ~27 Dec · or sow now under a tunnel or Fushokufu, done ~7 Feb ›
+Spinach (ほうれん草) 🪴 Plant seedlings now → ready ~12 Dec, done ~30 Dec · or sow now, done ~17 Jan ›
 Radish (二十日大根) 🌱 Sow now → ready ~21 Dec, done ~3 Jan ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
 Shungiku (春菊) 🪴 Plant seedlings now → ready ~11 Dec, done ~10 Jan · or sow now under a tunnel or Fushokufu, done ~11 Mar ›
 Bok choy (チンゲン菜) 🪴 Plant seedlings now → ready ~20 Dec, done ~10 Jan · or sow now under a tunnel or Fushokufu, done ~2 Mar ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
-Spinach (ほうれん草) 🌱 Sow now → ready ~30 Dec, done ~17 Jan ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
 Turnip (カブ) 🌱 Sow now under a tunnel or Fushokufu → ready ~17 Feb, done ~12 Mar ›
 Nanohana (菜の花) 🪴 Plant seedlings now → ready ~10 Feb, done ~12 Mar ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
 Lettuce (レタス) 🪴 Plant seedlings now → ready ~3 Mar, done ~21 Mar · or sow indoors 1 Feb, plant out 1 Mar, done ~26 Apr ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
@@ -26,13 +26,13 @@ Carrot (人参) 🌱 Sow from 1 Mar → ready ~30 Jun, done ~26 Jul ❄ slow in 
 → /plant/new/g1?crop=mizuna&from=0&to=40&date=2026-11-18&method=seedling | draft ["mizuna","seedling","2026-11-18",null,"2026-12-07"]
 
 gap rows: [
-  'Whole bed free from 19 Dec · after Daikon Spinach 🌱 done ~6 MarShungiku 🌱 done ~22 AprLettuce 🪴 done ~27 Apr💡 More ideas…'
+  'Whole bed free from 19 Dec · after Daikon Spinach 🏠 done ~26 JanShungiku 🌱 done ~22 AprLettuce 🪴 done ~27 Apr💡 More ideas…'
 ]
 
 === Plot A after the daikon
 clear by 2027-04-30
 Done by 30 Apr (9)
-Spinach (ほうれん草) 🌱 Sow from 19 Dec under a tunnel or Fushokufu → ready ~19 Feb, done ~6 Mar ›
+Spinach (ほうれん草) 🏠 Sow indoors 22 Nov, plant out 19 Dec → ready ~8 Jan, done ~26 Jan · or plant seedlings from 19 Dec, done ~30 Jan ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
 Shungiku (春菊) 🌱 Sow from 19 Dec under a tunnel or Fushokufu → ready ~23 Mar, done ~22 Apr ›
 Lettuce (レタス) 🪴 Plant seedlings from 1 Mar → ready ~18 Apr, done ~27 Apr · or sow indoors 1 Feb, plant out 1 Mar, done ~27 Apr ❄ slow in the cold — a tunnel or Fushokufu speeds it up›
 Radish (二十日大根) 🌱 Sow from 19 Dec under a tunnel or Fushokufu → ready ~8 Feb, done ~22 Feb ⚠ same family as the daikon before it›

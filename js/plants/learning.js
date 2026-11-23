@@ -42,7 +42,7 @@ function learnCompute() {
   }
   for (const s of S.starts || []) {
     const outEv = (s.events || []).filter(e => e.type === 'out').map(e => e.date).sort()[0];
-    if (!outEv) continue;
+    if (!outEv || !tpDays(s.cropId)) continue;
     const g = growParams(s.cropId), need = Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)) * (g.tref - g.tb), daily = S.weather && S.weather.daily;
     add(s.cropId, 'out', ddBetween(startEmerge(s), outEv, s.cropId, keptTemp(s) || (x => dayTemp(x, daily))) / need, `tray sown ${shortDate(s.sowDate)}`);
   }

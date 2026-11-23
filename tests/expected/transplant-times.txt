@@ -1,0 +1,7 @@
+crops without their own plant-out time: none | signs not in English: none | not raised in trays: Potato, Carrot, Daikon, Radish, Turnip, Taro, Sweet potato, Garlic
+spinach sown 15 Nov: out 2026-12-17, cover 2026-12-11, in 2026-12-05 | sign: At 2–3 true leaves — plant out young: its roots resent disturbance
+without its days: Sown 12 Nov (6 days) · ready to plant out: no estimate — add its days to planting out (⋯) | plant-out job: false
+edit asks: true | How long until they’re ready to plant out? Add the days from the packet below.
+with 28 days: Plant out in about 86 days at this time of year.
+saved: 28 | Sown 12 Nov (6 days) · ready in ~80 days | plant-out job: 2027-02-06
+errs []

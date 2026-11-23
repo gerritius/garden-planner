@@ -13,7 +13,7 @@ import { syncTasks, upsertAuto } from '../garden/tasks.js';
 import { crop } from './crops.js';
 import { germChecks, notUpYet, syncGermTask } from './germination.js';
 import { ddBetween, learnedFactor, learnedText } from './learning.js';
-import { startsGrowing, syncStartTasks, tpDays, TRANSPLANT, trayDateOf } from './seedlings.js';
+import { startsGrowing, syncStartTasks, tpDays, transplantOf, trayDateOf } from './seedlings.js';
 
 // ---------- thinning: counted from when seedlings came up, at the speed the temperature allows ----------
 export const WARM_LEAF = ['corn', 'edamame', 'ingen', 'kyuri', 'zucchini', 'nasu', 'piman', 'tomato', 'minitomato', 'shishito', 'chilli', 'satoimo', 'satsumaimo'];
@@ -76,9 +76,13 @@ export function moveKept(s, kept, date) {
   s.kept = kept;
 }
 export const keptText = s => { const l = (KEPT.find(k => k[0] === (s.kept || 'out')) || KEPT[0])[1].toLowerCase(), log = s.keptLog || []; return log.length > 1 ? `${l} since ${shortDate(log[log.length - 1].date)}` : l; };
+// ready to plant out: from your leaf count when there is one, else the crop's days to planting out at the pace the
+// temperatures allow (null when the crop's days aren't known — a crop of your own without them)
 export function startReady(s) {
-  const tf = keptTemp(s), e = startEmerge(s);
-  return leafAnchored(s, s.cropId, e, leafTarget((TRANSPLANT[s.cropId] || [])[1]), tf) || leafDate(s.cropId, e, Math.max(5, tpDays(s.cropId) - germAvg(s.cropId)), tf, learnedFactor(s.cropId, 'out'));
+  const tf = keptTemp(s), e = startEmerge(s), tp = transplantOf(s.cropId);
+  const byLeaves = leafAnchored(s, s.cropId, e, leafTarget((tp || [])[1]), tf); if (byLeaves) return byLeaves;
+  if (!tp || !(tp[0] > 0)) return null;
+  return leafDate(s.cropId, e, Math.max(5, tp[0] - germAvg(s.cropId)), tf, learnedFactor(s.cropId, 'out'));
 }
 // harvest: catalogue days hold for sowing at the crop's usual (best) time; colder sowings stretch out
 export const _need = {};

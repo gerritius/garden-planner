@@ -106,6 +106,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `soil-readings-and-feeding` | Soil readings feeding into the feeding advice |
 | `sowing-windows` | Sowing months worked out from temperature: matches the Japanese chart for Tokyo; other climates |
 | `split-bed-sections` | Splitting a bed into sections for several crops |
+| `replant-fill-gaps` | Back-up seedlings filling gaps in a crop already growing; one planted separately by mistake: placed by hand as one, drawn by its age, added to the first |
 | `seedlings-looks-replant` | A 49-cell tray: looks at how many cells are up, then replanting a few at a time — into 9 cm pots, a new 9-cell tray, a grow bag where snap peas grow — and throwing one away |
 | `spray-days` | Good spraying days from the forecast |
 | `spray-mixing-and-legality` | Spray dilution helper and the registered-crop legality check |

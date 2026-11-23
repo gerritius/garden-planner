@@ -239,7 +239,12 @@ export function replantDialog(s) {
   modal(`<h3>Replant ${esc(crop(s.cropId).en)} seedlings</h3><p class="muted small">${left} ${unitOf(s)}${left === 1 ? '' : 's'} in ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
     <form id="pof" class="form"><div class="two"><label>How many?<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label><label>When<input name="date" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label></div></form>
     ${pp && isPlanned(pp) ? `<p class="small">Planned spot</p><ul class="plist pick"><li><a href="#" data-plan="${pp.id}">📅 <span class="grow"><b>${esc((container(pp.containerId) || {}).name || '')}${sectionOf(pp) ? ' · ' + sectionOf(pp) : ''}</b><small>planned for ${shortDate(pp.sowDate)}</small></span>›</a></li></ul>` : ''}
-    <p class="small">Into the garden</p><ul class="plist pick">${spots.map(c => `<li><a href="#" data-c="${c.id}">${c.type === 'bed' ? BED_ICON(22) : '🪴'} <span class="grow"><b>${esc(c.name)}</b><small>${activeIn(c.id).map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small></span>›</a></li>`).join('') || '<li class="muted">No beds, bags or pots yet.</li>'}</ul>
+    <p class="small">Into the garden</p><ul class="plist pick">${spots.map(c => {
+      // the same crop growing there already: these can fill its gaps (one that never came up, one that died) instead
+      const same = activeIn(c.id).filter(p => p.cropId === s.cropId);
+      return same.map(p => `<li><a href="#" data-fill="${p.id}">🩹 <span class="grow"><b>${esc(c.name)} · fill gaps in the ${esc(crop(p.cropId).en.toLowerCase())} there</b><small>${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}${sectionOf(p) ? ' · ' + esc(sectionOf(p)) : ''} — replacing ones that didn’t make it</small></span>›</a></li>`).join('')
+        + `<li><a href="#" data-c="${c.id}">${c.type === 'bed' ? BED_ICON(22) : '🪴'} <span class="grow"><b>${esc(c.name)}${same.length ? ' · as a new planting' : ''}</b><small>${activeIn(c.id).map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small></span>›</a></li>`;
+    }).join('') || '<li class="muted">No beds, bags or pots yet.</li>'}</ul>
     <p class="small">Into a tray or pots, to grow on</p><ul class="plist pick">${nursery.map(c => `<li><a href="#" data-nt="${c.v}">🌱 <span class="grow"><b>${esc(c.label)}</b>${c.sub ? `<small>${esc(c.sub)}</small>` : ''}</span>›</a></li>`).join('')}<li><a href="#" data-nt="add">＋ <span class="grow"><b>Another size of tray or pot…</b></span>›</a></li></ul>
     <form id="pon" class="form">${newSizeFields}<div class="btns" id="ponGo" hidden><button class="btn primary">Replant here</button></div></form>
     <p class="hint">The rest stay in ${esc(startWhere(s))} — replant again to put some somewhere else.</p>
@@ -256,6 +261,7 @@ export function replantDialog(s) {
       close(); location.hash = `#/plant/new/${a.dataset.c}?crop=${encodeURIComponent(s.cropId)}&start=${s.id}&n=${n}${date !== td ? '&date=' + date : ''}`;
     });
     const go = async v => { moveSeedlings(s, howMany(), when(), placeOf(v)); await save(); close(); render(); };
+    m.querySelectorAll('[data-fill]').forEach(a => a.onclick = async e => { e.preventDefault(); const p = planting(a.dataset.fill); fillGaps(s, howMany(), when(), p); await save(); close(); location.hash = '#/plant/' + p.id; });
     m.querySelectorAll('[data-nt]').forEach(a => a.onclick = e => {
       e.preventDefault();
       if (a.dataset.nt !== 'add') return go(a.dataset.nt);
@@ -265,6 +271,25 @@ export function replantDialog(s) {
   });
 }
 export const plantOutDialog = replantDialog;   // the "plant out" job opens it too
+// n seedlings from group s fill gaps in planting p (the same crop): they become part of it, no new planting
+export function fillGaps(s, n, date, p) {
+  (s.events = s.events || []).push({ id: uid(), type: 'out', date, n, pid: p.id, fill: true });
+  (p.fills = p.fills || []).push({ date, n, startId: s.id });
+  if (startLeft(s) <= 0) s.status = 'done';
+  const tt = S.tasks.find(t => t.startId === s.id && t.kind === 'transplant' && !t.done);
+  if (tt && s.status === 'done') { tt.done = true; tt.doneOn = date; }
+  syncStartTasks(s);
+}
+// seedlings planted out as a planting of their own where the same crop already grows, that were really filling its
+// gaps: they join it, and the extra planting goes
+export function mergeAsFill(dup, into) {
+  for (const s of S.starts || []) for (const e of s.events || []) if (e.type === 'out' && e.pid === dup.id) { e.pid = into.id; e.fill = true; (into.fills = into.fills || []).push({ date: e.date, n: e.n, startId: s.id }); }
+  S.tasks = S.tasks.filter(t => t.plantingId !== dup.id);
+  S.plantings = S.plantings.filter(x => x !== dup);
+  const c = container(dup.containerId); if (c) c.history = (c.history || []).filter(h => h.plantingId !== dup.id);
+}
+// the planting this one could have been filling gaps in: the same crop, already growing in the same space when these were planted out
+export const fillTarget = p => p.startId && activeIn(p.containerId).find(x => x.id !== p.id && x.cropId === p.cropId && x.sowDate <= p.sowDate && x.from < p.to - 0.01 && x.to > p.from + 0.01);
 // n seedlings from group s into another tray or pots: their own group from then on (up already: no more looks for them)
 export function moveSeedlings(s, n, date, at) {
   if (at && at.nid && !at.kind) at = Object.assign({ kind: ntype(at.nid).kind }, at, ntype(at.nid).kind === 'tray' ? { tray: at.tray || nextTrayNo() } : { tray: null });
@@ -279,6 +304,7 @@ export function moveSeedlings(s, n, date, at) {
 }
 // what happened to some of them, in a few words
 function eventText(e) {
+  if (e.type === 'out' && e.fill) return `${e.n} filled gaps in ${esc((container((planting(e.pid) || {}).containerId) || {}).name || 'a bed')} ${shortDate(e.date)}`;
   if (e.type === 'out') return `${e.n} planted in ${esc((container((planting(e.pid) || {}).containerId) || {}).name || 'a bed')} ${shortDate(e.date)}`;
   if (e.type === 'move' || e.type === 'pot') { const to = start(e.to); return `${e.n} replanted into ${esc(to ? startWhere(to) : 'pots')} ${shortDate(e.date)}`; }
   if (e.type === 'resow') return e.gaps ? `empty cells re-sown ${shortDate(e.date)}` : `re-sown ${shortDate(e.date)} (first sown ${shortDate(e.was)})`;
@@ -315,14 +341,19 @@ export function prefillFromStart(d, q) {
   d.notes = d.notes || `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
   placeFew(d, d.startN);
 }
-// a few seedlings into a bag or pot: that many plants, spaced round the middle of the section (beds keep their rows)
-function placeFew(d, n) {
-  const c = container(d.containerId); if (!c || c.type === 'bed' || !(n > 0) || n > 12) return;
-  if (n === 1) { d.layout = 'center'; return; }
+// where n seedlings go in a bag or pot: spaced round the middle of the section (one in the middle) — null in a bed
+export function fewSpots(c, d, n) {
+  if (!c || c.type === 'bed' || !(n > 0) || n > 12) return null;
   const { W } = Draw.dims(c), m = +c.margin || 0, cy = (+d.from + +d.to) / 2;
+  if (n === 1) return [[Math.round(W / 2 * 10) / 10, Math.round(cy * 10) / 10]];
   const rx = Math.max(2, (W / 2 - m) * 0.5), ry = Math.max(2, ((+d.to - +d.from) / 2 - m) * 0.5);
-  d.layout = 'free';
-  d.positions = Array.from({ length: n }, (_, i) => { const a = Math.PI * 2 * i / n + (n === 2 ? 0 : -Math.PI / 2); return [Math.round((W / 2 + rx * Math.cos(a)) * 10) / 10, Math.round((cy + ry * Math.sin(a)) * 10) / 10]; });
+  return Array.from({ length: n }, (_, i) => { const a = Math.PI * 2 * i / n + (n === 2 ? 0 : -Math.PI / 2); return [Math.round((W / 2 + rx * Math.cos(a)) * 10) / 10, Math.round((cy + ry * Math.sin(a)) * 10) / 10]; });
+}
+// a few seedlings into a bag or pot: that many plants (beds keep their rows)
+function placeFew(d, n) {
+  const pts = fewSpots(container(d.containerId), d, n); if (!pts) return;
+  if (n === 1) { d.layout = 'center'; return; }
+  d.layout = 'free'; d.positions = pts;
 }
 export function startPlanted(d, p) {
   const s = start(d.startId); if (!s) return;
@@ -344,7 +375,8 @@ export function startLogItems() {
     if (s.from && (s.movedOn || s.pottedOn)) out.push({ date: s.movedOn || s.pottedOn, kind: 'sow', title: `Replanted ${s.count} ${n} seedlings`, sub: `${start(s.from) ? startWhere(start(s.from)) : 'tray'} → ${where}`, href, cids: [], pids: [] });
     for (const e of s.events || []) {
       const p = e.pid && planting(e.pid), c = p && container(p.containerId);
-      if (e.type === 'out') out.push({ date: e.date, kind: 'sow', title: `Planted out ${e.n} ${n} seedlings`, sub: `${where} → ${c ? c.name : 'bed'}`, href: p ? '#/plant/' + p.id : href, cids: c ? [c.id] : [], pids: p ? [p.id] : [] });
+      if (e.type === 'out' && e.fill) out.push({ date: e.date, kind: 'sow', title: `Filled gaps in the ${n.toLowerCase()} with ${e.n} seedling${e.n === 1 ? '' : 's'}`, sub: `${where} → ${c ? c.name : 'bed'}`, href: p ? '#/plant/' + p.id : href, cids: c ? [c.id] : [], pids: p ? [p.id] : [] });
+      else if (e.type === 'out') out.push({ date: e.date, kind: 'sow', title: `Planted out ${e.n} ${n} seedlings`, sub: `${where} → ${c ? c.name : 'bed'}`, href: p ? '#/plant/' + p.id : href, cids: c ? [c.id] : [], pids: p ? [p.id] : [] });
       else if (e.type === 'resow') out.push({ date: e.date, kind: 'sow', title: e.gaps ? `Re-sowed the empty cells of ${n}` : `Re-sowed ${n} (first sown ${shortDate(e.was)})`, sub: where, href, cids: [], pids: [] });
       else if (e.type === 'bin') out.push({ date: e.date, kind: 'done', title: `Discarded ${e.n} ${n} seedlings`, sub: where + (e.reason ? ' · ' + e.reason : ''), href, cids: [], pids: [] });
     }

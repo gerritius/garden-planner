@@ -20,7 +20,7 @@ import { allCrops, crop, newCropDialog, varieties } from '../plants/crops.js';
 import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import {
-  applyStart, linkStartOnSave, prefillFromStart, start, startChooser, startPlanted, startReadyNote, startWhere
+  applyStart, fewSpots, linkStartOnSave, prefillFromStart, start, startChooser, startLeft, startPlanted, startReadyNote, startWhere
 } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
 
@@ -182,7 +182,12 @@ export function pagePlantForm(p, c, q) {
   const preview = () => {
     const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
     tmp.thinned = p ? p.thinned : false;
-    if (tmp.layout === 'free' && !(tmp.positions || []).length) tmp.positions = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
+    if (tmp.layout === 'free' && !(tmp.positions || []).length) {
+      // placing by hand: start from the seedlings you're planting out (that many), or else from rows at this spacing
+      const n = d.startN || (d.useStart && start(d.useStart) ? startLeft(start(d.useStart)) : 0), rows = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
+      tmp.positions = n ? fewSpots(c, d, n) || rows.slice(0, n) : rows;
+      if (n) d.positions = tmp.positions.map(q => q.slice());
+    }
     const planMode = d.sowDate > todayStr();
     const others = decorate(planMode ? occupants(c.id, 0, 1e9, d.sowDate, d.sowDate, p && p.id) : activeIn(c.id).filter(x => !p || x.id !== p.id));
     const vw = Math.min(window.innerWidth, 640) - 48;

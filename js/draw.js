@@ -161,6 +161,8 @@ export const Draw = (() => {
 
   // Plant radius (cm) for "today": seed-sized → thinned → mature spread at harvest.
   function radius(p, todayS) {
+    // seedlings you raised from seed are as old as their sowing in the tray: drawn from then, like a sowing
+    if (p.method !== 'seed' && p.seededOn && p.seededOn < (p.sowDate || '')) return radius(Object.assign({}, p, { method: 'seed', sowDate: p.seededOn, thinSp: null }), todayS);
     const t = pd(todayS) || new Date(), sow = pd(p.sowDate) || t;
     const R = Math.max(0.5, (+p.spread || spacingNow(p)) / 2);
     let hv = pd(p.harvestDate);

@@ -8,7 +8,7 @@ import { $, $$, addDays, daysBetween, esc, go, niceDate, shortDate, todayStr, ui
 import { Draw, plotSVG } from '../draw.js';
 import { feedingSection } from '../feeding/ledger.js';
 import { amtFor } from '../feeding/nutrients.js';
-import { activeIn, container, decorate, isLive, isPlanned, occupants, planRotation } from '../garden/garden.js';
+import { activeIn, container, decorate, isLive, isPlanned, occupants, planRotation, planting } from '../garden/garden.js';
 import { planBanner, planNextButton } from '../garden/planning.js';
 import { rotationNote } from '../garden/rotation.js';
 import { readingText, soilAdvice, soilReadingAdvice } from '../garden/soil.js';
@@ -17,6 +17,7 @@ import { crop, cropName, ic } from '../plants/crops.js';
 import { germChecks, germDialog, germText, pctText } from '../plants/germination.js';
 import { germWindow, harvestNote, harvestWindowText, lastLeaves, leafDialog, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
+import { fillTarget, mergeAsFill, start, startWhere } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
 import { regSummary, sprayBanner, spraySection } from '../products/sprays.js';
 import { pastCropDialog } from '../records/history.js';
@@ -46,6 +47,7 @@ export function pagePlant(p) {
     p.startId || p.seededOn ? ['Raised from seed', `in ${p.raisedName ? (p.raisedIn === 'pot' ? '' : 'a ') + esc(p.raisedName) : p.raisedIn === 'pot' ? 'small pots' : 'a cell tray'}, sown ${shortDate(p.seededOn)}${p.sowDate ? ` (${daysBetween(p.seededOn, p.sowDate)} days before planting out)` : ''}`] : null,
     c && (p.from > 0 || p.to < L) ? ['Section', `${p.from}–${p.to} cm from top`] : null,
     ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && p.layout !== 'continuous' ? ` · ${plantsNow.toLocaleString('en-AU')} plants` : '') + (thinnedTo ? ` · about ${thinnedTo.toLocaleString('en-AU')} plants once thinned to ${p.thinSp} cm` : '')],
+    (p.fills || []).length ? ['Gaps filled', p.fills.map(f => `${f.n} seedling${f.n === 1 ? '' : 's'} ${shortDate(f.date)}${start(f.startId) ? ` <small class="muted">(from ${esc(startWhere(start(f.startId)))})</small>` : ''}`).join('<br>')] : null,
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
     p.plantSp != null ? [seed ? 'Sowing distance' : 'Plant spacing', p.plantSp + ' cm'] : null,
     rowish && p.rowSp != null ? ['Between rows', p.rowSp + ' cm'] : null,
@@ -66,6 +68,11 @@ export function pagePlant(p) {
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.mergeFill = async el => {
+    const into = planting(el.dataset.id); if (!into) return;
+    if (!await confirmBox(`Add these ${esc(cr.en.toLowerCase())} seedlings to the ${esc(cr.en.toLowerCase())} sown ${shortDate(into.sowDate)}, as filling its gaps? This separate planting goes.`, 'Add them')) return;
+    mergeAsFill(p, into); syncTasks(into); await save(); location.replace('#/plant/' + into.id);
+  };
   A.germLook = () => germDialog(p);
   A.addPrev = () => pastCropDialog(c, null, { from: p.from, to: p.to });
   A.leaves = () => leafDialog(p, cropName(p.cropId), () => { p.thinFixed = false; });
@@ -94,6 +101,7 @@ export function pagePlant(p) {
     <div class="varrow"><div class="grow"><small>Variety</small><a class="variety" href="#/variety?c=${encodeURIComponent(p.cropId)}&v=${encodeURIComponent(p.variety || '')}">${esc(p.variety || '—')} <small>notes ›</small></a></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
     ${planBanner(p)}
+    ${(() => { const t = isLive(p) && fillTarget(p); return t ? `<div class="banner">🩹 ${esc(cr.en)} sown ${shortDate(t.sowDate)} is already growing here. Were these seedlings to fill its gaps? <button class="link" data-act="mergeFill" data-id="${t.id}">Yes — add them to it</button></div>` : ''; })()}
     ${isLive(p) ? qualityWarnings(p).map(([, , t]) => `<div class="banner warn">${esc(t)}</div>`).join('') : ''}
     ${harvested || isPlanned(p) ? '' : sprayBanner(p)}
     ${harvested ? `<div class="banner">This crop was harvested on ${niceDate(p.harvestedOn)}. <button class="link" data-act="unharvest">Undo</button></div>` : ''}

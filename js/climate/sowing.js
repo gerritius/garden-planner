@@ -11,14 +11,16 @@ import { Draw } from '../draw.js';
 import { gaps, sizeLabel } from '../garden/garden.js';
 import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
 import { allCrops, crop, cropName, ic, kin, myCrops } from '../plants/crops.js';
-import { frostEnd, harvestModel } from '../plants/growth.js';
-import { applyClimate, climateHere, climateNotice, growUnits, NORMAL_T, normalT } from './climate.js';
+import { frostEnd, growParams, harvestModel, soonestHarvest } from '../plants/growth.js';
+import { applyClimate, climateHere, climateNotice, growUnits, NORMAL_T, normalT, TOKYO_T } from './climate.js';
 import { SOW_PROFILE } from '../data/catalog.js';
 
 // ---------- sowing windows from temperature ----------
 // per crop, where the general rules need a hand. heat: mean °C above which it bolts/spoils when maturing.
 // rising / falling: sow or plant in that temperature range while it's warming / cooling (crops with set seasons).
-// winter: grown through winter — planted as it cools within [low, high] °C if winters are mild; spring: otherwise, as it warms.
+// winter: grown through winter — planted as it cools within [low, high] °C if winters are mild (coldest month ≥ winterMin, else
+// −2 °C; garlic takes hard winters under snow — winterCold: where the coldest month is below 0 °C, planted cooler, a few
+// weeks before the ground freezes: Hokkaido's late September–October); spring: otherwise, as it warms.
 // pick: days of picking after the first harvest that need frost-free weather (crops picked over a season).
 // plant: [low, high] mean °C to sow / plant out, where the general rule doesn't fit. warmLo: when warming, wait for this much warmth (young plants
 // that get cold bolt later, e.g. hakusai). Each crop's profile is in its record (data/crops.js).
@@ -29,7 +31,7 @@ const monthDays = (y, m) => [5, 15, 25].map(d => `${y}-${String(m).padStart(2, '
 export function climGrow(cr, from) {
   const m = harvestModel({ cropId: cr.id, sowDate: from, method: cr.method === 'seed' ? 'seed' : 'seedling' }, true); if (!m) return null;
   let acc = 0, d = m.from;
-  for (let i = 1; i <= 365; i++) { d = addDays(d, 1); acc += growUnits(cr.id, normalT(d)); if (acc >= m.need) return { days: daysBetween(from, d), end: d }; }
+  for (let i = 1; i <= 365; i++) { d = addDays(d, 1); acc += growUnits(cr.id, normalT(d)); if (acc >= m.need) { const e = soonestHarvest(m, d); return { days: daysBetween(from, e), end: e }; } }
   return null;
 }
 const meanT = (a, b) => { let s = 0, n = 0; for (let d = a; d <= b; d = addDays(d, 3)) { s += normalT(d); n++; } return n ? s / n : normalT(a); };
@@ -38,16 +40,38 @@ const coldDays = (a, b) => { let n = 0; for (let d = a; d <= b; d = addDays(d, 1
 const isWarming = d => normalT(addDays(d, 30)) > normalT(d);
 // crops that bolt (or spoil) when they mature in the heat
 export const boltsInHeat = id => !!(SOW_PROFILE[kin(id)] || {}).heat;
+// Frost-tender (warm-season) crops by their own temperatures, not one figure for all: they need to keep growing — no
+// spell below about 6 °C over the bottom of their growth curve (14 °C for tomatoes, corn and beans, 16 °C for eggplant,
+// okra and melons) from when they're up until they're nearly done (dry beans ripen off in the cool) — and, planted as it cools, to crop (the last third of their growing) in weather warm
+// enough to set and ripen (15–17 °C on average), like
+// the picking season of crops picked over weeks. A fixed 12 °C let everything through where winters never go below it:
+// tomatoes and corn sown all year in Sydney.
+const tenderLo = id => { const g = growParams(id); return Math.max(12, (g.warm ? g.warm[0] : 8) + 6); };
+const tenderGood = id => { const g = growParams(id); return Math.max(15, (g.warm ? g.warm[0] : 8) + 7); };
+// Seasons set by the cold: crops planted to grow through winter as it cools (garlic, onions, peas) and crops planted as
+// soon as spring warms (potatoes) have their temperatures for a winter that gets cold. Where the coldest month is milder
+// than that, the band moves up to start from the coldest month — onions go in through May–June in Sydney and Nov–Dec
+// in Okinawa, potatoes as Sydney starts warming in August.
+// (never past a few degrees over the warmth it grows best in: no potatoes planted in Singapore's 26 °C)
+const fromCold = (b, coldest, cap) => b && coldest > b[0] ? [coldest - 0.5, Math.min(cap, b[1] + (coldest - b[0]))] : b;
 // does sowing / planting on this day work for this crop, in this climate?
 export function sowDayOK(cr, d) {
-  const pr = SOW_PROFILE[kin(cr.id)] || {}, T = normalT(d), warm = isWarming(d), coldest = Math.min(...NORMAL_T);
+  const pr = SOW_PROFILE[kin(cr.id)] || {}, T = normalT(d), warm = isWarming(d), coldest = Math.min(...NORMAL_T), hottest = Math.max(...NORMAL_T), cap = growParams(cr.id).tcap + 3;
+  const tenderOK = (g, cooling) => !cr.tender || (minT(addDays(d, 20), addDays(g.end, -Math.round(g.days * 0.15))) >= tenderLo(cr.id) && minT(d, g.end) >= 12 && (!cooling || meanT(addDays(g.end, -Math.round(g.days * 0.3)), g.end) >= tenderGood(cr.id)));
   if (pr.winter) {   // grown through winter where winters are mild; sown in spring where they're hard (then it has to finish before the next winter)
-    if (coldest >= -2) return !warm && T >= pr.winter[0] && T <= pr.winter[1];
+    // (in the warm half of the year, as it really cools — not the flat top of a mild summer: January garlic in Sydney;
+    // and it has to be ready within the year)
+    if (coldest >= (pr.winterMin ?? -2)) {
+      const w = coldest < 0 && pr.winterCold ? pr.winterCold : fromCold(pr.winter, coldest, cap);
+      if (warm || T < w[0] || T > w[1] || (T > (coldest + hottest) / 2 && normalT(addDays(d, 30)) > T - 1)) return false;
+      const g = climGrow(cr, d); return !!g && g.days <= 330;
+    }
     if (!(pr.spring && warm && T >= pr.spring[0] && T <= pr.spring[1])) return false;
     const g = climGrow(cr, d); return !!g && g.days <= 240 && coldDays(d, g.end) <= 30;
   }
   if (pr.rising || pr.falling) {   // a set season — and then it still has to make it, like any other crop
-    if (!((warm && pr.rising && T >= pr.rising[0] && T <= pr.rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]))) return false;
+    const rising = fromCold(pr.rising, coldest, cap);
+    if (!((warm && rising && T >= rising[0] && T <= rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]))) return false;
     // planted as it warms, the cold is behind it; planted as it cools, it has to be done before the cold — except crops
     // dug when frost takes the tops (autumn potatoes), which only need the growing weeks before that
     if (warm) { const g = climGrow(cr, d); return !!g && g.days <= (cr.daysHarvest || 60) * 1.5 && !(cr.tender && normalT(g.end) < 12); }
@@ -59,17 +83,19 @@ export function sowDayOK(cr, d) {
   }
   const seedT = SOIL_T[kin(cr.id)], seedling = cr.method !== 'seed';
   const lo = pr.plant ? pr.plant[0] : cr.tender ? (seedling ? 14 : (seedT ? seedT[0] : 14)) : Math.max(7, seedT && !seedling ? seedT[0] + 2 : 7);
-  const hi = pr.plant ? pr.plant[1] : seedT && seedT[2] ? seedT[2] - 1 : cr.tender ? 29 : 26;
+  let hi = pr.plant ? pr.plant[1] : seedT && seedT[2] ? seedT[2] - 1 : cr.tender ? 29 : 26;
+  // (where it never gets cool — the tropics — a warm-season crop's "not too late in summer" doesn't apply: there's no autumn)
+  if (cr.tender && coldest >= 18) hi = Math.max(hi, seedT && seedT[2] ? seedT[2] - 1 : 32);
   if (warm && pr.warmLo && T < pr.warmLo) return false;
   if (T < lo || T > hi) return false;
   const g = climGrow(cr, d); if (!g || g.days > (cr.daysHarvest || 60) * 2) return false;              // too slow: it would crawl into winter
-  if (cr.tender && minT(d, g.end) < 12) return false;                                                // frost-tender: growing done before the cold
+  if (!tenderOK(g, !warm)) return false;                                                             // frost-tender: warm enough all through
   if (!cr.tender && !pr.hardy && !warm && coldDays(d, g.end) > 20) return false;                     // sown as it cools: should be ready before winter
   if (pr.heat && meanT(addDays(g.end, -Math.round(g.days * 0.3)), g.end) > pr.heat) return false;     // would mature in the heat: bolts / poor quality
-  return pr.pick ? pickDays(g.end, pr.pick) : true;
+  return pr.pick ? pickDays(g.end, pr.pick, cr.tender ? tenderGood(cr.id) : 12) : true;
 }
-// days of picking from the first harvest until the cold (mean below 12 °C), up to the crop's usual season
-export const pickDays = (from, max) => { let n = 0; for (let d = from; n < max && normalT(d) >= 12; d = addDays(d, 1)) n++; return n; };
+// days of picking from the first harvest until it gets too cool for it to keep cropping, up to the crop's usual season
+export const pickDays = (from, max, cool = 12) => { let n = 0; for (let d = from; n < max && normalT(d) >= cool; d = addDays(d, 1)) n++; return n; };
 export function sowWindow(cr) {
   const res = [];
   for (let m = 1; m <= 12; m++) res.push(monthDays(2026, m).map(d => sowDayOK(cr, d)));
@@ -77,12 +103,15 @@ export function sowWindow(cr) {
   const best = Math.max(0, ...res.flat().filter(v => typeof v === 'number'));
   const ok = v => v === true || (typeof v === 'number' && v >= Math.max(20, best * 0.6));
   // a month of the central-Japan chart counts if part of it works here; any other month only when most of it works (two
-  // of its early, middle and late days) — not because of one good day at its edge (mid-August corn in Tokyo)
-  const chart = cr.sowRef || [];
-  return res.map((r, i) => r.filter(ok).length >= (chart.includes(i + 1) ? 1 : 2) ? i + 1 : 0).filter(Boolean);
+  // of its early, middle and late days) — not because of one good day at its edge (mid-August corn in Tokyo). (The chart
+  // is only for weather like central Japan's: elsewhere — Sydney's July is no April — every month needs most of it.)
+  const chart = NORMAL_T.every((t, i) => Math.abs(t - TOKYO_T[i]) <= 2.5) ? cr.sowRef || [] : [];
+  const months = need => res.map((r, i) => r.filter(ok).length >= (chart.includes(i + 1) ? 1 : need) ? i + 1 : 0).filter(Boolean);
+  // (a short season that straddles two months — tomatoes planted out late May to mid-June in London — still gets its months)
+  const m2 = months(2); return m2.length ? m2 : months(1);
 }
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
-const SOW_RULES_VER = 2;   // bump when the rules change, so stored windows are worked out again
+const SOW_RULES_VER = 3;   // bump when the rules change, so stored windows are worked out again
 export function applySowWindows() {
   const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
   const cache = S.sowCache && S.sowCache.key === key ? S.sowCache.m : null, worked = {};

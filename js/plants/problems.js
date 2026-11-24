@@ -1,6 +1,6 @@
 // Problem finder (pests, diseases & disorders), pests noted in the diary, and crop quality / bolting warnings.
 
-import { normalT, warming } from '../climate/climate.js';
+import { normalT, seasonMonth, tropical, warming } from '../climate/climate.js';
 import { dayName, Weather } from '../climate/weather.js';
 import { A, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
@@ -93,8 +93,9 @@ for (const c of CATALOG) {
 const famOf = id => crop(id).family || 'other';
 const probFits = (pr, cropId) => pr[3].includes('all') || pr[3].includes(cropId) || pr[3].includes(kin(cropId)) || pr[3].includes(famOf(cropId));
 function problemMatches(cropId, signs) {
-  const m = new Date().getMonth() + 1;
-  return PROBLEMS.filter(pr => probFits(pr, cropId)).map(pr => { const hit = pr[4].filter(s => signs.includes(s)).length; return { pr, hit, score: hit * 3 + (pr[5].includes(m) ? 1 : 0) - (pr[3].includes('all') ? 0.5 : 0) }; })
+  // (each problem's months are Japan's; south of the equator they're six months on, and in the tropics there's no season)
+  const m = seasonMonth(new Date().getMonth() + 1), inSeason = pr => !tropical() && pr[5].includes(m);
+  return PROBLEMS.filter(pr => probFits(pr, cropId)).map(pr => { const hit = pr[4].filter(s => signs.includes(s)).length; return { pr, hit, score: hit * 3 + (inSeason(pr) ? 1 : 0) - (pr[3].includes('all') ? 0.5 : 0) }; })
     .filter(x => x.hit).sort((a, b) => b.score - a.score);
 }
 function problemSprays(pr, p) {

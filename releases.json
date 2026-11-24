@@ -1,5 +1,17 @@
 [
   {
+    "version": "1.38.0",
+    "date": "2026-11-24",
+    "notes": [
+      "Sowing months now work for gardens anywhere, not just Japan. Warm-season crops go by their own temperatures: they must keep growing (no spell below about 14 °C for tomatoes, corn and beans, 16 °C for eggplant, okra and melons) and, sown as it cools, crop in weather warm enough to set and ripen. Before, one 12 °C limit let tomatoes, corn and beans through all year where winters are mild — Sydney.",
+      "Crops planted to go through winter (garlic, onions, peas, broad beans) and crops planted as spring warms (potatoes) move with how mild the winter is: Sydney’s garlic goes in March–May (not January), onions May–June, potatoes in August as well as late summer; Okinawa’s onions in December. Garlic can now be autumn-planted where winters are hard (Hokkaido, Denver: October).",
+      "In the tropics, warm-season crops can go in any month (no autumn to beat). Japan’s own sowing chart is only leaned on where the weather is like central Japan’s.",
+      "No crop is counted as ready in much under two-thirds of its packet days, however warm it is.",
+      "South of the equator, the rotation plan names seasons like “2026–27” (July to June, by when a crop was planted), and the Problems helper shifts Japan’s pest seasons by six months.",
+      "Behind the scenes, every crop is now checked in Sydney, Melbourne, London, Singapore and Denver as well as Japan, including against months local growing guides give."
+    ]
+  },
+  {
     "version": "1.37.1",
     "date": "2026-11-24",
     "notes": [

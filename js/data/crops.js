@@ -260,7 +260,7 @@ export const CROPS = [
   // ---- Garlic にんにく ----
   { id: 'garlic', en: 'Garlic', ja: 'にんにく', color: '#e9e2d0', group: 'onions', family: 'allium', method: 'seedling', layout: 'staggered',
     depth: null, rowSp: 20, sowSp: 15, thinStage: '', thinSp: null, daysThin: null, daysHarvest: 220, spread: 15, sow: [9, 10],
-    grow: { tb: 0, tref: 16, tcap: 20 }, profile: { winter: [15, 23] }, transplant: [0, 'grown from cloves, planted where they grow'], win: 14,
+    grow: { tb: 0, tref: 16, tcap: 20 }, profile: { winter: [15, 23], winterMin: -12, winterCold: [10, 17] }, transplant: [0, 'grown from cloves, planted where they grow'], win: 14,
     late: 'bulbs split and skins rot', jobs: [['Side-dress (追肥)', 90], ['Remove flower stalk (芽摘み)', 180]], feed: 'medium', n: 20, p: 15, k: 15,
     stages: [{ w: 'start', t: 'as winter sets in' }, { w: 'restart', t: 'as growth restarts — the last feed (止め肥)', last: true }], ph: [6, 6.8],
     lime: 150, rest: 1, reg: [['にんにく'], ['野菜類']], varieties: ['ホワイト六片', '平戸', '上海早生', '嘉定', 'ジャンボニンニク'] },

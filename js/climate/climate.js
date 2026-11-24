@@ -53,6 +53,11 @@ export function clearSeasonCaches() {
   for (const k in _season) delete _season[k];
   _ideaCache.clear();
 }
+// South of the equator the seasons run six months apart: a southern garden's November is a northern May. For things
+// written by month for Japan (pest seasons) and growing seasons that cross the new year there (the rotation plan).
+export const southern = () => !!(S.weather && S.weather.lat != null && S.weather.lat < 0);
+export const tropical = () => !!(S.weather && S.weather.lat != null && Math.abs(S.weather.lat) < 15);
+export const seasonMonth = (m) => southern() ? (m + 5) % 12 + 1 : m;   // the month it's like up north
 // the fetched climate, if it's for where the garden is now (after moving the location, the old place's doesn't count)
 export function climateHere() {
   const c = S.climate, w = S.weather;

@@ -129,9 +129,12 @@ export function harvestModel(p, raw) {
   const dd = Math.max(7, Math.round(days));
   return { from, days: dd, need: calibratedNeed(p.cropId, dd, Math.round(offset), refMonth(p.cropId, eff)) * (raw ? 1 : learnedFactor(p.cropId, 'harvest')) };
 }
+// Warmth speeds growth only so far: packet days are already for good growing weather, so even somewhere warmer all
+// through (celery planted in Sydney's January) a crop isn't ready in much under two-thirds of them.
+export const soonestHarvest = (m, d) => { const f = addDays(m.from, Math.round(m.days * 0.65)); return d < f ? f : d; };
 export function harvestEstimate(p) {
   const m = harvestModel(p); if (!m) return p.harvestDate || '';
-  let d = ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId, p));
+  let d = soonestHarvest(m, ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId, p)));
   const fe = frostEnd(p); if (fe && d > fe) d = fe;   // autumn potatoes: the tops die back with the first frosts, so they're dug then
   return d < addDays(p.sowDate, 14) ? addDays(p.sowDate, 14) : d;
 }

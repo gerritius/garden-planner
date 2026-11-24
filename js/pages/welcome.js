@@ -3,7 +3,7 @@
 // backup. Every step can be skipped and changed later in Tools. "My crops" (Tools) is the same crop picker on its own.
 
 import { importBackup, copyFromMainSite } from '../backup/backup.js';
-import { ensureClimate } from '../climate/climate.js';
+import { climatePending, ensureClimate } from '../climate/climate.js';
 import { weatherSettings } from '../climate/weather.js';
 import { A, render, setChrome } from '../core/router.js';
 import { IS_TEST } from '../core/site.js';
@@ -65,7 +65,7 @@ export function pageWelcome(q) {
     after = () => { const f = $('#wlimp'); if (f) f.onchange = () => importBackup(f.files[0]); };
   } else if (step === 2) {
     const w = S.weather;
-    if (w && w.lat != null && !S.climate) ensureClimate().then(ok => { if (ok) render(); });   // the usual weather there, for sowing times
+    if (climatePending()) ensureClimate().then(ok => { if (ok) render(); });   // the usual weather there, for sowing times
     body = `<p>Where your garden is sets the weather and frost alerts, and — from the last ten years’ weather there — when each crop can be sown and how fast it grows.</p>
       ${weatherSettings()}
       <div class="btncol"><a class="btn primary wide" href="${next}">${w && w.lat != null ? 'Next' : 'Skip — use central Japan (Tokyo)'}</a></div>`;

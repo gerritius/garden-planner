@@ -30,7 +30,7 @@ import { pageLog } from '../records/log.js';
 import { pageDiary, pagePhotos, pageTimeline } from '../records/notes.js';
 import { pageCompare, pageReview, pageSpend, pageTotals } from '../records/review.js';
 import { hydrate } from './photos.js';
-import { savingAllowed } from './state.js';
+import { S, savingAllowed } from './state.js';
 import { $, $$, esc } from './util.js';
 
 // ---------- per-page state ----------
@@ -54,6 +54,8 @@ const SEKKI = [[1, 5, '小寒', 'Minor cold'], [1, 20, '大寒', 'Major cold'], 
   [9, 7, '白露', 'White dew'], [9, 22, '秋分', 'Autumn equinox'], [10, 8, '寒露', 'Cold dew'], [10, 23, '霜降', 'Frost descends'],
   [11, 7, '立冬', 'Start of winter'], [11, 22, '小雪', 'Minor snow'], [12, 7, '大雪', 'Major snow'], [12, 21, '冬至', 'Winter solstice']];
 export function sekki(d = new Date()) {
+  // (the Japanese solar terms are only right for Japan — south of the equator 立冬 "start of winter" falls in late spring)
+  const w = S.weather; if (w && w.lat != null && !(w.lat > 24 && w.lat < 46 && w.lon > 122 && w.lon < 154)) return '';
   const md = (d.getMonth() + 1) * 100 + d.getDate();
   let cur = SEKKI[SEKKI.length - 1];
   for (const s of SEKKI) if (s[0] * 100 + s[1] <= md) cur = s;

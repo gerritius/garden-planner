@@ -2,6 +2,7 @@
 
 import { driveBanner, driveOn } from '../backup/drive.js';
 import { sowNowSection, sowPick } from '../climate/sowing.js';
+import { climateNotice } from '../climate/climate.js';
 import { dayName, sprayDays, Weather } from '../climate/weather.js';
 import { A, render, route, sekki, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
@@ -53,7 +54,7 @@ export function pageHome() {
   A.sowCrop = el => sowPick(el.dataset.id);
   if (driveOn() && S.drive.lastDate && daysBetween(S.drive.lastDate, td) < 7) backupNote = '';   // Drive has it covered
   const html = `${driveBanner()}${backupNote}
-    ${Weather.section()}
+    ${climateNotice()}${Weather.section()}
     ${headsCard()}
     <section class="today"><h2>Today’s jobs</h2>
       ${today.length ? `<ul class="tasks">${jobsList(today)}</ul>` : '<p class="muted">Nothing to do today 🌤️</p>'}

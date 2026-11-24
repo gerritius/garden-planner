@@ -35,7 +35,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.goto(U); await pg.waitForTimeout(400); await pg.screenshot({ path: SP + '/home14.png', fullPage: true });
   console.log('frost task', await pg.evaluate(() => S.tasks.filter(t => t.kind === 'frost').map(t => [t.title, t.due])));
   console.log('alerts', await pg.evaluate(() => Weather.alerts().map(a => a[1])));
-  console.log('spray alert', await pg.textContent('.banner.warn').catch(() => null));
+  console.log('spray alert', await pg.textContent('.banner.warn:not(.clim)').catch(() => null));
   await pg.goto(U + '#/plant/hk'); await pg.waitForTimeout(300); const tx = await pg.textContent('main');
   console.log('banner', tx.match(/Sprayed.*?wait\)/)?.[0]); console.log('soil', tx.match(/Soil.{0,160}/)?.[0]);
   await pg.click('[data-act=logHarvest]'); await pg.waitForTimeout(200); console.log('harvest dlg warn', !!(await pg.$('#modal .banner.warn')));

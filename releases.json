@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.37.1",
+    "date": "2026-11-24",
+    "notes": [
+      "Setting your garden’s location now fetches the usual weather there straight away. Before, it waited until the app was next opened, and until then sowing months, growth, harvest and feeding times quietly used western Tokyo’s climate (so a Sydney garden got a “slow winter stretch” in January).",
+      "While it isn’t in yet (offline, or the fetch failed), the home screen and sowing calendar say so, with ↻ Get it now. A climate fetched for a different place no longer counts after you move the location.",
+      "The Japanese solar terms (立冬 “Start of winter” …) are only shown for gardens in Japan."
+    ]
+  },
+  {
     "version": "1.37.0",
     "date": "2026-11-24",
     "notes": [

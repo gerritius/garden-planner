@@ -34,7 +34,7 @@ export const normalRain = d => { const x = pd(d); return RAIN_MONTH[x.getMonth()
 // Tools → Weather location: what the climate is based on
 export function climateSection() {
   A.climRefresh = async () => { const el = $('#climst'); if (el) el.textContent = 'Fetching…'; const ok = await ensureClimate(true); if (!ok && el) el.textContent = 'Couldn’t fetch it — are you online?'; };
-  const c = S.climate, t = NORMAL_T, rows = MONTHS.map((m, i) => `<span><i>${m[0]}</i>${Math.round(t[i])}°</span>`).join('');
+  const c = climateHere(), t = NORMAL_T, rows = MONTHS.map((m, i) => `<span><i>${m[0]}</i>${Math.round(t[i])}°</span>`).join('');
   return `<section><h3>Climate</h3><p>Sowing months, growth and harvest estimates, frost and watering use the usual weather for <b>${esc(climateName())}</b>.</p>
     <div class="climrow">${rows}</div>
     ${S.weather && S.weather.lat != null ? `<div class="btnrow"><button class="btn small" data-act="climRefresh">↻ ${c ? 'Refresh' : 'Get'} climate for ${esc(S.weather.name || 'my location')}</button></div><p class="small muted" id="climst"></p>` : '<p class="hint">Set your location above and the app fetches the usual temperatures and rainfall there (10 years of records).</p>'}</section>`;
@@ -47,14 +47,27 @@ export function refNormalT(d) {
   const x = pd(d), m = x.getMonth(), f = (x.getDate() - 15) / 30, n = f >= 0 ? (m + 1) % 12 : (m + 11) % 12;
   return TOKYO_T[m] + (TOKYO_T[n] - TOKYO_T[m]) * Math.abs(f);
 }
-let _climKey = '', _climBusy = false;
+let _climKey = '', _climBusy = false, _climFailed = '';   // (a place whose fetch failed this visit is tried again with ↻, or next visit)
 export function clearSeasonCaches() {
   for (const k in _need) delete _need[k];
   for (const k in _season) delete _season[k];
   _ideaCache.clear();
 }
+// the fetched climate, if it's for where the garden is now (after moving the location, the old place's doesn't count)
+export function climateHere() {
+  const c = S.climate, w = S.weather;
+  if (!c || !Array.isArray(c.t) || c.t.length !== 12) return null;
+  return !w || w.lat == null || (Math.abs(c.lat - w.lat) < 0.15 && Math.abs(c.lon - w.lon) < 0.15) ? c : null;
+}
+// a location is set but its climate isn't in yet: everything still runs on the built-in Tokyo values — say so
+export const climatePending = () => !!(S.weather && S.weather.lat != null && !climateHere());
+export function climateNotice() {
+  if (!climatePending()) return '';
+  A.climRetry = async () => { const ok = await ensureClimate(true); if (!ok) alert('Couldn’t fetch it — are you online?'); };
+  return `<p class="banner warn small clim">${_climBusy ? '⏳ Getting the usual weather for' : '⚠️ Not yet fetched: the usual weather for'} <b>${esc(S.weather.name || 'your location')}</b>. Until it is, sowing months, growth, harvest and feeding times use the built-in western Tokyo climate. ${_climBusy ? '' : '<button class="btn small" data-act="climRetry">↻ Get it now</button>'}</p>`;
+}
 export function applyClimate(force) {
-  const c = S.climate && Array.isArray(S.climate.t) && S.climate.t.length === 12 ? S.climate : null;
+  const c = climateHere();
   const t = c ? c.t : TOKYO_T, r = c ? c.rain : TOKYO_RAIN, key = t.join(',') + '|' + JSON.stringify(S.sowOverride || {});
   if (!force && key === _climKey) return;
   _climKey = key;
@@ -64,9 +77,9 @@ export function applyClimate(force) {
 }
 export async function ensureClimate(force) {
   const w = S.weather; if (!w || w.lat == null || _climBusy || !navigator.onLine) return false;
-  const c = S.climate;
-  if (!force && c && Math.abs(c.lat - w.lat) < 0.15 && Math.abs(c.lon - w.lon) < 0.15 && daysBetween(c.fetched, todayStr()) < 365) return false;
-  _climBusy = true;
+  const c = climateHere(), where = `${w.lat},${w.lon}`;
+  if (!force && (where === _climFailed || (c && daysBetween(c.fetched, todayStr()) < 365))) return false;
+  _climBusy = true; applyClimate(); if (climatePending()) render();   // (the notice says it's on its way)
   try {
     const y = new Date().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;
     const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean,precipitation_sum&timezone=auto`;
@@ -83,9 +96,9 @@ export async function ensureClimate(force) {
     S.climate = { lat: w.lat, lon: w.lon, name: w.name || '', t, rain: rr, years: `${y - 10}–${y - 1}`, fetched: todayStr() };
     applyClimate(); await save(); render();
     return true;
-  } catch (e) { console.warn('climate', e); return false; } finally { _climBusy = false; }
+  } catch (e) { console.warn('climate', e); _climFailed = where; return false; } finally { _climBusy = false; if (climatePending()) render(); }
 }
-const climateName = () => S.climate ? `${S.climate.name || 'your location'} (${S.climate.years} averages)` : 'western Tokyo (built-in — set your location for your own)';
+const climateName = () => { const c = climateHere(); return c ? `${c.name || 'your location'} (${c.years} averages)` : climatePending() ? 'western Tokyo (built-in) — not yet fetched for your location' : 'western Tokyo (built-in — set your location for your own)'; };
 
 // ---------- growth speed ----------
 // Warm-season crops (tomatoes, peppers, cucurbits, beans, corn…) don't speed up in a straight line with temperature: they

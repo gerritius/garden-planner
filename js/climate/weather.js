@@ -3,6 +3,7 @@
 import { A, render, route, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
+import { ensureClimate } from './climate.js';
 import { $, addDays, daysBetween, esc, niceDate, pd, todayStr, uid } from '../core/util.js';
 import { Icons } from '../data/icons.js';
 import { container, isLive } from '../garden/garden.js';
@@ -80,7 +81,7 @@ export function weatherSettings() {
     if (!navigator.geolocation) return alert('Location isn’t available on this device.');
     navigator.geolocation.getCurrentPosition(async pos => {
       S.weather = { lat: +pos.coords.latitude.toFixed(2), lon: +pos.coords.longitude.toFixed(2), name: 'My garden' };
-      await save(); await Weather.refresh(true); render();
+      await save(); ensureClimate(); await Weather.refresh(true); render();
     }, err => alert('Couldn’t get your location: ' + err.message), { timeout: 15000 });
   };
   A.wxSearch = async () => {
@@ -91,7 +92,7 @@ export function weatherSettings() {
       const j = await r.json();
       const res = j.results || [];
       $('#wxres').innerHTML = res.length ? `<ul class="plist">${res.map((x, i) => `<li data-act="wxPick" data-i="${i}"><span class="grow">${esc(x.name)}<small>${esc([x.admin1, x.country].filter(Boolean).join(', '))}</small></span>›</li>`).join('')}</ul>` : '<p class="muted">No places found. Try the town or ward name in English or Japanese.</p>';
-      A.wxPick = async el => { const x = res[+el.dataset.i]; S.weather = { lat: +x.latitude.toFixed(2), lon: +x.longitude.toFixed(2), name: x.name }; await save(); await Weather.refresh(true); render(); };
+      A.wxPick = async el => { const x = res[+el.dataset.i]; S.weather = { lat: +x.latitude.toFixed(2), lon: +x.longitude.toFixed(2), name: x.name }; await save(); ensureClimate(); await Weather.refresh(true); render(); };
     } catch { $('#wxres').innerHTML = '<p class="muted">Couldn’t search — are you online?</p>'; }
   };
   A.wxClear = async () => { S.weather = null; await save(); render(); };

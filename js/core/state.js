@@ -12,6 +12,7 @@ export function blank() {
 // memory is not your garden, and saving it would write over the real one.
 let canSave = false;
 export function allowSaving() { canSave = true; }
+export function stopSaving() { canSave = false; }   // (while everything is being deleted: nothing may write it back)
 export const savingAllowed = () => canSave;
 export function save() {
   if (!canSave) return Promise.resolve(false);

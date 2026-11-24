@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.42.0",
+    "date": "2026-11-24",
+    "notes": [
+      "Tools → Delete all my data: removes your garden from this phone — beds and pots, plantings, records, photos, products, settings and the daily recovery copies — and starts the app again as new. It first reminds you to back up (showing when you last did, with a button to export one now), then only deletes once you type DELETE. Backup files and Google Drive backups are kept; on the test site only the test garden is deleted."
+    ]
+  },
+  {
     "version": "1.41.1",
     "date": "2026-11-24",
     "notes": [

@@ -1,0 +1,11 @@
+before: kv 2 · photos 1 · gp keys 1 · other keys someone-else
+step 1 (never backed up): Back up first? Deleting can’t be undone. You’ve never made a backup — without one, your garden is gone for good. A backup file can be restored later (Tools → Backup → Restore). 💾 Export a backup now Continue without a backup Cancel
+  cancelled: kv 2 · photos 1 · gp keys 1 · other keys someone-else
+step 1 (backed up): Back up first? Deleting can’t be undone. Your last backup was Fri 20 Nov — anything since then would be lost. A backup file can be restored later (Tools → Backup → Restore). 💾 Export a backup now I have a backup — continue Cancel
+step 2: Delete everything? This deletes your whole garden from this phone, including photos. Backup files you’ve saved and backups in Google Drive are kept. Type DELETE to confirm CancelDelete everything
+  enabled — empty false
+  "dele" false
+  "delete" true
+  cancelled: kv 2 · photos 1 · gp keys 1 · other keys someone-else | plantings 1
+deleted: kv 0 · photos 0 · gp keys 1 · other keys someone-else | beds 0 | plantings 0 | page #/
+errs []

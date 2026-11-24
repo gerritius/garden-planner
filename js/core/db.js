@@ -33,5 +33,7 @@ export const DB = (() => {
     photoKeys: () => tx('photos', 'readonly', s => s.getAllKeys()),
     kvKeys: () => tx('kv', 'readonly', s => s.getAllKeys()),
     clearPhotos: () => tx('photos', 'readwrite', s => s.clear()),
+    // everything: the garden, its earlier copies and the photos (Tools → Delete all my data)
+    clearAll: async () => { const d = await open(); return new Promise((res, rej) => { const t = d.transaction(['kv', 'photos'], 'readwrite'); t.objectStore('kv').clear(); t.objectStore('photos').clear(); t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); },
   };
 })();

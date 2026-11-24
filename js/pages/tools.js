@@ -2,6 +2,7 @@
 
 import { copyFromMainSite, exportBackup, importBackup, snapshotSection } from '../backup/backup.js';
 import { driveSection } from '../backup/drive.js';
+import { eraseSection } from '../backup/erase.js';
 import { climateSection } from '../climate/climate.js';
 import { weatherSettings } from '../climate/weather.js';
 import { morningSection } from '../core/notify.js';
@@ -47,6 +48,7 @@ export function pageSettings() {
     <details class="set"><summary>🎨 Appearance &amp; crop names</summary>${themeSettings()}    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section></details>
     <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
     <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
+    ${eraseSection()}
     <p class="hint center">Garden Planner · v${APP_VERSION}${IS_TEST ? ' · test site' : ''} · <a href="#/settings" data-act="relNotes">What’s new</a></p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));

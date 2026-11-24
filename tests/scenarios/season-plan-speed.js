@@ -26,7 +26,9 @@ const U = 'http://localhost:8765/';
     await pg.waitForTimeout(300);
     console.log(h, Math.round(t), 'ms');
   }
-  await pg.goto(U + '#/plan'); await pg.waitForTimeout(3000);
+  await pg.goto(U + '#/plan');
+  // (ideas fill in after the page shows; wait for them rather than a fixed time — under load 3 s wasn't always enough)
+  await pg.waitForFunction(() => !document.querySelector('.gaps .chip.muted'), null, { timeout: 15000 }).catch(() => {});
   console.log('plan chips filled:', await pg.$$eval('.gaps .gap', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim().slice(0, 90))).then(a => a.slice(0, 3)), '| placeholders left', await pg.$$eval('.gaps .chip.muted', x => x.length));
   await pg.goto(U + '#/settings'); await pg.waitForTimeout(300);
   console.log('plan again (cached):', Math.round(await pg.evaluate(async () => { const t0 = performance.now(); location.hash = '#/plan'; await new Promise(r => setTimeout(r, 0)); return performance.now() - t0; })), 'ms');

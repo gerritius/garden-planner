@@ -10,6 +10,7 @@ import { _season } from '../feeding/stages.js';
 import { container } from '../garden/garden.js';
 import { _ideaCache } from '../garden/ideas.js';
 import { _need, growParams, HEADING } from '../plants/growth.js';
+import { climateTypePicker } from './presets.js';
 import { applySowWindows, MONTHS } from './sowing.js';
 import { kin } from '../plants/crops.js';
 
@@ -37,6 +38,7 @@ export function climateSection() {
   const c = climateHere(), t = NORMAL_T, rows = MONTHS.map((m, i) => `<span><i>${m[0]}</i>${Math.round(t[i])}°</span>`).join('');
   return `<section><h3>Climate</h3><p>Sowing months, growth and harvest estimates, frost and watering use the usual weather for <b>${esc(climateName())}</b>.</p>
     <div class="climrow">${rows}</div>${frostText() ? `<p class="small">❄ ${frostText()}</p>` : ''}
+    ${!S.weather || S.weather.lat == null || climatePending() ? climateTypePicker() : ''}
     ${S.weather && S.weather.lat != null ? `<div class="btnrow"><button class="btn small" data-act="climRefresh">↻ ${c ? 'Refresh' : 'Get'} climate for ${esc(S.weather.name || 'my location')}</button></div><p class="small muted" id="climst"></p>` : '<p class="hint">Set your location above and the app fetches the usual temperatures and rainfall there (10 years of records).</p>'}</section>`;
 }
 
@@ -55,21 +57,22 @@ export function clearSeasonCaches() {
 }
 // South of the equator the seasons run six months apart: a southern garden's November is a northern May. For things
 // written by month for Japan (pest seasons) and growing seasons that cross the new year there (the rotation plan).
-export const southern = () => !!(S.weather && S.weather.lat != null && S.weather.lat < 0);
-export const tropical = () => !!(S.weather && S.weather.lat != null && Math.abs(S.weather.lat) < 15);
+export const southern = () => gardenLat() < 0;
+export const tropical = () => Math.abs(gardenLat()) < 15;
 export const seasonMonth = (m) => southern() ? (m + 5) % 12 + 1 : m;   // the month it's like up north
 // the fetched climate, if it's for where the garden is now (after moving the location, the old place's doesn't count)
 export function climateHere() {
   const c = S.climate, w = S.weather;
   if (!c || !Array.isArray(c.t) || c.t.length !== 12) return null;
+  if (c.preset) return c;   // a climate type you picked: until your location's own weather is in
   return !w || w.lat == null || (Math.abs(c.lat - w.lat) < 0.15 && Math.abs(c.lon - w.lon) < 0.15) ? c : null;
 }
 // a location is set but its climate isn't in yet: everything still runs on the built-in Tokyo values — say so
-export const climatePending = () => !!(S.weather && S.weather.lat != null && !climateHere());
+export const climatePending = () => { const c = climateHere(); return !!(S.weather && S.weather.lat != null && (!c || c.preset)); };
 export function climateNotice() {
   if (!climatePending()) return '';
   A.climRetry = async () => { const ok = await ensureClimate(true); if (!ok) alert('Couldn’t fetch it — are you online?'); };
-  return `<p class="banner warn small clim">${_climBusy ? '⏳ Getting the usual weather for' : '⚠️ Not yet fetched: the usual weather for'} <b>${esc(S.weather.name || 'your location')}</b>. Until it is, sowing months, growth, harvest and feeding times use the built-in western Tokyo climate. ${_climBusy ? '' : '<button class="btn small" data-act="climRetry">↻ Get it now</button>'}</p>`;
+  return `<p class="banner warn small clim">${_climBusy ? '⏳ Getting the usual weather for' : '⚠️ Not yet fetched: the usual weather for'} <b>${esc(S.weather.name || 'your location')}</b>. Until it is, sowing months, growth, harvest and feeding times use ${S.climate && S.climate.preset ? `the climate type you picked (${esc(S.climate.name)})` : 'the built-in western Tokyo climate'}. ${_climBusy ? '' : '<button class="btn small" data-act="climRetry">↻ Get it now</button>'}</p>`;
 }
 export function applyClimate(force) {
   const c = climateHere();
@@ -83,7 +86,7 @@ export function applyClimate(force) {
 export async function ensureClimate(force) {
   const w = S.weather; if (!w || w.lat == null || _climBusy || !navigator.onLine) return false;
   const c = climateHere(), where = `${w.lat},${w.lon}`;
-  if (!force && (where === _climFailed || (c && c.frost !== undefined && daysBetween(c.fetched, todayStr()) < 365))) return false;   // (fetched before frost dates were kept: again, once)
+  if (!force && (where === _climFailed || (c && !c.preset && c.frost !== undefined && daysBetween(c.fetched, todayStr()) < 365))) return false;   // (fetched before frost dates were kept: again, once)
   _climBusy = true; applyClimate(); if (climatePending()) render();   // (the notice says it's on its way)
   try {
     const y = new Date().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;
@@ -106,7 +109,7 @@ export async function ensureClimate(force) {
 // ---------- day length ----------
 // Hours from sunrise to sunset, worked out from the latitude and date (no fetching): what sets off bolting in long-day
 // crops (spinach, coriander, daikon…) and bulbing in onions. Without a location, western Tokyo's latitude.
-export const gardenLat = () => S.weather && S.weather.lat != null ? S.weather.lat : 35.75;
+export const gardenLat = () => S.weather && S.weather.lat != null ? S.weather.lat : S.climate && S.climate.preset ? S.climate.lat : 35.75;
 export function dayLength(d, lat = gardenLat()) {
   const x = pd(d), n = Math.round((x - new Date(x.getFullYear(), 0, 1)) / 864e5) + 1;
   const decl = 23.44 * Math.sin((2 * Math.PI / 365) * (n - 81)) * Math.PI / 180, phi = lat * Math.PI / 180;
@@ -158,7 +161,7 @@ export function frostText() {
   const on = o => shortDate(addDays(winterStart(2026, f), o));
   return `Frosts usually from about <b>${on(f.first)}</b> to <b>${on(f.last)}</b> (${f.frosty} of the last ${f.winters} winters had frost — in half of them it came earlier, or lasted later).`;
 }
-const climateName = () => { const c = climateHere(); return c ? `${c.name || 'your location'} (${c.years} averages)` : climatePending() ? 'western Tokyo (built-in) — not yet fetched for your location' : 'western Tokyo (built-in — set your location for your own)'; };
+const climateName = () => { const c = climateHere(); return c && c.preset ? `${c.name} — a typical year for that climate type` : c ? `${c.name || 'your location'} (${c.years} averages)` : climatePending() ? 'western Tokyo (built-in) — not yet fetched for your location' : 'western Tokyo (built-in — set your location for your own)'; };
 
 // ---------- growth speed ----------
 // Warm-season crops (tomatoes, peppers, cucurbits, beans, corn…) don't speed up in a straight line with temperature: they

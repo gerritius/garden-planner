@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.41.0",
+    "date": "2026-11-24",
+    "notes": [
+      "No location, or offline? Pick your climate type instead (Tools → Weather & climate, or the first-run “Where” step): eleven Köppen–Geiger types from tropical to continental — humid subtropical in two, since Tokyo and Sydney share a type but not a winter — for either hemisphere. Each gives a typical year (with frost dates where frost is usual) for sowing months, growth and seasons.",
+      "Setting your location later replaces it with your own garden’s 10-year records; until they’re in, the picked type stands (and the home screen says so)."
+    ]
+  },
+  {
     "version": "1.40.0",
     "date": "2026-11-24",
     "notes": [

@@ -4,6 +4,7 @@
 
 import { importBackup, copyFromMainSite } from '../backup/backup.js';
 import { climatePending, ensureClimate } from '../climate/climate.js';
+import { climateTypePicker } from '../climate/presets.js';
 import { weatherSettings } from '../climate/weather.js';
 import { A, render, setChrome } from '../core/router.js';
 import { IS_TEST } from '../core/site.js';
@@ -67,8 +68,8 @@ export function pageWelcome(q) {
     const w = S.weather;
     if (climatePending()) ensureClimate().then(ok => { if (ok) render(); });   // the usual weather there, for sowing times
     body = `<p>Where your garden is sets the weather and frost alerts, and — from the last ten years’ weather there — when each crop can be sown and how fast it grows.</p>
-      ${weatherSettings()}
-      <div class="btncol"><a class="btn primary wide" href="${next}">${w && w.lat != null ? 'Next' : 'Skip — use central Japan (Tokyo)'}</a></div>`;
+      ${weatherSettings()}${!w || w.lat == null ? climateTypePicker() : ''}
+      <div class="btncol"><a class="btn primary wide" href="${next}">${w && w.lat != null || (S.climate && S.climate.preset) ? 'Next' : 'Skip — use central Japan (Tokyo)'}</a></div>`;
   } else if (step === 3) {
     body = `<p>Which crops do you grow, or want to? Tap to choose — you can change this any time in Tools → My crops.</p>
       ${cropPicker()}<div class="btncol"><a class="btn primary wide" href="${next}">Next</a></div>`;

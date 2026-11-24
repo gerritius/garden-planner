@@ -92,7 +92,7 @@ export const CROPS = [
   // ---- Komatsuna 小松菜 ----
   { id: 'komatsuna', en: 'Komatsuna', ja: '小松菜', color: '#3f8f3a', group: 'leaves', family: 'brassica', method: 'seed', layout: 'continuous',
     depth: 0.5, rowSp: 15, sowSp: 1, thinStage: 'At 3–4 true leaves', thinSp: 5, daysThin: 14, daysHarvest: 35, spread: 15, sow: [3, 4, 5, 6, 9, 10],
-    germ: [2, 4], soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 25 }, transplant: [18, 'At 3 true leaves'], win: 12,
+    germ: [2, 4], soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 25, longDay: 15.5 }, transplant: [18, 'At 3 true leaves'], win: 12,
     late: 'leaves get tough and it bolts', jobs: [NET], feed: 'medium', n: 12, p: 10, k: 10,
     stages: [{ d: 5, t: 'after thinning (only if leaves look pale)' }], rest: 1, flags: ['heatBolt', 'dayBolt', 'netted'],
     reg: [['こまつな'], ['非結球あぶらな科葉菜類', '野菜類']], varieties: ['楽天', '夏楽天', 'よかった菜', '浜美2号', 'きよすみ'] },
@@ -107,7 +107,7 @@ export const CROPS = [
   // ---- Hakusai 白菜 ----
   { id: 'hakusai', en: 'Hakusai', ja: '白菜', color: '#c5e1a5', group: 'heads', family: 'brassica', method: 'seed', layout: 'staggered', dir: 'along',
     depth: 1, rowSp: 60, sowSp: 45, thinStage: 'Down to 1 plant at 5–6 true leaves', thinSp: 45, daysThin: 25, daysHarvest: 80, spread: 50,
-    sow: [8, 9], germ: [2, 4], soilT: [5, 18, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 21, warmLo: 14 },
+    sow: [8, 9], germ: [2, 4], soilT: [5, 18, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 21, warmLo: 14, longDay: 15.5 },
     transplant: [22, 'At 4–5 true leaves'], win: 40, late: 'heads crack or bolt in spring',
     jobs: [NET, ['Side-dress & earth up (追肥・土寄せ)', 30], ['Tie up outer leaves for frost (頭を縛る)', 75]], feed: 'heavy', n: 25, p: 20, k: 25,
     stages: [{ d: 18, t: '2–3 weeks after planting / final thinning' }, { f: 0.5, t: 'as heads start to form (結球始め)' }], rest: 2,
@@ -116,7 +116,7 @@ export const CROPS = [
   // ---- Daikon 大根 ----
   { id: 'daikon', en: 'Daikon', ja: '大根', color: '#e8eef0', group: 'roots', family: 'brassica', method: 'seed', layout: 'rows', depth: 1.5,
     rowSp: 60, sowSp: 30, thinStage: 'Down to 1 plant at 5–6 true leaves', thinSp: 30, daysThin: 25, daysHarvest: 60, spread: 35, sow: [3, 4, 8, 9],
-    germ: [2, 4], soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 22 },
+    germ: [2, 4], soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 22, longDay: 15.5 },
     transplant: [0, 'roots resent moving — sow it where it grows'], win: 20, late: 'roots go pithy (す入り)',
     jobs: [NET, ['Earth up after thinning (土寄せ)', 28]], feed: 'medium', n: 12, p: 10, k: 12,
     stages: [{ d: 5, t: 'at the last thinning (本葉5–6枚)' }, { d: 25, t: 'as roots start to thicken' }], ph: [5.5, 6.5], rest: 1,
@@ -226,7 +226,7 @@ export const CROPS = [
   // ---- Mizuna 水菜 ----
   { id: 'mizuna', en: 'Mizuna', ja: '水菜', color: '#9ccc65', group: 'leaves', family: 'brassica', method: 'seed', layout: 'continuous', depth: 0.5,
     rowSp: 15, sowSp: 1, thinStage: 'At 3–4 true leaves', thinSp: 5, daysThin: 15, daysHarvest: 35, spread: 15, sow: [3, 4, 9, 10], germ: [2, 4],
-    soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 23 }, transplant: [20, 'At 3–4 true leaves'], win: 14,
+    soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 23, longDay: 15.5 }, transplant: [20, 'At 3–4 true leaves'], win: 14,
     late: 'stems get tough', jobs: [NET], feed: 'medium', n: 12, p: 10, k: 10, stages: [{ d: 10, t: 'after thinning' }], rest: 1,
     flags: ['heatBolt', 'dayBolt', 'netted'], reg: [['みずな'], ['非結球あぶらな科葉菜類', '野菜類']], varieties: ['京みぞれ', '千筋京水菜', '早生水菜', '京しぐれ', '紅法師'] },
   // ---- Zucchini ズッキーニ ----
@@ -254,7 +254,7 @@ export const CROPS = [
   // ---- Bok choy チンゲン菜 ----
   { id: 'chingensai', en: 'Bok choy', ja: 'チンゲン菜', color: '#7fb069', group: 'leaves', family: 'brassica', method: 'seed', layout: 'continuous',
     depth: 0.5, rowSp: 20, sowSp: 2, thinStage: 'At 4–5 true leaves', thinSp: 15, daysThin: 20, daysHarvest: 45, spread: 15, sow: [3, 4, 5, 9, 10],
-    germ: [2, 4], soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 24 }, transplant: [20, 'At 3–4 true leaves'], win: 10,
+    germ: [2, 4], soilT: [5, 15, 30], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { heat: 24, longDay: 15.5 }, transplant: [20, 'At 3–4 true leaves'], win: 10,
     late: 'bolts and base gets tough', jobs: [NET], feed: 'medium', n: 12, p: 10, k: 10, stages: [{ d: 7, t: 'after thinning' }], rest: 1,
     flags: ['heatBolt', 'dayBolt', 'netted'], reg: [['チンゲンサイ'], ['非結球あぶらな科葉菜類', '野菜類']], varieties: ['青帝', '長陽', '夏賞味', 'シャオパオ'] },
   // ---- Garlic にんにく ----

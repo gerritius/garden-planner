@@ -1,6 +1,6 @@
 // Problem finder (pests, diseases & disorders), pests noted in the diary, and crop quality / bolting warnings.
 
-import { normalT, seasonMonth, tropical, warming } from '../climate/climate.js';
+import { dayLength, lengthening, normalT, seasonMonth, tropical } from '../climate/climate.js';
 import { dayName, Weather } from '../climate/weather.js';
 import { A, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
@@ -151,7 +151,7 @@ export function qualityWarnings(only) {
     const n = crop(p.cropId).en;
     if (HEAT_BOLT.includes(kin(p.cropId)) && hot.length && (near(p) || normalT(td) >= 17))
       out.push([p, 'bolt', `${n}: ${hot.length > 1 ? 'warm days' : 'a warm day'} ahead (${Math.round(Math.max(...hot.map(d => d.max)))}°) — ${near(p) ? 'pick soon, it may bolt or turn bitter' : 'keep it watered; it may bolt early'}.`]);
-    else if (DAY_BOLT.includes(kin(p.cropId)) && warming(td) && normalT(td) >= 8 && p.harvestDate && p.harvestDate <= td)
+    else if (DAY_BOLT.includes(kin(p.cropId)) && lengthening(td) && dayLength(td) >= 12 && normalT(td) >= 8 && p.harvestDate && p.harvestDate <= td)   // (spring: days past 12 h and lengthening)
       out.push([p, 'bolt', `${n}: lengthening days make it flower now — pick ${p.cropId === 'naganegi' ? 'before the flower buds (ネギ坊主) open' : 'before it bolts'}.`]);
     if (SPLITTERS.includes(kin(p.cropId)) && rainy && dryBefore && near(p) && outdoors(p))
       out.push([p, 'split', `${n}: ${Math.round(rainy.rain)} mm of rain ${dayName(rainy.date) === 'Today' ? 'today' : 'on ' + dayName(rainy.date)} after a dry week — pick what’s ready first, it may split.`]);

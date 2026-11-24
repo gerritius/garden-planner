@@ -12,7 +12,7 @@ import { gaps, sizeLabel } from '../garden/garden.js';
 import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
 import { allCrops, crop, cropName, ic, kin, myCrops } from '../plants/crops.js';
 import { frostEnd, growParams, harvestModel, soonestHarvest } from '../plants/growth.js';
-import { applyClimate, climateHere, climateNotice, firstFrostAfter, frostFree, growUnits, NORMAL_T, normalT, TOKYO_T } from './climate.js';
+import { applyClimate, climateHere, climateNotice, dayLength, firstFrostAfter, gardenLat, frostFree, growUnits, NORMAL_T, normalT, TOKYO_T } from './climate.js';
 import { SOW_PROFILE } from '../data/catalog.js';
 
 // ---------- sowing windows from temperature ----------
@@ -23,7 +23,11 @@ import { SOW_PROFILE } from '../data/catalog.js';
 // weeks before the ground freezes: Hokkaido's late September–October); spring: otherwise, as it warms.
 // pick: days of picking after the first harvest that need frost-free weather (crops picked over a season).
 // plant: [low, high] mean °C to sow / plant out, where the general rule doesn't fit. warmLo: when warming, wait for this much warmth (young plants
-// that get cold bolt later, e.g. hakusai). Each crop's profile is in its record (data/crops.js).
+// that get cold bolt later, e.g. hakusai). longDay: hours of daylight at which it bolts instead of filling out (daikon,
+// hakusai and the Asian greens): it mustn't be maturing in days that long — only far from the equator, where summer
+// days pass 15 h (London's June: 16.6 h; RHS: sow them from midsummer); Japan's longest days are under that. (Not
+// spinach or coriander: in long-day places their summer bolting is as much heat, drought and variety, and spring sowings
+// are the main ones there.) Each crop's profile is in its record (data/crops.js).
 const monthDays = (y, m) => [5, 15, 25].map(d => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
 // days of growth to harvest, using the usual temperatures from a sowing date (null if it never gets there within a year)
 // — the harvest estimate's own model (coming up first, then the packet's growth), so the months it offers and the dates it
@@ -93,6 +97,7 @@ export function sowDayOK(cr, d) {
   if (cr.tender && (!frostFree(d) || (!pr.pick && firstFrostAfter(d) && g.end > firstFrostAfter(d)))) return false;   // …and between the frosts, where there are frost dates
   if (!cr.tender && !pr.hardy && !warm && coldDays(d, g.end) > 20) return false;                     // sown as it cools: should be ready before winter
   if (pr.heat && meanT(addDays(g.end, -Math.round(g.days * 0.3)), g.end) > pr.heat) return false;     // would mature in the heat: bolts / poor quality
+  if (pr.longDay && Math.max(dayLength(g.end), dayLength(addDays(g.end, 10))) >= pr.longDay) return false;   // would mature in long days: bolts
   return pr.pick ? pickDays(g.end, pr.pick, cr.tender ? tenderGood(cr.id) : 12) : true;
 }
 // days of picking from the first harvest until it gets too cool for it to keep cropping, up to the crop's usual season
@@ -113,9 +118,9 @@ export function sowWindow(cr) {
   const m2 = months(2); return m2.length ? m2 : months(1);
 }
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
-const SOW_RULES_VER = 4;   // bump when the rules change, so stored windows are worked out again
+const SOW_RULES_VER = 5;   // bump when the rules change, so stored windows are worked out again
 export function applySowWindows() {
-  const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), JSON.stringify((climateHere() || {}).frost || null), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
+  const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), JSON.stringify((climateHere() || {}).frost || null), Math.round(gardenLat() * 10), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
   const cache = S.sowCache && S.sowCache.key === key ? S.sowCache.m : null, worked = {};
   for (const c of crops) {
     if (c.sowRef === undefined) c.sowRef = (c.sow || []).slice();

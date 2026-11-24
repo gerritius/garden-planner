@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.40.0",
+    "date": "2026-11-24",
+    "notes": [
+      "Day length now counts, worked out from your latitude. Daikon, hakusai, bok choy, komatsuna and mizuna aren’t offered for sowings that would mature in days of 15½ hours or more — they bolt instead (far from the equator only: London’s midsummer is 16.6 h, so there they’re sown from midsummer, as the RHS advises; Japan’s longest days are shorter).",
+      "When planting onions, the form says which type bulbs where you are: short-day near the tropics, short or intermediate at Japan’s and Sydney’s latitudes, long-day for spring planting further from the equator.",
+      "The “lengthening days make it flower” warning follows the actual day length (past 12 hours and getting longer), so it comes at the right time of year south of the equator too."
+    ]
+  },
+  {
     "version": "1.39.0",
     "date": "2026-11-24",
     "notes": [

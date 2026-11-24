@@ -16,7 +16,8 @@ import { linkedStart, planFormBits } from '../garden/planning.js';
 import { rotationNote } from '../garden/rotation.js';
 import { soilAdvice, soilLine, soilReadingAdvice } from '../garden/soil.js';
 import { syncTasks } from '../garden/tasks.js';
-import { crop, cropOptions, newCropDialog, varieties } from '../plants/crops.js';
+import { onionType } from '../climate/climate.js';
+import { crop, cropOptions, kin, newCropDialog, varieties } from '../plants/crops.js';
 import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import {
@@ -103,7 +104,8 @@ export function pagePlantForm(p, c, q) {
       ${isNew && !d.startId ? `<button type="button" class="link" data-act="formIdeas">💡 What could go here${d.sowDate > todayStr() ? ' then' : ' now'}?</button>` : ''}
       <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="e.g. ${esc(cr ? (cr.varieties || [])[0] || '' : '')}" autocomplete="off">
         <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
-        ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}</label>
+        ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}
+        ${d.cropId && kin(d.cropId) === 'onion' ? `<small class="hint">🌗 For here: ${esc(onionType()[1])}.</small>` : ''}</label>
       <label>Planting type<div class="seg">${[['seed', 'From seed'], ['seedling', 'Seedlings / tubers']].map(([v, l]) => `<button type="button" data-act="method" data-v="${v}" class="${d.method === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>
     </fieldset>
     <fieldset><legend>Where &amp; when</legend>

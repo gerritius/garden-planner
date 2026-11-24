@@ -27,11 +27,12 @@ const U = 'http://localhost:8765/';
 
   // 1. offline for the archive: picking Sydney tries at once, and the home screen says it's still on Tokyo
   await pick('Sydney');
-  console.log('picked Sydney, archive down — tries:', calls, '|', await T());
+  let seen = 0; const tried = () => { const t = calls > seen; seen = calls; return t ? 'yes' : 'no'; };
+  console.log('picked Sydney, archive down — fetch tried:', tried(), '|', await T());
   console.log('  home:', JSON.stringify(await home()));
   // 2. back online: "Get it now" fetches it
   archiveUp = true; await pg.click('[data-act=climRetry]'); await pg.waitForTimeout(1200);
-  console.log('got it — tries:', calls, '|', await T(), '| climate', JSON.stringify(await pg.evaluate(() => S.climate && [S.climate.name, S.climate.t.slice(0, 2)])));
+  console.log('got it — fetch tried:', tried(), '|', await T(), '| climate', JSON.stringify(await pg.evaluate(() => S.climate && [S.climate.name, S.climate.t.slice(0, 2)])));
   console.log('  home:', JSON.stringify(await home()));
   // spinach sown now (late spring there) — its feeding isn't a "slow winter stretch" in January
   await pg.evaluate(async () => { S.plantings.push({ id: 'sp', cropId: 'spinach', containerId: 'b1', from: 0, to: 160, layout: 'rows', rowSp: 15, plantSp: 5, method: 'seed', sowDate: '2026-11-18', status: 'active', photos: {}, series: [], harvests: [] }); await save(); });
@@ -40,7 +41,7 @@ const U = 'http://localhost:8765/';
   console.log('  says winter?', await pg.evaluate(() => /winter/i.test(document.querySelector('main').textContent)));
   // 3. moving the garden to Tokyo: Sydney's climate no longer counts, and Tokyo's is fetched at once
   archiveUp = false; await pick('Higashiyamato');
-  console.log('moved to Higashiyamato — tries:', calls, '|', await T(), '| climate kept for', await pg.evaluate(() => S.climate && S.climate.name));
+  console.log('moved to Higashiyamato — fetch tried:', tried(), '|', await T(), '| climate kept for', await pg.evaluate(() => S.climate && S.climate.name));
   console.log('  home:', JSON.stringify(await home()));
   console.log('errs', errs); await b.close();
 })();

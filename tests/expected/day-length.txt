@@ -1,0 +1,8 @@
+Tokyo: 21 Jun 14.6 h · 21 Dec 9.7 h · onions: intermediate
+Sapporo: 21 Jun 15.4 h · 21 Dec 9.0 h · onions: long-day
+London: 21 Jun 16.6 h · 21 Dec 7.8 h · onions: long-day
+Sydney: 21 Jun 9.9 h · 21 Dec 14.4 h · onions: intermediate
+Singapore: 21 Jun 12.2 h · 21 Dec 12.0 h · onions: short-day
+onion form (London): 🌗 For here: Long-day onions for spring planting (they bulb from ~14–16 h days); short-day types only for autumn planting.
+lengthening 1 May / 1 Aug (London): true / false
+errs []

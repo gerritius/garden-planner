@@ -103,6 +103,24 @@ export async function ensureClimate(force) {
     return true;
   } catch (e) { console.warn('climate', e); _climFailed = where; return false; } finally { _climBusy = false; if (climatePending()) render(); }
 }
+// ---------- day length ----------
+// Hours from sunrise to sunset, worked out from the latitude and date (no fetching): what sets off bolting in long-day
+// crops (spinach, coriander, daikon…) and bulbing in onions. Without a location, western Tokyo's latitude.
+export const gardenLat = () => S.weather && S.weather.lat != null ? S.weather.lat : 35.75;
+export function dayLength(d, lat = gardenLat()) {
+  const x = pd(d), n = Math.round((x - new Date(x.getFullYear(), 0, 1)) / 864e5) + 1;
+  const decl = 23.44 * Math.sin((2 * Math.PI / 365) * (n - 81)) * Math.PI / 180, phi = lat * Math.PI / 180;
+  const c = (Math.sin(-0.833 * Math.PI / 180) - Math.sin(phi) * Math.sin(decl)) / (Math.cos(phi) * Math.cos(decl));
+  return c <= -1 ? 24 : c >= 1 ? 0 : 2 * Math.acos(c) * 12 / Math.PI;
+}
+export const lengthening = d => dayLength(addDays(d, 7)) > dayLength(d);
+// The onion type that bulbs here: onions start bulbing once days pass a length their type is bred for — short-day types
+// ~11–12 h, intermediate ~12–14 h, long-day 14 h and more. Japan's autumn-planted onions are short- and intermediate-day
+// types; far from the equator spring-planted long-day types are the ones that bulb in time.
+export function onionType(lat = gardenLat()) {
+  const a = Math.abs(lat);
+  return a < 28 ? ['short-day', 'Short-day onions (they bulb from ~11–12 h days)'] : a < 38 ? ['intermediate', 'Short- or intermediate-day onions (they bulb from ~12–14 h days) — like Japanese varieties'] : ['long-day', 'Long-day onions for spring planting (they bulb from ~14–16 h days); short-day types only for autumn planting']
+}
 // ---------- frost dates from the daily lows ----------
 // For each winter in the records (July to June up north, January to December down south): the first and last night the
 // low went to 0 °C or below. Kept as the usual (median) dates, days from the winter's start, and how many winters had any.

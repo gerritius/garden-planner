@@ -8,5 +8,8 @@ Perth, offline: Mediterranean, hot summer (southern hemisphere) · Jan 25° Jul 
   notice: ⚠️ Not yet fetched: the usual weather for Perth. Until it is, sowing months, growth, harvest and feeding times use the climate type you picked (Mediterranean, hot summer (southern hemisphere)). ↻ Get it now
 Perth, online: Perth · Jan 24.5° Jul 13.2° · tomato 1,9,10,11,12 · garlic 3,4,5 · frost none · south true · solar term ""
 welcome step 2: true | Skip — use central Japan (Tokyo)
-  picked tropical: Next | Tropical, wet all year (northern hemisphere) · Jan 26.5° Jul 27.9° · tomato 1,2,3,4,5,6,7,8,9,10,11,12 · garlic  · frost none · south false · solar term ""
+  picked tropical: Next | Tropical, wet all year (southern hemisphere) · Jan 27.9° Jul 26.5° · tomato 1,2,3,4,5,6,7,8,9,10,11,12 · garlic  · frost none · south true · solar term ""
+hemisphere swapped: open set, climtypes | scroll kept true | Oceanic (northern hemisphere)
+hemisphere first: still built-in | southern tab on true
+  then oceanic: Oceanic (southern hemisphere)
 errs []

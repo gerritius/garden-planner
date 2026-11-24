@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.41.1",
+    "date": "2026-11-24",
+    "notes": [
+      "Buttons that redraw the page you’re on (like the hemisphere tabs in Tools → Weather & climate) no longer fold up every section or jump the page: open sections stay open and you stay where you were.",
+      "Tapping a hemisphere before picking a climate type no longer switches the climate by itself — it applies when you pick the type."
+    ]
+  },
+  {
     "version": "1.41.0",
     "date": "2026-11-24",
     "notes": [

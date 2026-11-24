@@ -73,7 +73,9 @@ export function setChrome(title, { back = false, tab = null, kicker = '', sub = 
 export function render() {
   if (failure) return showRecovery();   // the garden couldn't be loaded: nothing else until that's sorted
   const { parts, q } = route();
-  const key = location.hash;
+  const key = location.hash, same = key === lastRoute;
+  // redrawing the page you're on (a button that changes something): keep the sections you had open or shut, and your place
+  const kept = same ? keptDetails() : null, y = window.scrollY;
   if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
   A = {};
   try { syncWater(); } catch (e) { console.warn(e); }
@@ -136,5 +138,16 @@ export function render() {
   $('#view').innerHTML = html;
   hydrate();
   after && after();
+  if (kept) { restoreDetails(kept); if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }
 }
+// <details> sections on the page, by their heading (its own text — not counts or names in its <small>) and order
+function detailsKeys() {
+  const seen = {};
+  return [...$('#view').querySelectorAll('details')].map(d => {
+    const sm = d.querySelector(':scope > summary'), t = sm ? [...sm.childNodes].filter(n => n.nodeType === 3 || n.tagName === 'B').map(n => n.textContent).join('').trim() : '';
+    const k = `${d.className}|${t}`; seen[k] = (seen[k] || 0) + 1; return [`${k}|${seen[k]}`, d];
+  });
+}
+const keptDetails = () => new Map(detailsKeys().map(([k, d]) => [k, d.open]));
+function restoreDetails(kept) { for (const [k, d] of detailsKeys()) if (kept.has(k) && d.open !== kept.get(k)) d.open = kept.get(k); }
 export const notFound = () => { setChrome('Not found', { back: true }); return `<div class="empty-state">That item no longer exists.<br><a class="btn" href="#/">Go home</a></div>`; };

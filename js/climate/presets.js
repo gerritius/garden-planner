@@ -44,10 +44,11 @@ export function presetClimate(id, south) {
     years: 'a typical year', fetched: todayStr(), frost: p.frost ? { winters: 10, frosty: 10, first: p.frost[0], last: p.frost[1], south: !!south } : null };
 }
 // the picker: Tools → Weather & climate, and the first-run "Where" step, while no location's weather is in
+let pickSouth = null;   // the hemisphere tapped before a type is picked (it only takes effect with the type)
 export function climateTypePicker() {
-  const cur = S.climate && S.climate.preset, south = S.climate && S.climate.preset ? S.climate.lat < 0 : false;
-  A.climType = async el => { S.climate = presetClimate(el.dataset.id, el.dataset.s === '1' || (el.dataset.s == null && south)); applyClimate(true); await save(); render(); };
-  A.climHemi = async el => { const s = el.dataset.v === 's'; S.climate = presetClimate(cur || 'Cfa', s); applyClimate(true); await save(); render(); };
+  const cur = S.climate && S.climate.preset, south = cur ? S.climate.lat < 0 : pickSouth ?? (S.weather && S.weather.lat != null ? S.weather.lat < 0 : false);
+  A.climType = async el => { S.climate = presetClimate(el.dataset.id, south); applyClimate(true); await save(); render(); };
+  A.climHemi = async el => { const s = el.dataset.v === 's'; pickSouth = s; if (cur) { S.climate = presetClimate(cur, s); applyClimate(true); await save(); } render(); };
   A.climBuiltIn = async () => { S.climate = null; applyClimate(true); await save(); render(); };
   return `<details class="climtypes"${cur ? ' open' : ''}><summary>No location? Pick your climate type</summary>
     <p class="small muted">A typical year for each type (Köppen–Geiger). Setting your location gives your own garden’s weather instead.</p>

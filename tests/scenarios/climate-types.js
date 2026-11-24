@@ -40,6 +40,17 @@ const U = 'http://localhost:8765/';
   console.log('  picked tropical:', await pg.textContent('.welcome .btncol .btn.primary'), '|', await state());
   await pg.goto(U + '#/settings'); await pg.waitForTimeout(300); await pg.evaluate(() => document.querySelectorAll('details').forEach(d => d.open = true));
   await pg.evaluate(async () => { S.weather = null; S.climate = presetClimate('Cfb', true); applyClimate(true); await save(); render(); }); await pg.waitForTimeout(300); await pg.evaluate(() => document.querySelectorAll('details').forEach(d => d.open = true));
+  // swapping hemisphere redraws the page but keeps the open sections and the place on the page
+  await pg.evaluate(() => { document.querySelectorAll('details').forEach(d => d.open = false); document.querySelector('details.climtypes').closest('details.set').open = true; document.querySelector('details.climtypes').open = true; });
+  await pg.evaluate(() => document.querySelector('[data-act=climHemi][data-v=n]').scrollIntoView({ block: 'center' })); const y0 = await pg.evaluate(() => Math.round(scrollY));
+  await pg.click('[data-act=climHemi][data-v=n]'); await pg.waitForTimeout(300);
+  console.log('hemisphere swapped: open', await pg.$$eval('details[open]', x => x.map(d => d.className || d.querySelector('summary').textContent.trim().slice(0, 22)).join(', ')), '| scroll kept', Math.abs(await pg.evaluate(() => Math.round(scrollY)) - y0) <= 2, '|', await pg.evaluate(() => S.climate.name));
+  // before a type is picked, the hemisphere alone changes nothing
+  await pg.evaluate(async () => { S.climate = null; applyClimate(true); await save(); render(); }); await pg.waitForTimeout(200);
+  await pg.click('[data-act=climHemi][data-v=s]'); await pg.waitForTimeout(300);
+  console.log('hemisphere first:', await pg.evaluate(() => S.climate ? S.climate.name : 'still built-in'), '| southern tab on', await pg.evaluate(() => document.querySelector('[data-act=climHemi][data-v=s]').classList.contains('on')));
+  await pg.click('[data-act=climType][data-id=Cfb]'); await pg.waitForTimeout(300);
+  console.log('  then oceanic:', await pg.evaluate(() => S.climate.name));
   const el = await pg.$('details.climtypes'); if (el && process.argv[2]) await el.screenshot({ path: process.argv[2] + '/climtypes.png' });
   console.log('errs', errs); await b.close();
 })();

@@ -4,17 +4,18 @@
 const { newContext } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
-// [latitude, monthly mean °C] (approximate normals)
+// [latitude, monthly mean °C, frost] (approximate normals; frost: usual first and last frost, days from 1 July — where
+// frost comes most winters)
 const CLIMATES = {
   Tokyo: null,   // the built-in one
-  Sapporo: [43.1, [-3.2, -2.7, 1.1, 7.3, 13.0, 17.0, 21.1, 22.3, 18.6, 12.1, 5.2, -0.9]],
+  Sapporo: [43.1, [-3.2, -2.7, 1.1, 7.3, 13.0, 17.0, 21.1, 22.3, 18.6, 12.1, 5.2, -0.9], { first: 112, last: 303 }],   // ~21 Oct – ~30 Apr
   Kagoshima: [31.6, [8.7, 9.9, 12.8, 16.9, 20.8, 24.0, 28.1, 28.8, 26.5, 21.8, 16.2, 10.9]],
   Naha: [26.2, [17.3, 17.5, 19.1, 21.5, 24.2, 27.2, 29.1, 29.0, 27.9, 25.5, 22.5, 19.0]],
   Sydney: [-33.9, [22.8, 22.8, 21.6, 19.0, 16.1, 13.6, 12.8, 13.9, 16.2, 18.4, 20.0, 21.7]],
   Melbourne: [-37.8, [21.3, 21.4, 19.4, 16.6, 13.9, 11.6, 11.0, 11.9, 13.6, 15.6, 17.8, 19.8]],
-  London: [51.5, [5.2, 5.3, 7.6, 9.9, 13.3, 16.5, 18.7, 18.5, 15.7, 12.0, 8.0, 5.5]],
+  London: [51.5, [5.2, 5.3, 7.6, 9.9, 13.3, 16.5, 18.7, 18.5, 15.7, 12.0, 8.0, 5.5], { first: 140, last: 266 }],   // ~18 Nov – ~24 Mar
   Singapore: [1.35, [26.5, 27.1, 27.5, 28.0, 28.3, 28.3, 27.9, 27.9, 27.6, 27.6, 27.0, 26.4]],
-  Denver: [39.7, [0.0, 0.9, 5.0, 9.0, 14.0, 19.6, 23.5, 22.4, 17.6, 10.8, 4.4, -0.4]],
+  Denver: [39.7, [0.0, 0.9, 5.0, 9.0, 14.0, 19.6, 23.5, 22.4, 17.6, 10.8, 4.4, -0.4], { first: 98, last: 307 }],   // ~7 Oct – ~4 May
 };
 // What local growing guides say, for a few crops away from Japan: months that must be offered (+) and must not (−).
 // (Checks the rules give each place its own seasons — not Japan's months, and not "all year" where winters are mild.)
@@ -66,10 +67,11 @@ const KNOWN = {
     return probs.length ? `${probs.length} problems\n  ✗ ` + probs.join('\n  ✗ ') : `${CATALOG.length} crops, problems: none`;
   }));
   for (const [name, lt] of Object.entries(CLIMATES)) {
-    const [lat, t] = lt || [35.75, null];
-    const r = await pg.evaluate(({ name, lat, t, known }) => {
+    const [lat, t, fr] = lt || [35.75, null];
+    const frost = fr ? { winters: 10, frosty: 10, south: false, ...fr } : null;
+    const r = await pg.evaluate(({ name, lat, t, known, frost }) => {
       S.weather = t ? { lat, lon: 0, name } : null;
-      S.climate = t ? { lat, lon: 0, name, t, rain: [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51], years: 'test', fetched: '2026-01-01' } : null;
+      S.climate = t ? { lat, lon: 0, name, t, rain: [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51], years: 'test', fetched: '2026-01-01', frost } : null;
       applyClimate(true);
       const probs = [], summary = [];
       const overwinter = id => !!(SOW_PROFILE[id] || {}).winter;   // grown through winter (garlic, onions, peas, broad beans…)
@@ -105,7 +107,7 @@ const KNOWN = {
         if (miss.length) probs.push(`${cr.id}: missing ${miss.join(', ')}`);
       }
       return { probs, summary };
-    }, { name, lat, t, known: KNOWN[name] });
+    }, { name, lat, t, known: KNOWN[name], frost });
     console.log(`== ${name}: ${r.probs.length ? r.probs.length + ' problems' : 'problems: none'}`);
     for (const p of r.probs) console.log('  ✗ ' + p);
     console.log('  sowing months:days ' + r.summary.join(' · '));

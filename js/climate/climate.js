@@ -5,7 +5,7 @@
 import { A, render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
-import { $, addDays, daysBetween, esc, pd, todayStr } from '../core/util.js';
+import { $, addDays, daysBetween, esc, pd, shortDate, todayStr } from '../core/util.js';
 import { _season } from '../feeding/stages.js';
 import { container } from '../garden/garden.js';
 import { _ideaCache } from '../garden/ideas.js';
@@ -36,7 +36,7 @@ export function climateSection() {
   A.climRefresh = async () => { const el = $('#climst'); if (el) el.textContent = 'Fetching…'; const ok = await ensureClimate(true); if (!ok && el) el.textContent = 'Couldn’t fetch it — are you online?'; };
   const c = climateHere(), t = NORMAL_T, rows = MONTHS.map((m, i) => `<span><i>${m[0]}</i>${Math.round(t[i])}°</span>`).join('');
   return `<section><h3>Climate</h3><p>Sowing months, growth and harvest estimates, frost and watering use the usual weather for <b>${esc(climateName())}</b>.</p>
-    <div class="climrow">${rows}</div>
+    <div class="climrow">${rows}</div>${frostText() ? `<p class="small">❄ ${frostText()}</p>` : ''}
     ${S.weather && S.weather.lat != null ? `<div class="btnrow"><button class="btn small" data-act="climRefresh">↻ ${c ? 'Refresh' : 'Get'} climate for ${esc(S.weather.name || 'my location')}</button></div><p class="small muted" id="climst"></p>` : '<p class="hint">Set your location above and the app fetches the usual temperatures and rainfall there (10 years of records).</p>'}</section>`;
 }
 
@@ -73,7 +73,7 @@ export function climateNotice() {
 }
 export function applyClimate(force) {
   const c = climateHere();
-  const t = c ? c.t : TOKYO_T, r = c ? c.rain : TOKYO_RAIN, key = t.join(',') + '|' + JSON.stringify(S.sowOverride || {});
+  const t = c ? c.t : TOKYO_T, r = c ? c.rain : TOKYO_RAIN, key = t.join(',') + '|' + JSON.stringify(S.sowOverride || {}) + '|' + JSON.stringify(c ? c.frost || null : null);
   if (!force && key === _climKey) return;
   _climKey = key;
   for (let i = 0; i < 12; i++) { NORMAL_T[i] = t[i]; RAIN_MONTH[i] = r[i]; }
@@ -83,11 +83,11 @@ export function applyClimate(force) {
 export async function ensureClimate(force) {
   const w = S.weather; if (!w || w.lat == null || _climBusy || !navigator.onLine) return false;
   const c = climateHere(), where = `${w.lat},${w.lon}`;
-  if (!force && (where === _climFailed || (c && daysBetween(c.fetched, todayStr()) < 365))) return false;
+  if (!force && (where === _climFailed || (c && c.frost !== undefined && daysBetween(c.fetched, todayStr()) < 365))) return false;   // (fetched before frost dates were kept: again, once)
   _climBusy = true; applyClimate(); if (climatePending()) render();   // (the notice says it's on its way)
   try {
     const y = new Date().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;
-    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean,precipitation_sum&timezone=auto`;
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean,temperature_2m_min,precipitation_sum&timezone=auto`;
     const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json(), d = j.daily; if (!d || !d.time) throw new Error('no data');
     const tSum = Array(12).fill(0), tN = Array(12).fill(0), rain = {};
@@ -98,10 +98,47 @@ export async function ensureClimate(force) {
     Object.entries(rain).forEach(([k, v]) => { const m = +k.slice(5, 7) - 1; rSum[m] += v; rN[m]++; });
     const t = tSum.map((s, i) => tN[i] ? Math.round(s / tN[i] * 10) / 10 : null), rr = rSum.map((s, i) => rN[i] ? Math.round(s / rN[i]) : null);
     if (t.some(v => v == null)) throw new Error('incomplete');
-    S.climate = { lat: w.lat, lon: w.lon, name: w.name || '', t, rain: rr, years: `${y - 10}–${y - 1}`, fetched: todayStr() };
+    S.climate = { lat: w.lat, lon: w.lon, name: w.name || '', t, rain: rr, years: `${y - 10}–${y - 1}`, fetched: todayStr(), frost: frostStats(d.time, d.temperature_2m_min, w.lat < 0) };
     applyClimate(); await save(); render();
     return true;
   } catch (e) { console.warn('climate', e); _climFailed = where; return false; } finally { _climBusy = false; if (climatePending()) render(); }
+}
+// ---------- frost dates from the daily lows ----------
+// For each winter in the records (July to June up north, January to December down south): the first and last night the
+// low went to 0 °C or below. Kept as the usual (median) dates, days from the winter's start, and how many winters had any.
+// null: no daily lows in the records (then the usual mean temperature stands in: frost about when it's below 8.5 °C).
+export function frostStats(time, tmin, south) {
+  if (!Array.isArray(tmin) || !tmin.some(v => v != null)) return null;
+  const startOf = ds => { const y = +ds.slice(0, 4), m = +ds.slice(5, 7); return south ? `${y}-01-01` : m >= 7 ? `${y}-07-01` : `${y - 1}-07-01`; };
+  const wins = {};
+  time.forEach((ds, i) => { const v = tmin[i]; if (v == null) return; const k = startOf(ds), w = wins[k] = wins[k] || { n: 0, first: null, last: null };
+    w.n++; if (v <= 0) { const o = daysBetween(k, ds); if (w.first == null) w.first = o; w.last = o; } });
+  const full = Object.values(wins).filter(w => w.n >= 330), hit = full.filter(w => w.first != null);
+  if (!full.length) return null;
+  const med = a => { const x = a.slice().sort((p, q) => p - q); return x.length ? x[Math.floor(x.length / 2)] : null; };
+  return { winters: full.length, frosty: hit.length, first: med(hit.map(w => w.first)), last: med(hit.map(w => w.last)), south: !!south };
+}
+// frost only counts where it comes most winters (in a frost-free place a rare cold night doesn't set the seasons)
+const frostOf = () => { const c = climateHere(), f = c && c.frost; return f && f.frosty >= Math.ceil(f.winters * 0.4) && f.first != null ? f : null; };
+export const hasFrostDates = () => !!frostOf();
+const winterStart = (y, f) => f.south ? `${y}-01-01` : `${y}-07-01`;
+// the usual first autumn frost after a date (null where frost is rare, or no daily lows were fetched)
+export function firstFrostAfter(d) {
+  const f = frostOf(); if (!f) return null;
+  for (let y = +d.slice(0, 4) - 1; y <= +d.slice(0, 4) + 1; y++) { const x = addDays(winterStart(y, f), f.first); if (x > d) return x; }
+  return null;
+}
+// is this day usually past the last spring frost and before the first autumn one?
+export function frostFree(d) {
+  const f = frostOf(); if (!f) return true;
+  for (let y = +d.slice(0, 4) - 1; y <= +d.slice(0, 4); y++) { const a = addDays(winterStart(y, f), f.first), b = addDays(winterStart(y, f), f.last); if (d >= a && d <= b) return false; }
+  return true;
+}
+export function frostText() {
+  const c = climateHere(), f = c && c.frost; if (!f) return '';
+  if (!frostOf()) return f.frosty ? `Frost is rare here: ${f.frosty} of the last ${f.winters} winters.` : `No frost in the last ${f.winters} winters.`;
+  const on = o => shortDate(addDays(winterStart(2026, f), o));
+  return `Frosts usually from about <b>${on(f.first)}</b> to <b>${on(f.last)}</b> (${f.frosty} of the last ${f.winters} winters had frost — in half of them it came earlier, or lasted later).`;
 }
 const climateName = () => { const c = climateHere(); return c ? `${c.name || 'your location'} (${c.years} averages)` : climatePending() ? 'western Tokyo (built-in) — not yet fetched for your location' : 'western Tokyo (built-in — set your location for your own)'; };
 

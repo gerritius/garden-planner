@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.39.0",
+    "date": "2026-11-24",
+    "notes": [
+      "Real frost dates for your location: the climate now also reads the daily lows of the last 10 years and works out when frosts usually start and end (Tools → Weather & climate shows them). Where frost only comes some winters, it says so and doesn’t set the seasons by it.",
+      "Frost-tender crops are offered for planting only after the usual last frost, and must finish — or, for crops picked over weeks, stop picking — by the usual first one. Autumn potatoes end at the first frost there, instead of when the average temperature falls to about 8.5 °C (which comes too late where nights get much colder than days, like Denver).",
+      "Your climate is fetched again once to add the frost dates."
+    ]
+  },
+  {
     "version": "1.38.0",
     "date": "2026-11-24",
     "notes": [

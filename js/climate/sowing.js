@@ -12,7 +12,7 @@ import { gaps, sizeLabel } from '../garden/garden.js';
 import { SOIL_T, soilBadge, soilTemps } from '../garden/soil.js';
 import { allCrops, crop, cropName, ic, kin, myCrops } from '../plants/crops.js';
 import { frostEnd, growParams, harvestModel, soonestHarvest } from '../plants/growth.js';
-import { applyClimate, climateHere, climateNotice, growUnits, NORMAL_T, normalT, TOKYO_T } from './climate.js';
+import { applyClimate, climateHere, climateNotice, firstFrostAfter, frostFree, growUnits, NORMAL_T, normalT, TOKYO_T } from './climate.js';
 import { SOW_PROFILE } from '../data/catalog.js';
 
 // ---------- sowing windows from temperature ----------
@@ -90,12 +90,14 @@ export function sowDayOK(cr, d) {
   if (T < lo || T > hi) return false;
   const g = climGrow(cr, d); if (!g || g.days > (cr.daysHarvest || 60) * 2) return false;              // too slow: it would crawl into winter
   if (!tenderOK(g, !warm)) return false;                                                             // frost-tender: warm enough all through
+  if (cr.tender && (!frostFree(d) || (!pr.pick && firstFrostAfter(d) && g.end > firstFrostAfter(d)))) return false;   // …and between the frosts, where there are frost dates
   if (!cr.tender && !pr.hardy && !warm && coldDays(d, g.end) > 20) return false;                     // sown as it cools: should be ready before winter
   if (pr.heat && meanT(addDays(g.end, -Math.round(g.days * 0.3)), g.end) > pr.heat) return false;     // would mature in the heat: bolts / poor quality
   return pr.pick ? pickDays(g.end, pr.pick, cr.tender ? tenderGood(cr.id) : 12) : true;
 }
 // days of picking from the first harvest until it gets too cool for it to keep cropping, up to the crop's usual season
-export const pickDays = (from, max, cool = 12) => { let n = 0; for (let d = from; n < max && normalT(d) >= cool; d = addDays(d, 1)) n++; return n; };
+// (and the first frost ends it, where there are frost dates)
+export const pickDays = (from, max, cool = 12) => { const ff = firstFrostAfter(from); let n = 0; for (let d = from; n < max && normalT(d) >= cool && (!ff || d < ff); d = addDays(d, 1)) n++; return n; };
 export function sowWindow(cr) {
   const res = [];
   for (let m = 1; m <= 12; m++) res.push(monthDays(2026, m).map(d => sowDayOK(cr, d)));
@@ -111,9 +113,9 @@ export function sowWindow(cr) {
   const m2 = months(2); return m2.length ? m2 : months(1);
 }
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
-const SOW_RULES_VER = 3;   // bump when the rules change, so stored windows are worked out again
+const SOW_RULES_VER = 4;   // bump when the rules change, so stored windows are worked out again
 export function applySowWindows() {
-  const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
+  const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), JSON.stringify((climateHere() || {}).frost || null), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
   const cache = S.sowCache && S.sowCache.key === key ? S.sowCache.m : null, worked = {};
   for (const c of crops) {
     if (c.sowRef === undefined) c.sowRef = (c.sow || []).slice();

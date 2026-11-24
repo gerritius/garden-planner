@@ -1,0 +1,8 @@
+frost: {"winters":9,"frosty":9,"first":119,"last":280,"south":false}
+Denver: first frost after 1 Aug 2026-10-28 · frost-free 1 May true, 20 May true
+  tomato 5 · basil 6 · kyuri 5,6,7 · potato 4,7,8
+  potato planted 20 Jul: harvest 2026-09-29 (before the frost) · planted 20 Apr: 2026-07-17
+  Tools: ❄ Frosts usually from about 28 Oct to 7 Apr (9 of the last 9 winters had frost — in half of them it came earlier, or lasted later).
+mild: {"winters":9,"frosty":2,"first":198,"last":200,"south":false} | has frost dates false
+  Tools: ❄ Frost is rare here: 2 of the last 9 winters.
+errs []

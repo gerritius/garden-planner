@@ -1,7 +1,7 @@
 // How plants develop with the temperature they get: when seedlings come up, when to thin, true leaves, when the
 // harvest starts and how long the crop keeps (packet days, main harvest, holding in the ground).
 
-import { coverWarmth, dayTemp, growUnits, normalT, refNormalT, tempFor } from '../climate/climate.js';
+import { coverWarmth, dayTemp, firstFrostAfter, growUnits, hasFrostDates, normalT, refNormalT, tempFor } from '../climate/climate.js';
 import { render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
@@ -138,12 +138,14 @@ export function harvestEstimate(p) {
   const fe = frostEnd(p); if (fe && d > fe) d = fe;   // autumn potatoes: the tops die back with the first frosts, so they're dug then
   return d < addDays(p.sowDate, 14) ? addDays(p.sowDate, 14) : d;
 }
-// for frost-tender crops planted for autumn: the date the first frosts usually finish the tops (normal mean temperature falls to ~8.5 °C)
+// for frost-tender crops planted for autumn: the date the first frosts usually finish the tops (from the daily lows where
+// they've been fetched, else when the normal mean temperature falls to ~8.5 °C)
 export function frostEnd(p) {
   const cr = crop(p.cropId); if (!cr.frostEnd || !p.sowDate) return null;
   if (normalT(addDays(p.sowDate, 45)) >= normalT(p.sowDate)) return null;   // planted as it warms up (spring): dug before summer, not stopped by frost
   const c = container(p.containerId); if (c && c.indoor) return null;
-  for (let d = addDays(p.sowDate, 30), i = 0; i < 200; i++, d = addDays(d, 1)) if (normalT(d) < 8.5) return d;
+  const ff = firstFrostAfter(addDays(p.sowDate, 30)); if (ff || hasFrostDates()) return ff;   // the usual first frost there, from its daily lows
+  for (let d = addDays(p.sowDate, 30), i = 0; i < 200; i++, d = addDays(d, 1)) if (normalT(d) < 8.5) return d;   // (else: about when the mean falls to 8.5 °C)
   return null;
 }
 // data version 2: plantings from before harvest dates followed the temperature keep dates that were clearly typed in by hand

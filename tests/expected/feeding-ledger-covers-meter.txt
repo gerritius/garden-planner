@@ -2,7 +2,7 @@ cover type migrated fushokufu
 old job [true,"2026-10-25",true,[["Bokashi",3,"handful","2026-10-25",["b1"]]]]
 today jobs mention side-dress? true
 new past job done? [ true, '2026-10-28', true ]
-hakusai feeding: Feeding 30 Aug4 JanRunning short now — plan a feed soon. 🌿 Record feeding📅 Feeding plan… What’s been counted Hakusai needs about 50 g of nitrogen over the season in this 2.0 m² section. Counted: 21 g. Where it goes: the hakusai should take up about 21 g of its 50 g; about 0 g washes out with rain. So even with more counted than it needs, it runs short once the early feed has been used or washed out. N21 g / 50 gP19
+hakusai feeding: Feeding 30 Aug29 DecRunning short now — plan a feed soon. 🌿 Record feeding📅 Feeding plan… What’s been counted Hakusai needs about 50 g of nitrogen over the season in this 2.0 m² section. Counted: 21 g. Where it goes: the hakusai should take up about 21 g of its 50 g; about 0 g washes out with rain. So even with more counted than it needs, it runs short once the early feed has been used or washed out. N21 g / 50 gP1
 bag1 fresh base plan [] | bag2 reused [{"product":"Chemical fertiliser 8-8-8","amount":20,"unit":"g"}]
 dialog prefilled Chemical fertiliser 8-8-8 10 ≈ 10 g → usable this season: N 0.8 g · P 0.6 g · K 0.8 g.
 task done & logged [true,"2026-11-16",true]

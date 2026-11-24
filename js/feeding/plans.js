@@ -118,7 +118,7 @@ const SUPPORT = /trellis|\bnet\b|stake|support|cane|tie (in|stems)|支柱|誘引
 export function careJobStart(p, j) {
   const from = p.sowDate || todayStr(), days = +j[1] || 0;
   if (!days) return from;
-  let d = growthDate(p.cropId, from, days, p.containerId);
+  let d = growthDate(p.cropId, from, days, p.containerId, p);
   if (SUPPORT.test(j[0]) && !NOT_SUPPORT.test(j[0])) { const s = feedSeason(Object.assign({}, p, { sowDate: from })); if (s && d < s.we) d = s.we; }   // it overwinters: supports in spring
   return d;
 }

@@ -118,10 +118,26 @@ function climateOffset(c) {
   else if (vol != null && vol < 60 && sun === 'full') off += 0.3;
   return T => T + off - (vol != null && vol < 15 && T < 5 ? 0.8 : 0);
 }
-export function tempFor(cid) {
-  const c = container(cid); if (!c || (!c.indoor && (c.sun || 'full') === 'full' && potVolume(c) == null)) return null;
+// Covers over a planting keep it warmer on the days they're on: fushokufu about 2.5 °C on the daily mean, an insect net a
+// little, shade cloth not at all — less as the weather warms (no help in heat, and they usually come off), none from 22 °C.
+const COVER_WARMTH = { fushokufu: 2.5, insect: 0.5, shade: 0 };
+export function coverWarmth(p, c = p && container(p.containerId)) {
+  if (!p || !c || c.indoor || (p.from == null && !p.assumeCover)) return null;
+  // (an idea "under a tunnel or fushokufu" counts the cover it suggests)
+  const xs = p.assumeCover ? [{ type: p.assumeCover }] : (c.covers || []).filter(x => (COVER_WARMTH[x.type] || 0) > 0 && x.from < p.to - 0.5 && x.to > p.from + 0.5);
+  if (!xs.length) return null;
+  return (d, T) => {
+    let b = 0; for (const x of xs) if ((!x.on || d >= x.on) && (!x.off || d < x.off)) b = Math.max(b, COVER_WARMTH[x.type]);
+    return b * (T <= 15 ? 1 : T >= 22 ? 0 : (22 - T) / 7);
+  };
+}
+// the temperature a planting (or, without one, anything in that bed or pot) grows at each day — null: just the weather
+export function tempFor(cid, p) {
+  const c = container(cid); if (!c) return null;
+  const cov = coverWarmth(p, c);
+  if (!cov && !c.indoor && (c.sun || 'full') === 'full' && potVolume(c) == null) return null;
   const adj = climateOffset(c), daily = S.weather && S.weather.daily;
-  return d => adj(dayTemp(d, daily));
+  return d => { const T = adj(dayTemp(d, daily)); return cov ? T + cov(d, T) : T; };
 }
 export function climateLabel(c) {
   if (c.indoor) return '🏠 Indoors';

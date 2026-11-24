@@ -63,7 +63,7 @@ function cropIdeasUncached(c, a, b, s, clearBy) {
     const opts = [];
     const tryOpt = (kind, P, T, cover) => {
       if (cr.tender && !warm(P)) return;
-      const hp = { id: 'idea', cropId: cr.id, sowDate: P, containerId: c.id, method: kind === 'sow' ? 'seed' : 'seedling', seededOn: kind === 'raise' ? T : undefined };
+      const hp = { id: 'idea', cropId: cr.id, sowDate: P, containerId: c.id, method: kind === 'sow' ? 'seed' : 'seedling', seededOn: kind === 'raise' ? T : undefined, assumeCover: cover ? 'fushokufu' : undefined };   // (under the fushokufu it suggests)
       const r = doneOf(hp); if (!r || daysBetween(P, r.ready) > 300) return;
       opts.push({ kind, P, T, cover: !!cover, ...r, fits: !clearBy || r.done <= clearBy });
     };

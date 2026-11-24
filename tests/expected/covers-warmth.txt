@@ -1,0 +1,10 @@
+no cover:             spinach: up ["2026-11-15","2026-11-20"] · thin 2026-12-08 · harvest 2026-12-19 | komatsuna: up ["2026-11-12","2026-11-14"] · thin 2026-11-29 · harvest 2027-01-05
+fushokufu on spinach: spinach: up ["2026-11-15","2026-11-20"] · thin 2026-12-04 · harvest 2026-12-12 | komatsuna: up ["2026-11-12","2026-11-14"] · thin 2026-11-29 · harvest 2027-01-05
+insect net instead:   spinach: up ["2026-11-15","2026-11-20"] · thin 2026-12-07 · harvest 2026-12-17 | komatsuna: up ["2026-11-12","2026-11-14"] · thin 2026-11-29 · harvest 2027-01-05
+shade cloth instead:  spinach: up ["2026-11-15","2026-11-20"] · thin 2026-12-08 · harvest 2026-12-19 | komatsuna: up ["2026-11-12","2026-11-14"] · thin 2026-11-29 · harvest 2027-01-05
+fushokufu off 15 Dec: spinach: up ["2026-11-15","2026-11-20"] · thin 2026-12-04 · harvest 2026-12-12 | komatsuna: up ["2026-11-12","2026-11-14"] · thin 2026-11-29 · harvest 2027-01-05
+fushokufu, whole bed: spinach: up ["2026-11-15","2026-11-20"] · thin 2026-12-04 · harvest 2026-12-12 | komatsuna: up ["2026-11-12","2026-11-14"] · thin 2026-11-26 · harvest 2026-12-22
+sown 15 Dec, up: bare ["2026-12-22","2026-12-29"] · fushokufu ["2026-12-21","2026-12-26"]
+tomato planted 1 May: with fushokufu 2027-07-11 · without 2027-07-13
+page: Sown10 Nov8 days ago Harvest from12 Decin 24 days
+errs []

@@ -28,7 +28,7 @@ function learnCompute() {
   const out = {}, add = (id, k, r, what) => { if (!(r > 0.2 && r < 5)) return; ((out[id] = out[id] || {})[k] = out[id][k] || []).push({ r, what }); };
   for (const p of S.plantings) {
     if (!p.sowDate) continue;
-    const cr = crop(p.cropId), tf = tempFor(p.containerId), lbl = `${shortDate(p.sowDate)}${container(p.containerId) ? ' · ' + container(p.containerId).name : ''}`;
+    const cr = crop(p.cropId), tf = tempFor(p.containerId, p), lbl = `${shortDate(p.sowDate)}${container(p.containerId) ? ' · ' + container(p.containerId).name : ''}`;
     if (p.method === 'seed' && p.germ && p.germ.date && p.germ.result !== 'none') {
       const gw = germWindow(Object.assign({}, p, { method: 'seed' }));
       if (gw) { const exp = daysBetween(p.sowDate, gw[0]) + daysBetween(gw[0], gw[1]) / 2, act = daysBetween(p.sowDate, p.germ.date); if (exp > 0) add(p.cropId, 'germ', act / exp, lbl); }

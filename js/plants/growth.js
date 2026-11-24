@@ -1,7 +1,7 @@
 // How plants develop with the temperature they get: when seedlings come up, when to thin, true leaves, when the
 // harvest starts and how long the crop keeps (packet days, main harvest, holding in the ground).
 
-import { dayTemp, growUnits, normalT, refNormalT, tempFor } from '../climate/climate.js';
+import { coverWarmth, dayTemp, growUnits, normalT, refNormalT, tempFor } from '../climate/climate.js';
 import { render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
@@ -54,11 +54,11 @@ function ddUntil(from, need, id, tempFn) {
 // leaf-stage milestones (thinning, ready to plant out): catalogue days are warm-weather numbers, so use a fixed reference temperature
 function leafDate(id, emerge, leafDays, tempFn, factor) { const g = growParams(id); return ddUntil(emerge, Math.max(3, leafDays) * (g.tref - g.tb) * (factor || 1), id, tempFn); }
 // `days` of growth from a date, at the pace the temperatures there allow (a cold spell stretches them)
-export const growthDate = (id, from, days, containerId) => leafDate(id, from, days, tempFor(containerId));
+export const growthDate = (id, from, days, containerId, p) => leafDate(id, from, days, tempFor(containerId, p));
 export const germAvg = id => { const g = crop(id).germ || [5, 10]; return (g[0] + g[1]) / 2; };
 export function thinEstimate(p) {
   const cr = crop(p.cropId); if (!cr.daysThin || !p.sowDate) return p.thinDate || '';
-  const tf = tempFor(p.containerId), e = emergeDate(p).d;
+  const tf = tempFor(p.containerId, p), e = emergeDate(p).d;
   return leafAnchored(p, p.cropId, e, leafTarget(p.thinStage || cr.thinStage), tf) || leafDate(p.cropId, e, Math.max(5, cr.daysThin - germAvg(p.cropId)), tf, learnedFactor(p.cropId, 'thin'));
 }
 // seedlings in trays/pots: ready to plant out
@@ -131,7 +131,7 @@ export function harvestModel(p, raw) {
 }
 export function harvestEstimate(p) {
   const m = harvestModel(p); if (!m) return p.harvestDate || '';
-  let d = ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId));
+  let d = ddUntil(m.from, m.need, p.cropId, tempFor(p.containerId, p));
   const fe = frostEnd(p); if (fe && d > fe) d = fe;   // autumn potatoes: the tops die back with the first frosts, so they're dug then
   return d < addDays(p.sowDate, 14) ? addDays(p.sowDate, 14) : d;
 }
@@ -186,7 +186,7 @@ export function syncThin() {
 export function thinNote(p) {
   if (p.thinFixed) return 'date set by you';
   const e = emergeDate(p), L = lastLeaves(p), l = learnedText(p.cropId, 'thin');
-  const anch = L && leafAnchored(p, p.cropId, e.d, leafTarget(p.thinStage || crop(p.cropId).thinStage), tempFor(p.containerId));
+  const anch = L && leafAnchored(p, p.cropId, e.d, leafTarget(p.thinStage || crop(p.cropId).thinStage), tempFor(p.containerId, p));
   if (anch) return `from your leaf count on ${shortDate(L.date)}`;
   if (e.notUp) { const k = germChecks(p).pop(); return `not up yet when you looked on ${shortDate(k.date)} — counted from tomorrow at the earliest, and moves on until they're up`; }
   return `from ${e.known ? 'when they came up (' + shortDate(e.d) + ')' : 'expected germination'} and the temperatures${l ? '; ' + l : ''}`;
@@ -242,7 +242,7 @@ function packetDays(p) {
 }
 // days the crop stays good once mature: catalogue days in mild weather; cold slows ageing (roots and brassicas hold for weeks), but ends tender crops
 function keepsUntil(p, mature) {
-  const cr = crop(p.cropId), tf = tempFor(p.containerId), daily = S.weather && S.weather.daily, T = tf || (x => dayTemp(x, daily));
+  const cr = crop(p.cropId), tf = tempFor(p.containerId, p), daily = S.weather && S.weather.daily, T = tf || (x => dayTemp(x, daily));
   let units = cr.win || 14, d = mature;
   for (let i = 0; i < 240 && units > 0; i++) {
     d = addDays(d, 1); const t = T(d);
@@ -254,7 +254,7 @@ export function harvestWindow(p) {
   if (!p.harvestDate) return null;
   const cr = crop(p.cropId), [a, b] = packetDays(p), m = harvestModel(p), g = growParams(p.cropId);
   const rate = m && m.days ? m.need / m.days : g.tref - g.tb;
-  let mature = b > a ? ddUntil(p.harvestDate, (b - a) * rate, p.cropId, tempFor(p.containerId)) : p.harvestDate;
+  let mature = b > a ? ddUntil(p.harvestDate, (b - a) * rate, p.cropId, tempFor(p.containerId, p)) : p.harvestDate;
   const cap = addDays(p.harvestDate, Math.round((b - a) * 1.5));   // ready heads don't wait for spring: cap the spread in calendar days
   if (mature > cap) mature = cap;
   const fe = frostEnd(p);
@@ -281,12 +281,14 @@ export function germWindow(p) {
   const slow = t => t >= r[1] ? 1 : t >= r[0] ? 1 + (r[1] - t) / Math.max(1, r[1] - r[0]) * 0.9 : 2.2;
   // the soil over the days they take to come up, not just the day they're sown: soil warming through spring brings
   // them up sooner (taro planted in mid-April sprouts in late May), cooling through autumn later
-  const avgT = n => { let s = 0, k = 0; for (let i = 0; i <= n; i += 2) { s += normalT(addDays(p.sowDate, i)); k++; } return s / k; };
+  const cov = coverWarmth(p);   // (a cover warms the soil too)
+  const avgT = n => { let s = 0, k = 0; for (let i = 0; i <= n; i += 2) { const d = addDays(p.sowDate, i), T = normalT(d); s += T + (cov ? cov(d, T) : 0); k++; } return s / k; };
   let f = 1;
   if (!(c && c.indoor)) for (let i = 0; i < 3; i++) f = slow(avgT(Math.round(cr.germ[1] * f)) + 1);   // soil runs a little warmer than the air mean
   if (Math.abs(daysBetween(p.sowDate, todayStr())) <= 7 && !(c && c.indoor)) {
     const st = c ? soilTempFor(c, p.from, p.to) : soilTemps(), t = st && (st.week ?? st.now);
-    if (t != null) f = slow(t);
+    // (a meter reading taken under the cover already has its warmth; the forecast doesn't)
+    if (t != null) f = slow(t + (cov && st.src !== 'meter' ? cov(p.sowDate, t) : 0));
   }
   return [addDays(p.sowDate, Math.round(cr.germ[0] * f)), addDays(p.sowDate, Math.round(cr.germ[1] * f))];
 }

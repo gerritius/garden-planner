@@ -47,7 +47,7 @@ export function feedSim(p, L, extra = [], skip) {
   for (const x of L.planned) { if (!(x.n > 0) || (skip && skip(x))) continue; const r = relOf(x.name); add(addDays(x.t.due, r[0]), r[1], x.n, x); }
   for (const x of extra) { const r = relOf(x.name); add(addDays(x.date, r[0]), r[1], x.n, x); }
   // demand follows growth: more in warm weather, almost none in midwinter
-  const tf = tempFor(p.containerId), daily = S.weather && S.weather.daily, T = tf || (d => dayTemp(d, daily));
+  const tf = tempFor(p.containerId, p), daily = S.weather && S.weather.daily, T = tf || (d => dayTemp(d, daily));
   const days = []; for (let d = start; d <= end; d = addDays(d, 1)) days.push([d, Math.max(0.05, growUnits(p.cropId, T(d)))]);
   const W = days.reduce((a, x) => a + x[1], 0) || 1, wOf = {}; days.forEach(([d, w]) => { wOf[d] = w / W * L.need; });
   const stop = lastFeedDate(p), shortTo = stop ? addDays(stop, 45) : end, lean = feedSeason(p);   // garlic / onion: after the last feed the bulbs finish on what's in the soil

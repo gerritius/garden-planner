@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.37.0",
+    "date": "2026-11-24",
+    "notes": [
+      "Covers now count in growth times. While fushokufu is on, the section under it grows as if about 2.5 °C warmer in cool weather — an insect net a little (about 0.5 °C), shade cloth not at all — less as it warms up, and none from about 22 °C. Sprouting, thinning, harvest and feeding dates for that section come sooner; taking the cover off (its “off” date) ends it.",
+      "Crop ideas that say “or sow now under a tunnel or Fushokufu” now give the finish date with the cover counted."
+    ]
+  },
+  {
     "version": "1.36.1",
     "date": "2026-11-24",
     "notes": [

@@ -7,8 +7,7 @@ import { S, save } from '../core/state.js';
 import { addDays, esc, todayStr, uid } from '../core/util.js';
 import { CATALOG, DAY_BOLT, FROST_HEADS, HEAT_BOLT, PESTS, SPLITTERS } from '../data/catalog.js';
 import { container, isLive, planting } from '../garden/garden.js';
-import { myProducts } from '../products/library.js';
-import { dilsEn, maxUses, phiDays, regRows } from '../products/sprays.js';
+import { spraysFor, waitText } from '../products/sprays.js';
 import { crop, cropName, ic, kin } from './crops.js';
 
 // ---------- problem finder ----------
@@ -98,16 +97,8 @@ function problemMatches(cropId, signs) {
   return PROBLEMS.filter(pr => probFits(pr, cropId)).map(pr => { const hit = pr[4].filter(s => signs.includes(s)).length; return { pr, hit, score: hit * 3 + (inSeason(pr) ? 1 : 0) - (pr[3].includes('all') ? 0.5 : 0) }; })
     .filter(x => x.hit).sort((a, b) => b.score - a.score);
 }
-function problemSprays(pr, p) {
-  if (!pr[6].length) return null;
-  const out = [];
-  for (const prod of myProducts(['spray'])) {
-    if (!prod.reg) continue;
-    const rows = regRows(prod.reg, p.cropId, p.variety).filter(r => r[5] === '散布' && pr[6].includes(r[1]));
-    if (rows.length) out.push({ prod, phi: Math.max(...rows.map(r => phiDays(r[3]))), uses: Math.min(...rows.map(r => maxUses(r[4]))), dils: [...new Set(rows.map(r => r[2]))] });
-  }
-  return out.sort((a, b) => (b.prod.organic - a.prod.organic));
-}
+// your sprays entered for this crop (whether one suits this problem is on its label)
+const problemSprays = p => spraysFor(p).sort((a, b) => (b.pr.organic - a.pr.organic));
 export function pageDoctor(q) {
   const ps = S.plantings.filter(isLive), p = planting(q.get('p')) || null;
   setChrome('What’s wrong?', { back: true, kicker: p ? cropName(p.cropId) : 'Problem finder' });
@@ -125,12 +116,12 @@ export function pageDoctor(q) {
     await save(); el.textContent = 'Saved to diary ✓'; el.disabled = true;
   };
   const card = ({ pr }, i) => {
-    const sp = problemSprays(pr, p);
+    const sp = problemSprays(p);
     return `<section class="dx${i === 0 ? ' top' : ''}"><h3>${i === 0 ? 'Best match: ' : ''}${esc(pr[1])} <small class="ja">${esc(pr[2])}</small></h3>
       <p class="small"><b>Check:</b> ${esc(pr[8])}</p>
       <ul class="bul small">${pr[9].map(x => `<li>${esc(x)}</li>`).join('')}</ul>
-      ${sp === null ? '' : sp.length ? `<p class="small"><b>Your sprays registered for this on ${esc(crop(p.cropId).en)}:</b></p><ul class="bul small">${sp.map(s => `<li>${s.prod.organic ? '🌱' : '⚗️'} <a href="#/product/${s.prod.id}">${esc(s.prod.en)}</a> — ${dilsEn(s.dils)} · ${s.phi ? `wait ${s.phi === 1 ? '1 day' : s.phi + ' days'} before picking` : 'no wait'}${s.uses === Infinity ? '' : ` · max ${s.uses} uses`}</li>`).join('')}</ul>`
-        : `<p class="small muted">None of your sprays is registered for this on ${esc(crop(p.cropId).en)} — stick to the steps above.</p>`}
+      ${sp.length ? `<p class="small"><b>Your sprays for ${esc(crop(p.cropId).en)}</b> — check the label covers this problem:</p><ul class="bul small">${sp.map(s => `<li>${s.pr.organic ? '🌱' : '⚗️'} <a href="#/product/${s.pr.id}">${esc(s.pr.en)}</a> — ${waitText(s.r.phi)}${s.r.max == null ? '' : ` · ${s.left} of ${s.r.max} sprays left`}</li>`).join('')}</ul>`
+        : ''}
       <button class="btn small" data-act="toDiary" data-id="${pr[0]}">📝 Save to diary</button></section>`;
   };
   const html = `<p class="hint">Tick what you see on the ${esc(crop(p.cropId).en)}. This narrows down the usual suspects for this crop and time of year — it can’t see your plant, so always check with the “Check” tip. If it isn’t clear, take a leaf to a garden centre or JA.</p>

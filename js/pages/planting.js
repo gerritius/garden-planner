@@ -18,8 +18,7 @@ import { germChecks, germDialog, germText, pctText } from '../plants/germination
 import { germWindow, harvestNote, harvestWindowText, lastLeaves, leafDialog, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
 import { drawFill, fillTarget, mergeAsFill, start, startWhere } from '../plants/seedlings.js';
-import { myProducts } from '../products/library.js';
-import { regSummary, sprayBanner, spraySection } from '../products/sprays.js';
+import { sprayBanner, spraySection, spraysFor } from '../products/sprays.js';
 import { pastCropDialog } from '../records/history.js';
 import { harvestDialog, harvestSection, logFeed, logSection } from '../records/log.js';
 import { diaryAfter, diarySection } from '../records/notes.js';
@@ -113,7 +112,7 @@ export function pagePlant(p) {
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
     ${isPlanned(p) || !((p.harvests || []).length || harvested || (p.harvestDate && p.harvestDate <= addDays(td, 7))) ? '' : harvestSection(p)}
     ${diarySection(p)}
-    ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = myProducts(['spray']).filter(pr => { const r = regSummary(pr.id, p.cropId, p.variety); return r && r.ok; }).length; return `<details class="fold"><summary>💦 Sprays you can use <small>${n} allowed</small></summary>${sp}</details>`; })()}
+    ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = spraysFor(p).length; return `<details class="fold"><summary>💦 Your sprays <small>${n ? `${n} for ${esc(crop(p.cropId).en)}` : 'none entered for this crop'}</small></summary>${sp}</details>`; })()}
     ${harvested || isPlanned(p) ? '' : `<details class="fold"><summary>📝 Running log <small>${logFeed().filter(x => (x.pids || []).includes(p.id)).length} entries</small></summary>${logSection(null, p)}</details>`}
     ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id)), today: isPlanned(p) ? p.sowDate : undefined })}</a>
       ${harvested || isPlanned(p) || (p.layout === 'continuous' && !p.thinned) || (p.layout !== 'free' && plantsNow > Draw.MAX_ARRANGE) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}

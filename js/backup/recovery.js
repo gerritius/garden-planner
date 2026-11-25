@@ -2,9 +2,9 @@
 // anything without keeping a copy, and while the garden can't be loaded nothing is saved over it.
 
 import { DB } from '../core/db.js';
-import { DATA_VERSION, dataProblem } from '../core/migrate.js';
+import { DATA_VERSION, dataProblem, newGarden } from '../core/migrate.js';
 import { A, setChrome } from '../core/router.js';
-import { blank, setState } from '../core/state.js';
+import { setState } from '../core/state.js';
 import { confirmBox } from '../core/ui.js';
 import { $, esc, niceDate } from '../core/util.js';
 import { photosForBackup, readBackupFile, restoreGarden, restoreSnapshot, shareOrDownload, snapshotList } from './backup.js';
@@ -48,10 +48,10 @@ export function pageRecovery() {
       try { await restoreGarden(data.state, { label: 'a backup file', photos: data.photos }); } catch (er) { return alert('Restore didn’t work: ' + er.message); }
       done('Backup restored.');
     });
-    A.rcNoSave = () => { setState(blank()); failure = null; location.hash = '#/'; window.dispatchEvent(new HashChangeEvent('hashchange')); };
+    A.rcNoSave = () => { setState(newGarden()); failure = null; location.hash = '#/'; window.dispatchEvent(new HashChangeEvent('hashchange')); };
     A.rcFresh = async () => {
       if (!await confirmBox('Start again with an empty garden?<br>Your stored garden is kept on this phone as a copy first.', 'Start empty', true)) return;
-      try { await restoreGarden(blank(), { label: 'an empty garden' }); } catch (e) { return alert('Couldn’t keep a copy first, so nothing was changed: ' + e.message); }
+      try { await restoreGarden(newGarden(), { label: 'an empty garden' }); } catch (e) { return alert('Couldn’t keep a copy first, so nothing was changed: ' + e.message); }
       done('Started with an empty garden. Your old one is kept under earlier copies.');
     };
     // earlier copies: daily snapshots, the garden before the last restore, before the last format update, kept copies

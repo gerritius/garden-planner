@@ -28,8 +28,6 @@ const U = 'http://localhost:8765/';
       careJobs: JSON.stringify(careJobs(id)) === JSON.stringify(careJobs('komatsuna')), icon: ic(id) === ic('komatsuna').replace(k.color, a.color),
       harvest: harvestEstimate(p(id)) === harvestEstimate(p('komatsuna')) ? harvestEstimate(p(id)) : `${harvestEstimate(p(id))} vs ${harvestEstimate(p('komatsuna'))}` };
   }, id)));
-  const regs = c => pg.evaluate(c => Object.keys(REGISTRATIONS).filter(k => regRows(k, c).length).length, c);
-  console.log('sprays registered for it:', await regs(id), '| for komatsuna:', await regs('komatsuna'));
   // the packet says 45 days: that wins
   await pg.evaluate(async id => { const c = S.customCrops.find(x => x.id === id); c.daysHarvest = 45; await save(); }, id);
   console.log('own 45 days → harvest', await pg.evaluate(id => harvestEstimate({ cropId: id, sowDate: '2026-09-10', method: 'seed' }), id), 'vs komatsuna', await pg.evaluate(() => harvestEstimate({ cropId: 'komatsuna', sowDate: '2026-09-10', method: 'seed' })));

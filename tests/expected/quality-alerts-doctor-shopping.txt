@@ -14,7 +14,7 @@ dx [
   'Armyworms / cutworm moths ヨトウムシ',
   'Loopers ウワバ'
 ]
-sprays Your sprays registered for this on Hakusai:🌱 Benica Natural spray — Ready to use · no wait🌱 Spino Ace water granules — Dilute 2,500–5,000× · wait 3 days before picking · max 3 uses⚗️ Benica X Next spray — Ready to use · wait 7 days before picking · max 2 uses 
+sprays Your sprays for Hakusai — check the label covers this problem:🌱 Benica Natural spray — no wait before picking🌱 Spino Ace water granules — wait 3 days before picking · 3 of 3 sprays left⚗️ Benica X Next spray — wait 7 days before picking · 2 of 2 sprays left 
 diary [{"id":"ID","date":"2026-11-18","photo":null,"note":"Possible Cabbage white caterpillars (アオムシ): holes chewed in leaves; droppings (frass) on or between leaves","tags":["caterpillars"]}]
 shop [
   'Cabbage seedlings × 3for Bed 2 120–200 cm · plant 8 Dec · by 7 Dec',

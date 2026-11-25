@@ -1,11 +1,11 @@
-// Your products: every fertiliser, lime, compost, soil improver, potting mix and spray is an entry you can add, edit
-// or remove. Nothing is assumed: the app picks what to suggest by what a product is for (base fertiliser, side-dressing,
-// lime, compost) and its N-P-K — not by name. The built-in list is only a catalogue (Japan) to add from.
-// Older lists (ticked products, your own products) are moved into the library once; nothing of yours is lost.
+// Your products: every fertiliser, lime, compost, soil improver, potting mix and spray is an entry you add, edit or
+// remove. The app comes with none — there are far too many in the world — and looks nothing up: it picks what to suggest
+// by what a product is for (base fertiliser, side-dressing, lime, compost) and its N-P-K, and a spray's crops, waiting
+// time and spray limit are what you enter from its label. Products from older versions become your own entries.
 
 import { S } from '../core/state.js';
 import { uid } from '../core/util.js';
-import { NPK, PRODUCTS } from '../data/products.js';
+import { OLD_ALIASES, OLD_CAT_INFO, OLD_MIXES, OLD_NPK, OLD_PRODUCTS, OLD_SPRAY_RULES } from '../data/legacy-products.js';
 import { customByName, DENS, DENS_ID, isLiquid } from '../feeding/nutrients.js';
 
 export const PROD_KINDS = [['fert', '🌿', 'Fertiliser / feed'], ['lime', '🐚', 'Lime'], ['compost', '🪏', 'Compost'], ['amend', '🪨', 'Soil improver'],
@@ -13,26 +13,14 @@ export const PROD_KINDS = [['fert', '🌿', 'Fertiliser / feed'], ['lime', '🐚
 export const PROD_FORMS = [['quick', 'Granular, quick (chemical)'], ['slow', 'Organic / slow'], ['liquid', 'Liquid (mixed into water)']];
 export const kindOf = k => PROD_KINDS.find(x => x[0] === k) || PROD_KINDS[0];
 
-// ---------- the catalogue (built-in Japan products, as plain data) ----------
-const CAT_INFO = {   // form, uses, [start, release] days, lead days (to start working)
-  kasei888: ['quick', ['base', 'side'], [0, 30], 0], bokashi: ['slow', ['base', 'side'], [3, 40], 7], toshoAburakasu: ['slow', ['base', 'side'], [3, 40], 7],
-  chickenManure: ['slow', ['base', 'side'], [7, 55], 10], aburakasu: ['slow', ['base', 'side'], [14, 70], 21], neem: ['slow', ['base'], [14, 70], 14],
-  oysterLime: [null, ['lime'], null, 0], woodAsh: [null, ['potash'], [0, 30], 0], kuntan: [null, ['improver'], null, 0],
-  cowCompost: [null, ['compost'], [0, 180], 14], cowHuskCompost: [null, ['compost'], [0, 180], 14], barkCompost: [null, ['compost'], [0, 180], 7],
-};
-const CAT_MIXES = [   // potting mixes: built-in fertiliser N-P-K, g per litre (estimated), days it lasts
-  { id: 'touikawa', en: 'Touikawa Peace Farm vegetable soil', ja: 'おいしい野菜を育てる土', npkv: [6, 36, 6], gPerL: 2, lasts: 365, what: 'slow-release 6-36-6 + magnesium (like Magamp K), feeding steadily for about a year' },
-  { id: 'iris', en: 'Iris Ohyama Golden Granular Soil', ja: 'アイリスオーヤマ ゴールデン粒状培養土', npkv: [8, 8, 8], gPerL: 1, lasts: 30, what: 'starter fertiliser (about 1:1:1) that lasts about a month' },
-  { id: 'other', en: 'Potting mix (with starter fertiliser)', ja: '培養土', npkv: [8, 8, 8], gPerL: 1, lasts: 30, what: 'starter fertiliser for about a month' },
-];
 export const defStart = p => p.form === 'liquid' ? [0, 7] : p.kind === 'compost' ? [0, 180] : p.form === 'quick' ? [0, 30] : [7, 55];
 export const defAvail = p => p.form === 'liquid' || p.form === 'quick' ? 1 : p.kind === 'compost' ? 0.1 : p.kind === 'amend' || p.kind === 'lime' ? 0 : 0.7;
 export const defLead = p => p.form === 'quick' || p.form === 'liquid' ? 0 : p.kind === 'fert' ? 7 : 0;
 export function normProd(src) {
   const p = Object.assign({ notes: [], uses: [] }, JSON.parse(JSON.stringify(src)));
-  const ci = CAT_INFO[p.id];
+  const ci = OLD_CAT_INFO[p.tpl || p.id];
   if (p.kind === 'fert' && !p.form) p.form = ci && ci[0] || (/liquid|液/i.test(p.en) ? 'liquid' : 'slow');
-  if (!p.npkv) { const n = NPK[p.id]; if (n) { p.npkv = [n[0], n[1], n[2]]; p.avail = n[3]; } else { const m = String(p.npk || p.en || '').match(/(\d{1,2}(?:\.\d)?)\s*-\s*(\d{1,2}(?:\.\d)?)\s*-\s*(\d{1,2}(?:\.\d)?)/); if (m) p.npkv = [+m[1], +m[2], +m[3]]; } }
+  if (!p.npkv) { const n = OLD_NPK[p.tpl || p.id]; if (n) { p.npkv = [n[0], n[1], n[2]]; p.avail = n[3]; } else { const m = String(p.npk || p.en || '').match(/(\d{1,2}(?:\.\d)?)\s*-\s*(\d{1,2}(?:\.\d)?)\s*-\s*(\d{1,2}(?:\.\d)?)/); if (m) p.npkv = [+m[1], +m[2], +m[3]]; } }
   if (!p.uses.length) p.uses = ci ? ci[1].slice() : p.kind === 'fert' ? (p.form === 'liquid' ? ['side'] : ['base', 'side']) : p.kind === 'lime' ? ['lime'] : p.kind === 'compost' ? ['compost'] : [];
   if (p.start == null) { const r = ci && ci[2] || defStart(p); p.start = r[0]; p.release = r[1]; }
   if (p.lead == null) p.lead = ci ? ci[3] : defLead(p);
@@ -41,25 +29,19 @@ export function normProd(src) {
   if (p.wait == null) p.wait = p.kind === 'spray' || p.kind === 'homemade' || p.kind === 'mix' ? null : 0;
   return p;
 }
-let _cat = null;
-export function catalogue() {
-  if (!_cat) _cat = [...PRODUCTS.map(normProd), ...CAT_MIXES.map(m => normProd(Object.assign({ kind: 'mix', maker: '', organic: null }, m)))];
-  return _cat;
-}
-export const catGet = id => catalogue().find(p => p.id === id) || null;
-
 // ---------- your library ----------
-export const libList = kind => (S.products || []).filter(p => !kind || [].concat(kind).includes(p.kind));
-export const libGet = id => (S.products || []).find(p => p.id === id) || catGet(id);
+// (a product you removed that your records mention is kept, hidden — so those records still count — but never offered)
+export const libList = kind => (S.products || []).filter(p => !p.hidden && (!kind || [].concat(kind).includes(p.kind)));
+export const libGet = id => (S.products || []).find(p => p.id === id) || null;
 const nameKey = n => String(n || '').trim().toLowerCase();
 export function libByName(n) {
   if (!n) return undefined; const t = String(n).trim(), lo = t.toLowerCase();
-  const mine = S.products || [];
-  let p = mine.find(x => x.id === t || nameKey(x.en) === lo || (x.ja && x.ja === t));
+  const mine = (S.products || []).slice().sort((a, b) => !!a.hidden - !!b.hidden);   // (yours first, then ones you removed)
+  const p = mine.find(x => x.id === t || nameKey(x.en) === lo || (x.ja && x.ja === t));
   if (p) return p;
-  const a = PROD_ALIASES.find(([, re]) => re.test(t));
-  if (a) return mine.find(x => x.id === a[0] || x.tpl === a[0]) || catGet(a[0]);
-  return catalogue().find(x => nameKey(x.en) === lo || (x.ja && x.ja === t)) || undefined;
+  // (records from older versions may name an old product another way: it's one of yours by now)
+  const a = OLD_ALIASES.find(([, re]) => re.test(t));
+  return (a && mine.find(x => x.id === a[0] || x.tpl === a[0])) || undefined;
 }
 // a product to suggest for a job: one that's for that use, the right kind of thing first, then ones you have plenty of
 export function pickRole(role, prefer) {
@@ -77,9 +59,9 @@ export function migrateProducts() {
     const own = Array.isArray(S.myProducts) ? S.myProducts : null, plenty = S.plenty || [];
     // keep the order the app used to prefer them in, so suggestions don't change underneath you
     const PREF = ['kasei888', 'bokashi', 'toshoAburakasu', 'chickenManure', 'neem', 'aburakasu', 'cowCompost', 'cowHuskCompost', 'barkCompost'], rank = p => { const i = PREF.indexOf(p.id); return i < 0 ? 99 : i; };
-    S.products = PRODUCTS.filter(p => !own || own.includes(p.id)).sort((a, b) => rank(a) - rank(b)).map(p => Object.assign(normProd(p), { tpl: p.id, plenty: plenty.includes(p.id) }));
+    S.products = OLD_PRODUCTS.filter(p => !own || own.includes(p.id)).sort((a, b) => rank(a) - rank(b)).map(p => Object.assign(normProd(p), { tpl: p.id, plenty: plenty.includes(p.id) }));
     const used = new Set(S.containers.flatMap(c => (c.mixLog || []).map(e => e.kind)));
-    for (const m of CAT_MIXES) if (used.has(m.id) || m.id === 'other') S.products.push(Object.assign(normProd(Object.assign({ kind: 'mix', maker: '' }, m)), { tpl: m.id }));
+    for (const m of OLD_MIXES) if (used.has(m.id) || m.id === 'other') S.products.push(Object.assign(normProd(Object.assign({ kind: 'mix', maker: '' }, m)), { tpl: m.id }));
     S.prodLib = 1;
   }
   // products made in the old editor (or converted from records) join the library
@@ -88,7 +70,7 @@ export function migrateProducts() {
 }
 
 // ---------- products by id ----------
-// products come from your library; PRODUCTS (data/products.js) is only the catalogue to add from
+// products come from your library only
 export const product = id => libGet(id);
 export const myProducts = kind => libList(kind);
 
@@ -114,13 +96,35 @@ export function migrateOwnProducts() {
   }
 }
 
-// ---------- finding a product by name; older lists ----------
-// forgiving: exact names first, then the usual English/Japanese names however they're typed
-const PROD_ALIASES = [
-  ['toshoAburakasu', /tosho|東商|超醗酵|超発酵|発酵油|醗酵油|fermented\s*(abura|oil)/i], ['aburakasu', /abura\s*kasu|油\s*かす|油\s*粕|油カス|oil\s*-?\s*cake/i],
-  ['chickenManure', /chicken|鶏\s*ふん|鶏\s*糞|鶏フン/i], ['bokashi', /bokashi|ぼかし|ボカシ/i], ['neem', /neem|ニーム/i],
-  ['oysterLime', /oyster|かき殻|牡蠣|カキ殻|有機石灰/i], ['cowHuskCompost', /husk|もみ殻|籾殻/i], ['cowCompost', /cow|牛\s*ふん|牛\s*糞|牛フン/i],
-  ['barkCompost', /bark|バーク/i], ['kasei888', /8\s*-\s*8\s*-\s*8|化成/i],
-];
+// ---------- finding a product by name ----------
 export const productByName = n => libByName(n);
 export function migrateFeed() { if (Array.isArray(S.myProducts) && !S.kaseiAdded) { if (!S.myProducts.includes('kasei888')) S.myProducts.push('kasei888'); S.kaseiAdded = true; } }
+
+// ---------- data version 10: no built-in products; sprays carry their own rules ----------
+// Products older versions had built in that your records use become your own entries; sprays that took their rules
+// from Japan's register get those rules as their own (per crop: days to wait before picking, most sprays a season), and
+// the stochu recipe goes into that product's notes. Nothing of yours is lost; you can edit or remove any of it.
+export function migrateOwnRules() {
+  S.products = S.products || [];
+  const have = id => S.products.some(p => p.id === id || p.tpl === id), add = src => { if (!have(src.id)) S.products.push(Object.assign(normProd(src), { tpl: src.id })); };
+  const byName = n => { if (!n) return null; const t = String(n).trim(), lo = t.toLowerCase(), a = OLD_ALIASES.find(([, re]) => re.test(t));
+    return OLD_PRODUCTS.find(x => x.id === t || x.en.toLowerCase() === lo || x.ja === t) || (a && OLD_PRODUCTS.find(x => x.id === a[0])) || null; };
+  const names = [...(S.log || []).map(e => e.product), ...(S.log || []).map(e => e.productId), ...S.tasks.map(t => t.product),
+    ...S.plantings.flatMap(p => [...(p.fert || []), ...(p.feedPlan || [])].map(g => g.product))];
+  for (const n of names) { const o = byName(n); if (o) add(o); }
+  for (const c of S.containers) for (const e of c.mixLog || []) { const m = OLD_MIXES.find(x => x.id === e.kind); if (m) add(Object.assign({ kind: 'mix', maker: '' }, m)); }
+  for (const p of S.products) {
+    if (p.reg) {
+      const rules = OLD_SPRAY_RULES[p.reg] || {};
+      p.crops = Object.fromEntries(Object.entries(rules).map(([cid, [phi, max]]) => [cid, { phi, max }]));
+      delete p.reg;
+    }
+    if (p.kind === 'spray' && !p.crops) p.crops = {};
+    delete p.mix;
+    if ((p.id === 'stochu' || p.tpl === 'stochu') && S.stochu) {
+      const r = S.stochu, bits = [['vinegar', 'mL vinegar'], ['wood', 'mL wood vinegar'], ['shochu', 'mL shōchū']].filter(([k]) => r[k]).map(([k, l]) => `${r[k]} ${l}`);
+      const line = `My recipe: ${[...bits, r.tabasco ? `${r.tabasco} Tabasco` : ''].filter(Boolean).join(' + ')}${r.water ? ` in ${r.water} L of water` : ''}${r.note ? ` — ${r.note}` : ''}`;
+      if (!(p.notes || []).includes(line)) p.notes = [...(p.notes || []), line];
+    }
+  }
+}

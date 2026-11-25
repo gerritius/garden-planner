@@ -10,5 +10,5 @@ base b1 cabbage: [{"product":"Cow manure compost","amount":6,"unit":"kg"},{"prod
 npk: Chicken manure=[3,5,3,0.6] 化成肥料 8-8-8=[8,8,8,1] Kincho Liquid 6-6-7=[6,6,7,1] Bokashi=[4,4,2,0.7] oyster lime=[0,0,0,0] Wood ash=[0,3,7,0] Hyponex 6-10-5=[6,10,5,1]
 rel: Chicken manure=[7,55] Aburakasu (oil cake)=[14,70] Kincho Liquid 6-6-7=[0,7] Cow manure compost=[0,180] Chemical fertiliser 8-8-8=[0,30]
 lead: chickenManure=10 aburakasu=21 kasei888=0 bokashi=7
-mix: {"id":"m2","date":"2026-10-01","kind":"touikawa","fresh":false,"firstCrop":false,"mix":["touikawa","Touikawa Peace Farm vegetable soil","おいしい野菜を育てる土"]} | {"id":"m3","date":"2026-10-01","kind":"iris","fresh":true,"firstCrop":false,"mix":["iris","Iris Ohyama Golden Granular Soil","アイリスオーヤマ ゴールデン粒状培養土"]}
+mix: {"id":"m2","date":"2026-10-01","kind":"touikawa","fresh":false,"firstCrop":false,"mix":["touikawa","Touikawa Peace Farm vegetable soil",""]} | {"id":"m3","date":"2026-10-01","kind":"iris","fresh":true,"firstCrop":false,"mix":["iris","Iris Ohyama Golden Granular Soil",""]}
 errs []

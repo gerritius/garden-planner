@@ -1,9 +1,9 @@
 const { newContext } = require('../lib');
-// products page, add/edit/remove any kind, catalogue, and everything using them
+// products page, add/edit/remove any kind (no built-in catalogue), sprays with the crops, waits and limits you enter, and everything using them
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
     delete S.prodLib; delete S.products; S.productsRemoved = [];
@@ -22,7 +22,10 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   // add my own spray (no registry)
   await pg.click('[data-act=pTab][data-t=spray]'); await pg.waitForTimeout(300);
   await pg.click('[data-act=addProd][data-k=spray]'); await pg.waitForTimeout(200);
-  await pg.fill('#pdf [name=en]', 'Garden Safe Neem Oil'); await pg.fill('#pdf [name=what]', 'neem oil 70%'); await pg.fill('#pdf [name=phi]', '1'); await pg.check('#pdf [name=organic]', { force: true });
+  await pg.fill('#pdf [name=en]', 'Garden Safe Neem Oil'); await pg.fill('#pdf [name=what]', 'neem oil 70%'); await pg.fill('#pdf [name=phi0]', '1'); await pg.fill('#pdf [name=max0]', '4'); await pg.check('#pdf [name=organic]', { force: true });
+  await pg.selectOption('#pdf [name=addCrop]', 'cabbage'); await pg.waitForTimeout(200);
+  await pg.selectOption('#pdf [name=addCrop]', 'tomato'); await pg.waitForTimeout(200); await pg.fill('#pdf [name=phi_tomato]', '3');
+  console.log('spray crops in the form:', await pg.$$eval('#pdf .cropsrules tr[data-c]', x => x.map(t => `${t.dataset.c} ${t.querySelector('input[name^=phi]').value}d max ${t.querySelector('input[name^=max]').value || '—'}`).join(' | ')), '| name still', await pg.inputValue('#pdf [name=en]'));
   await pg.locator('#modal .sheet').screenshot({ path: `${SP}/prod_spray.png` });
   await pg.click('#pdf button.primary'); await pg.waitForTimeout(300);
   // add a fertiliser: switch type & form in the dialog
@@ -31,10 +34,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.fill('#pdf [name=en]', 'Hyponex granules 6-10-5'); await pg.selectOption('#pdf [name=form]', 'quick'); await pg.waitForTimeout(150);
   await pg.fill('#pdf [name=n]', '6'); await pg.fill('#pdf [name=p]', '10'); await pg.fill('#pdf [name=k]', '5');
   await pg.click('#pdf button.primary'); await pg.waitForTimeout(300);
-  // add a compost from the catalogue
+  // no catalogue to add from
   await pg.click('[data-act=pTab][data-t=soil]'); await pg.waitForTimeout(300);
-  await pg.evaluate(() => document.querySelector('details.fold').open = true);
-  await pg.click('[data-act=addCat][data-id=barkCompost]'); await pg.waitForTimeout(300);
+  console.log('catalogue offered?', await pg.evaluate(() => !!document.querySelector('[data-act=addCat]')));
   console.log('library now:', await pg.evaluate(() => libList().map(p => `${p.kind}:${p.en}`).join(' | ')));
   // edit Touikawa: it now lasts 300 days
   await pg.goto(U + '#/product/touikawa'); await pg.waitForTimeout(300); await pg.click('[data-act=editProd]'); await pg.waitForTimeout(200);
@@ -49,7 +51,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.goto(U + '#/product/chickenManure'); await pg.waitForTimeout(300); await pg.click('[data-act=editProd]'); await pg.waitForTimeout(200);
   await pg.click('#pdf [data-x=del]'); await pg.waitForTimeout(200); console.log('ask:', await pg.textContent('#modal .msg'));
   await pg.click('#modal [data-x=ok]'); await pg.waitForTimeout(300);
-  console.log('library has chicken?', await pg.evaluate(() => libList().some(p => p.id === 'chickenManure')), '| old record name still counts:', JSON.stringify(await pg.evaluate(() => npkOf('Chicken manure'))));
+  console.log('library has chicken?', await pg.evaluate(() => libList().some(p => p.id === 'chickenManure')), '| its name still counts (no records use it, so not):', JSON.stringify(await pg.evaluate(() => npkOf('Chicken manure'))));
   console.log('bed base now:', JSON.stringify(await pg.evaluate(() => baseFertPlan('cabbage', container('b1'), 0, 200, todayStr()))));
   // log a spray that has no registry data
   await pg.evaluate(() => logDialog({ pids: ['cb'] })); await pg.waitForTimeout(200);

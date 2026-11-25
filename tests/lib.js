@@ -29,7 +29,7 @@ window.__bridged = true;
 }
 
 async function newContext(browser, extra = {}) {
-  const { openFolds, bridge: useBridge = true, welcome = false, realAddress = false, ...opts } = extra;   // bridge: false for an old version of the app (plain scripts, no modules)
+  const { openFolds, bridge: useBridge = true, welcome = false, realAddress = false, products = false, ...opts } = extra;   // bridge: false for an old version of the app (plain scripts, no modules)
   const ctx = await browser.newContext(Object.assign({}, devices['Pixel 7'], { timezoneId: 'Asia/Tokyo' }, opts));
   await ctx.clock.setFixedTime(FIXED_NOW);
   await ctx.route(u => !['localhost', '127.0.0.1'].includes(u.hostname), r => r.abort());
@@ -42,9 +42,16 @@ async function newContext(browser, extra = {}) {
   await ctx.addInitScript(() => { if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && location.port === '8765') import('/__test_bridge.js'); });
   // after loading a page of the app, wait until the bridge is in place
   const ready = p => p.waitForFunction(() => window.__bridged === true, null, { timeout: 10000 }).catch(() => {});
+  // products: true — the garden starts with the products and potting mixes older versions of the app came with (as a
+  // garden from then has them), once per scenario: new gardens start with none
+  let seeded = !products;
+  const seed = async p => { if (seeded) return; seeded = true;
+    await p.evaluate(async () => { if ((S.products || []).length) return; delete S.prodLib; S.products = []; migrateProducts(); migrateOwnRules();
+      for (const m of OLD_MIXES) if (!S.products.some(p => p.id === m.id)) S.products.push(Object.assign(normProd(Object.assign({ kind: 'mix', maker: '' }, m)), { tpl: m.id }));
+      await save(); }).catch(e => { seeded = false; throw e; }); };
   const wrap = p => {
     if (p._bridgeWrapped) return p; p._bridgeWrapped = true;
-    for (const fn of ['goto', 'reload']) { const orig = p[fn].bind(p); p[fn] = async (...a) => { const r = await orig(...a); if (/:8765\//.test(p.url())) await ready(p); return r; }; }
+    for (const fn of ['goto', 'reload']) { const orig = p[fn].bind(p); p[fn] = async (...a) => { const r = await orig(...a); if (/:8765\//.test(p.url())) { await ready(p); await seed(p); } return r; }; }
     return p;
   };
   const newPage = ctx.newPage.bind(ctx);

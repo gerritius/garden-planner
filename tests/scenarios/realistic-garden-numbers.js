@@ -4,7 +4,7 @@ const { chromium, devices } = require('playwright');
 const PORT = '8765';
 const U = `http://localhost:${PORT}/`;
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
     S.myProducts = ['benicaNatural', 'paiBenicaV', 'spinoace', 'neem', 'toshoAburakasu', 'oysterLime', 'bokashi', 'aburakasu', 'chickenManure', 'cowCompost', 'cowHuskCompost', 'stochu', 'kasei888', 'woodAsh', 'kuntan', 'cust_k'];

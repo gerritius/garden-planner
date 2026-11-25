@@ -3,7 +3,7 @@ const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 const openAll = async pg => { for (let i = 0; i < 20; i++) { const b = await pg.$('.frow.line [data-open]'); if (!b) break; await b.click(); await pg.waitForTimeout(80); } };
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); pg.on('dialog', d => { errs.push('dialog ' + d.message()); d.accept(); });
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {

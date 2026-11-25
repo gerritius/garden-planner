@@ -1,8 +1,8 @@
-new bag: Potting mixRe-usedFresh mix Which mixTouikawa Peace Farm vegetable soil おいしい野菜を育てる土Potting mix (with starter fertiliser) 培養土Iris Ohyama Golden Granular Soil アイリスオーヤマ ゴールデン粒状培養土Touikawa Peace Farm vegetable soil おいしい野菜を育て | fert []
+new bag: Potting mixRe-usedFresh mix Which mixTouikawa Peace Farm vegetable soil Potting mix (with starter fertiliser) Iris Ohyama Golden Granular Soil Touikawa Peace Farm vegetable soil  | fert []
   saved log: [["2026-11-18","touikawa",true,true]]
 same bag later: Potting mixRe-usedFresh mix Touikawa Peace Farm vegetable soil, filled fresh 18 Nov 2026. Sieve out the old roots; the compost and fertiliser you mix in go under Starting fertiliser.  | fert ["Cow manure compost 4L","Chemical fertiliser 8-8-8 45g","Oyster shell lime 45g"] ["komatsuna","2026-12-20",false,[["n1","2026-11-18","active"]]]
 hist bag: Potting mixRe-usedFresh mix Touikawa Peace Farm vegetable soil, filled fresh 1 Mar 2026. Sieve out the old roots; the compost and fertiliser you mix in go under Starting fertiliser.  | fert ["Cow manure compost 4L","Chemical fertiliser 8-8-8 45g","Oyster shell lime 45g"]
-  → fresh: Potting mixRe-usedFresh mix Which mixTouikawa Peace Farm vegetable soil おいしい野菜を育てる土Potting mix (with starter fertiliser) 培養土Iris Ohyama Golden Granular Soil アイリスオーヤマ ゴールデン粒状培養土Touikawa Peace Farm vegetable soil おいしい野菜を育て | fert []
+  → fresh: Potting mixRe-usedFresh mix Which mixTouikawa Peace Farm vegetable soil Potting mix (with starter fertiliser) Iris Ohyama Golden Granular Soil Touikawa Peace Farm vegetable soil  | fert []
   saved log: [["2026-03-01","touikawa",true,false],["2026-11-18","touikawa",false,true]]
   ledger soil: Fertiliser in the potting mix (Touikawa Peace Farm vegetable soil, filled fresh 1 Mar, re-used 18 Nov)
 edit shows: Potting mixRe-usedFresh mix Touikawa Peace Farm vegetable soil, filled fresh 1 Mar 2026. Sieve out the old roots; the compost and fertiliser you mix in go under Starting fertiliser. 

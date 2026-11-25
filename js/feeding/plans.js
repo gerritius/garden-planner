@@ -14,8 +14,8 @@ import { finishToggle } from '../garden/tasks.js';
 import { waterPots } from '../garden/watering.js';
 import { crop, kin } from '../plants/crops.js';
 import { growthDate, harvestWindow } from '../plants/growth.js';
-import { libList, myProducts, pickRole, productByName } from '../products/library.js';
-import { pestEn, regSummary } from '../products/sprays.js';
+import { myProducts, pickRole, productByName } from '../products/library.js';
+import { spraysFor } from '../products/sprays.js';
 import { feedLedger } from './ledger.js';
 import { mixFert, mixRow, mixState } from './mix.js';
 import { amtFor, feedGrams, gN, isLiquid, liqMeasure, npkOf, potLitres, usable3 } from './nutrients.js';
@@ -247,12 +247,12 @@ export function baseFertNote(cropId, c, sowDate) {
   if (['carrot', 'daikon', 'hatsuka', 'kabu'].includes(kin(cropId))) bits.push('keep compost well mixed and at least 3 weeks old for root crops');
   return bits.join(' · ');
 }
-// pests: organic sprays allowed on this crop first, others as a last resort — from your sprays, not fixed names
+// pests: your organic sprays entered for this crop first, others as a last resort
 export function pestPlan(p) {
   const steps = [crop(p.cropId).family === 'brassica' ? 'Net at planting; check leaf undersides weekly for eggs and caterpillars.' : 'Check weekly, especially leaf undersides and new growth.'];
-  const ok = libList('spray').map(pr => ({ pr, s: pr.reg ? regSummary(pr.id, p.cropId, p.variety) : null })).filter(x => x.s && x.s.ok);
+  const ok = spraysFor(p);   // (your sprays you've entered this crop for)
   const org = ok.filter(x => x.pr.organic), syn = ok.filter(x => !x.pr.organic);
-  if (org.length) steps.push('First: ' + org.map(x => `${x.pr.en} (${x.s.pests.slice(0, 3).map(pestEn).join(', ')})`).join('; ') + '.');
+  if (org.length) steps.push('First: ' + org.map(x => x.pr.en).join(', ') + '.');
   if (syn.length) steps.push('Last resort: ' + syn.map(x => x.pr.en).join(', ') + '.');
   return steps.join(' ');
 }

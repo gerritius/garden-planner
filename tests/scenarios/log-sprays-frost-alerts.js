@@ -2,7 +2,7 @@ const { newContext, FIXED_NOW } = require('../lib');
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch(); const pg = await (await newContext(b)).newPage(); const errs = [];
+  const b = await chromium.launch(); const pg = await (await newContext(b, { products: true })).newPage(); const errs = [];
   pg.on('pageerror', e => errs.push(e.message)); pg.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errs.push(m.text()); });
   pg.on('dialog', d => { errs.push('dialog: ' + d.message()); d.accept(); });
   await pg.route('**/api.open-meteo.com/**', r => r.abort());

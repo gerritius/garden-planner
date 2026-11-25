@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.44.0",
+    "date": "2026-11-25",
+    "notes": [
+      "No built-in products any more: there are far too many in the world. New gardens start with none — add the fertilisers, composts, potting mixes and sprays you use. Yours, including any you had from the old built-in list, are kept as your own entries.",
+      "Sprays work from what you enter from the label: the crops it’s for, and for each the days to wait before picking and the most sprays allowed a season. The app looks nothing up — it says so wherever sprays appear. Logging a spray checks the crops you sprayed against what you entered and counts the sprays left; the waiting period still holds picking.",
+      "Sprays you had that came with Japan’s register data keep those crops, waits and limits as your own; your stochu recipe is in that product’s notes. The register lookup, legal notices, mixing helper and Japanese product details are gone.",
+      "A product your records mention is kept out of sight when you remove it, so what you recorded still counts."
+    ]
+  },
+  {
     "version": "1.43.0",
     "date": "2026-11-25",
     "notes": [

@@ -3,7 +3,7 @@ const { newContext } = require('../lib');
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); await pg.goto(U); await pg.waitForTimeout(400);
   const cases = [['cabbage', 'seedling', '2026-10-18'], ['cabbage', 'seedling', '2026-10-01'], ['cabbage', 'seedling', '2026-08-25'], ['cabbage', 'seedling', '2026-03-20'], ['broccoli', 'seedling', '2026-09-20'],
     ['hakusai', 'seedling', '2026-09-05'], ['garlic', 'seedling', '2026-10-10'], ['spinach', 'seed', '2026-10-15'], ['daikon', 'seed', '2026-09-10'], ['snappea', 'seed', '2026-11-05'], ['tomato', 'seedling', '2026-05-01'], ['komatsuna', 'seed', '2026-11-10']];

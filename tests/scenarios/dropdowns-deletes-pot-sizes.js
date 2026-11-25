@@ -3,7 +3,7 @@ const { newContext } = require('../lib');
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
     S.containers = [20, 44, 80].map((v, i) => ({ id: 'p' + i, type: 'round', name: `Pot ${v} L`, diameter: Math.round(Math.sqrt(v * 1000 / (Math.PI * 35)) * 2), depth: 35, margin: 2, history: [{ cropId: 'kyuri', sowDate: '2026-05-01', harvestedOn: '2026-08-30', from: 0, to: 40 }], mixLog: [{ id: 'm' + i, date: '2026-03-01', kind: 'touikawa', fresh: false }] }));

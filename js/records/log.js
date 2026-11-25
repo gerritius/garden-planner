@@ -13,7 +13,7 @@ import { germChecks, pctText } from '../plants/germination.js';
 import { pestName } from '../plants/problems.js';
 import { startLogItems } from '../plants/seedlings.js';
 import { myProducts, product } from '../products/library.js';
-import { dilsEn, regSummary, sprayBanner, stochuLegal, usesSoFar } from '../products/sprays.js';
+import { sprayBanner, sprayRule, usesSoFar, waitText } from '../products/sprays.js';
 
 // ---------- running log ----------
 const LOG_KINDS = [
@@ -165,19 +165,19 @@ function wireLogLibrary(m, f, e) {
   };
   const check = () => {
     const pr = product(f.productId.value); box.innerHTML = '';
-    if (!pr || pr.kind !== 'spray') { if (pr && pr.kind === 'homemade') box.innerHTML = `<p class="msg small">🧪 Home-made spray — no registration. ${esc(stochuLegal())}</p>`; return; }
-    if (!pr.reg) { box.innerHTML = '<p class="hint">No registration data in the app for this product — follow its label for which crops, the dilution, how many uses and the days before picking (put that below).</p>'; if (pr.phi != null && f.phi.value === '') f.phi.value = pr.phi; return; }
-    const ts = targets(); if (!ts.length) { box.innerHTML = '<p class="hint">Tick the beds or crops you sprayed to check the rules.</p>'; return; }
-    let phi = 0, bad = [];
+    if (!pr || (pr.kind !== 'spray' && pr.kind !== 'homemade')) return;
+    if (!Object.keys(pr.crops || {}).length) { box.innerHTML = '<p class="hint">You haven’t entered crops for this product — follow its label for which crops, how many sprays and the days before picking (put that below). You can add them to the product so the app keeps count.</p>'; if (pr.phi != null && f.phi.value === '') f.phi.value = pr.phi; return; }
+    const ts = targets(); if (!ts.length) { box.innerHTML = '<p class="hint">Tick the beds or crops you sprayed to check them against what you entered from the label.</p>'; return; }
+    let phi = 0; const bad = [];
     const lines = ts.map(p => {
-      const s = regSummary(pr.id, p.cropId, p.variety), n = crop(p.cropId).en;
-      if (!s || !s.ok) { bad.push(n); return `<li class="no">🚫 <b>${esc(n)}</b> — not registered: not allowed on this crop</li>`; }
-      phi = Math.max(phi, s.phi);
-      const used = usesSoFar(p, pr.id) - (e.productId === pr.id && (S.log || []).includes(e) ? 1 : 0), left = s.uses === Infinity ? Infinity : s.uses - used;
+      const r = sprayRule(pr, p.cropId), n = crop(p.cropId).en;
+      if (!r || !r.listed) { bad.push(n); return `<li class="no">🚫 <b>${esc(n)}</b> — not one of the crops you entered for it</li>`; }
+      phi = Math.max(phi, r.phi);
+      const used = usesSoFar(p, pr.id) - (e.productId === pr.id && (S.log || []).includes(e) ? 1 : 0), left = r.max == null ? Infinity : r.max - used;
       if (left <= 0) bad.push(n);
-      return `<li class="${left <= 0 ? 'no' : ''}">${left <= 0 ? '🚫' : '✓'} <b>${esc(n)}</b> — ${dilsEn(s.dils).toLowerCase()} · ${s.phi ? `wait ${s.phi} day${s.phi > 1 ? 's' : ''}` : 'no wait'} · ${left === Infinity ? 'no limit' : left <= 0 ? `<b>limit of ${s.uses} reached</b>` : `use ${used + 1} of ${s.uses}`}</li>`;
+      return `<li class="${left <= 0 ? 'no' : ''}">${left <= 0 ? '🚫' : '✓'} <b>${esc(n)}</b> — ${waitText(r.phi)} · ${left === Infinity ? 'no limit entered' : left <= 0 ? `<b>limit of ${r.max} reached</b>` : `spray ${used + 1} of ${r.max}`}</li>`;
     });
-    box.innerHTML = `<ul class="legal">${lines.join('')}</ul>${bad.length ? `<p class="banner warn small">Under the Agricultural Chemicals Regulation Act (農薬取締法) you may only use a pesticide on its registered crops, within its use limit. Untick: ${esc(bad.join(', '))}.</p>` : ''}`;
+    box.innerHTML = `<ul class="legal">${lines.join('')}</ul>${bad.length ? `<p class="banner warn small">By what you entered from the label, it isn’t for (or has reached its limit on): ${esc(bad.join(', '))}. Check the label before spraying them.</p>` : ''}`;
     if (phi && (f.phi.value === '' || f.phi.dataset.auto)) { f.phi.value = phi; f.phi.dataset.auto = '1'; }
   };
   const pickLib = pr => {
@@ -187,8 +187,6 @@ function wireLogLibrary(m, f, e) {
       f.product.value = pr.en;
       const kind = pr.kind === 'spray' || pr.kind === 'homemade' ? 'spray' : pr.kind === 'fert' ? 'fert' : 'soil';
       if ([...f.kind.options].some(o => o.value === kind)) f.kind.value = kind;
-      if (pr.kind === 'spray' && /原液/.test(pr.what)) { f.amount.value = ''; }
-      if (pr.id === 'spinoace' && !f.unit.value) f.unit.value = 'L';
       f.phi.value = ''; delete f.phi.dataset.auto;
       f.dispatchEvent(new Event('change'));
     }

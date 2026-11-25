@@ -1,17 +1,19 @@
 tabs: 🌿 Fertiliser* | 🪨 Soil | 🪴 Potting mix | 💦 Sprays | 🌱 Seeds & plants
-page: 🌿 Fertiliser🪨 Soil🪴 Potting mix💦 Sprays🌱 Seeds & plantsEverything here is yours to edit. Plans and suggestions use what each product is for and its N-P-K — tap one to change it, or add your own. Fertilisers & feeds🌿Chemical fertiliser 8-8-8 化成肥料 8-8-88-8-8 · Granular, quick (chemical)›🌿Bokashi ぼかし肥料4-4-2 · Organic / slow›🌿Chicken manure 鶏ふん3-5-3 · Organic / slow · ★ plenty› ＋ Add 📚 Add from the catalogue 3 common Japanese products🌿Pure Neem pellets ピュアニーム ペレットNeem seed cake — organic fertiliser / soil improver＋ Add🌿Tosho Super Fermented aburakasu 東商 超醗酵油かすFermented oil cake — slow, gentle organic fertiliser＋ Add🌿Aburakasu (oil cake) 油かすUnfermented rapeseed oil cake — slow nitroge
-library now: fert:Chemical fertiliser 8-8-8 | fert:Bokashi | fert:Chicken manure | compost:Cow manure compost | spray:Benica Natural spray | spray:Spino Ace water granules | lime:Oyster shell lime | mix:Touikawa Peace Farm vegetable soil | mix:Potting mix (with starter fertiliser) | spray:Garden Safe Neem Oil | fert:Hyponex granules 6-10-5 | compost:Bark compost
-mix form fields: en,ja,maker,kind,n,p,k,gPerL,lasts,what,organic
+page: 🌿 Fertiliser🪨 Soil🪴 Potting mix💦 Sprays🌱 Seeds & plantsThe app comes with no products — add the ones you use. Plans and suggestions go by what each one is for and its N-P-K; tap one to change it. Fertilisers & feeds🌿Chemical fertiliser 8-8-88-8-8 · Granular, quick (chemical)›🌿Bokashi4-4-2 · Organic / slow›🌿Chicken manure3-5-3 · Organic / slow · ★ plenty› ＋ Add 
+spray crops in the form: cabbage 1d max 4 | tomato 3d max 4 | name still Garden Safe Neem Oil
+catalogue offered? false
+library now: fert:Chemical fertiliser 8-8-8 | fert:Bokashi | fert:Chicken manure | compost:Cow manure compost | spray:Benica Natural spray | spray:Spino Ace water granules | lime:Oyster shell lime | mix:Touikawa Peace Farm vegetable soil | mix:Potting mix (with starter fertiliser) | spray:Garden Safe Neem Oil | fert:Hyponex granules 6-10-5
+mix form fields: en,maker,kind,n,p,k,gPerL,lasts,what,organic
 touikawa lasts 300
 planting fert renamed: Bokashi (Sun & Hope) | still counted N 3.36
 ask: Remove Chicken manure from your products?
-library has chicken? false | old record name still counts: [3,5,3,0.6]
+library has chicken? false | its name still counts (no records use it, so not): null
 bed base now: [{"product":"Cow manure compost","amount":4,"unit":"kg"},{"product":"Oyster shell lime","amount":300,"unit":"g"},{"product":"Bokashi (Sun & Hope)","amount":13.5,"unit":"handful"}]
-log check: No registration data in the app for this product — follow its label for which crops, the dilution, how many uses and the | phi 1
+log check: ✓ Cabbage — wait 1 day before picking · spray 1 of 4 | phi 1
 crop sprays: [
-  '🌱Benica Natural spray organic For: aphids (アブラムシ類), whitefly (コナジラミ類), spider mites (ハダニ類',
-  '🌱Spino Ace water granules organic For: loopers (ウワバ類), diamondback moth (コナガ), cabbage wh',
-  '🌱Garden Safe Neem OilNo registration data in the app — check its label for this crop, the'
+  '🌱Benica Natural spray organic BT (Bacillus thuringiensis) + vegetable oil + starch syrup ',
+  '🌱Spino Ace water granules organic Spinosad 25% — granules to dilute in water · wait 3 day',
+  '🌱Garden Safe Neem Oil organic neem oil 70% · wait 1 day before picking · 4 of 4 sprays le'
 ]
-fert names: Chemical fertiliser 8-8-8 | Bokashi (Sun & Hope) | Cow manure compost | Oyster shell lime | Hyponex granules 6-10-5 | Bark compost
+fert names: Chemical fertiliser 8-8-8 | Bokashi (Sun & Hope) | Cow manure compost | Oyster shell lime | Hyponex granules 6-10-5
 errs []

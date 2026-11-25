@@ -3,7 +3,7 @@ const { newContext } = require('../lib');
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/';
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto(U); await pg.waitForTimeout(400);
   for (const [label, fert, waterTicks, mixKind, extra] of [['130 g 8-8-8, re-used mix', 130, true, 'reused', []], ['130 g 8-8-8, fresh Touikawa', 130, true, 'fresh', []], ['100 g 8-8-8 + 2 handfuls chicken manure, re-used', 100, true, 'reused', [{ product: 'Chicken manure', amount: 2, unit: 'handful' }]]]) {

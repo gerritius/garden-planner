@@ -3,7 +3,7 @@ const { newContext } = require('../lib');
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
-  const b = await chromium.launch(); const ctx = await newContext(b); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
+  const b = await chromium.launch(); const ctx = await newContext(b, { products: true }); await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
@@ -11,7 +11,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
       { id: 'n1', type: 'round', name: 'Bag new', diameter: 40, depth: 35, margin: 2, history: [] },
       { id: 'h1', type: 'round', name: 'Bag hist', diameter: 40, depth: 35, margin: 2, history: [], mixLog: [{ id: 'm1', date: '2026-03-01', kind: 'touikawa', fresh: true }] },
       { id: 'b1', type: 'bed', name: 'Plot A', width: 100, length: 200, margin: 10, history: [] }];
-    S.plantings = []; S.tasks = []; delete S.prodLib; delete S.products; migrateProducts(); S.products.push(JSON.parse(JSON.stringify(catGet('iris')))); await save();
+    S.plantings = []; S.tasks = []; delete S.prodLib; delete S.products; migrateProducts(); S.products.push(Object.assign(normProd(Object.assign({ kind: 'mix', maker: '' }, OLD_MIXES.find(m => m.id === 'iris'))), { tpl: 'iris' })); await save();
   });
   const mixUI = async () => (await pg.textContent('#pf fieldset:nth-of-type(2)')).replace(/\s+/g, ' ').match(/Potting mix.*?(?=More options|$)/)?.[0]?.slice(0, 220);
   const fert = () => pg.evaluate(() => JSON.stringify(draft && draft.fert.map(f => f.product + ' ' + f.amount + f.unit)));

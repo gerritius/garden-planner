@@ -4,9 +4,9 @@ import { timeShift } from './core/clock.js';   // first: on the test site, time 
 import { showRecovery } from './backup/recovery.js';
 import './core/forms.js';   // drop-down lists and "are you sure?" before deleting: they set themselves up when loaded
 import { DB } from './core/db.js';
-import { DATA_VERSION, upgrade } from './core/migrate.js';
+import { DATA_VERSION, newGarden, upgrade } from './core/migrate.js';
 import { A, render } from './core/router.js';
-import { allowSaving, blank, S, save, setState } from './core/state.js';
+import { allowSaving, S, save, setState } from './core/state.js';
 import { IS_TEST } from './core/site.js';
 import { applyTheme } from './core/theme.js';
 import { checkForUpdate, whatsNewOnce } from './core/updates.js';
@@ -46,7 +46,7 @@ if (IS_TEST) { document.body.classList.add('site-test'); $('#top .bar').insertAd
   try { raw = await DB.get('state'); }
   catch (e) { return showRecovery({ kind: 'storage', error: e }); }
   try {
-    const { state, from } = upgrade(raw == null ? blank() : raw);
+    const { state, from } = upgrade(raw == null ? newGarden() : raw);
     setState(state);
     if (raw == null) S.firstRun = true;   // a new garden: the welcome steps (until they're finished or skipped)
     if (raw != null && from < DATA_VERSION) await DB.set('state.v' + from, raw).catch(e => console.warn('could not keep the old format', e));

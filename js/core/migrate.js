@@ -12,10 +12,10 @@ import { migrateGermChecks } from '../plants/germination.js';
 import { migrateHarvestDates, migrateThinningText } from '../plants/growth.js';
 import { migrateSeeds } from '../plants/seeds.js';
 import { migrateNursery } from '../plants/seedlings.js';
-import { migrateFeed, migrateOwnProducts, migrateProducts } from '../products/library.js';
+import { migrateFeed, migrateOwnProducts, migrateOwnRules, migrateProducts } from '../products/library.js';
 import { blank, S, setState } from './state.js';
 
-export const DATA_VERSION = 9;
+export const DATA_VERSION = 10;
 const STEPS = [
   { to: 2, what: 'harvest dates typed in by hand stay as they are', run: migrateHarvestDates },
   { to: 3, what: 'cover names: fleece and cloche → fushokufu, bird net → insect net', run: migrateCovers },
@@ -25,7 +25,12 @@ const STEPS = [
   { to: 7, what: 'your varieties and packet photos become a seed library; thinning advice in English; care jobs timed by growth', run: () => { migrateSeeds(); migrateThinningText(); migrateCareJobTimes(); } },
   { to: 8, what: 'germination: looks every few days with roughly how many are up, instead of one answer', run: migrateGermChecks },
   { to: 9, what: 'seedlings: a list of your tray and pot sizes instead of one of each', run: migrateNursery },
+  { to: 10, what: 'no built-in products: the ones your records use become yours, and sprays keep their crops, waiting times and limits as their own', run: migrateOwnRules },
 ];
+
+// a new, empty garden — without the products older versions came with (the data steps still run: on an empty garden
+// they only mark themselves done)
+export const newGarden = () => Object.assign(blank(), { products: [], prodLib: 1 });
 
 const LISTS = { containers: 'beds and pots', plantings: 'plantings', tasks: 'jobs', log: 'log entries', customCrops: 'own crops', starts: 'seedling trays', products: 'products', seeds: 'seeds' };
 // What would stop the app from working with this data, in plain words ('' when it's fine). Deliberately only the things

@@ -7,7 +7,7 @@ import { esc, shortDate, todayStr, uid } from '../core/util.js';
 import { planting } from '../garden/garden.js';
 import { yearOfD } from '../garden/rotation.js';
 import { crop } from '../plants/crops.js';
-import { catGet, libGet, libList } from '../products/library.js';
+import { libGet, libList } from '../products/library.js';
 
 // ---------- potting mix in bags ----------
 export function mixState(c, beforeDate) {
@@ -85,6 +85,9 @@ export function mixFormBits(d, c) {
 
 // ---------- potting mixes in your library ----------
 // potting mixes
-export const mixRow = k => { const p = libGet(k) || catGet('other'); return [p.id, p.en, p.ja || '']; };
-export const mixList = () => { const l = libList('mix'); return (l.length ? l : [catGet('other')]).map(p => [p.id, p.en, p.ja || '']); };
-export const mixFert = k => { const p = (k && libGet(k)) || catGet('other'); return { npk: p.npkv || [0, 0, 0], gPerL: p.gPerL || 0, days: p.lasts || 30, what: p.what || '' }; };
+// a potting mix you haven't entered: most come with a little starter fertiliser, about a month's worth (an assumption,
+// not a product — enter yours under Products → Potting mix to have it counted properly)
+const ANY_MIX = { id: 'other', en: 'Potting mix', npkv: [8, 8, 8], gPerL: 1, lasts: 30, what: 'starter fertiliser for about a month (assumed)' };
+export const mixRow = k => { const p = libGet(k) || ANY_MIX; return [p.id, p.en, '']; };
+export const mixList = () => { const l = libList('mix'); return (l.length ? l : [ANY_MIX]).map(p => [p.id, p.en, '']); };
+export const mixFert = k => { const p = (k && libGet(k)) || ANY_MIX; return { npk: p.npkv || [0, 0, 0], gPerL: p.gPerL || 0, days: p.lasts || 30, what: p.what || '' }; };

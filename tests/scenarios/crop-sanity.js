@@ -42,7 +42,8 @@ const KNOWN = {
       if (ids.has(r.id)) bad('duplicate id'); ids.add(r.id);
       for (const k of Object.keys(r)) if (!KEYS.includes(k)) bad(`unknown field ${k}`);
       if (r.like && !CROPS.some(x => x.id === r.like)) bad(`like '${r.like}' isn't a crop`);
-      if (!r.en || !r.ja) bad('needs English and Japanese names');
+      if (!r.en) bad('needs a name');
+      if (/[\u3040-\u30ff\u4e00-\u9fff]/.test(JSON.stringify(r))) bad('has Japanese text');
     }
     const num = (c, k, lo, hi) => { const v = c[k]; if (v == null || !(v >= lo && v <= hi)) probs.push(`${c.id}: ${k} ${JSON.stringify(v)} not in ${lo}–${hi}`); };
     for (const c of CATALOG) {

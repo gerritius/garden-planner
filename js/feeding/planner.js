@@ -117,7 +117,7 @@ export function feedPlanner(p) {
       const ev = evaluate();
       m.querySelector('#fpBars').innerHTML = previewBars(L, ev.add);
       const sim = ev.sim;
-      m.querySelector('#fpSum').innerHTML = sim ? `${coverBar(sim)}With this plan: ${sim.shortFrom ? `fed until about <b>${shortDate(sim.shortFrom)}</b> — add a dose or a repeating feed (↻ Re-suggest fills the gaps)` : sim.stop ? `<b>fed for the season</b> — nothing after the last feed (止め肥) around ${shortDate(sim.stop)}; the bulbs finish on what’s in the soil` : `<b>fed through to ${shortDate(sim.end)}</b>`}.` : '';
+      m.querySelector('#fpSum').innerHTML = sim ? `${coverBar(sim)}With this plan: ${sim.shortFrom ? `fed until about <b>${shortDate(sim.shortFrom)}</b> — add a dose or a repeating feed (↻ Re-suggest fills the gaps)` : sim.stop ? `<b>fed for the season</b> — nothing after the last feed around ${shortDate(sim.stop)}; the bulbs finish on what’s in the soil` : `<b>fed through to ${shortDate(sim.end)}</b>`}.` : '';
       const ex = existing();
       m.querySelector('#fpExist').innerHTML = ex.length ? `<p class="small"><b>Already planned</b></p><ul class="plist">${ex.map(x => `<li><span class="grow small">${esc(x.text)}</span><button type="button" class="link danger" data-rmx="${x.kind}:${x.id}">remove</button></li>`).join('')}</ul>` : '';
       m.querySelector('#fpRows').innerHTML = rows.map(rowHTML).join('') || '<p class="muted">No doses — add one below.</p>';
@@ -151,7 +151,7 @@ export function feedPlanner(p) {
       for (const r of rows) {
         if (!r.on || !r.product || !r.amount) continue;
         if (r.type === 'once') { if (r.big || (r.over && !r.count)) continue;
-          S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress (追肥): ${r.product} ${amtFor(r.product, +r.amount, r.unit)}${r.t && r.src !== 'custom' ? ' — ' + r.t : ''}`, product: r.product, amount: +r.amount, unit: r.unit, due: r.due || r.date, done: false }); }
+          S.tasks.push({ id: uid(), plantingId: p.id, kind: 'feed', title: `Side-dress: ${r.product} ${amtFor(r.product, +r.amount, r.unit)}${r.t && r.src !== 'custom' ? ' — ' + r.t : ''}`, product: r.product, amount: +r.amount, unit: r.unit, due: r.due || r.date, done: false }); }
         else if (r.count && !r.big) (p.feedPlan = p.feedPlan || []).push({ id: uid(), product: r.product, amount: +r.amount, unit: r.unit, every: +r.every || 7, start: r.date, end: r.over ? r.lastOk : (r.until || end) });
       }
       syncFeedPlans(); await save(); close(); render();

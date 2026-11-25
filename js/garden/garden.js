@@ -64,7 +64,7 @@ export function planRotation(c, from, to, cropId, date, excludeId) {
   if (!cands.length) return null;
   const prev = cands.sort((a, b) => (a.end < b.end ? -1 : 1)).pop(), a = crop(prev.cropId), b = cropId ? crop(cropId) : null;
   const same = !!(b && a.family && a.family !== 'other' && a.family === b.family), fam = same ? FAMILIES[a.family] : null;
-  return { prev, same, html: same ? `<b>Same family as the crop before it.</b> ${esc(a.en)} ${prev.p ? `will be here until about ${shortDate(prev.end)}` : `was here (${shortDate(prev.end)})`} — both are ${esc(fam[0])} ${esc(fam[1])}. Consider a different spot or extra compost.`
+  return { prev, same, html: same ? `<b>Same family as the crop before it.</b> ${esc(a.en)} ${prev.p ? `will be here until about ${shortDate(prev.end)}` : `was here (${shortDate(prev.end)})`} — both are ${esc(fam[0])}. Consider a different spot or extra compost.`
     : `Follows ${esc(cropName(prev.cropId))}${prev.p ? ` (here until about ${shortDate(prev.end)})` : ''}.` };
 }
 

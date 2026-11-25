@@ -1,5 +1,5 @@
 new garden products: 0
-after update: data version 10 | Spino Ace has register link? false | its crops: 36 | cabbage {"phi":3,"max":3}
+after update: data version 11 | Spino Ace has register link? false | its crops: 36 | cabbage {"phi":3,"max":3}
 stochu notes: ["My recipe: 15 mL vinegar + 15 mL wood vinegar + 15 mL shōchū + a few drops Tabasco in 1 L of water — evenings"]
 cabbage: 💦 Your sprays 1 for CabbageYour sprays🌱Spino Ace water granules organic Spinosad 25% — granules to dilute in water · wait 3 days before picking · 2 of 3 sprays left›🧪Stochu (home-made)No crops entered for it — check its label for Cabbage, the waiting time and the limit (or add them to the product).›The app doesn’t look up pesticide rules: crops, waiting times and limits are what you’ve entered from each label. Always follow the label and the rules where you live.
 log check: ✓ Cabbage — wait 3 days before picking · spray 2 of 3🚫 Parsley — not one of the crops you entered for itBy what you entered from the label, it isn’t for (or has reached its limit on): Parsley. Check the label before spraying them. | wait set to 3

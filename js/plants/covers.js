@@ -1,4 +1,4 @@
-// Covers on beds and pots (put on as tunnels over hoops): insect net, fushokufu (不織布), shade cloth — drawn on the plot, used by alerts.
+// Covers on beds and pots (put on as tunnels over hoops): insect net, fleece (row cover — saved as 'fushokufu'), shade cloth — drawn on the plot, used by alerts.
 
 import { normalT, warming } from '../climate/climate.js';
 import { dayName, Weather } from '../climate/weather.js';
@@ -12,7 +12,7 @@ import { crop, kin } from './crops.js';
 import { NEEDS_BEES } from '../data/catalog.js';
 
 const COVER_TYPES = [
-  ['insect', '🕸️', 'Insect net tunnel', '防虫ネット'], ['fushokufu', '🧣', 'Fushokufu tunnel', '不織布'], ['shade', '🕶️', 'Shade cloth', '寒冷紗・遮光'],
+  ['insect', '🕸️', 'Insect net tunnel', ''], ['fushokufu', '🧣', 'Fleece tunnel', ''], ['shade', '🕶️', 'Shade cloth', ''],
 ];
 const COVER_OLD = { fleece: 'fushokufu', cloche: 'fushokufu', bird: 'insect' };
 export const coverType = t => COVER_TYPES.find(x => x[0] === (COVER_OLD[t] || t)) || COVER_TYPES[0];
@@ -63,11 +63,11 @@ export function coverSection(c) {
   const notes = coverNotes().filter(n => n.c === c);
   return `<section><h3>Covers</h3>
     ${notes.map(n => `<div class="banner warn">${esc(n.text)}</div>`).join('')}
-    ${on.length ? `<ul class="plist covers">${on.map(x => `<li><span class="lic">${coverType(x.type)[1]}</span><span class="grow" data-act="editCover" data-id="${x.id}"><b>${coverType(x.type)[2]}</b> <small class="ja">${coverType(x.type)[3]}</small><small>${coverWhere(c, x)} · on since ${shortDate(x.on)}</small></span><button class="btn small" data-act="liftCover" data-id="${x.id}">Take off</button></li>`).join('')}</ul>` : '<p class="muted">Nothing covered.</p>'}
-    <button class="btn small" data-act="addCover">＋ Add insect net / fushokufu</button>
+    ${on.length ? `<ul class="plist covers">${on.map(x => `<li><span class="lic">${coverType(x.type)[1]}</span><span class="grow" data-act="editCover" data-id="${x.id}"><b>${coverType(x.type)[2]}</b><small>${coverWhere(c, x)} · on since ${shortDate(x.on)}</small></span><button class="btn small" data-act="liftCover" data-id="${x.id}">Take off</button></li>`).join('')}</ul>` : '<p class="muted">Nothing covered.</p>'}
+    <button class="btn small" data-act="addCover">＋ Add insect net / fleece</button>
     ${past.length ? `<details class="donelog"><summary>Taken off (${past.length})</summary><ul class="plist">${past.map(x => `<li data-act="editCover" data-id="${x.id}"><span class="lic">${coverType(x.type)[1]}</span><span class="grow">${coverType(x.type)[2]}<small>${coverWhere(c, x)} · ${shortDate(x.on)} – ${shortDate(x.off)}</small></span></li>`).join('')}</ul></details>` : ''}</section>`;
 }
-// reminders: lift fushokufu when frosts are over or it's warm, nets on crops that need pollinating, covers over nothing
+// reminders: lift fleece when frosts are over or it's warm, nets on crops that need pollinating, covers over nothing
 export function coverNotes() {
   const td = todayStr(), days = Weather.days().slice(0, 7), out = [];
   const noFrost = days.length >= 5 && days.every(d => d.min > 3), warm = days.slice(0, 3).find(d => d.max >= 25);

@@ -105,16 +105,16 @@ const freshMixFed = (ms, sowDate) => !!(ms && ms.fresh && ms.firstCrop && (sowDa
 export function careJobs(cropId) {
   const cr = crop(cropId);
   // feeding is planned from the Feeding card, so side-dressing isn't a plain job any more (earthing up stays)
-  const jobs = (cr.jobs || []).map(j => j.slice()).filter(j => !/追肥|side-dress|止め肥/i.test(j[0]) || /earth up|土寄せ/i.test(j[0])).map(j => /追肥|side-dress/i.test(j[0]) ? ['Earth up (土寄せ)', ...j.slice(1)] : j);
+  const jobs = (cr.jobs || []).map(j => j.slice()).filter(j => !/side-dress/i.test(j[0]) || /earth up/i.test(j[0])).map(j => /side-dress/i.test(j[0]) ? ['Earth up', ...j.slice(1)] : j);
   if (FRUITING.includes(kin(cropId)) || cr.family === 'brassica' || ['strawberry', 'soramame', 'edamame', 'lettuce'].includes(kin(cropId)))
-    jobs.push(['Pest check (害虫チェック) – undersides & new growth', 7, 1, 'week']);
+    jobs.push(['Pest check – undersides & new growth', 7, 1, 'week']);
   return jobs;
 }
 // When a care job starts. Its days after sowing / planting are days of growth, at the pace the temperature allows, so
 // a cold spell pushes it back. Supports — nets, trellises, stakes, canes, tying in — for a crop that goes through winter
 // go up when it grows again in spring, not before: autumn-sown peas stay low until then and only climb in spring, and a
 // net up all winter is only something to be blown about or to crush them. Insect netting is a cover, not a support: it goes on at planting.
-const SUPPORT = /trellis|\bnet\b|stake|support|cane|tie (in|stems)|支柱|誘引|ネット\)/i, NOT_SUPPORT = /insect|防虫/i;
+const SUPPORT = /trellis|\bnet\b|stake|support|cane|tie (in|stems)/i, NOT_SUPPORT = /insect/i;
 export function careJobStart(p, j) {
   const from = p.sowDate || todayStr(), days = +j[1] || 0;
   if (!days) return from;
@@ -153,7 +153,7 @@ export function feedDialog(e, onSave, onCancel) {
   const prods = myProducts(['fert', 'compost', 'lime', 'amend']), names = [...new Set([...prods.map(x => x.en), ...(S.log || []).filter(x => x.kind === 'fert').map(x => x.product).filter(Boolean)])];
   const targets = [...(e.cids || []).map(id => (container(id) || {}).name), ...(e.pids || []).map(id => { const p = planting(id); return p ? crop(p.cropId).en + ' · ' + ((container(p.containerId) || {}).name || '') : ''; })].filter(Boolean).join(', ') || 'Whole garden';
   modal(`<h3>🌿 ${isNew ? 'Record feeding' : 'Edit feeding'}</h3><p class="muted small">${esc(targets)}</p><form id="fdf" class="form">
-      <label>Product<input name="product" list="fdl" value="${esc(e.product || '')}" required placeholder="e.g. Bokashi, 化成肥料 8-8-8"><datalist id="fdl">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
+      <label>Product<input name="product" list="fdl" value="${esc(e.product || '')}" required placeholder="e.g. Bokashi, NPK 8-8-8"><datalist id="fdl">${names.map(n => `<option value="${esc(n)}">`).join('')}</datalist></label>
       <div id="fdd"></div>
       <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}" required></label><label>Unit<select name="unit">${unitOpts(e.unit || 'handful')}</select></label></div>
       <label>Date<input name="date" type="date" value="${e.date}" max="${td}"></label>
@@ -243,7 +243,7 @@ export function baseFertNote(cropId, c, sowDate) {
   if (lime) bits.push(`${lime.en}: ${whenIn(lime)}`);
   if (base) bits.push(`${base.en}: ${whenIn(base)}`);
   if (cropId === 'potato') bits.push('no lime for potatoes (scab)');
-  if (cropId === 'satsumaimo') bits.push('no nitrogen fertiliser for sweet potato — rich soil gives leaves, not tubers (つるぼけ)');
+  if (cropId === 'satsumaimo') bits.push('no nitrogen fertiliser for sweet potato — rich soil gives leaves, not tubers');
   if (['carrot', 'daikon', 'hatsuka', 'kabu'].includes(kin(cropId))) bits.push('keep compost well mixed and at least 3 weeks old for root crops');
   return bits.join(' · ');
 }

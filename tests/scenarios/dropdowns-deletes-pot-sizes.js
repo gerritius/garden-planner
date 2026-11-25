@@ -11,6 +11,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     S.customProducts = [{ id: 'cust_k', en: 'Kincho Liquid 6-6-7', form: 'liquid', kind: 'fert', npkv: [6, 6, 7], per: 5, doses: [5, 10], custom: true }];
     S.plantings = [{ id: 'le', containerId: 'p1', cropId: 'lettuce', method: 'seedling', layout: 'center', from: 0, to: 40, sowDate: '2026-11-01', status: 'active', photos: {}, series: [], harvests: [], fert: [] }];
     S.log = [{ id: 'lg', kind: 'fert', product: 'Chemical fertiliser 8-8-8', amount: 10, unit: 'g', date: '2026-11-10', cids: [], pids: ['le'] }];
+    S.seeds = [{ id: 'sd1', cropId: 'spinach', variety: 'Bloomsdale' }, { id: 'sd2', cropId: 'spinach', variety: 'Giant Winter' }];   // (variety suggestions are your own seeds)
     S.tasks = []; S.ownMigrated2 = true; delete S.dataVersion; await save();
   });
   await pg.reload(); await pg.waitForTimeout(500);   // an old-format save is brought up to date when the app loads it

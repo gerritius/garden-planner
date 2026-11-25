@@ -188,11 +188,11 @@ export function prepDialog(c) {
   const sa = soilAdvice(c, 0, Draw.dims(c).L, null), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
   const comp = pickRole('compost'), lime = pickRole('lime'), base = pickRole('base', c.type === 'bed' ? 'slow' : 'quick');
   const items = [
-    ['compost', `Dig in ${comp ? comp.en : 'compost (堆肥)'} ~${Math.max(1, Math.round(a * 2 * cm * 2) / 2)} kg`, comp ? -Math.max(comp.wait, 7) : -14, true],
-    ...(g(limeRate(null, rd ? rd.ph : null)) > 0 ? [['lime', `Spread ${lime ? lime.en : 'lime (苦土石灰)'} ~${g(limeRate(null, rd ? rd.ph : null))} g${rd && rd.ph != null ? ` (your pH reading: ${rd.ph})` : ''}`, lime ? 0 : -14, true]] : []),
-    ['base', `Base fertiliser: ${base ? base.en : '元肥'} ~${g(150 * bm)} g`, base ? -base.wait : -7, true],
-    ['ridge', 'Dig & shape the bed (畝立て)', -1, c.type === 'bed'],
-    ['mulch', 'Lay mulch film (マルチ)', -1, false],
+    ['compost', `Dig in ${comp ? comp.en : 'compost'} ~${Math.max(1, Math.round(a * 2 * cm * 2) / 2)} kg`, comp ? -Math.max(comp.wait, 7) : -14, true],
+    ...(g(limeRate(null, rd ? rd.ph : null)) > 0 ? [['lime', `Spread ${lime ? lime.en : 'garden lime'} ~${g(limeRate(null, rd ? rd.ph : null))} g${rd && rd.ph != null ? ` (your pH reading: ${rd.ph})` : ''}`, lime ? 0 : -14, true]] : []),
+    ['base', `Base fertiliser: ${base ? base.en : 'a base fertiliser'} ~${g(150 * bm)} g`, base ? -base.wait : -7, true],
+    ['ridge', 'Dig & shape the bed', -1, c.type === 'bed'],
+    ['mulch', 'Lay mulch film', -1, false],
   ];
   modal(`<h3>Prepare ${esc(c.name)}</h3><p class="muted small">${c.type === 'bed' ? `${a.toFixed(2)} m²` : `~${Math.round(potVolume(c) || 40)} L of soil`} · amounts are typical rates for this much soil — adjust to your products.</p>${sa ? `<p class="msg small">🪱 ${sa.text}${bm !== 1 || cm !== 1 ? ' Amounts below are adjusted.' : ''}</p>` : ''}
     <form id="pf2" class="form"><label>Planting date<input type="date" name="plant" value="${addDays(todayStr(), 14)}"></label>

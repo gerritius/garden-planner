@@ -46,7 +46,7 @@ export const stageAnchor = (se, w) => w === 'start' ? se.ws : w === 'mid' ? addD
 // the day a dose put on `due` starts working (organic feeds take a while)
 export const actsOn = (name, due) => addDays(due, leadOf(productByName(name || ''))[0] || 0);
 export const leanWhy = (p, se) => se.bolt
-  ? `an overwintering ${crop(p.cropId).en.toLowerCase()} is kept small going into the cold — a big plant bolts (トウ立ち) in spring instead of heading`
+  ? `an overwintering ${crop(p.cropId).en.toLowerCase()} is kept small going into the cold — a big plant bolts in spring instead of heading`
   : 'soft new growth going into winter is easily frost-damaged';
 export function sideStages(p) {
   const td = todayStr(), cr = crop(p.cropId), hv = p.harvestDate || addDays(p.sowDate, cr.daysHarvest || 60), se = feedSeason(p), skipped = [];

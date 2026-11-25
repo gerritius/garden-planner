@@ -2,12 +2,12 @@ damaged: Recovery | Your saved garden couldn’t be loaded: its beds and pots ar
 other pages still show recovery: true | stored data untouched: {"containers":"oops","plantings":[]}
 copy saved: garden-stored-copy-DATE.json | it holds the stored data: {"containers":"oops","plantings":[]}
 earlier copies offered: Wed 18 Nov
-after restoring the daily copy: Restored. | My Garden | 1 bed, 1 planting, data version 10
+after restoring the daily copy: Restored. | My Garden | 1 bed, 1 planting, data version 11
 the damaged data was kept: {"containers":"oops","plantings":[]}
-newer format: saved by a newer version of the app (data format 99; this version reads up to 10) — reload to get the newest version
+newer format: saved by a newer version of the app (data format 99; this version reads up to 11) — reload to get the newest version
 no storage: Recovery | couldn’t open its storage on this phone (blocked by the browser) | offers: Try again · Go back to an earlier copy · Restore from a backup file · Use the app without saving
 without saving: My Garden | Changes aren’t being saved: this phone’s storage couldn’t be opened. Recovery
-old format at start: data version 10, 7 plantings | old one kept: true | stored now: 10
+old format at start: data version 11, 7 plantings | old one kept: true | stored now: 11
 restored: Backup restored. | Plot A
 undone: Restore undone. | Renamed before the restore
 errs []

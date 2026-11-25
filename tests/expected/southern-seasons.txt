@@ -1,6 +1,6 @@
-Tokyo — rotation: What can go where in 2027 | Plot A 2026 Tomato (large), Cabbage ✕ Nightshade until 2031✕ Brassica until 2029 ›
-  pest-season month: 1→1 5→5 11→11 | solar term: 立冬 · Start of winter
-Sydney — rotation: What can go where in 2026–27 | Plot A 2025–26 Tomato (large), Cabbage ✕ Nightshade until 2030–31✕ Brassica until 2028–29 ›
+Tokyo — rotation: What can go where in 2027 | Plot A 2026 Tomato, Cabbage ✕ Nightshade until 2031✕ Brassica until 2029 ›
+  pest-season month: 1→1 5→5 11→11 | solar term: (none)
+Sydney — rotation: What can go where in 2026–27 | Plot A 2025–26 Tomato, Cabbage ✕ Nightshade until 2030–31✕ Brassica until 2028–29 ›
   pest-season month: 1→7 5→11 11→5 | solar term: (none)
   November is like: 5 (aphid months in Japan: 3–6, 9–11)
 errs []

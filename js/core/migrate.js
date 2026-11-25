@@ -15,7 +15,15 @@ import { migrateNursery } from '../plants/seedlings.js';
 import { migrateFeed, migrateOwnProducts, migrateOwnRules, migrateProducts } from '../products/library.js';
 import { blank, S, setState } from './state.js';
 
-export const DATA_VERSION = 10;
+export const DATA_VERSION = 11;
+// a bracketed Japanese gloss, in text the app wrote: job and care-job titles, thinning advice
+const GLOSS = /\s*\((?:[^()]*?)[\u3040-\u30ff\u4e00-\u9fff][^()]*\)/g;
+function migrateGlosses() {
+  const clean = o => { if (o && typeof o.title === 'string') o.title = o.title.replace(GLOSS, ''); };
+  S.tasks.forEach(clean);
+  for (const p of S.plantings) { (p.series || []).forEach(clean); if (typeof p.thinStage === 'string') p.thinStage = p.thinStage.replace(GLOSS, ''); }
+  delete S.lang;
+}
 const STEPS = [
   { to: 2, what: 'harvest dates typed in by hand stay as they are', run: migrateHarvestDates },
   { to: 3, what: 'cover names: fleece and cloche → fushokufu, bird net → insect net', run: migrateCovers },
@@ -26,6 +34,7 @@ const STEPS = [
   { to: 8, what: 'germination: looks every few days with roughly how many are up, instead of one answer', run: migrateGermChecks },
   { to: 9, what: 'seedlings: a list of your tray and pot sizes instead of one of each', run: migrateNursery },
   { to: 10, what: 'no built-in products: the ones your records use become yours, and sprays keep their crops, waiting times and limits as their own', run: migrateOwnRules },
+  { to: 11, what: 'job names the app wrote lose their Japanese glosses; your own notes are untouched', run: migrateGlosses },
 ];
 
 // a new, empty garden — without the products older versions came with (the data steps still run: on an empty garden

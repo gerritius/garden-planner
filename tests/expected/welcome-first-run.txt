@@ -2,17 +2,17 @@ opens on: #/welcome | first run: true
 step 1: Welcome to Garden Planner Draw your beds, pots and grow bags and what’s in them, and the app works out the rest for your climate: when to sow and plant, thinning, feeding, watering with the weather, frost and pest warnings, and when to harvest — as jobs for each day. 🔒 Your garden stays on this phone. Nothing is uploaded; only 
 step 2: Where your garden is sets the weather and frost alerts, and — from the last ten years’ weather there — when each crop can be sown and how fast it grows. Weather
   location: ["Setagaya",35.65,139.65] | button: Next
-step 3: Leafy greens 葉物野菜 | Cabbages & broccoli キャベツ・ブロッコリー類 | Roots 根菜 | Fruiting vegetables 果菜 | Beans & peas 豆類 | Onions & garlic ネギ類 | Potatoes & other tubers イモ類 | Herbs ハーブ・香味野菜 | Fruit 果物
-  the usual crops: 18 crops chosen — they come first in crop lists, and the sowing calendar and ideas are about them. The rest are still there under “Other crops”.
-  search "komat": komatsuna ✓
-  chosen: 18 komatsuna false shungiku true
+step 3: Leafy greens | Cabbages & broccoli | Roots | Fruiting vegetables | Beans & peas | Onions & garlic | Potatoes & other tubers | Herbs | Fruit
+  the usual crops: 25 crops chosen — they come first in crop lists, and the sowing calendar and ideas are about them. The rest are still there under “Other crops”.
+  search "komat": komatsuna
+  chosen: 27 komatsuna true shungiku true
 step 4: Now add where things grow: a bed in the ground, or a pot, trough or grow bag. You draw what’s in it, and the jobs follow from that. ＋ Add my first bed or pot Later
 step 5: You’re set up 🌱 📋 Jobs for each day are on the home screen — tick them off as you go. 💾 Keep a backup. Your garden is only on this phone: Tools → Backup saves a copy as a file, or to Google Drive every day. 📱 Add it to your home screen to open it like an app: in Chrome’s ⋮ menu, “Add to Home screen” (or “Install app”). 🧺 Your crops, location and everything else can be changed in Tools. Go to my garden
 finished: #/ | first run: false | home says finish setting up: false
 crop list: Your crops / Other crops · 98 crops
-sowing calendar: 18 crops (of 96) · Your crops. Show all crops · Change my crops
+sowing calendar: 27 crops (of 96) · Your crops. Show all crops · Change my crops
   show all: 96
 Tools has My crops: true
-my crops page: 18 crops chosen — they come first in crop lists, and the sowing calendar and ideas are about them. The rest are still there under “Other crops”.
+my crops page: 27 crops chosen — they come first in crop lists, and the sowing calendar and ideas are about them. The rest are still there under “Other crops”.
 existing garden opens on: (home)
 errs []

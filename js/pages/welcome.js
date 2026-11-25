@@ -20,10 +20,10 @@ let pickQuery = '';
 function chosen() { return new Set(Array.isArray(S.myCrops) ? S.myCrops : []); }
 function cropPicker() {
   const sel = chosen(), q = pickQuery.trim().toLowerCase();
-  const hit = c => !q || `${c.en} ${c.ja || ''} ${c.id}`.toLowerCase().includes(q);
-  const chip = c => `<button type="button" class="chip big pick${sel.has(c.id) ? ' on' : ''}" data-act="pickCrop" data-id="${c.id}" aria-pressed="${sel.has(c.id)}">${ic(c.id, 20)}${esc(c.en)}${c.ja ? ` <small>${esc(c.ja)}</small>` : ''}</button>`;
+  const hit = c => !q || `${c.en} ${c.id}`.toLowerCase().includes(q);
+  const chip = c => `<button type="button" class="chip big pick${sel.has(c.id) ? ' on' : ''}" data-act="pickCrop" data-id="${c.id}" aria-pressed="${sel.has(c.id)}">${ic(c.id, 20)}${esc(c.en)}</button>`;
   const own = (S.customCrops || []).map(c => allCrops().find(x => x.id === c.id)).filter(Boolean).filter(hit);
-  const groups = Object.entries(GROUPS).map(([g, [en, ja]]) => { const cs = CATALOG.filter(c => (c.group || 'leaves') === g && hit(c)); return cs.length ? `<section class="pickgrp"><h4>${esc(en)} <small>${esc(ja)}</small></h4><div class="sowchips">${cs.map(chip).join('')}</div></section>` : ''; }).join('');
+  const groups = Object.entries(GROUPS).map(([g, [en]]) => { const cs = CATALOG.filter(c => (c.group || 'leaves') === g && hit(c)); return cs.length ? `<section class="pickgrp"><h4>${esc(en)}</h4><div class="sowchips">${cs.map(chip).join('')}</div></section>` : ''; }).join('');
   A.pickCrop = async el => {
     const s = chosen(); s.has(el.dataset.id) ? s.delete(el.dataset.id) : s.add(el.dataset.id);
     S.myCrops = [...s]; await save();
@@ -51,7 +51,6 @@ export function pageWelcome(q) {
   const next = `#/welcome?s=${step + 1}`;
   const dots = `<div class="wl-dots">${STEPS.map((s, i) => `<span class="${i + 1 === step ? 'on' : i + 1 < step ? 'done' : ''}" title="${esc(s)}"></span>`).join('')}</div>`;
   A.wlFinish = async el => { S.firstRun = false; pickQuery = ''; await save(); go(el.dataset.to || '#/'); };
-  A.lang = async el => { S.lang = el.dataset.v; await save(); render(); };
   let body = '', after = null;
   if (step === 1) {
     A.wlCopy = () => copyFromMainSite();
@@ -61,8 +60,7 @@ export function pageWelcome(q) {
       <ul class="wl-points"><li>🔒 <b>Your garden stays on this phone.</b> Nothing is uploaded; only a rough location (about 1 km) is used for the weather.</li><li>📴 <b>Works offline</b> once it’s been opened.</li><li>↩️ <b>Everything here can be changed later</b> in Tools.</li></ul>
       <div class="btncol"><a class="btn primary wide" href="${next}">Start my garden</a>
         <label class="btn wide">Restore a backup file<input type="file" id="wlimp" accept=".json,application/json" hidden></label>
-        ${IS_TEST ? '<button type="button" class="btn wide" data-act="wlCopy">Copy my real garden into the test site</button>' : ''}</div>
-      <section><h3>Crop names</h3><div class="seg">${[['', 'English'], ['ja', '日本語']].map(([v, l]) => `<button type="button" data-act="lang" data-v="${v}" class="${(S.lang || '') === v ? 'on' : ''}">${l}</button>`).join('')}</div></section>`;
+        ${IS_TEST ? '<button type="button" class="btn wide" data-act="wlCopy">Copy my real garden into the test site</button>' : ''}</div>`;
     after = () => { const f = $('#wlimp'); if (f) f.onchange = () => importBackup(f.files[0]); };
   } else if (step === 2) {
     const w = S.weather;

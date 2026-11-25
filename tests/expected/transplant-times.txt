@@ -1,10 +1,10 @@
-crops without their own plant-out time: none | signs not in English: none | not raised in trays: Potato, Carrot, Daikon, Radish, Turnip, Taro, Sweet potato, Garlic, Burdock (gobo), Ginger, Beetroot, Coriander (cilantro), Rakkyo (Japanese scallion), Dill, Wakegi, Eshalot (young rakkyo), Yacon, Chinese yam (nagaimo)
+crops without their own plant-out time: none | signs not in English: none | not raised in trays: Potato, Carrot, Daikon, Radish, Turnip, Taro, Sweet potato, Garlic, Burdock, Ginger, Beetroot, Coriander (cilantro), Rakkyo (Chinese onion), Dill, Bunching shallot (wakegi), Young rakkyo, Yacon, Chinese yam
 spinach sown 15 Nov: out 2026-12-17, cover 2026-12-11, in 2026-12-05 | sign: At 2–3 true leaves — plant out young: its roots resent disturbance
 without its days: Sown 12 Nov (6 days) · ready to plant out: no estimate — add its days to planting out (⋯) | plant-out job: false
 edit asks: true | How long until they’re ready to plant out? Add the days from the packet below.
 with 28 days: Plant out in about 30 days at this time of year.
 saved: 28 | Sown 12 Nov (6 days) · ready in ~24 days | plant-out job: 2026-12-12
-seeds tab: Okahijiki おかひじき · your crop edit this crop · not linked to a crop it’s like yet: edit it to choose one delete this crop
+seeds tab: Okahijiki · your crop edit this crop · not linked to a crop it’s like yet: edit it to choose one delete this crop
 crop now: [20,30,28,{"tb":10,"tref":24,"tcap":30,"warm":[9,21]}]
 warm-season, sown in November: Sown 12 Nov (6 days) · ready in ~158 days
 errs []

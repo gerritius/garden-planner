@@ -102,7 +102,7 @@ export function pagePlantForm(p, c, q) {
       ${isNew && !d.startId ? startChooser(d) : ''}
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
       ${isNew && !d.startId ? `<button type="button" class="link" data-act="formIdeas">💡 What could go here${d.sowDate > todayStr() ? ' then' : ' now'}?</button>` : ''}
-      <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="e.g. ${esc(cr ? (cr.varieties || [])[0] || '' : '')}" autocomplete="off">
+      <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="${esc(cr && varieties(cr.id)[0] ? 'e.g. ' + varieties(cr.id)[0] : 'from the seed packet or plant label')}" autocomplete="off">
         <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
         ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}
         ${d.cropId && kin(d.cropId) === 'onion' ? `<small class="hint">🌗 For here: ${esc(onionType()[1])}.</small>` : ''}</label>
@@ -148,7 +148,7 @@ export function pagePlantForm(p, c, q) {
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
       ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d), d.sowDate))}.</p>` : ''}
-      ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. 化成肥料 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
+      ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. NPK 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
         <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
       <datalist id="fertNames">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist>
       <button type="button" class="btn small" data-act="addFert">＋ Add fertiliser</button>
@@ -156,7 +156,7 @@ export function pagePlantForm(p, c, q) {
     </fieldset>
     <fieldset><legend>Repeating jobs</legend>
       ${d.series.map((s, i) => `<div class="series">
-        <div class="fert">${!s.product ? `<input name="series.${i}.title" value="${esc(s.title || '')}" placeholder="Job (e.g. Earth up 土寄せ)">` : `<input name="series.${i}.product" value="${esc(s.product)}"><input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
+        <div class="fert">${!s.product ? `<input name="series.${i}.title" value="${esc(s.title || '')}" placeholder="Job (e.g. Earth up)">` : `<input name="series.${i}.product" value="${esc(s.product)}"><input name="series.${i}.amount" type="number" inputmode="decimal" value="${esc(s.amount)}" placeholder="Amount">
         <select name="series.${i}.unit">${unitOpts(s.unit)}</select>`}<button type="button" class="x" data-act="rmSeries" data-i="${i}">✕</button></div>
         <div class="rep-row"><select name="series.${i}.every">${[0, 1, 2, 3, 4, 5, 6, 7, 10, 14].map(n => `<option value="${n}"${+s.every === n ? ' selected' : ''}>${n === 0 ? 'Once' : 'Every ' + n}</option>`).join('')}</select>
         ${+s.every > 0 ? `<select name="series.${i}.per">${['day', 'week', 'month'].map(u => `<option value="${u}"${s.per === u ? ' selected' : ''}>${u}${+s.every > 1 ? 's' : ''}</option>`).join('')}</select>` : ''}
@@ -200,7 +200,7 @@ export function pagePlantForm(p, c, q) {
     $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
-  A.searchVar = () => { read(); const q = `${cr ? cr.ja : ''} ${d.variety || ''} 種 まき方`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
+  A.searchVar = () => { read(); const q = `${cr ? cr.en : ''} ${d.variety || ''} growing from seed`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
   A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
   A.raise = el => { read(); d.raise = el.dataset.v; render(); };
   A.useStart = el => { read(); applyStart(d, start(el.dataset.id), c); render(); };
@@ -296,7 +296,7 @@ async function savePlanting(p, d, c) {
   });
   if (isNew) {
     const cj = careJobs(p.cropId);
-    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: careJobStart(p, j), end: /Pest check|Side-dress \(追肥\)$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
+    cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: careJobStart(p, j), end: /Pest check|^Side-dress$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
   }
   if (isNew && p.layout === 'free' && (d.positions || []).length) p.positions = d.positions.map(q => q.slice());   // placed for you (e.g. seedlings planted out)
   if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;

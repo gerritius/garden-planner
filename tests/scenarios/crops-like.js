@@ -12,7 +12,7 @@ const U = 'http://localhost:8765/';
   await pg.goto(U); await pg.waitForTimeout(400);
   // add tatsoi through the form: without "most like" it isn't saved
   await pg.evaluate(() => newCropDialog(() => {})); await pg.waitForTimeout(200);
-  await pg.fill('#ncf input[name=en]', 'Tatsoi'); await pg.fill('#ncf input[name=ja]', 'ターサイ');
+  await pg.fill('#ncf input[name=en]', 'Tatsoi');
   await pg.evaluate(() => { document.querySelector('#ncf select[name=like]').required = false; });   // (past the browser's own check, to see the app's)
   await pg.click('#ncf button.primary'); await pg.waitForTimeout(200);
   console.log('without "most like":', said.pop(), '| saved:', await pg.evaluate(() => (S.customCrops || []).length));

@@ -15,7 +15,7 @@ const U = 'http://localhost:8765/';
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => { S.weather = null; delete S.climate; await save(); });
   const tools = async () => { await pg.goto(U + '#/settings'); await pg.waitForTimeout(300); await pg.evaluate(() => document.querySelectorAll('details').forEach(d => d.open = true)); };
-  const state = () => pg.evaluate(() => `${S.climate ? S.climate.name : 'built-in'} · Jan ${normalT('2026-01-15')}° Jul ${normalT('2026-07-15')}° · tomato ${crop('tomato').sow} · garlic ${crop('garlic').sow} · frost ${hasFrostDates() ? firstFrostAfter('2026-08-01') : 'none'} · south ${southern()} · solar term "${sekki(new Date('2026-11-18'))}"`);
+  const state = () => pg.evaluate(() => `${S.climate ? S.climate.name : 'built-in'} · Jan ${normalT('2026-01-15')}° Jul ${normalT('2026-07-15')}° · tomato ${crop('tomato').sow} · garlic ${crop('garlic').sow} · frost ${hasFrostDates() ? firstFrostAfter('2026-08-01') : 'none'} · south ${southern()}`);
   await tools();
   console.log('types:', await pg.$$eval('[data-act=climType] b', x => x.map(e => e.textContent).join(' | ')));
   console.log('start:', await state());

@@ -37,7 +37,6 @@ export function pageSettings() {
   A.copyMain = copyFromMainSite;
   A.import = () => $('#impf').click();
   A.persist = async () => { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist().catch(() => false); storageNote(true); };
-  A.lang = async el => { S.lang = el.dataset.v; await save(); render(); };
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
   const tile = (h, i, l) => `<a class="tile" href="${h}"><span>${i}</span>${l}</a>`;
   const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
@@ -58,7 +57,7 @@ export function pageSettings() {
     <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>Watering jobs for pots &amp; bags, each bed in the ground (they hold far more water, so much less often), indoor pots and seedlings — spaced by the temperature, and put off when enough rain has fallen or is forecast (needs the weather location for the rain).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
     <details class="set"><summary>🌤️ Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
-    <details class="set"><summary>🎨 Appearance &amp; crop names</summary>${themeSettings()}    <section><h3>Crop names</h3><div class="seg"><button type="button" data-act="lang" data-v="en" class="${S.lang !== 'ja' ? 'on' : ''}">English first</button><button type="button" data-act="lang" data-v="ja" class="${S.lang === 'ja' ? 'on' : ''}">日本語 first</button></div></section></details>
+    <details class="set"><summary>🎨 Appearance</summary>${themeSettings()}</details>
     <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
     <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
     ${eraseSection()}

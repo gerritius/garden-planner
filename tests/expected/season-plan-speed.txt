@@ -3,8 +3,8 @@
 #/ N ms
 #/container/b2 N ms
 plan chips filled: [
-  'Whole bed free from 19 Dec · after Daikon Spinach 🏠 done ~26 JanShungiku 🌱 done ~1 AprSw',
-  '100–200 cm free from 23 Dec · after Hakusai Spinach 🏠 done ~31 JanShungiku 🌱 done ~5 Apr',
+  'Whole bed free from 19 Dec · after Daikon Spinach 🏠 done ~26 JanShungiku (edible chrysant',
+  '100–200 cm free from 23 Dec · after Chinese cabbage (napa) Spinach 🏠 done ~31 JanShungiku',
   '0–100 cm free from 17 May · after Cabbage Lettuce 🪴 done ~27 JunButterhead lettuce 🪴 don'
 ] | placeholders left 0
 plan again (cached): N ms

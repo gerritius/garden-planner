@@ -84,7 +84,7 @@ export function simVerdict(sim, L, p) {
   if (se && se.bolt && td >= addDays(se.leanFrom, -7) && td < se.we)
     bits.push(`<b>Keep it lean until about ${shortDate(se.we)}</b> — ${esc(leanWhy(p, se))}. Only feed now if leaves turn pale yellow, and then lightly. The main feed is around ${shortDate(se.we)}.`);
   if (bits.length && se && se.bolt && td < se.we && sim.shortFrom && Math.abs(daysBetween(sim.shortFrom, se.we)) <= 21) return bits.join(' ');   // the lean note already says when to feed
-  if (!sim.shortFrom) bits.push(sim.stop ? `<b>Fed for the season</b> — the last feed (止め肥) is around ${shortDate(sim.stop)}; after that the bulbs finish on what’s in the soil.` : `<b>Fed through to ${shortDate(sim.end)}</b> with what’s in and planned.`);
+  if (!sim.shortFrom) bits.push(sim.stop ? `<b>Fed for the season</b> — the last feed is around ${shortDate(sim.stop)}; after that the bulbs finish on what’s in the soil.` : `<b>Fed through to ${shortDate(sim.end)}</b> with what’s in and planned.`);
   else {
     const slow = normalT(sim.shortFrom) < restartTemp(p.cropId), back = slow ? nextGrowing(p.cropId, sim.shortFrom) : null;
     const when = sim.shortFrom <= addDays(td, 5) ? '<b>Running short now</b>' : `<b>Fed until about ${shortDate(sim.shortFrom)}</b>`;

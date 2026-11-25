@@ -30,7 +30,7 @@ function plantOK(cr, m) {
   const warming = normalT(`2026-${String(m).padStart(2, '0')}-15`) < normalT(`2026-${String(m % 12 + 1).padStart(2, '0')}-15`);
   return sowOK(cr, m) || (shiftM(cr.sow || [], k).includes(m) && !(warming && boltsInHeat(cr.id)));
 }
-// quick hardy leaves (komatsuna, spinach, mizuna…) can go a couple of months past their window under a tunnel or Fushokufu
+// quick hardy leaves (komatsuna, spinach, mizuna…) can go a couple of months past their window under a tunnel or fleece
 const coverOK = (cr, m) => !cr.tender && ['brassica', 'amaranth', 'aster'].includes(cr.family) && cr.daysHarvest <= 70 && !sowOK(cr, m) && (shiftM(cr.sow || [], 1).includes(m) || shiftM(cr.sow || [], 2).includes(m));
 const trayOK = (cr, m) => sowOK(cr, m) || shiftM(cr.sow || [], -1).includes(m);   // indoors you can start a month early
 // default "needs to be clear by": the next crop planned here (less 2 weeks' prep); otherwise, over winter, Golden Week
@@ -91,7 +91,7 @@ function cropIdeasUncached(c, a, b, s, clearBy) {
 const IDEA_KIND = { sow: ['🌱', 'Sow'], buy: ['🪴', 'Plant seedlings'], raise: ['🏠', 'Sow indoors'] };
 function ideaText(o) {
   const td = todayStr(), when = d => d <= td ? 'now' : shortDate(d);
-  const cov = o.cover ? ' under a tunnel or Fushokufu' : '';
+  const cov = o.cover ? ' under a tunnel or fleece' : '';
   if (o.kind === 'sow') return `🌱 Sow ${o.P <= td ? 'now' : 'from ' + shortDate(o.P)}${cov}`;
   return o.kind === 'raise' ? `🏠 Sow indoors ${when(o.T)}, plant out ${when(o.P)}` : `${IDEA_KIND[o.kind][0]} ${IDEA_KIND[o.kind][1]} ${o.kind === 'buy' ? (o.P <= td ? 'now' : 'from ' + shortDate(o.P)) : when(o.P)}`;
 }

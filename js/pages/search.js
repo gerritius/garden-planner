@@ -19,7 +19,7 @@ import { purchaseDialog } from '../records/review.js';
 export function pageSearch(q) {
   setChrome('Search', { tab: 'search', kicker: 'Crops, varieties, notes, pests' });
   const term = (q.get('q') || '').trim();
-  const html = `<form id="sf" class="searchrow" onsubmit="return false"><input id="sq" type="search" value="${esc(term)}" placeholder="e.g. 夏楽天, aphids, compost…" enterkeyhint="search" autocomplete="off"></form><div id="sres"></div>`;
+  const html = `<form id="sf" class="searchrow" onsubmit="return false"><input id="sq" type="search" value="${esc(term)}" placeholder="e.g. a variety, aphids, compost…" enterkeyhint="search" autocomplete="off"></form><div id="sres"></div>`;
   const run = () => {
     const t = $('#sq').value.trim().toLowerCase(); const out = $('#sres');
     history.replaceState(null, '', '#/search' + (t ? '?q=' + encodeURIComponent(t) : ''));
@@ -28,7 +28,7 @@ export function pageSearch(q) {
     const has = s => String(s || '').toLowerCase().includes(t);
     const hl = s => esc(s).replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), x => `<mark>${x}</mark>`);
     const raw = id => CATALOG.concat(S.customCrops || []).find(c => c.id === id) || {};
-    const pl = S.plantings.filter(p => { const c = raw(p.cropId); return has(c.en) || has(c.ja) || has(p.variety) || has(p.notes) || has(FAMILIES[c.family] && FAMILIES[c.family].join(' ')); });
+    const pl = S.plantings.filter(p => { const c = raw(p.cropId); return has(c.en) || has(p.variety) || has(p.notes) || has(FAMILIES[c.family] && FAMILIES[c.family].join(' ')); });
     const di = []; S.plantings.forEach(p => (p.diary || []).forEach(d => { if (has(d.note) || (d.tags || []).some(k => has(pestName(k)))) di.push([p, d]); }));
     const bn = []; S.containers.forEach(c => { if (has(c.name) || has(c.notes)) bn.push([c, null]); (c.log || []).forEach(n => { if (has(n.text)) bn.push([c, n]); }); });
     const jb = S.tasks.filter(x => has(x.title) && taskVisible(x)).slice(0, 40);

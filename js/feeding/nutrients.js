@@ -18,7 +18,7 @@ export const areaOf = (c, p) => c.type === 'bed' ? (p ? Draw.dims(c).W * (p.to -
 function availPK(npk) { return npk[3] >= 1 ? [0.8, 1] : npk[0] === 0 ? [0.6, 1] : npk[3] < 0.2 ? [0.3, 0.7] : [0.6, 0.8]; }
 export const DENS = { compost: 0.5, lime: 0.9, fert: 0.6, amend: 0.15 };   // g per mL for solids measured by volume
 export const DENS_ID = { woodAsh: 0.5, kuntan: 0.15 };
-export const isLiquid = n => { const p = libByName(n); return p ? p.form === 'liquid' : /液|liquid|hyponex|ハイポネックス|リキッド/i.test(n || ''); };
+export const isLiquid = n => { const p = libByName(n); return p ? p.form === 'liquid' : /liquid|hyponex/i.test(n || ''); };
 
 // ---------- grams from an amount ----------
 // usable N, P, K (g) this season — null if the analysis is unknown
@@ -62,7 +62,7 @@ export function npkOf(name) {
   const p = libByName(name);
   if (p && p.npkv && p.npkv.some(v => v > 0)) return [p.npkv[0], p.npkv[1], p.npkv[2], p.avail ?? defAvail(p)];
   if (p && p.kind !== 'fert' && p.kind !== 'mix') return [0, 0, 0, 0];   // a known lime / compost / improver with nothing listed: no feed value
-  const m = String(name || '').match(/(\d{1,2})\s*[-‐–・]\s*(\d{1,2})\s*[-‐–・]\s*(\d{1,2})/);
+  const m = String(name || '').match(/(\d{1,2})\s*[-‐–]\s*(\d{1,2})\s*[-‐–]\s*(\d{1,2})/);
   return m ? [+m[1], +m[2], +m[3], 1] : null;
 }
 export function feedGrams(amount, unit, name, c) {

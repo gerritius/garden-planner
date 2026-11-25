@@ -8,7 +8,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
     S.containers.push({ id: 'g1', type: 'round', name: 'Bag sun', diameter: 40, depth: 35, margin: 2, history: [], sun: 'full' }, { id: 'g2', type: 'round', name: 'Bag shade', diameter: 40, depth: 35, margin: 2, history: [], sun: 'shade' }, { id: 'p9', type: 'round', name: 'Small pot', diameter: 15, depth: 12, margin: 1, history: [], sun: 'full' });
-    const mk = (id, cid, extra) => Object.assign({ id, containerId: cid, cropId: 'komatsuna', method: 'seed', layout: 'continuous', from: 0, to: 40, rowSp: 15, plantSp: 3, thinSp: 5, thinStage: '本葉3–4枚', sowDate: '2026-11-10', status: 'active', photos: {}, series: [], harvests: [] }, extra || {});
+    const mk = (id, cid, extra) => Object.assign({ id, containerId: cid, cropId: 'komatsuna', method: 'seed', layout: 'continuous', from: 0, to: 40, rowSp: 15, plantSp: 3, thinSp: 5, thinStage: 'At 3–4 true leaves', sowDate: '2026-11-10', status: 'active', photos: {}, series: [], harvests: [] }, extra || {});
     S.plantings.push(mk('a', 'g1'), mk('b', 'g2'), mk('c', 'p9'));
     for (const p of S.plantings) syncTasks(p); await save();
   });

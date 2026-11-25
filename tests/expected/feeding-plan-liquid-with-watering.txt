@@ -1,6 +1,6 @@
-cabbage care jobs: ["Cover with insect netting (防虫ネット)","Earth up (土寄せ)","Pest check (害虫チェック) – undersides & new growth"]
+cabbage care jobs: ["Cover with insect netting","Earth up","Pest check – undersides & new growth"]
 cabbage rows: [
-  '9 Mar · Chemical fertiliser 8-8-8 3 handfuls (~90 g) as heads start to form (結球始め) / as growth restarts — the main feed for spring heads⏸ mo',
+  '9 Mar · Chemical fertiliser 8-8-8 3 handfuls (~90 g) as heads start to form / as growth restarts — the main feed for spring heads⏸ moved fro',
   '5 Apr · Chemical fertiliser 8-8-8 3 handfuls (~90 g) to keep it fed ✎'
 ]
 sum: 
@@ -17,5 +17,5 @@ after tick: ["2026-11-18",[["Kincho Liquid 6-6-7",2,"mL","2026-11-18"]],"2026-11
 water after tick: ["2026-11-21","Water pots & bags",0,"2026-11-25"]
 paused after heavy feed? ["enough",0]
 card: Feeding 1 Nov23 JanRunning short now — plan a feed soon. Next: Kincho Liquid 6-6-7 2 mL 25 Nov.🔁 Every 7 days: Kincho Liquid 6-6-7 2 mL 🌿 Record feeding📅 Feeding plan… What’s been counted Lettuce needs about 3.5 g of nitrogen over the season in this pot. Counted: 0.8 g + 0.4 g planned. Where it g
-task templates: ["Remove side shoots (わき芽かき)"]
+task templates: ["Remove side shoots"]
 errs []

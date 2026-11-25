@@ -182,7 +182,7 @@ export function bedTaskDialog(c, t) {
   const date0 = t ? (t.done ? t.doneOn : t.due) : td;
   modal(`<h3>${isNew ? 'Add bed job' : 'Edit job'}</h3><p class="muted small">${BED_ICON(20)} ${esc(c.name)}</p>
     <form id="btf" class="form">${isNew ? templatePicker() : ''}
-      <label>Job<input name="title" value="${esc(t ? t.title : '')}" required placeholder="e.g. Side-dress (追肥)"></label>
+      <label>Job<input name="title" value="${esc(t ? t.title : '')}" required placeholder="e.g. Side-dress"></label>
       <div class="two"><label>Date<input name="due" type="date" value="${date0}"></label><label class="inl chkline"><input type="checkbox" name="done"${t ? (t.done ? ' checked' : '') : ''}> <span>Already done</span></label></div>
       <details class="pktpick"${fp.product ? ' open' : ''}><summary>Fertiliser / compost used (counts towards feeding)</summary>
         <label>Product<input name="product" list="bfl" value="${esc(fp.product || '')}" placeholder="e.g. Bokashi"><datalist id="bfl">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist></label>

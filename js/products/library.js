@@ -19,7 +19,7 @@ export const defLead = p => p.form === 'quick' || p.form === 'liquid' ? 0 : p.ki
 export function normProd(src) {
   const p = Object.assign({ notes: [], uses: [] }, JSON.parse(JSON.stringify(src)));
   const ci = OLD_CAT_INFO[p.tpl || p.id];
-  if (p.kind === 'fert' && !p.form) p.form = ci && ci[0] || (/liquid|液/i.test(p.en) ? 'liquid' : 'slow');
+  if (p.kind === 'fert' && !p.form) p.form = ci && ci[0] || (/liquid/i.test(p.en) ? 'liquid' : 'slow');
   if (!p.npkv) { const n = OLD_NPK[p.tpl || p.id]; if (n) { p.npkv = [n[0], n[1], n[2]]; p.avail = n[3]; } else { const m = String(p.npk || p.en || '').match(/(\d{1,2}(?:\.\d)?)\s*-\s*(\d{1,2}(?:\.\d)?)\s*-\s*(\d{1,2}(?:\.\d)?)/); if (m) p.npkv = [+m[1], +m[2], +m[3]]; } }
   if (!p.uses.length) p.uses = ci ? ci[1].slice() : p.kind === 'fert' ? (p.form === 'liquid' ? ['side'] : ['base', 'side']) : p.kind === 'lime' ? ['lime'] : p.kind === 'compost' ? ['compost'] : [];
   if (p.start == null) { const r = ci && ci[2] || defStart(p); p.start = r[0]; p.release = r[1]; }

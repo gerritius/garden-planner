@@ -1,12 +1,12 @@
 // The calendar page.
 
-import { sekki, setChrome } from '../core/router.js';
+import { setChrome } from '../core/router.js';
 import { S } from '../core/state.js';
 import { daysBetween, niceDate, pd, todayStr } from '../core/util.js';
 import { effDue, sortTasks, taskLi, taskVisible } from '../garden/tasks.js';
 
 export function pageCalendar() {
-  setChrome('Calendar', { tab: 'cal', kicker: niceDate(todayStr()), sub: sekki() });
+  setChrome('Calendar', { tab: 'cal', kicker: niceDate(todayStr()) });
   const td = todayStr();
   const open = sortTasks(S.tasks.filter(t => !t.done && taskVisible(t)));
   const groups = {};

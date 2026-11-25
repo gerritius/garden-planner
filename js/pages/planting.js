@@ -93,7 +93,7 @@ export function pagePlant(p) {
   };
 
   const html = `<div class="crophead" style="--c:${cr.color}">
-      <div class="chtitle">${ic(p.cropId, 52)}<h2>${esc(cr.en)} <span class="ja">${esc(cr.ja)}</span></h2></div>
+      <div class="chtitle">${ic(p.cropId, 52)}<h2>${esc(cr.en)}</h2></div>
       <div class="datebar">
         <div><small>${isPlanned(p) ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown' : 'Planted'}</small><b>${shortDate(p.sowDate)}</b><small>${sowN == null ? '' : sowN === 0 ? 'today' : sowN > 0 ? sowN + ' days ago' : 'in ' + -sowN + ' days'}</small></div>
         <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : '🧺 ready now'}</small></div>

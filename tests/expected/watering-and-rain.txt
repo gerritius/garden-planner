@@ -9,9 +9,9 @@ planting ["seedling","2026-11-18","2027-04-17",45,"linked","2026-10-28"]
 page rows Raised from seedin a 49-cell tray, sown 28 Oct (21 days before planting out)LayoutStaggered rows
 start ["done",0,["out15","bin5"]]
 log [
-  'Planted out 15 Hakusai seedlings',
+  'Planted out 15 Chinese cabbage (napa) seedlings',
   'Sowed Lettuce in 12 cells',
-  'Sowed Hakusai in 20 cells',
+  'Sowed Chinese cabbage (napa) in 20 cells',
   'Sowed Komatsuna',
   'Sowed Broccoli in 4 pots'
 ]

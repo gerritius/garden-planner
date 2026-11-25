@@ -16,7 +16,7 @@ function varietyRuns(cropId, v) {
 }
 export function pageVariety(q) {
   const cid = q.get('c'), v = q.get('v') || '', cr = crop(cid);
-  setChrome(v || 'No variety', { back: true, kicker: cr.en + (cr.ja ? ' ' + cr.ja : '') });
+  setChrome(v || 'No variety', { back: true, kicker: cr.en });
   const runs = varietyRuns(cid, v), k = varKey(cid, v), note = (S.varNotes || {})[k] || { rating: '', note: '' };
   A.rate = async el => { S.varNotes = Object.assign({}, S.varNotes, { [k]: Object.assign({}, note, { rating: note.rating === el.dataset.r ? '' : el.dataset.r }) }); await save(); render(); };
   A.saveVarNote = async () => { S.varNotes = Object.assign({}, S.varNotes, { [k]: Object.assign({}, note, { note: $('#vnote').value.trim() }) }); await save(); $('#vsaved').textContent = 'Saved ✓'; };

@@ -22,7 +22,7 @@ const LOG_KINDS = [
 ];
 const LOG_FILTERS = [['all', 'All'], ['fert', 'Fertiliser'], ['spray', 'Sprays'], ['water', 'Watering'], ['job', 'Jobs'], ['harvest', 'Harvests'], ['sow', 'Sowing'], ['note', 'Notes & diary']];
 export const logKind = k => LOG_KINDS.find(x => x[0] === k) || LOG_KINDS[LOG_KINDS.length - 1];
-const kindOfTitle = s => /fertil|feed|追肥|元肥|bokashi|ぼかし|manure|肥料|side-dress/i.test(s) ? 'fert' : /spray|農薬|insecticide|fungicide|散布|neem|bt\b/i.test(s) ? 'spray' : /lime|compost|石灰|堆肥|dig|畝/i.test(s) ? 'soil' : 'job';
+const kindOfTitle = s => /fertil|feed|bokashi|manure|side-dress/i.test(s) ? 'fert' : /spray|insecticide|fungicide|neem|bt\b/i.test(s) ? 'spray' : /lime|compost|dig/i.test(s) ? 'soil' : 'job';
 export const KIND_ICON = { fert: '🌿', spray: '💦', water: '🚿', soil: '🪏', job: '✓', harvest: '🧺', sow: '🌱', note: '📝', diary: '📷', weed: '🌾', cover: '🕸️', pest: '🐛', other: '✎', done: '🏁' };
 const filterOf = k => ['diary', 'pest', 'note'].includes(k) ? 'note' : ['weed', 'cover', 'other', 'done', 'job'].includes(k) ? 'job' : k;
 export function logWhere(e) {
@@ -110,10 +110,10 @@ export function logDialog(e, preset = {}) {
     <form id="lf" class="form">
       <label>Date<input type="date" name="date" value="${e.date}" max="${todayStr()}"></label>
       <label>What did you do?<select name="kind">${LOG_KINDS.filter(([k]) => k !== 'other' || !isNew || e.kind === 'other').map(([k, i, l]) => `<option value="${k}"${k === e.kind ? ' selected' : ''}>${i} ${l}</option>`).join('')}</select></label>
-      <div id="prodrow">${libChips(e)}<label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. 化成肥料 8-8-8, bokashi, BT spray"><datalist id="prodl">${[...new Set([...libNames(), ...prods])].map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
+      <div id="prodrow">${libChips(e)}<label>What did you use?<input name="product" list="prodl" value="${esc(e.product || '')}" placeholder="e.g. NPK 8-8-8, bokashi, BT spray"><datalist id="prodl">${[...new Set([...libNames(), ...prods])].map(x => `<option value="${esc(x)}">`).join('')}</datalist></label>
         <div class="two"><label>Amount<input name="amount" type="number" inputmode="decimal" step="any" value="${e.amount ?? ''}"></label><label>Unit<select name="unit">${unitOpts(e.unit)}</select></label></div>
         <label id="perrow" hidden>The amount is<select name="per"><option value="each"${e.per !== 'total' ? ' selected' : ''}>for each bed / pot</option><option value="total"${e.per === 'total' ? ' selected' : ''}>in total, shared between them</option></select></label>
-        <label id="phirow">Wait before harvest (収穫前日数)<div class="two"><input name="phi" type="number" inputmode="numeric" min="0" value="${e.phi ?? ''}" placeholder="days, from the label"><span class="hint">Leave empty if none. Remembered for this product.</span></div></label></div>
+        <label id="phirow">Wait before harvest<div class="two"><input name="phi" type="number" inputmode="numeric" min="0" value="${e.phi ?? ''}" placeholder="days, from the label"><span class="hint">Leave empty if none. Remembered for this product.</span></div></label></div>
       <label>Notes<textarea name="text" rows="2" placeholder="e.g. 1000× dilution, both sides of leaves">${esc(e.text || '')}</textarea></label>
       <label>Where <small class="muted">(nothing ticked = whole garden)</small></label>
       <div class="sowchips">${S.containers.map(c => `<label class="chip big tog"><input type="checkbox" name="cid" value="${c.id}"${(e.cids || []).includes(c.id) ? ' checked' : ''}><span>${BED_ICON(16)} ${esc(c.name)}</span></label>`).join('')}</div>

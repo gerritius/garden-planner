@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.45.0",
+    "date": "2026-11-25",
+    "notes": [
+      "English only: Japanese crop names, the crop-name language switch, Japanese glosses in jobs and advice (“Earth up (土寄せ)” is now “Earth up”), the Japanese solar terms and the built-in variety lists (Japanese varieties) are gone. Varieties you’ve entered are still suggested.",
+      "Crop names in plain English where there’s a common one: Chinese cabbage (napa), Cherry tomato, Welsh onion (long white), Shishito pepper, Shungiku (edible chrysanthemum), Yard-long bean, Winter melon, Chinese yam, Turnip greens (nozawana) and others. Names that are the usual ones in English stay: daikon, komatsuna, mizuna, edamame, shiso…",
+      "Fushokufu is now “fleece” (row cover).",
+      "“The usual home-garden crops” is a worldwide list: tomatoes, lettuce, carrots, beetroot, radish, onions, garlic, potatoes, beans, peas, zucchini, cucumber, capsicum, chilli, pumpkin, sweetcorn, spinach, chard, kale, cabbage, broccoli, basil and parsley.",
+      "Jobs the app had already written in your garden lose their Japanese glosses too; your own notes are untouched."
+    ]
+  },
+  {
     "version": "1.44.0",
     "date": "2026-11-25",
     "notes": [

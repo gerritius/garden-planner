@@ -1,8 +1,8 @@
 without "most like": Choose the crop it’s most like — it’s grown the same way, so the app knows how to plan it. | saved: 0
 "most like" offers: Brassica 26, Nightshade 9, Legume 11, Allium 9, Cucurbit 10, Umbellifer 6, Aster 8, Amaranth 4, Grass family 1, Morning glory family 2, Aroid 1, Rose family 1, Mallow family 2, Ginger family 1, Mint family 3, Basella family 1, Yam family 1
-stored (only what was entered): {"id":"ID","varieties":[],"custom":true,"like":"komatsuna","tempLo":null,"tempHi":null,"tpDays":null,"en":"Tatsoi","ja":"ターサイ"}
+stored (only what was entered): {"id":"ID","custom":true,"like":"komatsuna","tempLo":null,"tempHi":null,"tpDays":null,"en":"Tatsoi"}
 same as komatsuna: {"spacing":true,"family":true,"sowMonths":true,"germ":true,"growth":true,"plantOut":true,"careJobs":true,"icon":true,"harvest":"2026-10-15"}
 own 45 days → harvest 2026-10-24 vs komatsuna 2026-10-15
-seeds tab: Okahijiki おかひじき · your crop — · not linked to a crop it’s like yet: edit it to choose one | Tatsoi ターサイ · your crop, grown like komatsuna — linked
+seeds tab: Okahijiki · your crop — · not linked to a crop it’s like yet: edit it to choose one | Tatsoi · your crop, grown like komatsuna — linked
 linked: {"id":"c_old","en":"Okahijiki","ja":"おかひじき","color":"#7a9a5b","daysHarvest":40,"spread":25,"varieties":[],"like":"spinach","tempLo":null,"tempHi":null,"tpDays":null} | row spacing now 15 (spinach 15)
 errs []

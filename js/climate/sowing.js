@@ -3,7 +3,7 @@
 // and heat-sensitive crops don't mature in the heat. Crops grown through winter are planted as it cools, if winters are
 // mild enough. You can edit any crop's months. Also the sowing guide page.
 
-import { A, render, sekki, setChrome } from '../core/router.js';
+import { A, render, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
 import { addDays, esc, daysBetween } from '../core/util.js';
@@ -135,7 +135,7 @@ export function applySowWindows() {
 // ---------- the sowing calendar page ----------
 // sowing calendar: worked out for your climate, every crop's months editable
 export function pageSow(q) {
-  setChrome('Sowing calendar', { back: true, kicker: climateHere() ? `For ${climateHere().name || 'your location'}` : 'Western Tokyo (built-in climate)', sub: sekki() });
+  setChrome('Sowing calendar', { back: true, kicker: climateHere() ? `For ${climateHere().name || 'your location'}` : 'Western Tokyo (built-in climate)' });
   const m = new Date().getMonth() + 1;
   const chosen = Array.isArray(S.myCrops), all = !chosen || (q && q.get('all') === '1');   // your crops, or all of them
   const list = (all ? allCrops() : myCrops()).filter(c => c.daysHarvest || (c.sow || []).length).slice().sort((a, b) => a.en.localeCompare(b.en));

@@ -5,12 +5,12 @@ ce rows: [
 ]
 weekly row: LmL from until each → N 0.4 g · P 0.3 g · K 0.4 g · 2 doses 💧 Given with the watering — on feed days the watering job becomes “Water + liquid feed”. Doneremove
 plan now:  15 Sept21 JanWith this plan: fed through to 21 Jan.
-saved: [[{"id":"ID","product":"Kincho Liquid 6-6-7","amount":5,"unit":"mL","every":7,"start":"2026-11-18","end":"2027-01-21","paused":null}],[["2026-11-18","Side-dress (追肥): Chemical fertiliser 8-8-8 8 g — mid-season"],["2026-11-18","Liquid feed: Kincho Liquid 6-6-7 5 mL"]]]
+saved: [[{"id":"ID","product":"Kincho Liquid 6-6-7","amount":5,"unit":"mL","every":7,"start":"2026-11-18","end":"2027-01-21","paused":null}],[["2026-11-18","Side-dress: Chemical fertiliser 8-8-8 8 g — mid-season"],["2026-11-18","Liquid feed: Kincho Liquid 6-6-7 5 mL"]]]
 card after: Feeding 15 Sept21 JanFed through to 21 Jan with what’s in and planned. Next: Chemical fertiliser 8-8-8 8 g 18 Nov.🔁 Every 7 days: Kincho Liquid 6-6-7 5 mL 🌿 Record feeding📅 Feeding plan… What’s been counted Celery needs about 10 g of nitrogen over the seaso
-cb card: Feeding 18 Oct2 MayKeep it lean until about 9 Mar — an overwintering cabbage is kept small going into the cold — a big plant bolts (トウ立ち) in spring instead of heading. Only feed now if leaves turn pale yellow, and then lightly. The main feed is around 9 Mar. 🌿 Record feeding📅 Feeding plan… What’s been counted Cabbage needs about 50 g of nitrogen over the season in this 2.0 m² section. Counted: 14 g. Where it goes: 
+cb card: Feeding 18 Oct2 MayKeep it lean until about 9 Mar — an overwintering cabbage is kept small going into the cold — a big plant bolts in spring instead of heading. Only feed now if leaves turn pale yellow, and then lightly. The main feed is around 9 Mar. 🌿 Record feeding📅 Feeding plan… What’s been counted Cabbage needs about 50 g of nitrogen over the season in this 2.0 m² section. Counted: 14 g. Where it goes: the cab
 cb plan:  18 Oct2 MayWith this plan: fed through to 2 May.
 cb rows: [
-  '2027-03-09 3 handful as heads start to form (結球始め) / as growth restarts — the main feed for',
+  '2027-03-09 3 handful as heads start to form / as growth restarts — the main feed for spring',
   '2027-04-05 3 handful to keep it fed gkghandfulsmLLhandfuls on each → N 7.2 g · P 5.8 g · K '
 ]
 errs []

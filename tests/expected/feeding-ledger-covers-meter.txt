@@ -2,13 +2,13 @@ cover type migrated fushokufu
 old job [true,"2026-10-25",true,[["Bokashi",3,"handful","2026-10-25",["b1"]]]]
 today jobs mention side-dress? true
 new past job done? [ true, '2026-10-28', true ]
-hakusai feeding: Feeding 30 Aug29 DecRunning short now — plan a feed soon. 🌿 Record feeding📅 Feeding plan… What’s been counted Hakusai needs about 50 g of nitrogen over the season in this 2.0 m² section. Counted: 21 g. Where it goes: the hakusai should take up about 21 g of its 50 g; about 0 g washes out with rain. So even with more counted than it needs, it runs short once the early feed has been used or washed out. N21 g / 50 gP1
+hakusai feeding: Feeding 30 Aug29 DecRunning short now — plan a feed soon. 🌿 Record feeding📅 Feeding plan… What’s been counted Chinese cabbage (napa) needs about 50 g of nitrogen over the season in this 2.0 m² section. Counted: 21 g. Where it goes: the chinese cabbage (napa) should take up about 21 g of its 50 g; about 0 g washes out with rain. So even with more counted than it needs, it runs short once the early feed has been used
 bag1 fresh base plan [] | bag2 reused [{"product":"Chemical fertiliser 8-8-8","amount":20,"unit":"g"}]
 dialog prefilled Chemical fertiliser 8-8-8 10 ≈ 10 g → usable this season: N 0.8 g · P 0.6 g · K 0.8 g.
 task done & logged [true,"2026-11-16",true]
 komatsuna feeding: Feeding 10 Sept28 OctFed through to 28 Oct with what’s in and planned. 🌿 Record feeding📅 Feeding plan… What’s been counted Komatsuna needs about 3.5 g of nitrogen over the season in this pot. Counted: 3.7 g. Where it goes: the komatsuna should take up about 2.1 g of its 3.5 g; about 0.3 g washes out with watering and rain. So 
-daikon: Harvest window: from 30 Oct · most ready by ~7 Dec · keeps until about 27 Jan — after that roots go pithy (す入り). Packet: 55–80 days.
+daikon: Harvest window: from 30 Oct · most ready by ~7 Dec · keeps until about 27 Jan — after that roots go pithy. Packet: 55–80 days.
 pickby task 2027-01-27
-split prev: Last crop here: Spinach (ほうれん草) (grew here until 18 Nov).🪱 Spinach was a medium feeder. Normal compost and base fertiliser.
+split prev: Last crop here: Spinach (grew here until 18 Nov).🪱 Spinach was a medium feeder. Normal compost and base fertiliser.
 water 2026-11-18 1 pot · every 3 days this time of year
 errs []

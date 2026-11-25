@@ -6,7 +6,7 @@ import { CROPS } from './crops.js';
 
 // fields a linked entry never takes from the crop it's like: its own name, colour, varieties — and spray registrations,
 // which are legal per crop
-const OWN_ONLY = ['id', 'en', 'ja', 'color', 'varieties', 'like', 'icon'];
+const OWN_ONLY = ['id', 'en', 'color', 'like', 'icon'];
 const byIdRec = Object.fromEntries(CROPS.map(c => [c.id, c]));
 function resolve(r, seen = []) {
   if (!r.like) return r;
@@ -15,7 +15,7 @@ function resolve(r, seen = []) {
   for (const [k, v] of Object.entries(b)) if (!OWN_ONLY.includes(k)) out[k] = JSON.parse(JSON.stringify(v));
   return Object.assign(out, r);
 }
-export const CATALOG = CROPS.map(r => resolve(r)).map(c => Object.assign({}, c, { varieties: c.varieties || [], sowRef: undefined }));
+export const CATALOG = CROPS.map(r => resolve(r)).map(c => Object.assign({}, c, { sowRef: undefined }));
 for (const c of CATALOG) { delete c.sowRef; c.tender = !!c.tender; }
 
 // ---------- the per-crop tables, from the records ----------
@@ -30,33 +30,34 @@ export const TALL = flagged('tall'), NETTED = flagged('netted'), NEEDS_BEES = fl
 
 // Plant families (for rotation warnings).
 export const FAMILIES = {
-  brassica: ['Brassica (cabbage family)', 'アブラナ科'], nightshade: ['Nightshade (tomato family)', 'ナス科'], legume: ['Legume (bean family)', 'マメ科'],
-  allium: ['Allium (onion family)', 'ヒガンバナ科'], cucurbit: ['Cucurbit (gourd family)', 'ウリ科'], umbellifer: ['Umbellifer (carrot family)', 'セリ科'],
-  aster: ['Aster (daisy family)', 'キク科'], amaranth: ['Amaranth (spinach family)', 'ヒユ科'], grass: ['Grass family', 'イネ科'],
-  morningglory: ['Morning glory family', 'ヒルガオ科'], aroid: ['Aroid (taro family)', 'サトイモ科'], rose: ['Rose family', 'バラ科'],
-  mallow: ['Mallow family (okra)', 'アオイ科'], ginger: ['Ginger family', 'ショウガ科'], mint: ['Mint family (shiso, basil)', 'シソ科'],
-  basella: ['Basella family (Malabar spinach)', 'ツルムラサキ科'], yam: ['Yam family', 'ヤマノイモ科'], other: ['Other', 'その他'],
+  brassica: ['Brassica (cabbage family)'], nightshade: ['Nightshade (tomato family)'], legume: ['Legume (bean family)'],
+  allium: ['Allium (onion family)'], cucurbit: ['Cucurbit (gourd family)'], umbellifer: ['Umbellifer (carrot family)'],
+  aster: ['Aster (daisy family)'], amaranth: ['Amaranth (spinach family)'], grass: ['Grass family'],
+  morningglory: ['Morning glory family'], aroid: ['Aroid (taro family)'], rose: ['Rose family'],
+  mallow: ['Mallow family (okra)'], ginger: ['Ginger family'], mint: ['Mint family (shiso, basil)'],
+  basella: ['Basella family (Malabar spinach)'], yam: ['Yam family'], other: ['Other'],
 };
 // How crops are grouped when you choose yours (what you'd look under, not botany).
 export const GROUPS = {
-  leaves: ['Leafy greens', '葉物野菜'], heads: ['Cabbages & broccoli', 'キャベツ・ブロッコリー類'], roots: ['Roots', '根菜'],
-  fruit: ['Fruiting vegetables', '果菜'], beans: ['Beans & peas', '豆類'], onions: ['Onions & garlic', 'ネギ類'],
-  tubers: ['Potatoes & other tubers', 'イモ類'], herbs: ['Herbs', 'ハーブ・香味野菜'], berries: ['Fruit', '果物'],
+  leaves: ['Leafy greens'], heads: ['Cabbages & broccoli'], roots: ['Roots'],
+  fruit: ['Fruiting vegetables'], beans: ['Beans & peas'], onions: ['Onions & garlic'],
+  tubers: ['Potatoes & other tubers'], herbs: ['Herbs'], berries: ['Fruit'],
 };
 // the crops most home gardens grow — a quick start when choosing yours
-export const COMMON_CROPS = ['tomato', 'minitomato', 'kyuri', 'nasu', 'piman', 'edamame', 'komatsuna', 'spinach', 'lettuce', 'daikon', 'hatsuka', 'carrot', 'potato', 'naganegi', 'cabbage', 'broccoli', 'snappea', 'ingen'];
-// Fertiliser / amendment units. A handful (一握り) of granular fertiliser is roughly 30 g.
+export const COMMON_CROPS = ['tomato', 'minitomato', 'lettuce', 'leaflettuce', 'carrot', 'beet', 'hatsuka', 'onion', 'garlic', 'potato', 'ingen', 'snappea',
+  'zucchini', 'kyuri', 'piman', 'chilli', 'kabocha', 'corn', 'spinach', 'chard', 'kale', 'cabbage', 'broccoli', 'basil', 'parsley'];
+// Fertiliser / amendment units. A handful of granular fertiliser is roughly 30 g.
 export const UNITS = ['g', 'kg', 'handful', 'mL', 'L'];
 export const HANDFUL_G = 30;
 // Ready-made jobs for the "add job" picker.
 export const JOB_TEMPLATES = [
-  ['Protect', ['Cover with insect netting (防虫ネット)', 'Cover with fleece / row cover (不織布)', 'Frost cover tonight', 'Bird netting', 'Remove covers']],
-  ['Support', ['Put in stake / support (支柱)', 'Tie stems to support (誘引)', 'Put up net / trellis (ネット)']],
-  ['Soil', ['Earth up (土寄せ)', 'Lay mulch film (マルチ)', 'Straw mulch (敷きわら)', 'Weed', 'Loosen soil (中耕)']],
+  ['Protect', ['Cover with insect netting', 'Cover with fleece / row cover', 'Frost cover tonight', 'Bird netting', 'Remove covers']],
+  ['Support', ['Put in stake / support', 'Tie stems to support', 'Put up net / trellis']],
+  ['Soil', ['Earth up', 'Lay mulch film', 'Straw mulch', 'Weed', 'Loosen soil']],
   ['Water', ['Deep water']],
-  ['Plant care', ['Remove side shoots (わき芽かき)', 'Pinch out tip (摘心)', 'Remove lower / yellow leaves', 'Hand-pollinate (人工授粉)', 'Remove flowers / runners', 'Thin seedlings (間引き)']],
+  ['Plant care', ['Remove side shoots', 'Pinch out tip', 'Remove lower / yellow leaves', 'Hand-pollinate', 'Remove flowers / runners', 'Thin seedlings']],
   ['Check', ['Check for pests', 'Check for disease', 'Check soil moisture']],
 ];
-export const PESTS = [['aphids', 'Aphids', 'アブラムシ'], ['caterpillars', 'Caterpillars', '青虫・ヨトウムシ'], ['slugs', 'Slugs / snails', 'ナメクジ'], ['fleabeetle', 'Flea beetles', 'キスジノミハムシ'],
-  ['leafminer', 'Leaf miners', 'ハモグリバエ'], ['cutworm', 'Cutworms', 'ネキリムシ'], ['stinkbug', 'Stink bugs', 'カメムシ'], ['ladybird28', '28-spot ladybird', 'テントウムシダマシ'],
-  ['powdery', 'Powdery mildew', 'うどんこ病'], ['downy', 'Downy mildew', 'べと病'], ['rot', 'Rot / wilt', '軟腐病・萎凋'], ['birds', 'Birds', '鳥'], ['other', 'Other problem', 'その他']];
+export const PESTS = [['aphids', 'Aphids'], ['caterpillars', 'Caterpillars'], ['slugs', 'Slugs / snails'], ['fleabeetle', 'Flea beetles'],
+  ['leafminer', 'Leaf miners'], ['cutworm', 'Cutworms'], ['stinkbug', 'Stink bugs'], ['ladybird28', '28-spot ladybird'],
+  ['powdery', 'Powdery mildew'], ['downy', 'Downy mildew'], ['rot', 'Rot / wilt'], ['birds', 'Birds'], ['other', 'Other problem']];

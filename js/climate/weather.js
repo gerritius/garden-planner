@@ -241,7 +241,7 @@ export function wxAdvice(t) {
   const ready = names(p => p.harvestDate && p.harvestDate <= addDays(td, 7)), trays = startsGrowing().length > 0;
   const L = {
     wind: [tall && `Tie in stems and check stakes are firm: ${tall}`, coveredText() ? `Check tunnel hoops, pegs and the edges of: ${coveredText()}` : net && `Netted crops — check pegs and edges: ${net}`, `Move light pots${trays ? ', seedling trays' : ''} and anything loose somewhere sheltered`, ready && `Pick what’s ready first: ${ready}`,
-      t.severe && 'Storm-force (typhoon): take off covers that act as sails, lay down supports you can’t secure, and push fabric bags together against a wall', 'Afterwards: check for snapped stems and earth up anything rocked loose (土寄せ)'],
+      t.severe && 'Storm-force winds: take off covers that act as sails, lay down supports you can’t secure, and push fabric bags together against a wall', 'Afterwards: check for snapped stems and earth up anything rocked loose'],
     rain: ['Clear drainage around the beds and make sure bags aren’t standing in water', trays && 'Move seedling trays under cover', young && `Young plants can be flattened or splashed with soil — mulch or cover: ${young}`,
       'Hold off fertiliser and sprays until it’s passed — they’ll wash off', ready && `Pick what’s ready — heavy rain can split or rot it: ${ready}`, 'Afterwards: earth up anything washed out and watch for slugs and rot'],
     heat: ['Water pots & bags deeply in the early morning', young && `Shade young plants and new transplants: ${young}`, trays && 'Keep seedling trays in the shade and check them twice', 'Mulch bare soil; don’t spray or fertilise in the heat of the day'],
@@ -265,7 +265,7 @@ export function wxTaskDialog(t) {
 export function frostTaskDialog(t) {
   const beds = (t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', ');
   modal(`<h3>❄️ Frost warning</h3><p class="msg">${esc(t.title)}</p>${beds ? `<p class="muted small">${esc(beds)}</p>` : ''}
-    <p class="hint">Cover tender crops the evening before (a fushokufu tunnel, a sheet or an upturned box) and uncover in the morning. Made from the weather forecast.</p>
+    <p class="hint">Cover tender crops the evening before (a fleece tunnel, a sheet or an upturned box) and uncover in the morning. Made from the weather forecast.</p>
     <div class="btns"><button class="btn danger" data-x="del">Delete</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
     m.querySelector('[data-x=ok]').onclick = close;
     m.querySelector('[data-x=del]').onclick = async () => {

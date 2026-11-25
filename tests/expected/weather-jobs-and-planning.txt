@@ -1,13 +1,13 @@
 wx tasks [["wind","2026-11-19","Secure supports & nets before strong wind on Fri (gusts 62 km/h)"],["rain","2026-11-20","Prepare for heavy rain on Sat (55 mm)"]]
 spray line none
 gaps [
-  '0–100 cm free from 31 Dec · after Hakusai Spinach 🪴 done ~13 FebShungiku 🌱 done ~12 AprSwiss chard 🌱 done ~26 AprLettuce 🪴 done ~27 Apr💡 More ideas…',
+  '0–100 cm free from 31 Dec · after Chinese cabbage (napa) Spinach 🪴 done ~13 FebShungiku (edible chrysanthemum) 🌱 done ~12 AprSwiss chard 🌱 done ~26 AprLettuce 🪴 done ~27 Apr💡 More ideas…',
   '100–200 cm free from 10 Jun · after Snap pea Komatsuna 🪴 done ~8 JulRadish 🌱 done ~19 JulMizuna 🌱 done ~20 JulRocket (rucola) 🌱 done ~26 Jul💡 More ideas…',
   'Whole pot free now Mizuna 🪴 done ~24 DecKomatsuna 🪴 done ~27 DecRocket (rucola) 🪴 done ~27 DecSpinach 🪴 done ~29 Dec💡 More ideas…'
 ]
 cabbage chip null
-harvest 2027-05-19 rot Same family as the crop before it. Hakusai will be here until about 30 Dec — both are Brassica (cabbage family) アブラナ科. Consider a different spot or extra compost.
-asked: Hakusai (0–100 cm) will probably be there until about 30 Dec.Save the plan anyway?
+harvest 2027-05-19 rot Same family as the crop before it. Chinese cabbage (napa) will be here until about 30 Dec — both are Brassica (cabbage family). Consider a different spot or extra compost.
+asked: Chinese cabbage (napa) (0–100 cm) will probably be there until about 30 Dec.Save the plan anyway?
 after save url http://localhost:8765/#/plant/ID
 plan ["planned","2026-12-20","tray","2027-05-19",[["plan_prep","2026-12-06","Dig in Cow manure compost 2 kg — for Cabbage (Bed 2 0–100 cm)"],["plan_tray","2026-11-18","Sow Cabbage seeds in a tray or small pots (to plant out 20 Dec)"],["plan_sow","2026-12-20","Plant out Cabbage — mix in Oyster shell lime 150 g + Bokashi 6.5 handfuls (~195 g) first"]]]
 preset count 4

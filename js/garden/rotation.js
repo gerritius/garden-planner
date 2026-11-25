@@ -24,7 +24,7 @@ export function rotationNote(c, from, to, cropId, beforeDate, excludeId) {
   return {
     prev, same,
     html: same
-      ? `<b>Same family as the last crop here.</b> ${esc(a.en)} was here before (${prev.trace ? 'until ' + shortDate(prev.harvestedOn) : histWhen(prev)}) — both are ${esc(fam[0])} ${esc(fam[1])}. Consider extra compost or a different spot.`
+      ? `<b>Same family as the last crop here.</b> ${esc(a.en)} was here before (${prev.trace ? 'until ' + shortDate(prev.harvestedOn) : histWhen(prev)}) — both are ${esc(fam[0])}. Consider extra compost or a different spot.`
       : `Last crop here: ${esc(cropName(prev.cropId))} (${prev.trace ? 'grew here until ' + shortDate(prev.harvestedOn) : histWhen(prev)}).`,
   };
 }
@@ -78,12 +78,12 @@ export function pageRotation() {
     const no = cs.filter(c => blocks[c.id][f] && blocks[c.id][f].ok > yr).sort((a, b) => blocks[b.id][f].ok - blocks[a.id][f].ok);
     const before = cs.filter(c => blocks[c.id][f] && blocks[c.id][f].ok <= yr).sort((a, b) => blocks[a.id][f].last - blocks[b.id][f].last);
     const never = cs.filter(c => !blocks[c.id][f]);
-    return `<li class="rotfam"><div class="rfh"><b>${esc(famName(f))}</b> <small class="ja">${esc(FAMILIES[f][1])}</small><small class="muted">${cs.length - no.length} of ${cs.length} OK</small></div>
+    return `<li class="rotfam"><div class="rfh"><b>${esc(famName(f))}</b> <small class="muted">${cs.length - no.length} of ${cs.length} OK</small></div>
       ${no.length ? `<div class="rotavoid">${no.map(c => `<span class="chip no">✕ ${esc(c.name)} · ${esc(crop(blocks[c.id][f].cropId).en)} ${SY(blocks[c.id][f].last)} · free ${SY(blocks[c.id][f].ok)}</span>`).join('')}</div>` : ''}
       ${before.length ? `<p class="small">✓ Grown before, fine again: ${before.map(c => `${esc(c.name)} (${SY(blocks[c.id][f].last)})`).join(', ')}</p>` : ''}
       ${never.length ? `<p class="small muted">✓ Not grown there yet: ${never.length === cs.length ? 'any bed or pot' : names(never)}</p>` : ''}</li>`;
   };
-  const html = `<p class="hint">From what grew in each bed and pot (including past crops you added). Wait times follow common guidance for avoiding replant problems (連作障害) — e.g. tomatoes & eggplant 4 years, peas 4–5, brassicas 2. A section of a bed counts as the whole bed.</p>
+  const html = `<p class="hint">From what grew in each bed and pot (including past crops you added). Wait times follow common guidance for avoiding replant problems (soil sickness) — e.g. tomatoes & eggplant 4 years, peas 4–5, brassicas 2. A section of a bed counts as the whole bed.</p>
     <section><h3>By bed &amp; pot</h3><ul class="plist rotl">${cs.map(bedCard).join('')}</ul></section>
     <section><h3>By family</h3>${fams.length ? `<ul class="plist rotl">${fams.map(famCard).join('')}</ul>` : '<p class="muted">Nothing recorded yet.</p>'}
       ${MAIN_FAMS.filter(f => !grownFams.has(f)).length ? `<p class="hint">Not grown anywhere yet, so free everywhere: ${MAIN_FAMS.filter(f => !grownFams.has(f)).map(famName).join(', ')}.</p>` : ''}</section>`;

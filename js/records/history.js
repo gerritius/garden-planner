@@ -23,7 +23,7 @@ export function pastCropDialog(c, h, preset) {
   modal(`<h3>${isNew ? 'Add a past crop' : 'Edit past crop'}</h3>
     <p class="muted small">For crops grown in ${esc(c.name)} before you used this app. Used for the rotation check.</p>
     <form id="pcf" class="form">
-      <label>Crop<select name="crop" required><option value="">Choose…</option>${opts.map(o => `<option value="${o.id}"${o.id === h.cropId ? ' selected' : ''}>${esc(o.en)}${o.ja ? ' ' + esc(o.ja) : ''}</option>`).join('')}<option value="__other"${other ? ' selected' : ''}>Something else…</option></select></label>
+      <label>Crop<select name="crop" required><option value="">Choose…</option>${opts.map(o => `<option value="${o.id}"${o.id === h.cropId ? ' selected' : ''}>${esc(o.en)}</option>`).join('')}<option value="__other"${other ? ' selected' : ''}>Something else…</option></select></label>
       <div id="pco"${other ? '' : ' hidden'}><label>Name<input name="oname" value="${other ? esc(h.cropId.slice(2)) : ''}" placeholder="e.g. Okra"></label>
         <label>How hungry is it?<select name="feed">${[['', 'Not sure'], ['heavy', 'Heavy feeder'], ['medium', 'Medium feeder'], ['light', 'Light feeder'], ['legume', 'Legume (beans, peas)']].map(([v, l]) => `<option value="${v}"${(h.feed || '') === v ? ' selected' : ''}>${l}</option>`).join('')}</select></label></div>
       <label>Variety <small class="muted">(optional)</small><input name="variety" value="${esc(h.variety || '')}"></label>

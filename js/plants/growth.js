@@ -215,7 +215,7 @@ const THIN_EN = {"芽かき – leave 2–3 stems at 10–15 cm tall": "Remove e
 export function migrateThinningText() { for (const p of S.plantings || []) if (THIN_EN[p.thinStage]) p.thinStage = THIN_EN[p.thinStage]; }
 // "at 2–3 true leaves" (or 本葉2–3枚, as older plantings say) → 2.5
 function leafTarget(text) {
-  const m = String(text || '').match(/(\d+)(?:\s*[–\-~〜]\s*(\d+))?\s*true leaves/i) || String(text || '').match(/本葉\s*(\d+)(?:\s*[–\-~〜]\s*(\d+))?\s*枚/);
+  const m = String(text || '').match(/(\d+)(?:\s*[–\-~〜]\s*(\d+))?\s*true leaves/i) ;
   return m ? (m[2] ? (+m[1] + +m[2]) / 2 : +m[1]) : null;
 }
 export const lastLeaves = o => (o.leaves || []).slice().sort((a, b) => (a.date < b.date ? -1 : 1)).pop() || null;
@@ -230,7 +230,7 @@ function leafAnchored(o, id, emerge, target, tempFn) {
 }
 export function leafDialog(o, label, after) {
   const td = todayStr(), list = (o.leaves || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
-  modal(`<h3>🌿 True leaves — ${esc(label)}</h3><p class="hint">Count the true leaves (本葉) on a typical plant — not the first seed leaves (子葉). The thinning / plant-out date then follows how fast they’re actually growing.</p>
+  modal(`<h3>🌿 True leaves — ${esc(label)}</h3><p class="hint">Count the true leaves on a typical plant — not the first seed leaves. The thinning / plant-out date then follows how fast they’re actually growing.</p>
     <form id="lvf" class="form"><div class="two"><label>True leaves<input name="n" type="number" inputmode="decimal" step="0.5" min="0" required></label><label>Date<input name="date" type="date" value="${td}" max="${td}"></label></div>
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>
     ${list.length ? `<ul class="plist">${list.map((l, i) => `<li><span class="grow">${shortDate(l.date)} · <b>${l.n}</b> true leaves</span><button class="link danger" data-del="${i}">remove</button></li>`).join('')}</ul>` : ''}`, (m, close) => {

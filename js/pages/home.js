@@ -4,7 +4,7 @@ import { driveBanner, driveOn } from '../backup/drive.js';
 import { sowNowSection, sowPick } from '../climate/sowing.js';
 import { climateNotice } from '../climate/climate.js';
 import { dayName, sprayDays, Weather } from '../climate/weather.js';
-import { A, render, route, sekki, setChrome } from '../core/router.js';
+import { A, render, route, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { $, daysBetween, esc, go, pd, shortDate, todayStr } from '../core/util.js';
 import { Draw, plotSVG } from '../draw.js';
@@ -43,7 +43,7 @@ export function pageHome() {
   const potTile = c => { const ps = activeIn(c.id), { W, L } = Draw.dims(c);
     return `<a class="ptile" href="#/container/${c.id}"><div class="thumb">${plotSVG(c, { px: Math.min(84 / L, 84 / W), minPx: 1.2 })}</div><b>${esc(c.name)}</b><small>${ps.map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small>${coverChips(c)}</a>`; };
   const growing = S.plantings.filter(isLive).length;
-  setChrome('My Garden', { tab: 'home', big: true, kicker: pd(td).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }), sub: sekki(),
+  setChrome('My Garden', { tab: 'home', big: true, kicker: pd(td).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' }),
     stats: `<div><b>${today.length}</b><span>job${today.length === 1 ? '' : 's'} today</span></div><div><b>${growing}</b><span>growing</span></div>` });
   const beds = S.containers.filter(c => c.type === 'bed'), pots = S.containers.filter(c => c.type !== 'bed');
   let backupNote = '';

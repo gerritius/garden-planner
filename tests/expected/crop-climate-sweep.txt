@@ -1,0 +1,3 @@
+90 climates, every crop × every month offered × early/mid/late: problems: none
+crops offered: least 40 | most 96 | climates with fewer than 15: none
+errs []

@@ -4,8 +4,8 @@
 const { newContext } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
-// [latitude, monthly mean °C, frost] (approximate normals; frost: usual first and last frost, days from 1 July — where
-// frost comes most winters)
+// [latitude, monthly mean °C, frost] (approximate normals; frost: usual first and last frost, days from the winter's start
+// — 1 July up north, 1 January down south — where frost comes most winters)
 const CLIMATES = {
   Tokyo: null,   // the built-in one
   Sapporo: [43.1, [-3.2, -2.7, 1.1, 7.3, 13.0, 17.0, 21.1, 22.3, 18.6, 12.1, 5.2, -0.9], { first: 112, last: 303 }],   // ~21 Oct – ~30 Apr
@@ -16,6 +16,9 @@ const CLIMATES = {
   London: [51.5, [5.2, 5.3, 7.6, 9.9, 13.3, 16.5, 18.7, 18.5, 15.7, 12.0, 8.0, 5.5], { first: 140, last: 266 }],   // ~18 Nov – ~24 Mar
   Singapore: [1.35, [26.5, 27.1, 27.5, 28.0, 28.3, 28.3, 27.9, 27.9, 27.6, 27.6, 27.0, 26.4]],
   Denver: [39.7, [0.0, 0.9, 5.0, 9.0, 14.0, 19.6, 23.5, 22.4, 17.6, 10.8, 4.4, -0.4], { first: 98, last: 307 }],   // ~7 Oct – ~4 May
+  Johannesburg: [-26.2, [20.4, 20.0, 18.9, 16.0, 13.0, 10.2, 10.4, 12.9, 16.4, 18.0, 18.9, 19.9], { first: 153, last: 234 }],   // highveld frosts ~3 Jun – ~23 Aug (days from 1 Jan)
+  CapeTown: [-33.9, [21.5, 21.6, 20.4, 18.0, 15.6, 13.8, 13.1, 13.4, 14.6, 16.5, 18.6, 20.4]],
+  Durban: [-29.9, [24.6, 24.9, 24.3, 22.4, 20.0, 17.8, 17.6, 18.6, 19.8, 20.7, 21.8, 23.6]],
 };
 // What local growing guides say, for a few crops away from Japan: months that must be offered (+) and must not (−).
 // (Checks the rules give each place its own seasons — not Japan's months, and not "all year" where winters are mild.)
@@ -27,6 +30,9 @@ const KNOWN = {
   Singapore: { garlic: ['-1,2,3,4,5,6,7,8,9,10,11,12'], potato: ['-1,2,3,4,5,6,7,8,9,10,11,12'], okra: ['+1,4,7,10'] },
   Denver: { tomato: ['+5', '-9,10,11,12,1,2,3'], garlic: ['+10', '-1,2,3,12'] },
   Naha: { tomato: ['+10,11', '-7'], garlic: ['-5,6,7,8'] },
+  Johannesburg: { tomato: ['+9,10,11', '-4,5,6,7'], garlic: ['+3,4', '-10,11,12'], potato: ['+8,9', '-5,6,7'], soramame: ['+4', '-10,11,12'], kabocha: ['+10,11', '-4,5,6,7'] },
+  CapeTown: { tomato: ['+9,10,11', '-4,5,6,7'], garlic: ['+3,4'], potato: ['+8'] },
+  Durban: { tomato: ['+3,4'], garlic: ['-11,12,1'] },
 };
 (async () => {
   const b = await chromium.launch(); const ctx = await newContext(b);
@@ -70,7 +76,7 @@ const KNOWN = {
   }));
   for (const [name, lt] of Object.entries(CLIMATES)) {
     const [lat, t, fr] = lt || [35.75, null];
-    const frost = fr ? { winters: 10, frosty: 10, south: false, ...fr } : null;
+    const frost = fr ? { winters: 10, frosty: 10, south: lat < 0, ...fr } : null;
     const r = await pg.evaluate(({ name, lat, t, known, frost }) => {
       S.weather = t ? { lat, lon: 0, name } : null;
       S.climate = t ? { lat, lon: 0, name, t, rain: [52, 56, 117, 125, 138, 168, 154, 168, 210, 198, 93, 51], years: 'test', fetched: '2026-01-01', frost } : null;
@@ -88,9 +94,10 @@ const KNOWN = {
           if (!h) { probs.push(`${cr.id} sown ${m}/${day}: no harvest date`); continue; }
           const n = daysBetween(sd, h), dh = cr.daysHarvest || 60; days.push(n);
           // (a crop usually grown through winter, sown in spring where winters are hard, skips the winter its packet days include)
-          // (overwintered crops: up to ~10 months — garlic planted in October in Hokkaido is lifted in early August)
+          // (overwintered crops: up to ~11 months — garlic planted in October in Hokkaido is lifted in early August, and slower
+          // still where summers are cool)
           // (long crops have less room: a 140-day crop at 240+ days has gone through a winter it shouldn't — winter-sown carrots in Kagoshima, ~1.7×, are real)
-          const max = overwinter(cr.id) ? 310 : dh > 100 ? Math.max(dh * 1.7, dh + 60) : Math.max(dh * 2.3, dh + 50), min = overwinter(cr.id) ? Math.min(60, dh * 0.35) : dh * 0.6;
+          const max = overwinter(cr.id) ? 335 : dh > 100 ? Math.max(dh * 1.7, dh + 60) : Math.max(dh * 2.3, dh + 50), min = overwinter(cr.id) ? Math.min(60, dh * 0.35) : dh * 0.6;
           if (n > max) probs.push(`${cr.id} sown ${m}/${day}: ${n} days to harvest (packet ${dh}) — too slow`);
           if (n < min) probs.push(`${cr.id} sown ${m}/${day}: ${n} days to harvest (packet ${dh}) — too fast`);
           if (n > 330) probs.push(`${cr.id} sown ${m}/${day}: over a year (${n} days)`);

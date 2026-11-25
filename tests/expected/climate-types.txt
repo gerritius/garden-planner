@@ -1,8 +1,8 @@
 types: Tropical, wet all year | Tropical, wet and dry seasons | Hot desert | Cold semi-arid | Mediterranean, hot summer | Mediterranean, mild summer | Humid subtropical, cool winter | Humid subtropical, mild winter | Oceanic | Continental, hot summer | Continental, warm summer
 start: built-in · Jan 5.2° Jul 25° · tomato 4,5,6 · garlic 9,10 · frost none · south false
-oceanic: Oceanic (northern hemisphere) · Jan 5.2° Jul 18.7° · tomato 5,6 · garlic 8,9 · frost 2026-11-18 · south false
+oceanic: Oceanic (northern hemisphere) · Jan 5.2° Jul 18.7° · tomato 5,6 · garlic 9,10 · frost 2026-11-18 · south false
   Tools says: J5°F5°M8°A10°M13°J17°J19°A19°S16°O12°N8°D6° | Sowing months, growth and harvest estimates, frost and watering use the usual weather for Oceanic (northern hemisphere) — a typical year for that climate type.
-oceanic, south: Oceanic (southern hemisphere) · Jan 18.7° Jul 5.2° · tomato 11,12 · garlic 2,3 · frost 2027-05-21 · south true
+oceanic, south: Oceanic (southern hemisphere) · Jan 18.7° Jul 5.2° · tomato 11,12 · garlic 3,4 · frost 2027-05-21 · south true
 mediterranean, south: Mediterranean, hot summer (southern hemisphere) · Jan 25° Jul 8° · tomato 11,12 · garlic 3,4 · frost none · south true
 Perth, offline: Mediterranean, hot summer (southern hemisphere) · Jan 25° Jul 8° · tomato 11,12 · garlic 3,4 · frost none · south true 
   notice: ⚠️ Not yet fetched: the usual weather for Perth. Until it is, sowing months, growth, harvest and feeding times use the climate type you picked (Mediterranean, hot summer (southern hemisphere)). ↻ Get it now

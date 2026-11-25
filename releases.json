@@ -1,5 +1,14 @@
 [
   {
+    "version": "1.46.0",
+    "date": "2026-11-25",
+    "notes": [
+      "Frost-tender crops planted as spring warms (potatoes) are only offered where they’d come up after the usual last frost — no more June–July potatoes on the Johannesburg highveld. Where winters are mild the potato season runs longer, up to where the tubers would fill in the heat (Johannesburg: August–October).",
+      "Crops planted to go through winter (garlic, onions, peas, broad beans) are never offered at the top of summer where summers are cool: London’s garlic is now September–October instead of August.",
+      "Behind the scenes, every crop is now checked in 90 made-up climates — both hemispheres, winters from −10 °C to tropical, summers from cool to hot, with frost where it would come — against rules that hold anywhere: harvest within the year, frost-tender crops between the frosts, nothing maturing in heat or days long enough to bolt it. Plus Johannesburg, Cape Town and Durban against local growing guides."
+    ]
+  },
+  {
     "version": "1.45.0",
     "date": "2026-11-25",
     "notes": [

@@ -275,15 +275,17 @@ export const Draw = (() => {
       if (ru.left) for (let y = ru.step; y <= L + 0.01; y += ru.step) s += `<text x="${-4 / px}" y="${y + gf * 0.35}" font-size="${gf}" class="tick" text-anchor="end">${y}</text>`;
     }
     if (o.labels) {
-      const fs = 12 / px;
+      // (the outline is in the drawing's units — centimetres — like the font size, so it's ~3 px on screen however big the
+      // bed is drawn; a fixed 3 made fat blobs round each letter on a zoomed-in bed or a small pot)
+      const fs = 12 / px, sw = `stroke-width="${+(3 / px).toFixed(3)}"`;
       for (const p of plantings) {
         if (o.highlight && o.highlight !== p.id) continue;
         const y = Math.min(p.to - fs * 0.3, +p.from + fs * 1.15);
-        s += `<text x="${W / 2}" y="${y}" font-size="${fs}" class="lbl" text-anchor="middle">${escT(p._label)}</text>`;
+        s += `<text x="${W / 2}" y="${y}" font-size="${fs}" ${sw} class="lbl" text-anchor="middle">${escT(p._label)}</text>`;
       }
       for (const g of o.gaps || []) {
         const fs2 = 11 / px;
-        if (g[1] - g[0] > fs2 * 1.4) s += `<text x="${W / 2}" y="${(g[0] + g[1]) / 2 + fs2 * 0.35}" font-size="${fs2}" class="lbl empty" text-anchor="middle">${escT(g[2] || '+ empty')}</text>`;
+        if (g[1] - g[0] > fs2 * 1.4) s += `<text x="${W / 2}" y="${(g[0] + g[1]) / 2 + fs2 * 0.35}" font-size="${fs2}" ${sw} class="lbl empty" text-anchor="middle">${escT(g[2] || '+ empty')}</text>`;
       }
     }
     s += `</svg>`;

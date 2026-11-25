@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.42.1",
+    "date": "2026-11-25",
+    "notes": [
+      "Labels on the bed and pot drawings (crop names, “+ empty”) have a thin even outline again, instead of dark overlapping bubbles round each letter when a bed or small pot is drawn large."
+    ]
+  },
+  {
     "version": "1.42.0",
     "date": "2026-11-24",
     "notes": [

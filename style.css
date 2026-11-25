@@ -163,7 +163,8 @@ svg.plot { display: block; overflow: visible; }
 .plot .plant.drag { stroke: #fff; stroke-width: 2; cursor: grab; }
 .plot .dim { opacity: .35; }
 .plot .cover { pointer-events: none; }   /* nets and fleece are drawn over the plants: taps go through to them */
-.plot .lbl { fill: #fff8ea; font-weight: 700; paint-order: stroke; stroke: rgba(40,22,8,.7); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; font-family: 'Zilla Slab', Georgia, serif; }
+/* (the outline's width is set on each label, in the drawing's units, so it stays ~3 screen px at any zoom) */
+.plot .lbl { fill: #fff8ea; font-weight: 700; paint-order: stroke; stroke: rgba(40,22,8,.7); stroke-linejoin: round; pointer-events: none; font-family: 'Zilla Slab', Georgia, serif; }
 .plot .lbl.empty { font-weight: 500; opacity: .85; }
 .plot [data-pid] { cursor: pointer; }
 .plotwrap { display: flex; justify-content: center; margin: 6px 0; text-decoration: none; }

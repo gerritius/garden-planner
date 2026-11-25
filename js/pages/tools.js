@@ -5,11 +5,12 @@ import { driveSection } from '../backup/drive.js';
 import { eraseSection } from '../backup/erase.js';
 import { climateSection } from '../climate/climate.js';
 import { weatherSettings } from '../climate/weather.js';
+import { realToday, timeShift, travelTo } from '../core/clock.js';
 import { morningSection } from '../core/notify.js';
 import { A, render, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { themeSettings } from '../core/theme.js';
-import { $, daysBetween, esc, niceDate, shortDate, todayStr } from '../core/util.js';
+import { $, addDays, daysBetween, esc, niceDate, shortDate, todayStr } from '../core/util.js';
 import { learnSection } from '../plants/learning.js';
 import { harvestTotalsSection } from '../records/review.js';
 import { IS_TEST } from '../core/site.js';
@@ -17,6 +18,18 @@ import { allReleaseNotes } from '../core/updates.js';
 import { APP_VERSION } from '../version.js';
 
 // ---------- the Tools page ----------
+// ---------- time travel (test site) ----------
+function timeTravelSection() {
+  const td = todayStr(), n = timeShift(), go = d => travelTo(d === realToday() ? null : d);
+  A.ttStep = el => go(addDays(td, +el.dataset.d));
+  A.ttGo = () => { const v = $('#ttDate').value; if (v) go(v); };
+  A.ttBack = () => travelTo(null);
+  return `<section class="timetravel"><h3>⏩ Time travel</h3>
+    <p>Move the test garden to another date to see how plantings, jobs, feeding and harvests play out. ${n ? `<b>The app thinks today is ${niceDate(td)}</b> — ${Math.abs(n)} day${Math.abs(n) === 1 ? '' : 's'} ${n > 0 ? 'ahead' : 'back'} (really ${niceDate(realToday())}).` : 'It’s on today’s date.'}</p>
+    <p class="small muted">The weather shown is what it actually did on those days — that year’s records, or the latest year that has them yet. Anything you tick off or record while travelling keeps the travelled date.</p>
+    <div class="btnrow">${[[-30, '−30 d'], [-7, '−7 d'], [-1, '−1 d'], [1, '+1 d'], [7, '+7 d'], [30, '+30 d']].map(([d, l]) => `<button type="button" class="btn small" data-act="ttStep" data-d="${d}">${l}</button>`).join('')}</div>
+    <div class="btnrow"><input type="date" id="ttDate" value="${td}"><button type="button" class="btn small" data-act="ttGo">Go to date</button>${n ? '<button type="button" class="btn small primary" data-act="ttBack">Back to today</button>' : ''}</div></section>`;
+}
 export function pageSettings() {
   setChrome('Tools', { tab: 'settings', kicker: 'Backup, weather & settings' });
   A.export = exportBackup;
@@ -34,7 +47,7 @@ export function pageSettings() {
     <h3 class="grp">Records</h3><div class="tiles">
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     ${IS_TEST ? `<section><h3>🧪 Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
-      <button class="btn wide" data-act="copyMain">Copy my real garden here</button></section>` : ''}
+      <button class="btn wide" data-act="copyMain">Copy my real garden here</button></section>${timeTravelSection()}` : ''}
     <h3 class="grp">Settings</h3>
     <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly — connect Google Drive below to have it done every day, or export a file and save it somewhere safe.</p>

@@ -2,6 +2,7 @@
 // temperature and rainfall for each month. Until it's fetched (or with no location) the built-in western Tokyo values
 // are used. Also growth speed from temperature, and the microclimate of each bed or pot (indoors, sun, size).
 
+import { realNow } from '../core/clock.js';
 import { A, render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
@@ -89,7 +90,7 @@ export async function ensureClimate(force) {
   if (!force && (where === _climFailed || (c && !c.preset && c.frost !== undefined && daysBetween(c.fetched, todayStr()) < 365))) return false;   // (fetched before frost dates were kept: again, once)
   _climBusy = true; applyClimate(); if (climatePending()) render();   // (the notice says it's on its way)
   try {
-    const y = new Date().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;
+    const y = realNow().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;   // (the real year: records only go up to now, wherever the test site has travelled)
     const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean,temperature_2m_min,precipitation_sum&timezone=auto`;
     const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status);
     const j = await r.json(), d = j.daily; if (!d || !d.time) throw new Error('no data');

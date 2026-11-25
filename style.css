@@ -56,7 +56,7 @@ a { color: var(--green); }
 #top .ttl { flex: 1; min-width: 0; }
 /* the test site: striped header and a badge, so it's never mistaken for the real garden */
 body.site-test #top { --hd1: #6a4f8a; --hd2: #4b3866; background-image: var(--noise), repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 10px, transparent 10px 20px), linear-gradient(180deg, var(--hd1), var(--hd2)); }
-.sitebadge { flex: none; font: 700 11px/1 system-ui, sans-serif; letter-spacing: .06em; background: #ffd34d; color: #3b2a00; padding: 4px 7px; border-radius: 4px; }
+.sitebadge { text-decoration: none; flex: none; font: 700 11px/1 system-ui, sans-serif; letter-spacing: .06em; background: #ffd34d; color: #3b2a00; padding: 4px 7px; border-radius: 4px; }
 /* a new version / what's new strip under the header */
 .notice { max-width: 680px; margin: 8px auto 0; padding: 8px 10px; display: flex; align-items: center; gap: 8px; background: var(--card); border: 1.5px solid var(--green); border-radius: 8px; font-size: 14px; }
 .notice .grow { flex: 1; }

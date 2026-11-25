@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.43.0",
+    "date": "2026-11-25",
+    "notes": [
+      "Test site only — Time travel (Tools → Test site): move the test garden to another date (±1, 7 or 30 days, or any date) to see how plantings, jobs, feeding and harvests play out. The whole app takes that as today, and the badge at the top shows the date.",
+      "While travelling, the weather is what it actually did on those days: that year’s records, or — for days still to come — the same days in the latest year that has them. “Back to today” returns and drops the borrowed weather. The real site never moves."
+    ]
+  },
+  {
     "version": "1.42.1",
     "date": "2026-11-25",
     "notes": [

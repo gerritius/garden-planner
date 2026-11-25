@@ -4,6 +4,7 @@ import { A, render, route, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
 import { ensureClimate } from './climate.js';
+import { realToday, timeShift } from '../core/clock.js';
 import { $, addDays, daysBetween, esc, niceDate, pd, todayStr, uid } from '../core/util.js';
 import { Icons } from '../data/icons.js';
 import { container, isLive } from '../garden/garden.js';
@@ -24,19 +25,53 @@ export async function freshenWeather() {
   if (!busy) render();
   return true;
 }
+// ---------- weather while time-travelling (test site) ----------
+// The "forecast" for a travelled-to week is what the weather actually did: the records for the same 14 days (the week
+// before and the week ahead), from that year if they exist yet, otherwise the latest year that has them — relabelled
+// to the travelled dates. Rain chances are made from the rain that fell.
+async function travelWeather(w) {
+  const td = todayStr(), start = addDays(td, -7), end = addDays(td, 6), lastRec = addDays(realToday(), -6);
+  let k = 0; while (addDays(end, -Math.round(365.25 * k)) > lastRec) k++;
+  const back = d => { const y = +d.slice(0, 4) - k, md = d.slice(5); const x = `${y}-${md}`; return md === '02-29' && !(y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0)) ? `${y}-03-01` : x; };
+  const from = back(start), to = addDays(from, 13);
+  const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${from}&end_date=${to}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m,soil_temperature_0_to_7cm&timezone=auto`;
+  const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status);
+  const j = await r.json(), d = j.daily, h = j.hourly; if (!d || !d.time || !h || !h.time) throw new Error('no records');
+  const pop = mm => mm == null ? null : mm >= 1 ? 90 : mm >= 0.2 ? 40 : 5;
+  d.time = d.time.map((t, i) => addDays(start, i));
+  d.precipitation_probability_max = d.precipitation_sum.map(pop);
+  h.time = h.time.map((t, i) => `${addDays(start, Math.floor(i / 24))}T${t.slice(11)}`);
+  h.precipitation_probability = h.precipitation.map(pop);
+  h.soil_temperature_6cm = h.soil_temperature_0_to_7cm; delete h.soil_temperature_0_to_7cm;
+  w.from = { year: +from.slice(0, 4), first: from };
+  return { daily: d, hourly: h };
+}
+// back to today: weather borrowed for travelled days (kept as "what happened") is dropped
+function dropTravelled() {
+  const rt = realToday();
+  for (const k of ['tempHist', 'rainHist']) if (S[k]) S[k] = Object.fromEntries(Object.entries(S[k]).filter(([d]) => d < rt));
+  if (S.weather) { delete S.weather.from; S.weather.fetched = 0; }
+}
 export const Weather = {
   busy: false,
   async refresh(force) {
     const w = S.weather;
     if (!w || w.lat == null || this.busy) return false;
+    // (moved in time, or back: the weather held is for another "today", and records borrowed for travelled days go)
+    if ((w.shift || 0) !== timeShift()) { force = true; if (!timeShift()) dropTravelled(); }
     if (!force && w.fetched && w.hourly && w.hourly.soil_temperature_6cm && Date.now() - w.fetched < 3600e3) return false;
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,soil_temperature_6cm&timezone=auto&forecast_days=7&past_days=7`;
-      const r = await fetch(url);
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      const j = await r.json(); w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now();
+      let j;
+      if (timeShift()) j = await travelWeather(w);
+      else {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,soil_temperature_6cm&timezone=auto&forecast_days=7&past_days=7`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        j = await r.json(); delete w.from;
+      }
+      w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now(); w.shift = timeShift();
       const td = todayStr(), keep = addDays(td, -45);
       S.tempHist = Object.fromEntries(Object.entries(S.tempHist || {}).filter(([k]) => k >= addDays(td, -120)));
       w.daily.time.forEach((t, i) => { if (t < td && w.daily.temperature_2m_max[i] != null) S.tempHist[t] = (w.daily.temperature_2m_max[i] + w.daily.temperature_2m_min[i]) / 2; }); S.rainHist = Object.fromEntries(Object.entries(S.rainHist || {}).filter(([k]) => k >= keep));
@@ -72,7 +107,7 @@ export const Weather = {
     const age = w.fetched ? Math.round((Date.now() - w.fetched) / 3600e3) : null;
     return `<section class="wx">
       <div class="wxdays">${days.map(d => `<div class="wxd${d.date === todayStr() ? ' now' : ''}${d.min <= 2 ? ' frost' : ''}"><span class="wn">${dayName(d.date)}</span>${Icons.weather(d.code, 30)}<b>${Math.round(d.max)}°</b><span class="lo">${Math.round(d.min)}°</span><span class="rn">${d.rain >= 0.5 ? Math.round(d.rain) + 'mm' : '&nbsp;'}</span></div>`).join('')}</div>
-      <div class="wxfoot">${esc(w.name)} · ${age == null ? '' : age < 1 ? 'updated just now' : `updated ${age} h ago`}</div></section>`;
+      <div class="wxfoot">${esc(w.name)} · ${w.from ? `⏩ what the weather did on these days in ${w.from.year}` : age == null ? '' : age < 1 ? 'updated just now' : `updated ${age} h ago`}</div></section>`;
   },
 };
 export function weatherSettings() {

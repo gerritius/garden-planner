@@ -98,11 +98,15 @@ export async function ensureClimate(force) {
 // ---------- the usual weather anywhere: the app's own climate tiles ----------
 // Made by tools/era5/build.py from ERA5 (hourly records 2016–2025, on a 0.25° grid — points about 28 km apart): for
 // each grid point the usual mean temperature and rainfall of each month, and frost dates from the daily lows worked out
-// as frostStats does, for lows of −2, −1, 0, 1 and 2 °C. The app downloads the one 5° tile its garden is in (about
+// as frostStats does, for lows of −2 to +4 °C. The app downloads the one 5° tile its garden is in (about
 // 20 kB), once — nothing is asked of a weather service — and blends the 4 grid points around the garden (land counts
 // for more than sea, so a garden on the coast isn't given the sea's weather).
 export const CLIM_SRC = 'era5-2016-2025', CLIM_YEARS = '2016–2025';
-const NV = 42, TH = [-2, -1, 0, 1, 2], LAPSE = 6.5;   // values per point (see LAYOUT in the build script); °C per km up
+const NV = 48, TH = [-2, -1, 0, 1, 2, 3, 4], LAPSE = 6.5;   // values per point (see LAYOUT in the build script); °C per km up
+// A grid point's low is an average over ~28 km: on clear, still, frosty nights a garden gets colder than that. Against
+// station frost dates (Denver, Chicago, Calgary, Munich, Sapporo, Winnipeg, Canberra…) the grid's lows ran about 1 °C
+// warm, so a grid low of +1 °C counts as a frost.
+const FROST_MARGIN = 1;
 export async function climateAt(lat, lon) {
   if (!(lat >= -60 && lat <= 90)) throw new Error('no climate tile here');
   const L = ((lon % 360) + 360) % 360, ty = Math.min(29, Math.floor((90 - lat) / 5)), tx = Math.floor(L / 5) % 72;
@@ -126,10 +130,10 @@ export async function climateAt(lat, lon) {
     elev: Math.round(avg(24)), winters: pts[0].v(26), frost, south: lat < 0 };
 }
 // A garden higher than the grid points' average ground is colder — about 6.5 °C a km — and gets frost on nights the grid
-// points' low is that much warmer; lower down, the other way (frost dates as far as 2 °C each way: about 300 m).
+// points' low is that much warmer; lower down, the other way (frost dates as far as 3 °C each way: about 450 m).
 export function forHeight(base, elev) {
   const dT = elev != null && base.elev != null ? -LAPSE * (elev - base.elev) / 1000 : 0;
-  const k = Math.max(0, Math.min(4, -dT + 2)), a = Math.min(3, Math.floor(k)), f = k - a, lo = base.frost[a], hi = base.frost[a + 1];
+  const top = TH.length - 1, k = Math.max(0, Math.min(top, FROST_MARGIN - dT - TH[0])), a = Math.min(top - 1, Math.floor(k)), f = k - a, lo = base.frost[a], hi = base.frost[a + 1];
   const mix = i => lo[i] != null && hi[i] != null ? lo[i] + (hi[i] - lo[i]) * f : (f < 0.5 ? lo : hi)[i];
   const first = mix(1), last = mix(2), frosty = Math.round(mix(0));
   return { t: base.t.map(v => Math.round((v + dT) * 10) / 10), rain: base.rain.slice(), elev: elev ?? null,

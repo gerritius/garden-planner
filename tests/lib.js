@@ -62,7 +62,7 @@ async function newContext(browser, extra = {}) {
 }
 // A climate tile as tools/era5/build.py makes them, every point the same, from made-up daily records (the shape the app
 // once fetched from a weather service): { time, temperature_2m_mean, temperature_2m_min?, precipitation_sum? }.
-// Frost dates are worked out as the build does, for lows of −2…+2 °C. elev: the grid points' height (m).
+// Frost dates are worked out as the build does, for lows of −2…+4 °C. elev: the grid points' height (m).
 function climateTile(daily, { south = false, elev = 0, land = 100 } = {}) {
   const tS = Array(12).fill(0), tN = Array(12).fill(0), rain = {};
   daily.time.forEach((ds, i) => { const m = +ds.slice(5, 7) - 1, t = daily.temperature_2m_mean[i], p = (daily.precipitation_sum || [])[i];
@@ -73,7 +73,7 @@ function climateTile(daily, { south = false, elev = 0, land = 100 } = {}) {
   const startOf = ds => { const y = +ds.slice(0, 4), m = +ds.slice(5, 7); return south ? `${y}-01-01` : m >= 7 ? `${y}-07-01` : `${y - 1}-07-01`; };
   const wins = {}; daily.time.forEach(ds => { const k = startOf(ds); wins[k] = (wins[k] || 0) + 1; });
   const full = Object.keys(wins).filter(k => wins[k] >= 330), tmin = daily.temperature_2m_min || [];
-  const frost = [-2, -1, 0, 1, 2].flatMap(th => {
+  const frost = [-2, -1, 0, 1, 2, 3, 4].flatMap(th => {
     const hit = full.map(k => { const o = daily.time.map((ds, i) => startOf(ds) === k && tmin[i] != null && tmin[i] <= th ? day(ds) - day(k) : null).filter(x => x != null); return o.length ? [o[0], o[o.length - 1]] : null; }).filter(Boolean);
     const med = a => { const x = a.slice().sort((p, q) => p - q); return x[Math.floor(x.length / 2)]; };
     return hit.length ? [hit.length, med(hit.map(h => h[0])), med(hit.map(h => h[1]))] : [0, -1, -1]; });

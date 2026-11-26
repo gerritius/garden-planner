@@ -11,8 +11,9 @@ point's own local days (sun time: longitude / 15 hours):
   - the usual rainfall of each month (mm)
   - frost dates from the daily lows, as the app works them out (frostStats in js/climate/climate.js): for each
     winter (July–June north of the equator, January–December south of it) the first and last day the low reached the
-    threshold; then how many winters had any, and the median first and last day. Done at five thresholds, −2…+2 °C,
-    so a garden higher or lower than the grid point (it's a 28 km average) can be shifted by its height difference.
+    threshold; then how many winters had any, and the median first and last day. Done at seven thresholds, −2…+4 °C:
+    the app counts a grid low of +1 °C as a frost (a 28 km grid's lows run about 1 °C warmer than a garden's on clear
+    frosty nights — checked against station frost dates), and shifts that for a garden higher or lower than the grid.
   - the grid point's height (m) and land fraction (%)
 
 Output: climate/<tile row>_<tile col>.bin (gzip of little-endian int16), tile row 0 = 90…85° N, col 0 = 0…5° E.
@@ -25,11 +26,11 @@ import concurrent.futures as cf, datetime as dt, gzip, json, os, ssl, sys, time,
 import numpy as np, numcodecs
 
 YEARS = (2016, 2025)                 # inclusive, whole years
-THRESH = (-2, -1, 0, 1, 2)           # frost thresholds (°C, daily low at or below)
+THRESH = (-2, -1, 0, 1, 2, 3, 4)     # frost thresholds (°C, daily low at or below)
 TILE, ROWS = 20, 30                  # 5° tiles; rows 0..29 = 90° N .. 60° S
 LAYOUT = ['t%d' % m for m in range(12)] + ['rain%d' % m for m in range(12)] + ['elev', 'land', 'winters'] + \
     [f'{k}{j}' for j in range(len(THRESH)) for k in ('frosty', 'first', 'last')]
-VALUES = len(LAYOUT)                 # 42
+VALUES = len(LAYOUT)                 # 48
 BASE = 'https://storage.googleapis.com/gcp-public-data-arco-era5/ar/full_37-1h-0p25deg-chunk-1.zarr-v3/'
 H0 = int((dt.datetime(YEARS[0], 1, 1) - dt.datetime(1900, 1, 1)).total_seconds() // 3600)   # zarr time index
 NDAYS = (dt.date(YEARS[1] + 1, 1, 1) - dt.date(YEARS[0], 1, 1)).days

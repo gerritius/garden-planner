@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.50.1",
+    "date": "2026-11-26",
+    "notes": [
+      "Credits (Tools, at the bottom): the weather and climate data (Open-Meteo, from Copernicus ERA5), place search (GeoNames) and fonts the app uses, with their licences. The forecast also credits Open-Meteo."
+    ]
+  },
+  {
     "version": "1.50.0",
     "date": "2026-11-26",
     "notes": [

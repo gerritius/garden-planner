@@ -19,7 +19,7 @@ import { pageHome } from '../pages/home.js';
 import { pagePlantForm } from '../pages/planting-form.js';
 import { pageArrange, pagePlant } from '../pages/planting.js';
 import { pageSearch } from '../pages/search.js';
-import { groupTabs, pageSettings } from '../pages/tools.js';
+import { groupTabs, pageCredits, pageSettings } from '../pages/tools.js';
 import { syncHarvest, syncThin } from '../plants/growth.js';
 import { pageDoctor } from '../plants/problems.js';
 import { nurseryDialog, pageSeedlings } from '../plants/seedlings.js';
@@ -107,6 +107,7 @@ export function render() {
     else if (a === 'compare') ({ html, after } = pageCompare(q));
     else if (a === 'container' && c === 'sections') ({ html, after } = pageSections(container(b)));
     else if (a === 'settings') ({ html, after } = pageSettings());
+    else if (a === 'credits') ({ html, after } = pageCredits());
     else if (a === 'container' && b === 'new') ({ html, after } = pageContainerForm(null));
     else if (a === 'container' && c === 'edit') ({ html, after } = pageContainerForm(container(b)));
     else if (a === 'container') ({ html, after } = pageContainer(container(b)));

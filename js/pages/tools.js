@@ -64,7 +64,7 @@ export function pageSettings() {
     <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
     <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
     ${eraseSection()}
-    <p class="hint center">Garden Planner · v${APP_VERSION}${IS_TEST ? ' · test site' : ''} · <a href="#/settings" data-act="relNotes">What’s new</a></p>`;
+    <p class="hint center">Garden Planner · v${APP_VERSION}${IS_TEST ? ' · test site' : ''} · <a href="#/settings" data-act="relNotes">What’s new</a> · <a href="#/credits">Credits</a></p>`;
   const after = async () => {
     $('#impf').addEventListener('change', e => importBackup(e.target.files[0]));
     storageNote();
@@ -97,4 +97,17 @@ export function groupTabs(route) {
   const g = TOOL_GROUPS.find(x => x.some(([r]) => r === route)); if (!g) return '';
   A.tabGo = el => location.replace('#/' + el.dataset.r);
   return `<div class="seg tabs">${g.map(([r, l]) => `<button type="button" data-act="tabGo" data-r="${r}" class="${r === route ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+}
+
+// ---------- credits: the data and fonts the app uses, and their licences ----------
+export function pageCredits() {
+  setChrome('Credits', { back: true, kicker: 'Data and fonts the app uses' });
+  const a = (href, t) => `<a href="${href}" target="_blank" rel="noopener">${t}</a>`;
+  const html = `<section><h3>Weather and climate</h3>
+      <p>Weather data by ${a('https://open-meteo.com/', 'Open-Meteo.com')}, licensed under ${a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')} — the forecast, recent weather, and the 10-year records your climate, frost dates and sowing months are worked out from.</p>
+      <p class="small muted">Open-Meteo’s historical records are based on the ERA5 reanalysis from the ${a('https://climate.copernicus.eu/', 'Copernicus Climate Change Service')} (ECMWF); its forecasts combine national weather services’ models.</p></section>
+    <section><h3>Place search</h3><p>${a('https://open-meteo.com/en/docs/geocoding-api', 'Open-Meteo Geocoding')}, using data from ${a('https://www.geonames.org/', 'GeoNames')} (${a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')}).</p></section>
+    <section><h3>Fonts</h3><p>Zilla Slab (Mozilla / Typotheque) and Caveat (Pablo Impallari), both under the ${a('https://openfontlicense.org/', 'SIL Open Font License 1.1')}.</p></section>
+    <section><h3>Crop information</h3><p>Growing times, temperatures and spacings are typical values gathered for this app — always check your seed packet and local advice. The app looks nothing up about pesticides: spray rules are what you enter from each label.</p></section>`;
+  return { html };
 }

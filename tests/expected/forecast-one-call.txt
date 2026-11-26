@@ -1,0 +1,6 @@
+request: hourly 7 values | daily none | days 7
+days made from the hours: 2026-11-18 15/3° rain 0 mm 10% gust 26 code 2 | 2026-11-19 16/4° rain 0 mm 10% gust 26 code 2 | 2026-11-20 17/5° rain 16.5 mm 80% gust 26 code 61
+rain recorded for yesterday: 0
+1 h later: fetched again? false
+3 h later: fetched again? true
+errs []

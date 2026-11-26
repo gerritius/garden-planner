@@ -61,7 +61,7 @@ if (IS_TEST) { document.body.classList.add('site-test'); $('#top .bar').insertAd
   whatsNewOnce();
   setTimeout(checkForUpdate, 4000); setInterval(checkForUpdate, 6 * 3600e3);
   // the forecast: fresh at start, when the app comes back to the front, and hourly
-  setTimeout(freshenWeather, 1000); setInterval(freshenWeather, 3600e3);
+  setTimeout(freshenWeather, 1000); setInterval(() => { if (!document.hidden) freshenWeather(); }, 3600e3);   // (checked hourly while on screen; fetched when 3 hours old)
   document.addEventListener('visibilitychange', () => { if (!document.hidden) { checkForUpdate(); freshenWeather(); } });
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});

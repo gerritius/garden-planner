@@ -32,9 +32,9 @@ function forecast(rain) {
   const jobs = () => pg.evaluate(() => S.tasks.filter(t => t.kind === 'water' && !t.done).map(t => `${t.title}: ${t.due} — ${t.note}`).sort().join('\n  '));
   await pg.goto(U + '#/plant/p1'); await pg.waitForTimeout(1800);   // not the home page: the forecast is fetched anyway
   console.log('with the first forecast (Fri 23 mm, Sat 15 mm):\n  ' + await jobs());
-  // the forecast changes; an hour later the app (here: coming back to the front) fetches it again
+  // the forecast changes; a few hours later the app (here: coming back to the front) fetches it again
   served = forecast({ '2026-11-20': 3 });
-  await pg.evaluate(() => { S.weather.fetched -= 2 * 3600e3; });
+  await pg.evaluate(() => { S.weather.fetched -= 4 * 3600e3; });
   await pg.evaluate(() => document.dispatchEvent(new Event('visibilitychange'))); await pg.waitForTimeout(1500);
   console.log('after the forecast changed to Fri 3 mm, Sat 0 mm:\n  ' + await jobs());
   // ticking one bed's job only marks that bed as watered

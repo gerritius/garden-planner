@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.51.0",
+    "date": "2026-11-26",
+    "notes": [
+      "The forecast uses far fewer requests: one small request (7 hourly values over 7 days — yesterday and the next 6 — with each day’s high, low, rain and wind worked out from the hours), fetched at most every 3 hours and only while the app is on screen. The forecast strip shows today and the next 5 days."
+    ]
+  },
+  {
     "version": "1.50.1",
     "date": "2026-11-26",
     "notes": [

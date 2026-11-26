@@ -52,6 +52,21 @@ function dropTravelled() {
   for (const k of ['tempHist', 'rainHist']) if (S[k]) S[k] = Object.fromEntries(Object.entries(S[k]).filter(([d]) => d < rt));
   if (S.weather) { delete S.weather.from; S.weather.fetched = 0; }
 }
+// The forecast is fetched at most every 3 hours (the forecast models themselves update every few hours), only while the
+// app is on screen, and as one small request: Open-Meteo counts a request of up to 10 values over up to 7 days as one call.
+const FRESH_MS = 3 * 3600e3;
+const HOURLY = 'weather_code,temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,soil_temperature_6cm';
+// each day's summary from its hours: high and low, rain, the chance of rain, wind and gusts, and its worst weather
+export function daysFromHours(h) {
+  const by = {}, days = [];
+  h.time.forEach((t, i) => { const d = t.slice(0, 10); if (!by[d]) { by[d] = []; days.push(d); } by[d].push(i); });
+  const pick = (k, ix, f) => { const v = ix.map(i => (h[k] || [])[i]).filter(x => x != null); return v.length ? f(v) : null; };
+  const max = v => Math.max(...v), min = v => Math.min(...v), sum = v => Math.round(v.reduce((a, b) => a + b, 0) * 10) / 10;
+  return { time: days, weather_code: days.map(d => pick('weather_code', by[d], max)), temperature_2m_max: days.map(d => pick('temperature_2m', by[d], max)),
+    temperature_2m_min: days.map(d => pick('temperature_2m', by[d], min)), precipitation_sum: days.map(d => pick('precipitation', by[d], sum)),
+    precipitation_probability_max: days.map(d => pick('precipitation_probability', by[d], max)), wind_speed_10m_max: days.map(d => pick('wind_speed_10m', by[d], max)),
+    wind_gusts_10m_max: days.map(d => pick('wind_gusts_10m', by[d], max)) };
+}
 export const Weather = {
   busy: false,
   async refresh(force) {
@@ -59,17 +74,19 @@ export const Weather = {
     if (!w || w.lat == null || this.busy) return false;
     // (moved in time, or back: the weather held is for another "today", and records borrowed for travelled days go)
     if ((w.shift || 0) !== timeShift()) { force = true; if (!timeShift()) dropTravelled(); }
-    if (!force && w.fetched && w.hourly && w.hourly.soil_temperature_6cm && Date.now() - w.fetched < 3600e3) return false;
+    if (!force && w.fetched && w.hourly && w.hourly.soil_temperature_6cm && Date.now() - w.fetched < FRESH_MS) return false;
     if (!navigator.onLine) return false;
     this.busy = true;
     try {
       let j;
       if (timeShift()) j = await travelWeather(w);
       else {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max&hourly=temperature_2m,precipitation,precipitation_probability,wind_speed_10m,wind_gusts_10m,soil_temperature_6cm&timezone=auto&forecast_days=7&past_days=7`;
+        // (one small request — 7 hourly values over 7 days, so it counts as a single call; the days are made from the hours)
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${w.lat}&longitude=${w.lon}&hourly=${HOURLY}&timezone=auto&forecast_days=6&past_days=1`;
         const r = await fetch(url);
         if (!r.ok) throw new Error('HTTP ' + r.status);
         j = await r.json(); delete w.from;
+        if (!j.daily && j.hourly) j.daily = daysFromHours(j.hourly);
       }
       w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now(); w.shift = timeShift();
       const td = todayStr(), keep = addDays(td, -45);

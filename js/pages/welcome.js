@@ -12,6 +12,7 @@ import { S, save } from '../core/state.js';
 import { $, esc, go } from '../core/util.js';
 import { CATALOG, COMMON_CROPS, GROUPS } from '../data/catalog.js';
 import { allCrops, ic } from '../plants/crops.js';
+import { startTour } from './tour.js';
 
 const STEPS = ['Welcome', 'Where', 'Your crops', 'First bed', 'Done'];
 let pickQuery = '';
@@ -73,15 +74,18 @@ export function pageWelcome(q) {
       ${cropPicker()}<div class="btncol"><a class="btn primary wide" href="${next}">Next</a></div>`;
     after = pickerAfter;
   } else if (step === 4) {
-    body = `<p>Now add where things grow: a bed in the ground, or a pot, trough or grow bag. You draw what’s in it, and the jobs follow from that.</p>
-      <div class="btncol"><button type="button" class="btn primary wide" data-act="wlFinish" data-to="#/container/new">＋ Add my first bed or pot</button>
+    A.wlGuide = async () => { await startTour(); S.firstRun = false; pickQuery = ''; await save(); go('#/container/new'); };
+    body = `<p>Now add where things grow — a bed in the ground, or a pot, trough or grow bag — and your first crop. A short guide shows you each step as you do it: raising seedlings in a tray first, or planting straight in.</p>
+      <div class="btncol"><button type="button" class="btn primary wide" data-act="wlGuide">＋ Add my first bed — show me how</button>
+        <button type="button" class="btn wide" data-act="wlFinish" data-to="#/container/new">＋ Add my first bed (no guide)</button>
         <a class="btn wide" href="${next}">Later</a></div>`;
   } else {
     body = `<h2 class="center">You’re set up 🌱</h2>
       <ul class="wl-points"><li>📋 <b>Jobs for each day</b> are on the home screen — tick them off as you go.</li>
         <li>💾 <b>Keep a backup.</b> Your garden is only on this phone: Tools → Backup saves a copy as a file${IS_TEST ? '' : ', or to Google Drive every day'}.</li>
         <li>📱 <b>Add it to your home screen</b> to open it like an app: in Chrome’s ⋮ menu, “Add to Home screen” (or “Install app”).</li>
-        <li>🧺 <b>Your crops, location and everything else</b> can be changed in Tools.</li></ul>
+        <li>🧺 <b>Your crops, location and everything else</b> can be changed in Tools.</li>
+        <li>🧭 <b>New to it?</b> Tools → Guided setup walks you through your first bed and crop.</li></ul>
       <div class="btncol"><button type="button" class="btn primary wide" data-act="wlFinish" data-to="#/">Go to my garden</button></div>`;
   }
   return { html: `<div class="welcome">${dots}${body}</div>`, after };

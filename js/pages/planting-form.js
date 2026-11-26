@@ -21,7 +21,7 @@ import { crop, cropOptions, kin, newCropDialog, varieties } from '../plants/crop
 import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import {
-  applyStart, fewSpots, linkStartOnSave, prefillFromStart, start, startChooser, startLeft, startPlanted, startReadyNote, startWhere
+  applyStart, fewSpots, linkStartOnSave, perOf, plantsOf, prefillFromStart, start, startChooser, startLeft, startPlanted, startReadyNote, startWhere, unitOf
 } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
 
@@ -96,7 +96,7 @@ export function pagePlantForm(p, c, q) {
     if (nj) bits.push(`${nj} job${nj > 1 ? 's' : ''}`);
     return bits.filter(Boolean).join(' · ');
   };
-  const html = `${d.startId && start(d.startId) ? `<p class="banner">🌱 Planting out ${d.startPlants || d.startN} ${esc(crop(start(d.startId).cropId).en)} seedling${(d.startPlants || d.startN) > 1 ? 's' : ''} from ${esc(startWhere(start(d.startId)))} — set the section and spacing to fit them.</p>` : ''}<form id="pf" class="form">
+  const html = `${d.startId && start(d.startId) ? `<div class="banner" id="startBanner"></div>` : ''}<form id="pf" class="form">
     <div class="preview big" id="pprev"></div>
     <fieldset><legend>Crop</legend>
       ${isNew && !d.startId ? startChooser(d) : ''}
@@ -197,6 +197,17 @@ export function pagePlantForm(p, c, q) {
     const rw = $('#rotWarn');
     if (rw) { const rn = planMode ? planRotation(c, d.from, d.to, d.cropId, d.sowDate, p && p.id) : rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; const sr = d.cropId ? soilReadingAdvice(c, d.from, d.to, d.cropId) : null; if (sr) { rw.innerHTML += `<p class="soiln">🧪 ${sr.bits.map(esc).join(' ')}</p>`; if (!rw.className) rw.className = 'note'; }
     const sa = soilAdvice(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); if (sa) { rw.innerHTML += `<p class="soiln">🪱 ${sa.text}</p>`; if (!rn || !rn.same) rw.className = sa.level === 'warn' ? 'warn' : 'note'; } }
+    // planting out from a tray: the plants going in are the ones the drawing holds — the rest stay in the tray
+    const sb = $('#startBanner'), st = d.startId && start(d.startId);
+    if (sb && st) {
+      const have = d.startPlants || plantsOf(st, d.startN || startLeft(st)), fit = Draw.count(c, tmp), per = perOf(st), use = Math.min(have, fit);
+      const cells = Math.min(startLeft(st), Math.ceil(use / per)), restCells = startLeft(st) - cells, unit = unitOf(st), n = crop(st.cropId).en;
+      d.startUse = use;
+      sb.innerHTML = `🌱 Planting out <b>${use}</b> of the ${have} ${esc(n)} seedling${have === 1 ? '' : 's'} from ${esc(startWhere(st))}${per > 1 ? ` (${cells} ${unit}${cells === 1 ? '' : 's'})` : ''}${use < have
+        ? ` — this layout holds ${fit}. The other ${restCells > 0 ? `${restCells} ${unit}${restCells === 1 ? '' : 's'}` : have - use} stay in ${esc(startWhere(st).toLowerCase())}, to replant somewhere else.`
+        : fit > have ? ` — the layout has room for ${fit}, so the drawing would show ${fit - have} more than you have. <button type="button" class="link" data-act="fitStart">Place just these ${have} by hand</button> or make the section smaller.` : '.'}`;
+      A.fitStart = () => { const rows = Draw.layout(c, Object.assign({}, tmp, { layout: tmp.layout === 'free' ? 'rows' : tmp.layout })).pts; d.layout = 'free'; d.positions = (fewSpots(c, d, have) || rows.slice(0, have)).map(q => q.slice(0, 2)); render(); };
+    }
     $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };

@@ -535,7 +535,7 @@ export const CROPS = [
   { id: 'amaranth', en: 'Amaranth greens (callaloo)', color: '#8a3a5a', icon: 'spinach', like: 'kushinsai', family: 'amaranth', rowSp: 30, sowSp: 5, thinSp: 15,
     daysHarvest: 40, spread: 30, germ: [5, 10], jobs: [['Pick the tips and young leaves', 40, 1, 'week']], late: 'it flowers and the leaves get small and tough' },
   { id: 'nzspinach', en: 'New Zealand spinach', color: '#4f8f4a', icon: 'spinach', like: 'tsurumurasaki', family: 'iceplant', rowSp: 60, sowSp: 40, thinSp: 40,
-    daysHarvest: 60, spread: 60, germ: [10, 21], flags: [], jobs: [['Soak the seed overnight before sowing', 0], ['Pick the tips every week to keep it bushy', 60, 1, 'week']],
+    daysHarvest: 60, spread: 60, germ: [10, 21], soilT: [10, 20, 30], grow: { tb: 5, tref: 20, tcap: 27 }, profile: { pick: 120 }, flags: [], jobs: [['Soak the seed overnight before sowing', 0], ['Pick the tips every week to keep it bushy', 60, 1, 'week']],
     late: 'stems get woody; frost kills it' },
   // ---- beans and corn ----
   { id: 'polebean', en: 'Climbing beans', color: '#4f8f3a', like: 'ingen', daysHarvest: 65, spread: 40, flags: ['fruiting', 'tall', 'bees'],

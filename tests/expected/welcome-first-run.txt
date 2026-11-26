@@ -6,8 +6,8 @@ step 3: Leafy greens | Cabbages & broccoli | Roots | Fruiting vegetables | Beans
   the usual crops: 25 crops chosen — they come first in crop lists, and the sowing calendar and ideas are about them. The rest are still there under “Other crops”.
   search "komat": komatsuna
   chosen: 27 komatsuna true shungiku true
-step 4: Now add where things grow: a bed in the ground, or a pot, trough or grow bag. You draw what’s in it, and the jobs follow from that. ＋ Add my first bed or pot Later
-step 5: You’re set up 🌱 📋 Jobs for each day are on the home screen — tick them off as you go. 💾 Keep a backup. Your garden is only on this phone: Tools → Backup saves a copy as a file, or to Google Drive every day. 📱 Add it to your home screen to open it like an app: in Chrome’s ⋮ menu, “Add to Home screen” (or “Install app”). 🧺 Your crops, location and everything else can be changed in Tools. Go to my garden
+step 4: Now add where things grow — a bed in the ground, or a pot, trough or grow bag — and your first crop. A short guide shows you each step as you do it: raising seedlings in a tray first, or planting stra
+step 5: You’re set up 🌱 📋 Jobs for each day are on the home screen — tick them off as you go. 💾 Keep a backup. Your garden is only on this phone: Tools → Backup saves a copy as a file, or to Google Drive every day. 📱 Add it to your home screen to open it like an app: in Chrome’s ⋮ menu, “Add to Home screen” (or “Install app”). 🧺 Your crops, location and everything else can be changed in Tools. 🧭 New to it? Tools → Guid
 finished: #/ | first run: false | home says finish setting up: false
 crop list: Your crops / Other crops · 132 crops
 sowing calendar: 27 crops (of 130) · Your crops. Show all crops · Change my crops

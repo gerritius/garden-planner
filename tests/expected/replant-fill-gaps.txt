@@ -14,5 +14,5 @@ older fill: 1 seedling 17 Nov (from Tray 1) show it in the drawing
   shown: 5.9 5.9 3.3 3.3 3.3
 pots: Snap pea 1 cell · Tray 1 · 1 seed each · outside Sown 5 Nov (13 days) · up 12 Nov · ready  || Snap pea 2 pots · 9 cm pots · 2 plants each (4 in all) · outside Sown 5 Nov (13 days) · up
 replant from them asks: How many pots? (2 plants each)
-form: 🌱 Planting out 2 Snap pea seedlings from 9 cm pots — set the section and spacing to fit them. | placed: free 2
+form: 🌱 Planting out 2 of the 2 Snap pea seedlings from 9 cm pots (1 pot). | placed: free 2
 errs []

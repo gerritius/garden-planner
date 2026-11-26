@@ -33,12 +33,16 @@ function ddShow(anchor, items, current, pick, opts = {}) {
   const place = () => {
     const r = anchor.getBoundingClientRect(), vv = window.visualViewport, vh = vv ? vv.height + vv.offsetTop : window.innerHeight;
     const clip = box && box !== document.body ? box.getBoundingClientRect() : { top: 0, bottom: vh };
-    if (r.bottom < clip.top + 4 || r.top > clip.bottom - 4 || r.bottom < 0 || r.top > vh) return ddClose();
+    // (while you're typing in its search box the keyboard may push the field out of sight: the list stays, in view)
+    const typing = search && document.activeElement === search;
+    if (!typing && (r.bottom < clip.top + 4 || r.top > clip.bottom - 4 || r.bottom < 0 || r.top > vh)) return ddClose();
     const below = vh - r.bottom - 8, above = r.top - 8;
     if (up === null) up = below < 180 && above > below;
     const room = Math.max(140, Math.min(360, up ? above : below));
     panel.style.left = `${Math.max(8, r.left)}px`; panel.style.width = `${Math.min(r.width, window.innerWidth - 16)}px`; panel.style.maxHeight = `${room}px`;
-    panel.style.top = up ? `${r.top - Math.min(panel.offsetHeight, room) - 4}px` : `${r.bottom + 4}px`;
+    let top = up ? r.top - Math.min(panel.offsetHeight, room) - 4 : r.bottom + 4;
+    if (typing) { const vt = vv ? vv.offsetTop : 0; top = Math.max(vt + 8, Math.min(top, vh - Math.min(panel.offsetHeight, room) - 8)); }
+    panel.style.top = `${top}px`;
   };
   ddOpen = { panel, anchor, draw, place }; anchor.classList.add('dd-on');
   draw(opts.query); place();
@@ -49,7 +53,8 @@ function ddShow(anchor, items, current, pick, opts = {}) {
 document.addEventListener('scroll', e => { if (ddOpen && !ddOpen.panel.contains(e.target)) ddOpen.place(); }, { capture: true, passive: true });
 if (window.visualViewport) window.visualViewport.addEventListener('scroll', () => { if (ddOpen) ddOpen.place(); });
 document.addEventListener('pointerdown', e => { if (ddOpen && !ddOpen.panel.contains(e.target) && e.target !== ddOpen.anchor && !ddOpen.anchor.contains(e.target)) ddClose(); }, true);
-window.addEventListener('resize', () => { if (ddOpen && !(ddOpen.anchor.tagName === 'INPUT' && document.activeElement === ddOpen.anchor)) ddClose(); });
+// (the keyboard opening resizes the window: a list whose field — or whose own search box — is being typed in stays open)
+window.addEventListener('resize', () => { if (!ddOpen) return; const a = document.activeElement; if ((ddOpen.anchor.tagName === 'INPUT' && a === ddOpen.anchor) || ddOpen.panel.contains(a)) ddOpen.place(); else ddClose(); });
 window.addEventListener('popstate', ddClose);
 
 // ---------- selects become a field + drop-down ----------

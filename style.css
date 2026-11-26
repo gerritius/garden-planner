@@ -722,3 +722,11 @@ button.banner { width: 100%; text-align: left; font: inherit; font-size: 14px; c
 .chip.pick small { color: var(--muted); margin-left: 2px; }
 .chip.pick.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 .chip.pick.on small { color: inherit; opacity: .8; }
+
+/* the guided setup card */
+.tour { background: var(--chip); border: 2px solid var(--green); border-radius: 10px; padding: 10px 14px 12px; margin: 0 0 14px; }
+.tour h3 { margin: 4px 0 6px; }
+.tour p, .tour li { font-size: 15px; }
+.tour-h { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+.tour-n { font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .05em; }
+.tour-pick { padding-left: 0; list-style: none; } .tour-pick li { margin: 6px 0; }

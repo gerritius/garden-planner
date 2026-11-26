@@ -88,7 +88,7 @@ export function simVerdict(sim, L, p) {
   else {
     const slow = normalT(sim.shortFrom) < restartTemp(p.cropId), back = slow ? nextGrowing(p.cropId, sim.shortFrom) : null;
     const when = sim.shortFrom <= addDays(td, 5) ? '<b>Running short now</b>' : `<b>Fed until about ${shortDate(sim.shortFrom)}</b>`;
-    bits.push(slow ? `${when} — but it’s the slow winter stretch: it only needs a little until growth picks up around ${shortDate(back)}. A light feed ${sim.shortFrom <= addDays(td, 5) ? 'now' : 'around ' + shortDate(sim.shortFrom)}, or a proper one around ${shortDate(back)}.` : `${when} — plan a feed ${sim.shortFrom <= addDays(td, 5) ? 'soon' : 'before then'}.`);
+    bits.push(slow ? `${when} — but ${normalT(sim.shortFrom) < 8 ? 'it’s the slow winter stretch' : 'it grows slowly while it’s this cool'}: it only needs a little until growth picks up around ${shortDate(back)}. A light feed ${sim.shortFrom <= addDays(td, 5) ? 'now' : 'around ' + shortDate(sim.shortFrom)}, or a proper one around ${shortDate(back)}.` : `${when} — plan a feed ${sim.shortFrom <= addDays(td, 5) ? 'soon' : 'before then'}.`);
   }
   return bits.join(' ');
 }

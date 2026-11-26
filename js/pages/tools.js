@@ -7,10 +7,11 @@ import { climateSection } from '../climate/climate.js';
 import { weatherSettings } from '../climate/weather.js';
 import { realToday, timeShift, travelTo } from '../core/clock.js';
 import { morningSection } from '../core/notify.js';
+import { startTour } from './tour.js';
 import { A, render, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { themeSettings } from '../core/theme.js';
-import { $, addDays, daysBetween, esc, niceDate, shortDate, todayStr } from '../core/util.js';
+import { $, addDays, daysBetween, esc, go, niceDate, shortDate, todayStr } from '../core/util.js';
 import { learnSection } from '../plants/learning.js';
 import { harvestTotalsSection } from '../records/review.js';
 import { IS_TEST } from '../core/site.js';
@@ -31,6 +32,7 @@ function timeTravelSection() {
     <div class="btnrow"><input type="date" id="ttDate" value="${td}"><button type="button" class="btn small" data-act="ttGo">Go to date</button>${n ? '<button type="button" class="btn small primary" data-act="ttBack">Back to today</button>' : ''}</div></section>`;
 }
 export function pageSettings() {
+  A.tourStart = async () => { await startTour(); go('#/'); };
   setChrome('Tools', { tab: 'settings', kicker: 'Backup, weather & settings' });
   A.export = exportBackup;
   A.relNotes = allReleaseNotes;
@@ -47,7 +49,8 @@ export function pageSettings() {
       ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
     ${IS_TEST ? `<section><h3>🧪 Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
       <button class="btn wide" data-act="copyMain">Copy my real garden here</button></section>${timeTravelSection()}` : ''}
-    <h3 class="grp">Settings</h3>
+    <h3 class="grp">Help</h3><div class="btnrow"><button type="button" class="btn" data-act="tourStart">🧭 Guided setup</button></div>
+        <h3 class="grp">Settings</h3>
     <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly — connect Google Drive below to have it done every day, or export a file and save it somewhere safe.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>

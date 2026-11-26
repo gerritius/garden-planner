@@ -7,9 +7,9 @@ tasks [["sgerm","2026-11-02","Check seedlings are up (expected 30 Oct–2 Nov)"]
 form http://localhost:8765/#/plant/new/b1?crop=hakusai&start=ID&n=15
 planting ["seedling","2026-11-18","2027-04-17",45,"linked","2026-10-28"]
 page rows Raised from seedin a 49-cell tray, sown 28 Oct (21 days before planting out)LayoutStaggered rows
-start ["done",0,["out15","bin5"]]
+start ["done",0,["out9","bin11"]]
 log [
-  'Planted out 15 Chinese cabbage (napa) seedlings',
+  'Planted out 9 Chinese cabbage (napa) seedlings',
   'Sowed Lettuce in 12 cells',
   'Sowed Chinese cabbage (napa) in 20 cells',
   'Sowed Komatsuna',

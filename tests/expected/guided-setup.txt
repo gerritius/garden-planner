@@ -1,0 +1,14 @@
+first-run step 4: ＋ Add my first bed — show me how / ＋ Add my first bed (no guide) / Later
+1 (bed form): Step 1 of 4 — Draw your bed or pot | buttons: 
+2 (home): Step 2 of 4 — How do you want to start? | buttons: 🌱 Raise seedlings / 🥕 Plant straight in
+3 tray: Step 3 of 4 — Sow your seedlings | buttons: ＋ Start seedlings
+   opens: #/seedlings Start seedlings
+4 grow: Step 4 of 4 — While your tomato grows | buttons: See my seedlings / Plant them out
+done: Guided setup — You’re set up 🌱 | buttons: Finish
+after Finish: (no guide)
+restarted: Step 2 of 4 — How do you want to start? | buttons: 🌱 Raise seedlings / 🥕 Plant straight in
+3 direct: Step 3 of 4 — Plant something in Back bed | buttons: ＋ Plant in Back bed
+3 (planting form): Step 3 of 4 — What you’re planting | buttons: 
+done: Guided setup — You’re set up 🌱 | buttons: Finish | carrots planted true
+skipped: (no guide)
+errs []

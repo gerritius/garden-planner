@@ -409,7 +409,9 @@ function placeFew(d, n) {
 export function startPlanted(d, p) {
   const s = start(d.startId); if (!s) return;
   p.startId = s.id; p.seededOn = s.sowDate; p.raisedIn = s.kind; p.raisedName = ntype(s).name;
-  (s.events = s.events || []).push({ id: uid(), type: 'out', date: p.sowDate || todayStr(), n: d.startN || startLeft(s), pid: p.id });
+  // (the cells the drawing's plants came from — any more stay in the tray)
+  const cells = d.startUse ? Math.ceil(d.startUse / perOf(s)) : d.startN || startLeft(s);
+  (s.events = s.events || []).push({ id: uid(), type: 'out', date: p.sowDate || todayStr(), n: Math.min(startLeft(s), cells), pid: p.id });
   if (startLeft(s) <= 0) s.status = 'done';
   const tt = S.tasks.find(t => t.startId === s.id && t.kind === 'transplant' && !t.done);
   if (tt && s.status === 'done') { tt.done = true; tt.doneOn = p.sowDate || todayStr(); }

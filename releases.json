@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.48.0",
+    "date": "2026-11-26",
+    "notes": [
+      "Guided setup: for a new garden, a card at the top of each page walks you through your first bed or pot and your first crop — raising seedlings in a tray first, or planting straight in — moving on by itself as you do each step, then shows what the app does for you. Start it from the first-run steps, or any time from Tools → Guided setup.",
+      "Planting out seedlings: the plants that go in are the ones the drawing holds, and only their cells or pots leave the tray. A 4-plant diamond in a grow bag takes 4 plants (2 cells at 2 a cell); the rest stay in the tray to replant elsewhere. If the layout has room for more than you have, it offers to place just yours, so the drawing and the number always match.",
+      "Drop-down lists stay open while you type in their search box on a phone (the keyboard opening used to close them).",
+      "New Zealand spinach grows from about 5 °C (it had the growth temperatures of water spinach, a tropical crop), and the feeding card no longer calls a cool late-spring spell “the slow winter stretch” — that’s only for real winter cold."
+    ]
+  },
+  {
     "version": "1.47.0",
     "date": "2026-11-26",
     "notes": [

@@ -29,6 +29,7 @@ import { pagePickSafe } from '../products/sprays.js';
 import { pageLog } from '../records/log.js';
 import { pageDiary, pagePhotos, pageTimeline } from '../records/notes.js';
 import { pageCompare, pageReview, pageSpend, pageTotals } from '../records/review.js';
+import { tourCard } from '../pages/tour.js';
 import { hydrate } from './photos.js';
 import { savingAllowed } from './state.js';
 import { $, $$, esc } from './util.js';
@@ -120,6 +121,7 @@ export function render() {
     else html = notFound();
   } catch (e) { console.error(e); html = `<div class="empty-state">Something went wrong: ${esc(e.message)}<br><a href="#/">Home</a> · <a href="#/recovery">Recovery</a></div>`; }
   if (!savingAllowed()) html = `<p class="banner warn">Changes aren’t being saved: this phone’s storage couldn’t be opened. <a href="#/recovery">Recovery</a></p>` + html;
+  try { html = tourCard() + html; } catch (e) { console.warn('tour', e); }   // (the guided setup, while it's on)
   html = groupTabs(location.hash.replace(/^#\/?/, '').split(/[/?]/)[0]) + html;
   $('#view').innerHTML = html;
   hydrate();

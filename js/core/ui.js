@@ -25,7 +25,7 @@ export function modal(html, mount) {
   const m = $('#modal'), openedHash = location.hash;
   m.innerHTML = `<div class="sheet">${html}</div>`;
   m.hidden = false;
-  if (!(history.state && history.state.gpModal)) history.pushState({ gpModal: true }, '');
+  if (!(history.state && history.state.gpModal)) history.pushState(Object.assign({}, history.state, { gpModal: true }), '');   // (keeping the page visit's mark: see router)
   const close = arg => {
     const fromBack = arg === true;   // buttons pass their click event here — only the Back button passes true
     m.hidden = true; m.innerHTML = ''; m._close = null;

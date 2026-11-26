@@ -39,6 +39,13 @@ export let A = {};          // per-page action handlers
 export let draft = null;    // form draft (planting / container)
 export function setDraft(v) { draft = v; return v; }
 let lastRoute = '';
+// Going back returns to where you were on that page. Each visit to a page gets its own mark in the browser history
+// (so the same page visited twice keeps two places); its scroll position is kept as you scroll, and a page you come
+// back to through Back / Forward — and only then — opens where you left it. A page newly opened starts at the top.
+const scrollAt = {};
+let visit = null, restoreY = null;
+if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+window.addEventListener('scroll', () => { if (visit != null) scrollAt[visit] = window.scrollY; }, { passive: true });
 export function setLastRoute(v) { lastRoute = v; return v; }
 let bgStarted = false;   // the once-per-visit background jobs have been started
 
@@ -63,7 +70,13 @@ export function render() {
   const key = location.hash, same = key === lastRoute;
   // redrawing the page you're on (a button that changes something): keep the sections you had open or shut, and your place
   const kept = same ? keptDetails() : null, y = window.scrollY;
-  if (key !== lastRoute) { draft = null; lastRoute = key; window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = ''; }
+  if (key !== lastRoute) {
+    draft = null; lastRoute = key;
+    const st = history.state || {};
+    if (st.gpVisit != null && scrollAt[st.gpVisit] != null) { visit = st.gpVisit; restoreY = scrollAt[visit]; }   // back (or forward) to a visit: its place
+    else { visit = st.gpVisit ?? `${Date.now()}.${Math.random()}`; restoreY = null; try { history.replaceState(Object.assign({}, st, { gpVisit: visit }), ''); } catch (e) { /* no history */ } }
+    window.scrollTo(0, 0); const m = $('#modal'); m.hidden = true; m.innerHTML = '';
+  }
   A = {};
   try { syncWater(); } catch (e) { console.warn(e); }
   try { syncFrost(); } catch (e) { console.warn(e); }
@@ -127,6 +140,7 @@ export function render() {
   hydrate();
   after && after();
   if (kept) { restoreDetails(kept); if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y); }
+  if (restoreY != null) { const ry = restoreY; restoreY = null; window.scrollTo(0, ry); requestAnimationFrame(() => { if (Math.abs(window.scrollY - ry) > 1) window.scrollTo(0, ry); }); }
 }
 // <details> sections on the page, by their heading (its own text — not counts or names in its <small>) and order
 function detailsKeys() {

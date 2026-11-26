@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.49.0",
+    "date": "2026-11-26",
+    "notes": [
+      "Going back returns you to where you were on the page — open a bag from halfway down the garden, go back, and you’re halfway down again (the ← button, the phone’s back, or the browser’s). Pages you open anew still start at the top."
+    ]
+  },
+  {
     "version": "1.48.1",
     "date": "2026-11-26",
     "notes": [

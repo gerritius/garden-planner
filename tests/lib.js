@@ -33,6 +33,7 @@ async function newContext(browser, extra = {}) {
   const ctx = await browser.newContext(Object.assign({}, devices['Pixel 7'], { timezoneId: 'Asia/Tokyo' }, opts));
   await ctx.clock.setFixedTime(FIXED_NOW);
   await ctx.route(u => !['localhost', '127.0.0.1'].includes(u.hostname), r => r.abort());
+  await ctx.route(u => /\/climate\/\d+_\d+\.bin$/.test(u.pathname), r => r.abort());   // no climate tiles unless a scenario serves its own (climateTile)
   if (!welcome) await ctx.addInitScript(() => { window.__noWelcome = true; });   // a new garden's welcome steps: only where a scenario asks for them
   if (!realAddress) await ctx.addInitScript(() => { window.__keepAddress = true; });   // the app moves …/ to …/index.html; scenarios keep the address they open
   if (openFolds) await ctx.addInitScript(() => setInterval(() => document.querySelectorAll('#pf details:not([open])').forEach(d => { d.open = true; }), 30));
@@ -59,4 +60,28 @@ async function newContext(browser, extra = {}) {
   ctx.on('page', wrap);
   return ctx;
 }
-module.exports = { newContext, FIXED_NOW };
+// A climate tile as tools/era5/build.py makes them, every point the same, from made-up daily records (the shape the app
+// once fetched from a weather service): { time, temperature_2m_mean, temperature_2m_min?, precipitation_sum? }.
+// Frost dates are worked out as the build does, for lows of −2…+2 °C. elev: the grid points' height (m).
+function climateTile(daily, { south = false, elev = 0, land = 100 } = {}) {
+  const tS = Array(12).fill(0), tN = Array(12).fill(0), rain = {};
+  daily.time.forEach((ds, i) => { const m = +ds.slice(5, 7) - 1, t = daily.temperature_2m_mean[i], p = (daily.precipitation_sum || [])[i];
+    if (t != null) { tS[m] += t; tN[m]++; } if (p != null) { const k = ds.slice(0, 7); rain[k] = (rain[k] || 0) + p; } });
+  const rS = Array(12).fill(0), rN = Array(12).fill(0);
+  Object.entries(rain).forEach(([k, v]) => { const m = +k.slice(5, 7) - 1; rS[m] += v; rN[m]++; });
+  const day = ds => Date.UTC(+ds.slice(0, 4), +ds.slice(5, 7) - 1, +ds.slice(8, 10)) / 864e5;
+  const startOf = ds => { const y = +ds.slice(0, 4), m = +ds.slice(5, 7); return south ? `${y}-01-01` : m >= 7 ? `${y}-07-01` : `${y - 1}-07-01`; };
+  const wins = {}; daily.time.forEach(ds => { const k = startOf(ds); wins[k] = (wins[k] || 0) + 1; });
+  const full = Object.keys(wins).filter(k => wins[k] >= 330), tmin = daily.temperature_2m_min || [];
+  const frost = [-2, -1, 0, 1, 2].flatMap(th => {
+    const hit = full.map(k => { const o = daily.time.map((ds, i) => startOf(ds) === k && tmin[i] != null && tmin[i] <= th ? day(ds) - day(k) : null).filter(x => x != null); return o.length ? [o[0], o[o.length - 1]] : null; }).filter(Boolean);
+    const med = a => { const x = a.slice().sort((p, q) => p - q); return x[Math.floor(x.length / 2)]; };
+    return hit.length ? [hit.length, med(hit.map(h => h[0])), med(hit.map(h => h[1]))] : [0, -1, -1]; });
+  const pt = [...tS.map((s, i) => Math.round(s / tN[i] * 10)), ...rS.map((s, i) => Math.round(s / rN[i])), elev, land, full.length, ...frost];
+  const buf = Buffer.alloc(21 * 21 * pt.length * 2);
+  for (let k = 0; k < 21 * 21; k++) pt.forEach((v, j) => buf.writeInt16LE(v, (k * pt.length + j) * 2));
+  return require('zlib').gzipSync(buf);
+}
+// serve that tile for whatever place the app asks about (until up() says no: then the request fails, as offline)
+const serveClimate = (ctx, tile, up = () => true) => ctx.route(u => /\/climate\/\d+_\d+\.bin$/.test(u.pathname), r => up() ? r.fulfill({ contentType: 'application/octet-stream', body: typeof tile === 'function' ? tile(r.request().url()) : tile }) : r.abort());
+module.exports = { newContext, FIXED_NOW, climateTile, serveClimate };

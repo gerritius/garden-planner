@@ -1,15 +1,15 @@
 // No location: pick a climate type (Köppen–Geiger) and hemisphere instead of the built-in western Tokyo. The type's
 // typical year sets sowing months, frost and seasons; setting a location later replaces it with that place's records.
-const { newContext } = require('../lib');
+const { newContext, climateTile } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
 (async () => {
   const b = await chromium.launch(); const ctx = await newContext(b);
   await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   let up = false; const PER = [24.5, 24.8, 22.9, 19.8, 16.6, 14.2, 13.2, 13.6, 15.0, 17.3, 20.3, 22.6];   // Perth-like
-  await ctx.route('**/archive-api.open-meteo.com/**', r => { if (!up) return r.abort(); const time = [], t = [], mn = [], p = [];
+  await ctx.route(u => /\/climate\/\d+_\d+\.bin$/.test(u.pathname), r => { if (!up) return r.abort(); const time = [], t = [], mn = [], p = [];
     for (let y = 2016; y <= 2025; y++) for (let m = 1; m <= 12; m++) { const n = new Date(y, m, 0).getDate(); for (let d = 1; d <= n; d++) { time.push(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`); t.push(PER[m - 1]); mn.push(PER[m - 1] - 7); p.push(2); } }
-    r.fulfill({ contentType: 'application/json', body: JSON.stringify({ daily: { time, temperature_2m_mean: t, temperature_2m_min: mn, precipitation_sum: p } }) }); });
+    r.fulfill({ body: climateTile({ time, temperature_2m_mean: t, temperature_2m_min: mn, precipitation_sum: p }, { south: true }) }); });
   await ctx.route('**/geocoding-api.open-meteo.com/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ results: [{ name: 'Perth', admin1: 'Western Australia', country: 'Australia', latitude: -31.95, longitude: 115.86 }] }) }));
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto(U); await pg.waitForTimeout(400);

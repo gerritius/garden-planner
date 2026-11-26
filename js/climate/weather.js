@@ -3,7 +3,7 @@
 import { A, render, route, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
-import { ensureClimate } from './climate.js';
+import { climateForHeight, ensureClimate } from './climate.js';
 import { realToday, timeShift } from '../core/clock.js';
 import { $, addDays, daysBetween, esc, niceDate, pd, todayStr, uid } from '../core/util.js';
 import { Icons } from '../data/icons.js';
@@ -87,6 +87,7 @@ export const Weather = {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         j = await r.json(); delete w.from;
         if (!j.daily && j.hourly) j.daily = daysFromHours(j.hourly);
+        if (j.elevation != null) { w.elev = j.elevation; climateForHeight(j.elevation); }   // (the garden's height: its climate follows)
       }
       w.daily = j.daily; w.hourly = j.hourly; w.fetched = Date.now(); w.shift = timeShift();
       const td = todayStr(), keep = addDays(td, -45);
@@ -143,15 +144,15 @@ export function weatherSettings() {
       const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`);
       const j = await r.json();
       const res = j.results || [];
-      $('#wxres').innerHTML = res.length ? `<ul class="plist">${res.map((x, i) => `<li data-act="wxPick" data-i="${i}"><span class="grow">${esc(x.name)}<small>${esc([x.admin1, x.country].filter(Boolean).join(', '))}</small></span>›</li>`).join('')}</ul>` : '<p class="muted">No places found. Try the town or ward name in English or Japanese.</p>';
-      A.wxPick = async el => { const x = res[+el.dataset.i]; S.weather = { lat: +x.latitude.toFixed(2), lon: +x.longitude.toFixed(2), name: x.name }; await save(); ensureClimate(); await Weather.refresh(true); render(); };
+      $('#wxres').innerHTML = res.length ? `<ul class="plist">${res.map((x, i) => `<li data-act="wxPick" data-i="${i}"><span class="grow">${esc(x.name)}<small>${esc([x.admin1, x.country].filter(Boolean).join(', '))}</small></span>›</li>`).join('')}</ul>` : '<p class="muted">No places found. Try another spelling, or a nearby town.</p>';
+      A.wxPick = async el => { const x = res[+el.dataset.i]; S.weather = { lat: +x.latitude.toFixed(2), lon: +x.longitude.toFixed(2), name: x.name, elev: x.elevation ?? null }; await save(); ensureClimate(); await Weather.refresh(true); render(); };
     } catch { $('#wxres').innerHTML = '<p class="muted">Couldn’t search — are you online?</p>'; }
   };
   A.wxClear = async () => { S.weather = null; await save(); render(); };
   return `<section><h3>Weather</h3>
-    ${w && w.lat != null ? `<p>Forecast for <b>${esc(w.name)}</b> <small>(${w.lat}, ${w.lon})</small></p><div class="btnrow"><button class="btn small" data-act="wxClear">Remove location</button></div>` : '<p>Show a 7-day forecast on the home screen, with frost, heavy rain, wind and heat alerts for what you’re growing.</p>'}
+    ${w && w.lat != null ? `<p>Forecast for <b>${esc(w.name)}</b> <small>(${w.lat}, ${w.lon})</small></p><div class="btnrow"><button class="btn small" data-act="wxClear">Remove location</button></div>` : '<p>Show the forecast on the home screen, with frost, heavy rain, wind and heat alerts for what you’re growing.</p>'}
     <div class="btnrow"><button class="btn" data-act="wxHere">📍 Use my current location</button></div>
-    <div class="searchrow"><input id="wxq" placeholder="…or search a town, e.g. Setagaya" enterkeyhint="search" data-enter="wxSearch"><button class="btn" data-act="wxSearch">Search</button></div>
+    <div class="searchrow"><input id="wxq" placeholder="…or search for your town or suburb" enterkeyhint="search" data-enter="wxSearch"><button class="btn" data-act="wxSearch">Search</button></div>
     <div id="wxres"></div>
     <p class="hint">Uses the free Open-Meteo service. Only your garden’s rough location (2 decimal places, about 1 km) is sent to get the forecast.</p></section>`;
 }

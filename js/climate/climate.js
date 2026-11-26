@@ -1,8 +1,7 @@
-// Climate from your location: 10 years of daily records for your weather location (Open-Meteo archive) → usual
-// temperature and rainfall for each month. Until it's fetched (or with no location) the built-in western Tokyo values
+// Climate from your location: the usual temperature and rainfall of each month and the frost dates there, from the
+// app's own climate tiles (ERA5, 2016–2025). Until it's fetched (or with no location) the built-in western Tokyo values
 // are used. Also growth speed from temperature, and the microclimate of each bed or pot (indoors, sun, size).
 
-import { realNow } from '../core/clock.js';
 import { A, render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
@@ -40,7 +39,7 @@ export function climateSection() {
   return `<section><h3>Climate</h3><p>Sowing months, growth and harvest estimates, frost and watering use the usual weather for <b>${esc(climateName())}</b>.</p>
     <div class="climrow">${rows}</div>${frostText() ? `<p class="small">❄ ${frostText()}</p>` : ''}
     ${!S.weather || S.weather.lat == null || climatePending() ? climateTypePicker() : ''}
-    ${S.weather && S.weather.lat != null ? `<div class="btnrow"><button class="btn small" data-act="climRefresh">↻ ${c ? 'Refresh' : 'Get'} climate for ${esc(S.weather.name || 'my location')}</button></div><p class="small muted" id="climst"></p>` : '<p class="hint">Set your location above and the app fetches the usual temperatures and rainfall there (10 years of records).</p>'}</section>`;
+    ${S.weather && S.weather.lat != null ? `<div class="btnrow"><button class="btn small" data-act="climRefresh">↻ ${c ? 'Refresh' : 'Get'} climate for ${esc(S.weather.name || 'my location')}</button></div><p class="small muted" id="climst"></p>` : '<p class="hint">Set your location above and the app looks up the usual temperatures, rainfall and frost dates there (records from 2016–2025).</p>'}</section>`;
 }
 
 // ---------- climate from your location ----------
@@ -87,25 +86,59 @@ export function applyClimate(force) {
 export async function ensureClimate(force) {
   const w = S.weather; if (!w || w.lat == null || _climBusy || !navigator.onLine) return false;
   const c = climateHere(), where = `${w.lat},${w.lon}`;
-  if (!force && (where === _climFailed || (c && !c.preset && c.frost !== undefined && daysBetween(c.fetched, todayStr()) < 365))) return false;   // (fetched before frost dates were kept: again, once)
+  if (!force && (where === _climFailed || (c && !c.preset && c.src === CLIM_SRC))) return false;   // (from a weather service, before the app had its own climate tiles: again, once)
   _climBusy = true; applyClimate(); if (climatePending()) render();   // (the notice says it's on its way)
   try {
-    const y = realNow().getFullYear(), start = `${y - 10}-01-01`, end = `${y - 1}-12-31`;   // (the real year: records only go up to now, wherever the test site has travelled)
-    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${w.lat}&longitude=${w.lon}&start_date=${start}&end_date=${end}&daily=temperature_2m_mean,temperature_2m_min,precipitation_sum&timezone=auto`;
-    const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status);
-    const j = await r.json(), d = j.daily; if (!d || !d.time) throw new Error('no data');
-    const tSum = Array(12).fill(0), tN = Array(12).fill(0), rain = {};
-    d.time.forEach((ds, i) => { const m = +ds.slice(5, 7) - 1, t = d.temperature_2m_mean[i], p = d.precipitation_sum[i];
-      if (t != null) { tSum[m] += t; tN[m]++; }
-      if (p != null) { const k = ds.slice(0, 7); rain[k] = (rain[k] || 0) + p; } });
-    const rSum = Array(12).fill(0), rN = Array(12).fill(0);
-    Object.entries(rain).forEach(([k, v]) => { const m = +k.slice(5, 7) - 1; rSum[m] += v; rN[m]++; });
-    const t = tSum.map((s, i) => tN[i] ? Math.round(s / tN[i] * 10) / 10 : null), rr = rSum.map((s, i) => rN[i] ? Math.round(s / rN[i]) : null);
-    if (t.some(v => v == null)) throw new Error('incomplete');
-    S.climate = { lat: w.lat, lon: w.lon, name: w.name || '', t, rain: rr, years: `${y - 10}–${y - 1}`, fetched: todayStr(), frost: frostStats(d.time, d.temperature_2m_min, w.lat < 0) };
+    const base = await climateAt(w.lat, w.lon);
+    S.climate = Object.assign({ lat: w.lat, lon: w.lon, name: w.name || '', src: CLIM_SRC, years: CLIM_YEARS, fetched: todayStr(), base }, forHeight(base, w.elev));
     applyClimate(); await save(); render();
     return true;
   } catch (e) { console.warn('climate', e); _climFailed = where; return false; } finally { _climBusy = false; if (climatePending()) render(); }
+}
+// ---------- the usual weather anywhere: the app's own climate tiles ----------
+// Made by tools/era5/build.py from ERA5 (hourly records 2016–2025, on a 0.25° grid — points about 28 km apart): for
+// each grid point the usual mean temperature and rainfall of each month, and frost dates from the daily lows worked out
+// as frostStats does, for lows of −2, −1, 0, 1 and 2 °C. The app downloads the one 5° tile its garden is in (about
+// 20 kB), once — nothing is asked of a weather service — and blends the 4 grid points around the garden (land counts
+// for more than sea, so a garden on the coast isn't given the sea's weather).
+export const CLIM_SRC = 'era5-2016-2025', CLIM_YEARS = '2016–2025';
+const NV = 42, TH = [-2, -1, 0, 1, 2], LAPSE = 6.5;   // values per point (see LAYOUT in the build script); °C per km up
+export async function climateAt(lat, lon) {
+  if (!(lat >= -60 && lat <= 90)) throw new Error('no climate tile here');
+  const L = ((lon % 360) + 360) % 360, ty = Math.min(29, Math.floor((90 - lat) / 5)), tx = Math.floor(L / 5) % 72;
+  const r = await fetch(new URL(`climate/${ty}_${tx}.bin`, document.baseURI));
+  if (!r.ok) throw new Error(r.status === 404 ? 'open sea: no climate tile' : 'HTTP ' + r.status);
+  let buf = await r.arrayBuffer(); const u8 = new Uint8Array(buf, 0, 2);
+  if (u8[0] === 0x1f && u8[1] === 0x8b) buf = await new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();   // (gzipped — unless a server already unpacked it)
+  const dv = new DataView(buf);
+  if (dv.byteLength !== 21 * 21 * NV * 2) throw new Error('bad tile');
+  // the 4 grid points around the garden (rows from the tile's north edge, columns from its west edge)
+  const row = Math.min(19.999, (90 - 5 * ty - lat) / 0.25), col = Math.min(19.999, (L - 5 * tx) / 0.25), i0 = Math.floor(row), j0 = Math.floor(col);
+  const pts = [[0, 0], [0, 1], [1, 0], [1, 1]].map(([a, b]) => {
+    const at = ((i0 + a) * 21 + j0 + b) * NV, v = k => dv.getInt16((at + k) * 2, true);
+    const w = (a ? row - i0 : 1 - row + i0) * (b ? col - j0 : 1 - col + j0) * (v(25) / 100 + 0.02);
+    return { w, v };
+  }).filter(p => p.w > 0);
+  const W = pts.reduce((s, p) => s + p.w, 0), avg = (k, of = pts) => { const ws = of.reduce((s, p) => s + p.w, 0); return ws ? of.reduce((s, p) => s + p.w * p.v(k), 0) / ws : null; };
+  const frost = TH.map((th, j) => { const k = 27 + 3 * j, hit = pts.filter(p => p.v(k) > 0);
+    return [pts.reduce((s, p) => s + p.w * p.v(k), 0) / W, avg(k + 1, hit), avg(k + 2, hit)]; });
+  return { t: Array.from({ length: 12 }, (_, m) => avg(m) / 10), rain: Array.from({ length: 12 }, (_, m) => Math.round(avg(12 + m))),
+    elev: Math.round(avg(24)), winters: pts[0].v(26), frost, south: lat < 0 };
+}
+// A garden higher than the grid points' average ground is colder — about 6.5 °C a km — and gets frost on nights the grid
+// points' low is that much warmer; lower down, the other way (frost dates as far as 2 °C each way: about 300 m).
+export function forHeight(base, elev) {
+  const dT = elev != null && base.elev != null ? -LAPSE * (elev - base.elev) / 1000 : 0;
+  const k = Math.max(0, Math.min(4, -dT + 2)), a = Math.min(3, Math.floor(k)), f = k - a, lo = base.frost[a], hi = base.frost[a + 1];
+  const mix = i => lo[i] != null && hi[i] != null ? lo[i] + (hi[i] - lo[i]) * f : (f < 0.5 ? lo : hi)[i];
+  const first = mix(1), last = mix(2), frosty = Math.round(mix(0));
+  return { t: base.t.map(v => Math.round((v + dT) * 10) / 10), rain: base.rain.slice(), elev: elev ?? null,
+    frost: { winters: base.winters, frosty, first: frosty && first != null ? Math.round(first) : null, last: frosty && last != null ? Math.round(last) : null, south: base.south } };
+}
+// the garden's height came with the forecast (or changed): its climate follows
+export function climateForHeight(elev) {
+  const c = climateHere(); if (!c || !c.base || elev == null || c.elev === elev) return false;
+  Object.assign(c, forHeight(c.base, elev)); applyClimate(); return true;
 }
 // ---------- day length ----------
 // Hours from sunrise to sunset, worked out from the latitude and date (no fetching): what sets off bolting in long-day
@@ -123,7 +156,7 @@ export const lengthening = d => dayLength(addDays(d, 7)) > dayLength(d);
 // types; far from the equator spring-planted long-day types are the ones that bulb in time.
 export function onionType(lat = gardenLat()) {
   const a = Math.abs(lat);
-  return a < 28 ? ['short-day', 'Short-day onions (they bulb from ~11–12 h days)'] : a < 38 ? ['intermediate', 'Short- or intermediate-day onions (they bulb from ~12–14 h days) — like Japanese varieties'] : ['long-day', 'Long-day onions for spring planting (they bulb from ~14–16 h days); short-day types only for autumn planting']
+  return a < 28 ? ['short-day', 'Short-day onions (they bulb from ~11–12 h days)'] : a < 38 ? ['intermediate', 'Short- or intermediate-day onions (they bulb from ~12–14 h days)'] : ['long-day', 'Long-day onions for spring planting (they bulb from ~14–16 h days); short-day types only for autumn planting']
 }
 // ---------- frost dates from the daily lows ----------
 // For each winter in the records (July to June up north, January to December down south): the first and last night the

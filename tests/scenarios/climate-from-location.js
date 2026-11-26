@@ -1,5 +1,5 @@
-const { newContext } = require('../lib');
-// climate from location (mocked archive), sowing calendar, editing months
+const { newContext, climateTile } = require('../lib');
+// climate from location (a made-up climate tile), sowing calendar, editing months
 const { chromium, devices } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
 (async () => {
@@ -8,9 +8,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   // a fake 10-year archive for Melbourne-like weather
   const mel = [21.3, 21.4, 19.4, 16.6, 13.9, 11.6, 11.0, 11.9, 13.6, 15.6, 17.8, 19.8], melR = [47, 48, 50, 57, 56, 49, 47, 50, 58, 66, 60, 59];
   let calls = 0;
-  await ctx.route('**/archive-api.open-meteo.com/**', r => { calls++; const time = [], t = [], p = [];
+  await ctx.route(u => /\/climate\/\d+_\d+\.bin$/.test(u.pathname), r => { calls++; const time = [], t = [], p = [];
     for (let y = 2016; y <= 2025; y++) for (let m = 1; m <= 12; m++) { const n = new Date(y, m, 0).getDate(); for (let d = 1; d <= n; d++) { time.push(`${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`); t.push(mel[m - 1]); p.push(melR[m - 1] / n); } }
-    r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ daily: { time, temperature_2m_mean: t, precipitation_sum: p } }) }); });
+    r.fulfill({ body: climateTile({ time, temperature_2m_mean: t, precipitation_sum: p }, { south: true }) }); });
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message)); await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => { delete S.climate; S.weather = null; S.sowOverride = {}; S.plantings = []; S.tasks = []; await save(); });
   await pg.goto(U + '#/sow'); await pg.waitForTimeout(500);

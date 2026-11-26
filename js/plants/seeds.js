@@ -52,14 +52,14 @@ export function seedDialog(entry, opts = {}) {
     return `<label class="phslot ph">${img}<input type="file" accept="image/*" data-slot="${k}" hidden></label>${fresh[k] || (d[k] && !gone[k]) ? `<button type="button" class="link" data-rm="${k}">remove</button>` : ''}`;
   };
   modal('<div></div>', (m, close) => {
-    const read = () => { const f = m.querySelector('#sdf'); if (!f) return; for (const n of ['variety', 'maker', 'notes']) d[n] = f[n].value.trim(); if (f.cropId.value !== '__new') d.cropId = f.cropId.value; d.cen = f.cen ? f.cen.value.trim() : ''; d.cja = f.cja ? f.cja.value.trim() : ''; d.clike = f.like ? f.like.value : d.clike; d.cdays = f.cdays ? f.cdays.value : ''; if (f.tempLo) { d.tempLo = f.tempLo.value; d.tempHi = f.tempHi.value; d.tpDays = f.tpDays.value; } };
+    const read = () => { const f = m.querySelector('#sdf'); if (!f) return; for (const n of ['variety', 'maker', 'notes']) d[n] = f[n].value.trim(); if (f.cropId.value !== '__new') d.cropId = f.cropId.value; d.cen = f.cen ? f.cen.value.trim() : ''; d.clike = f.like ? f.like.value : d.clike; d.cdays = f.cdays ? f.cdays.value : ''; if (f.tempLo) { d.tempLo = f.tempLo.value; d.tempHi = f.tempHi.value; d.tpDays = f.tpDays.value; } };
     const draw = () => {
       m.querySelector('.sheet').innerHTML = `<h3>${isNew ? 'Add seeds or plants' : 'Edit ' + esc(crop(d.cropId).en + (d.variety ? ' · ' + d.variety : ''))}</h3><form id="sdf" class="form">
         <label>Crop<select name="cropId"><option value="">Choose a crop…</option>${cropOptions(newCrop ? '' : d.cropId, true)}<option value="__new"${newCrop ? ' selected' : ''}>＋ A crop that isn’t listed…</option></select></label>
-        ${newCrop ? `<div class="two"><label>Crop name<input name="cen" value="${esc(d.cen || '')}" placeholder="e.g. Okahijiki"></label><label>Japanese name <small>(optional)</small><input name="cja" value="${esc(d.cja || '')}"></label></div>
+        ${newCrop ? `<label>Crop name<input name="cen" value="${esc(d.cen || '')}" placeholder="e.g. Salsify"></label>
           ${likeSelect(d.clike)}
           <label>Days to first harvest <small>(packet)</small><input name="cdays" type="number" inputmode="numeric" value="${esc(d.cdays || '')}" placeholder="as the crop it’s like"></label>${ownCropFields({ tempLo: d.tempLo, tempHi: d.tempHi, tpDays: d.tpDays })}` : ''}
-        <div class="two"><label>Variety<input name="variety" value="${esc(d.variety)}" placeholder="as on the packet"></label><label>Seed company <small>(optional)</small><input name="maker" value="${esc(d.maker)}" placeholder="e.g. Takii, Sakata"></label></div>
+        <div class="two"><label>Variety<input name="variety" value="${esc(d.variety)}" placeholder="as on the packet"></label><label>Seed company <small>(optional)</small><input name="maker" value="${esc(d.maker)}" placeholder="as on the packet"></label></div>
         <label>Seed packet<div class="phrow">${slot('front')}${slot('back')}</div><small>Front and back: used again for every planting of this variety.</small></label>
         <label>Notes <small>(optional)</small><textarea name="notes" rows="2">${esc(d.notes)}</textarea></label>
         <div class="btns">${isNew ? '' : '<button type="button" class="btn danger" data-x="del" data-own-confirm>Delete</button>'}<button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>`;
@@ -80,7 +80,7 @@ export function seedDialog(entry, opts = {}) {
         e.preventDefault(); read();
         if (newCrop) {
           if (!d.cen) return alert('Give the crop a name.');
-          const cr = { id: 'c_' + uid(), en: d.cen, ja: d.cja || '', varieties: [], custom: true };   // the rest comes from the crop it's most like
+          const cr = { id: 'c_' + uid(), en: d.cen, varieties: [], custom: true };   // the rest comes from the crop it's most like
           if (+d.cdays > 0) cr.daysHarvest = +d.cdays;
           if (!readOwnCropFields(m.querySelector('#sdf'), cr)) return;
           (S.customCrops = S.customCrops || []).push(cr); d.cropId = cr.id;

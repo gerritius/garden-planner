@@ -103,9 +103,11 @@ export function groupTabs(route) {
 export function pageCredits() {
   setChrome('Credits', { back: true, kicker: 'Data and fonts the app uses' });
   const a = (href, t) => `<a href="${href}" target="_blank" rel="noopener">${t}</a>`;
-  const html = `<section><h3>Weather and climate</h3>
-      <p>Weather data by ${a('https://open-meteo.com/', 'Open-Meteo.com')}, licensed under ${a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')} — the forecast, recent weather, and the 10-year records your climate, frost dates and sowing months are worked out from.</p>
-      <p class="small muted">Open-Meteo’s historical records are based on the ERA5 reanalysis from the ${a('https://climate.copernicus.eu/', 'Copernicus Climate Change Service')} (ECMWF); its forecasts combine national weather services’ models.</p></section>
+  const html = `<section><h3>Weather forecast</h3>
+      <p>Weather data by ${a('https://open-meteo.com/', 'Open-Meteo.com')}, licensed under ${a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')} — the forecast and the last few days’ weather. Its forecasts combine national weather services’ models.</p></section>
+    <section><h3>Climate</h3>
+      <p>The usual temperatures, rainfall and frost dates for your location (and so your sowing months) are worked out by the app from the ERA5 hourly records for 2016–2025: Hersbach, H. et al. (2023), ${a('https://doi.org/10.24381/cds.adbb2d47', 'ERA5 hourly data on single levels from 1940 to present')}, Copernicus Climate Change Service (C3S) Climate Data Store, licensed under ${a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')}; read from Google’s ${a('https://github.com/google-research/arco-era5', 'ARCO-ERA5')} copy.</p>
+      <p class="small muted">Contains modified Copernicus Climate Change Service information 2026. Neither the European Commission nor ECMWF is responsible for any use that may be made of the Copernicus information or data it contains.</p></section>
     <section><h3>Place search</h3><p>${a('https://open-meteo.com/en/docs/geocoding-api', 'Open-Meteo Geocoding')}, using data from ${a('https://www.geonames.org/', 'GeoNames')} (${a('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0')}).</p></section>
     <section><h3>Fonts</h3><p>Zilla Slab (Mozilla / Typotheque) and Caveat (Pablo Impallari), both under the ${a('https://openfontlicense.org/', 'SIL Open Font License 1.1')}.</p></section>
     <section><h3>Crop information</h3><p>Growing times, temperatures and spacings are typical values gathered for this app — always check your seed packet and local advice. The app looks nothing up about pesticides: spray rules are what you enter from each label.</p></section>`;

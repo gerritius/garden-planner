@@ -21,6 +21,7 @@ use — so to see where something comes from, look at the `import` lines.
 | `js/plants/` | Crops, how plants develop with temperature (sprouting, thinning, harvest), seedlings, covers, problems, varieties |
 | `js/garden/` | Beds and pots, the map, jobs, watering, soil readings, rotation, season planning, "what could go here?" |
 | `js/climate/` | Climate from your location, sowing windows, weather forecast and alerts |
+| `climate/` | The world climate tiles the app reads its location's usual weather from (made by `tools/era5/build.py` from ERA5; one 5° tile per download) |
 | `js/feeding/` | Nutrients, the feeding card, the day-by-day food model, side-dressing stages, feeding plans, potting mix |
 | `js/products/` | Your product library, product pages, sprays and their legal use |
 | `js/records/` | The log, past crops, season review and totals, notes and photo timelines |

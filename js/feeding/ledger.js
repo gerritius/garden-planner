@@ -143,5 +143,5 @@ export function feedingSection(p) {
       ${sim && L.need ? `<p class="small">${fateLine(sim, L, p)}</p>` : ''}
       ${npkBars(L)}${pkNote(L, p) ? `<p class="small">${pkNote(L, p)}</p>` : ''}
       <table class="ledger">${rows}</table>
-      <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use, worked out from each product’s N-P-K analysis (as on Japanese labels: N, P₂O₅, K₂O). “Fed until” follows when each feed releases, what the crop takes as it grows, and what washes out with watering and rain. All rough — trust how the plants look.</p></details></section>`;
+      <p class="hint"><b>N</b> nitrogen — leaves and growth, the one that most often runs short. <b>P</b> phosphate — roots, flowering and fruit set. <b>K</b> potash — fruit, roots and toughness. Grams plants can use, worked out from each product’s N-P-K analysis (as on most labels: N, P₂O₅, K₂O). “Fed until” follows when each feed releases, what the crop takes as it grows, and what washes out with watering and rain. All rough — trust how the plants look.</p></details></section>`;
 }

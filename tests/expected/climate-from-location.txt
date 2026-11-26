@@ -3,6 +3,6 @@ climate: ["Melbourne","2016–2025",[21.3,21.4,19.4],[47,48,50]] calls 1
 kicker: For Melbourne | tomato 10,11,12 | garlic 3,4 | normalT(Jul) 11
 after edit tomato 8,10,11 | own mark true {"tomato":[8,10,11]}
 after reset tomato 10,11,12
-settings: ClimateSowing months, growth and harvest estimates, frost and watering use the usual weather for Melbourne (2016–2025 averages). J21°F21°M19°A17°M14°J12°J11°A12°S14°O16°N18°D20° ↻ Refresh climate for Melbourne | calls 1
+settings: ClimateSowing months, growth and harvest estimates, frost and watering use the usual weather for Melbourne (2016–2025 averages). J21°F21°M19°A17°M14°J12°J11°A12°S14°O16°N18°D20°❄ No frost in the last 10 winters. ↻ Refres | calls 1
 back to Tokyo normalT(Jul) 25 | tomato 4,5,6
 errs []

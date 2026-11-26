@@ -23,10 +23,10 @@ const U = 'http://localhost:8765/', PHOTO = path.join(__dirname, '..', 'fixtures
   // a variety of a crop the app doesn't know: the crop is made too
   await pg.click('[data-act=addSeed]'); await pg.waitForTimeout(200);
   await pg.selectOption('#sdf [name=cropId]', '__new'); await pg.waitForTimeout(200);
-  await pg.fill('#sdf [name=cen]', 'Okahijiki'); await pg.fill('#sdf [name=cja]', 'おかひじき'); await pg.selectOption('#sdf [name=like]', 'spinach'); await pg.fill('#sdf [name=cdays]', '40'); await pg.fill('#sdf [name=variety]', 'Midori');
+  await pg.fill('#sdf [name=cen]', 'Okahijiki'); await pg.selectOption('#sdf [name=like]', 'spinach'); await pg.fill('#sdf [name=cdays]', '40'); await pg.fill('#sdf [name=variety]', 'Midori');
   await pg.click('#sdf button.primary'); await pg.waitForTimeout(400);
   console.log('library:', await pg.evaluate(() => S.seeds.map(s => `${crop(s.cropId).en} · ${s.variety} · ${s.maker || '-'} · packet ${!!s.front}`).join(' | ')));
-  console.log('new crop:', await pg.evaluate(() => { const c = S.customCrops.find(x => x.en === 'Okahijiki'); return c && `${c.en} ${c.ja} ${c.daysHarvest} days, in the crop list: ${allCrops().some(x => x.id === c.id)}`; }));
+  console.log('new crop:', await pg.evaluate(() => { const c = S.customCrops.find(x => x.en === 'Okahijiki'); return c && `${c.en} ${c.daysHarvest} days, in the crop list: ${allCrops().some(x => x.id === c.id)}`; }));
   console.log('listed:', (await pg.$$eval('#view section h3', x => x.map(h => h.textContent.trim()))).join(' | '), '| rows', await pg.$$eval('#view [data-act=editSeed]', x => x.length));
   // planting: choosing the variety brings its packet
   await pg.goto(U + '#/plant/new/b1?from=0&to=100'); await pg.waitForTimeout(400);

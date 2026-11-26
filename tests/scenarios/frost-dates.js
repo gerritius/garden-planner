@@ -1,8 +1,8 @@
 // Frost dates from the daily lows in the 10-year records: the usual first and last frost (median), shown in Tools; frost-
 // tender crops go out after the last and are done (or stop picking) by the first; autumn potatoes end at the first frost.
-// A place where frost is rare gets no frost dates. (Mocked archive: a Denver-like place, lows 8 °C under the daily mean,
+// A place where frost is rare gets no frost dates. (A made-up climate tile: a Denver-like place, lows 8 °C under the daily mean,
 // each winter a little different.)
-const { newContext } = require('../lib');
+const { newContext, climateTile } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
 const DEN = [0.0, 0.9, 5.0, 9.0, 14.0, 19.6, 23.5, 22.4, 17.6, 10.8, 4.4, -0.4], MILD = [12.5, 13, 14.5, 16.5, 19, 21.5, 24, 25, 23.5, 20.5, 17, 14];
@@ -15,7 +15,7 @@ const archive = (T, spread, shiftBy) => { const time = [], mean = [], min = [], 
   const b = await chromium.launch(); const ctx = await newContext(b);
   await ctx.route('**/api.open-meteo.com/**', r => r.abort());
   let place = 'den';
-  await ctx.route('**/archive-api.open-meteo.com/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(place === 'den' ? archive(DEN, 8, s => s) : archive(MILD, 9.5, s => s * 1.5)) }));
+  await ctx.route(u => /\/climate\/\d+_\d+\.bin$/.test(u.pathname), r => r.fulfill({ body: climateTile((place === 'den' ? archive(DEN, 8, s => s) : archive(MILD, 9.5, s => s * 1.5)).daily) }));
   const pg = await ctx.newPage(); const errs = []; pg.on('pageerror', e => errs.push(e.message));
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => { S.plantings = []; S.tasks = []; S.containers = [{ id: 'b1', type: 'bed', name: 'Plot A', width: 100, length: 200, margin: 10, history: [], covers: [] }];

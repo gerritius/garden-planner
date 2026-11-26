@@ -41,8 +41,9 @@ from the current code with `npm run fixture`, or from an older version with `nod
 
 - **The date is fixed** at 18 November 2026, 10:00 Tokyo time (see `tests/lib.js`), so results don't change from day
   to day. Scenarios that need another date set their plantings' dates explicitly.
-- **No internet**: weather, the climate archive and Google Drive are simulated inside the scenarios that need them; any
-  other outside request is blocked.
+- **No internet**: weather and Google Drive are simulated inside the scenarios that need them; any other outside request
+  is blocked. The app's climate tiles aren't served either, unless a scenario serves its own (`climateTile` in
+  `tests/lib.js` makes one from made-up daily records) or the real ones (`climate-tiles`).
 - **Screenshots** some scenarios take go to `tests/output/<name>/` (not kept in git) — handy for checking layouts by eye.
 - Each scenario starts with an empty app in a fresh browser, so they don't affect each other.
 - **Reaching into the app**: the app is made of ES modules, so its functions aren't globals. `tests/lib.js` adds a small
@@ -58,6 +59,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `back-button-and-popups` | The phone's Back button closes pop-ups instead of leaving the page |
 | `bee-warning` | Bee-harmful ingredients recognised in any product (names, brands, registry); the spray days page lists your sprays that have them |
 | `climate-from-location` | Fetching the climate for a location (simulated), the sowing calendar following it, editing a crop's months |
+| `climate-tiles` | The real climate tiles: spot checks around the world, a garden's height, open sea and Antarctica, picking a place |
 | `copy-planting-to-pots` | "Same in other pots": copying a planting, its jobs and feedings to other pots |
 | `crops-like` | A crop of your own must say which crop it's most like; it then takes everything it doesn't give from it (not spray registrations) |
 | `crop-sanity` | Every crop, sown in every month the app offers, in Tokyo, Sapporo, Kagoshima and Naha: timings must make sense ("problems: none") |

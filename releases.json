@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.52.1",
+    "date": "2026-11-26",
+    "notes": [
+      "Dark theme: the spray days list is readable again, as are search highlights, held crops on “OK to pick?”, and the plan, cover and warning chips.",
+      "Spray and pest tips no longer name a particular brand."
+    ]
+  },
+  {
     "version": "1.52.0",
     "date": "2026-11-26",
     "notes": [

@@ -28,7 +28,7 @@ const PROBLEMS = [
   ['aphids', 'Aphids', '', ['all'], ['clusters', 'mosaic'], [3, 4, 5, 6, 9, 10, 11], [], 'aphids', 'Look under leaves and on new shoots for green/black soft insects; ants often run up and down.',
     ['Squash or hose them off; pick off badly infested leaves', 'Silver reflective mulch and insect netting keep them off young plants', 'Go easy on nitrogen — soft lush growth attracts them', 'Ladybirds and lacewing larvae eat them — don’t spray if they’re already at work']],
   ['aomushi', 'Cabbage white caterpillars', '', BRAS, ['holes', 'frass'], [4, 5, 6, 9, 10, 11], [], 'caterpillars', 'Velvety green caterpillars along the leaf veins; white butterflies around; yellow eggs under leaves.',
-    ['Insect netting from planting day is the best fix', 'Pick off caterpillars and rub off eggs on each check', 'BT (in Benica Natural) only harms caterpillars — good organic choice']],
+    ['Insect netting from planting day is the best fix', 'Pick off caterpillars and rub off eggs on each check', 'BT (Bacillus thuringiensis) sprays only harm caterpillars — a good organic choice']],
   ['konaga', 'Diamondback moth', '', BRAS, ['skeleton', 'holes', 'frass'], [4, 5, 6, 9, 10, 11], [], 'caterpillars', 'Small (1 cm) pale green caterpillars that wriggle and drop on a thread when touched; see-through “windows” in leaves.',
     ['Insect netting (fine mesh, 0.8 mm or less)', 'Pick off; check the heart of young plants', 'Alternate sprays — it builds resistance quickly']],
   ['yotou', 'Armyworms / cutworm moths', '', ['all'], ['holes', 'frass', 'skeleton'], [5, 6, 9, 10, 11], [], 'caterpillars', 'Big holes overnight, nothing visible by day: look at night with a torch, or dig gently around the base — fat grey-brown caterpillars hide in the soil.',

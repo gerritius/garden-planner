@@ -216,7 +216,7 @@ function sprayDaysHTML(compact) {
 }
 function sprayDayInfo() {
   return `<ul class="bul small"><li>A good window is dry for the hour and the <b>6 hours after</b> (and wasn’t raining just before), wind under 3 m/s (gusts under ~7 m/s), and 5–28 °C.</li>
-    <li>Most sprays need a few dry hours to stick; rain soon after washes them off. Benica Natural works by contact, so it also needs to hit the pests directly.</li>
+    <li>Most sprays need a few dry hours to stick; rain soon after washes them off. Contact sprays (soaps, oils, most organic ones) only work where they hit the pests, so cover the undersides of leaves too.</li>
     ${beeNote()}
     <li>Spray in the cool of the day: oily sprays and hot sun can scorch leaves.</li></ul>`;
 }

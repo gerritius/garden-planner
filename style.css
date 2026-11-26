@@ -291,6 +291,7 @@ legend { font-family: var(--hand); font-weight: 600; font-size: 24px; padding: 0
 .wxd b { font-size: 15px; font-family: var(--head); }
 .wxd .lo { color: var(--muted); }
 .wxd .rn { color: #3d7fb8; font-size: 11px; }
+:root[data-theme="dark"] .wxd .rn { color: #7fb4e2; }
 .wxfoot { font-size: 11px; color: var(--muted); text-align: right; margin-top: 4px; }
 .wxcredit { font-size: 12px; font-style: italic; text-align: left; margin: 0 0 4px; }
 .wxcredit a { color: inherit; text-decoration: none; }
@@ -342,6 +343,7 @@ legend { font-family: var(--hand); font-weight: 600; font-size: 24px; padding: 0
 #rotWarn.note { color: var(--muted); font-size: 14px; }
 :root[data-theme="dark"] #rotWarn.warn { background: #3d2a1c; border-color: #7a4f2c; color: #f3cfa9; }
 .warnchip { display: inline-block; background: #fbe9d8; color: #8a4a1a; border-radius: 4px; padding: 0 6px; font-size: 13px; }
+:root[data-theme="dark"] .warnchip { background: #43281c; color: #f6c9ad; }
 
 /* ---------- v1.3 additions ---------- */
 .btns.col { flex-direction: column; }
@@ -394,6 +396,7 @@ legend { font-family: var(--hand); font-weight: 600; font-size: 24px; padding: 0
 button.dthumb { font: inherit; width: 100%; }
 .pestdot { position: absolute; top: 3px; right: 3px; font-style: normal; font-size: 14px; }
 mark { background: #f6e3a1; color: inherit; border-radius: 2px; }
+:root[data-theme="dark"] mark { background: #6b5520; color: #fbefd0; }
 #sres h3 { margin-top: 16px; }
 
 .plot .gap.newsec { fill: rgba(255,240,200,.35); stroke: #fff; stroke-dasharray: 5 3; }
@@ -463,6 +466,7 @@ table.reg.rain td, table.reg.rain th { padding: 5px 6px; }
 .banner.plan { display: block; }
 .banner.plan .btnrow { margin-top: 8px; }
 .planchip { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #e8eef7; color: #3a5a8a; }
+:root[data-theme="dark"] .planchip { background: #24324a; color: #bcd0ee; }
 section.plan h3 small { font-weight: 400; font-size: 12px; }
 .tl, .tlmonths { margin: 2px 0; }
 .tlrow, .tlmonths { display: flex; align-items: center; gap: 6px; min-height: 26px; }
@@ -485,6 +489,8 @@ li.gap .chip { text-decoration: none; display: inline-flex; align-items: center;
 .spd { display: flex; gap: 10px; padding: 8px 10px; border-radius: 10px; background: #f3ece4; font-size: 14px; }
 .spd b { flex: 0 0 52px; }
 .spd.ok { background: #e4efd8; }
+:root[data-theme="dark"] .spd { background: var(--chip); }
+:root[data-theme="dark"] .spd.ok { background: #2f4a22; color: #dcefc8; }
 /* problem finder */
 .signs .chip { font-size: 13px; text-align: left; }
 .signs .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
@@ -494,6 +500,7 @@ section.dx h3 { margin-top: 0; }
 .soilb { margin-left: 4px; font-size: 11px; }
 .soilb.s0 { color: #3d7fb8; } .soilb.s1 { color: #b0832a; } .soilb.s2 { color: #3f7a34; }
 .hint.soil.s0 { color: #3d7fb8; }
+:root[data-theme="dark"] .soilb.s0, :root[data-theme="dark"] .hint.soil.s0 { color: #7fb4e2; } :root[data-theme="dark"] .soilb.s1 { color: #e0b45a; } :root[data-theme="dark"] .soilb.s2 { color: #8bb26a; }
 /* shopping & spending */
 .plist.shop li { display: flex; align-items: center; gap: 10px; }
 .plist.shop li.got .grow b { text-decoration: line-through; color: var(--muted); }
@@ -520,6 +527,7 @@ button.pkt small { display: block; color: var(--muted); font-size: 11px; }
 .plot .cover.shade .coveredge { stroke: #2b302b; }
 .covchips { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .covchip { font-size: 11px; padding: 1px 6px; border-radius: 8px; background: #e7eef5; color: #2f4f6f; }
+:root[data-theme="dark"] .covchip { background: #22303a; color: #bcd6ea; }
 .plist.covers li { display: flex; align-items: center; gap: 10px; }
 a.variety { display: block; color: inherit; text-decoration: none; }
 a.variety small { color: var(--green); font-size: 12px; }
@@ -530,6 +538,7 @@ li.rot .sowchips { margin: 6px 0 2px; }
 .tlgrid a { text-decoration: none; color: var(--muted); font-size: 11px; }
 .tlgrid img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; display: block; }
 .plist.pick li.hold { background: #fbeee9; }
+:root[data-theme="dark"] .plist.pick li.hold { background: #43281c; }
 a.banner { display: block; text-decoration: none; color: inherit; }
 /* tools tiles & folded settings */
 .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 14px; }

@@ -1,7 +1,7 @@
 start: today 2026-11-18 (really 2026-11-18) · shift 0 · badge "TEST SITE"
 +30 d: today 2026-12-18 (really 2026-11-18) · shift 30 · badge "TEST SITE · ⏩ 18 Dec"
   records asked for: 2025-12-11…2025-12-24
-  forecast: Today18°8° | Tmrw18°8° | Sun19°9°12mm | Mon19°9° | Higashiyamato · Open-Meteo · ⏩ what the weather did on these days in 2025
+  forecast: Today18°8° | Tmrw18°8° | Sun19°9°12mm | Mon19°9° | ⏩ what the weather did on these days in 2025
   spinach harvest 2026-12-15 | jobs today: Water Plot A; Check seedlings are up (expected 13 Nov–18 Nov); Earliest harvest – check crop
 to 10 Jun: today 2026-06-10 (really 2026-11-18) · shift -161 · badge "TEST SITE · ⏩ 10 Jun" | records 2026-06-03…2026-06-16
   Tools: Move the test garden to another date to see how plantings, jobs, feeding and harvests play out. The app thinks today is Wed 10 Jun — 161 days back (really Wed 18 Nov).

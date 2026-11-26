@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.51.1",
+    "date": "2026-11-26",
+    "notes": [
+      "The forecast strip spans the full width again with its 6 days, and the Open-Meteo credit sits above it in small italics."
+    ]
+  },
+  {
     "version": "1.51.0",
     "date": "2026-11-26",
     "notes": [

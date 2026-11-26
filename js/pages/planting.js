@@ -17,7 +17,7 @@ import { crop, cropName, ic } from '../plants/crops.js';
 import { germChecks, germDialog, germText, pctText } from '../plants/germination.js';
 import { germWindow, harvestNote, harvestWindowText, lastLeaves, leafDialog, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
-import { drawFill, fillTarget, mergeAsFill, start, startWhere } from '../plants/seedlings.js';
+import { drawFill, fillTarget, mergeAsFill, start, startLeft, startWhere, syncStartTasks } from '../plants/seedlings.js';
 import { sprayBanner, spraySection, spraysFor } from '../products/sprays.js';
 import { pastCropDialog } from '../records/history.js';
 import { harvestDialog, harvestSection, logFeed, logSection } from '../records/log.js';
@@ -129,6 +129,9 @@ export function pagePlant(p) {
 export async function removePlanting(p) {
   S.tasks = S.tasks.filter(t => t.plantingId !== p.id);
   S.plantings = S.plantings.filter(x => x !== p);
+  // seedlings planted out from a tray (or filled into gaps) go back there: deleting a planting undoes planting them out
+  for (const st of S.starts || []) { const before = (st.events || []).length; st.events = (st.events || []).filter(e => e.pid !== p.id);
+    if (st.events.length !== before) { if (startLeft(st) > 0) st.status = 'growing'; syncStartTasks(st); } }
   { const mc = container(p.containerId); if (mc && mc.mixLog) mc.mixLog = mc.mixLog.filter(e => e.pid !== p.id); }
   for (const id of [...Object.values(p.photos || {}), ...(p.diary || []).map(d => d.photo)]) if (id) await dropPhoto(id);
   const c = container(p.containerId);

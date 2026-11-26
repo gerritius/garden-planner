@@ -31,5 +31,8 @@ const U = 'http://localhost:8765/';
   console.log('after "place just these":', await banner(), '| layout', await pg.inputValue('#pf select[name=layout]'), '| positions', await pg.evaluate(() => (draft.positions || []).length));
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(500);
   console.log('saved: cells left', await pg.evaluate(() => startLeft(start('st'))), '| tray', await pg.evaluate(() => start('st').status), '| plants in the bed', await pg.evaluate(() => { const p = S.plantings.find(x => x.containerId === 'b1'); return Draw.count(container('b1'), p); }));
+  // deleting a planting puts its seedlings back in the tray (to plant them out again, differently)
+  await pg.evaluate(async () => { await removePlanting(S.plantings.find(x => x.containerId === 'g1')); await save(); });
+  console.log('bag planting deleted: cells back in the tray', await pg.evaluate(() => startLeft(start('st'))));
   console.log('errs', errs); await b.close();
 })();

@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.48.1",
+    "date": "2026-11-26",
+    "notes": [
+      "Deleting a planting that came from your seedlings puts them back in their tray or pots — so a plant-out that went wrong can be undone and done again."
+    ]
+  },
+  {
     "version": "1.48.0",
     "date": "2026-11-26",
     "notes": [

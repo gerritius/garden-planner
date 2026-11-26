@@ -1,8 +1,8 @@
 wx tasks [["wind","2026-11-19","Secure supports & nets before strong wind on Fri (gusts 62 km/h)"],["rain","2026-11-20","Prepare for heavy rain on Sat (55 mm)"]]
 spray line none
 gaps [
-  '0–100 cm free from 31 Dec · after Chinese cabbage (napa) Spinach 🪴 done ~13 FebShungiku (edible chrysanthemum) 🌱 done ~12 AprSwiss chard 🌱 done ~26 AprLettuce 🪴 done ~27 Apr💡 More ideas…',
-  '100–200 cm free from 10 Jun · after Snap pea Komatsuna 🪴 done ~8 JulRadish 🌱 done ~19 JulMizuna 🌱 done ~20 JulRocket (rucola) 🌱 done ~26 Jul💡 More ideas…',
+  '0–100 cm free from 31 Dec · after Chinese cabbage (napa) Spinach 🪴 done ~13 FebCorn salad (mâche) 🪴 done ~2 AprShungiku (edible chrysanthemum) 🌱 done ~12 AprSwiss chard 🌱 done ~26 Apr💡 More ideas…',
+  '100–200 cm free from 10 Jun · after Snap pea Komatsuna 🪴 done ~8 JulRadish 🌱 done ~19 JulMizuna 🌱 done ~20 JulAmaranth greens (callaloo) 🏠 done ~24 Jul💡 More ideas…',
   'Whole pot free now Mizuna 🪴 done ~24 DecKomatsuna 🪴 done ~27 DecRocket (rucola) 🪴 done ~27 DecSpinach 🪴 done ~29 Dec💡 More ideas…'
 ]
 cabbage chip null

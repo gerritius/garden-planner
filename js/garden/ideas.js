@@ -110,7 +110,7 @@ export function ideasDialog(c, a, b, s, e, onPick) {
     const mine = startsGrowing().filter(st => list.some(x => x.cr.id === st.cropId));
     const li = x => `<li data-idea="${x.cr.id}">${ic(x.cr.id)}<span class="grow"><b>${esc(cropName(x.cr.id))}</b>
       <small>${ideaText(x.best)} → ready ~${shortDate(x.best.ready)}, done ~${shortDate(x.best.done)}${x.alt ? ` · or ${ideaText(x.alt).replace(/^\S+ (\S)/, (m0, ch) => ch.toLowerCase())}, done ~${shortDate(x.alt.done)}` : ''}</small>
-      ${ideaSoilNotes(c, a, b, x.cr.id) + ideaColdSoil(c, a, b, x.cr.id, x.best)}${x.sameFam ? `<small class="warn">⚠ same family as the ${esc(crop(x.prev.cropId).en.toLowerCase())} before it</small>` : ''}${x.cold && !x.best.cover ? '<small>❄ slow in the cold — a tunnel or Fushokufu speeds it up</small>' : ''}</span>›</li>`;
+      ${ideaSoilNotes(c, a, b, x.cr.id) + ideaColdSoil(c, a, b, x.cr.id, x.best)}${x.sameFam ? `<small class="warn">⚠ same family as the ${esc(crop(x.prev.cropId).en.toLowerCase())} before it</small>` : ''}${x.cold && !x.best.cover ? '<small>❄ slow in the cold — a tunnel or fleece speeds it up</small>' : ''}</span>›</li>`;
     m.querySelector('.sheet').innerHTML = `<h3>💡 What could go in ${esc(part)}?</h3>
       <p class="muted small">${esc(c.name)} · free ${s <= td ? 'now' : 'from ' + shortDate(s)}${e ? ` until ${shortDate(e)}` : ''}</p>
       ${ideaSoilBanner(c, a, b)}

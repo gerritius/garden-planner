@@ -26,7 +26,7 @@ function migrateGlosses() {
 }
 const STEPS = [
   { to: 2, what: 'harvest dates typed in by hand stay as they are', run: migrateHarvestDates },
-  { to: 3, what: 'cover names: fleece and cloche → fushokufu, bird net → insect net', run: migrateCovers },
+  { to: 3, what: 'cover names: cloche → fleece, bird net → insect net', run: migrateCovers },
   { to: 4, what: 'chemical fertiliser 8-8-8 joins the ticked products', run: migrateFeed },
   { to: 5, what: 'liquid feeds written with their N-P-K become your own products', run: migrateOwnProducts },
   { to: 6, what: 'all products become one editable library', run: migrateProducts },

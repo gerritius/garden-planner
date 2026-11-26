@@ -35,7 +35,8 @@ export const FAMILIES = {
   aster: ['Aster (daisy family)'], amaranth: ['Amaranth (spinach family)'], grass: ['Grass family'],
   morningglory: ['Morning glory family'], aroid: ['Aroid (taro family)'], rose: ['Rose family'],
   mallow: ['Mallow family (okra)'], ginger: ['Ginger family'], mint: ['Mint family (shiso, basil)'],
-  basella: ['Basella family (Malabar spinach)'], yam: ['Yam family'], other: ['Other'],
+  basella: ['Basella family (Malabar spinach)'], yam: ['Yam family'], valerian: ['Valerian family (corn salad)'], iceplant: ['Ice plant family (New Zealand spinach)'],
+  other: ['Other'],
 };
 // How crops are grouped when you choose yours (what you'd look under, not botany).
 export const GROUPS = {

@@ -1,5 +1,5 @@
 without "most like": Choose the crop it’s most like — it’s grown the same way, so the app knows how to plan it. | saved: 0
-"most like" offers: Brassica 26, Nightshade 9, Legume 11, Allium 9, Cucurbit 10, Umbellifer 6, Aster 8, Amaranth 4, Grass family 1, Morning glory family 2, Aroid 1, Rose family 1, Mallow family 2, Ginger family 1, Mint family 3, Basella family 1, Yam family 1
+"most like" offers: Brassica 29, Nightshade 14, Legume 16, Allium 10, Cucurbit 16, Umbellifer 12, Aster 10, Amaranth 6, Grass family 2, Morning glory family 2, Aroid 1, Rose family 1, Mallow family 2, Ginger family 1, Mint family 4, Basella family 1, Yam family 1, Valerian family 1, Ice plant family 1
 stored (only what was entered): {"id":"ID","custom":true,"like":"komatsuna","tempLo":null,"tempHi":null,"tpDays":null,"en":"Tatsoi"}
 same as komatsuna: {"spacing":true,"family":true,"sowMonths":true,"germ":true,"growth":true,"plantOut":true,"careJobs":true,"icon":true,"harvest":"2026-10-15"}
 own 45 days → harvest 2026-10-24 vs komatsuna 2026-10-15

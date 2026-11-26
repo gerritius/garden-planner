@@ -6,7 +6,8 @@ sow chips [
   'Onion',
   'Snow pea◐',
   'Broad bean◐',
-  'Green peas (shelling)◐'
+  'Green peas (shelling)◐',
+  'Corn salad (mâche)◐'
 ]
 dx [
   'Best match: Cabbage white caterpillars',

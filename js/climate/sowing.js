@@ -78,7 +78,7 @@ export function sowDayOK(cr, d) {
   if (pr.rising || pr.falling) {   // a set season — and then it still has to make it, like any other crop
     // (where the winter is mild the warming season is gentle and long: a wider band, with the heat at the end as the limit —
     // potatoes go in through August–September on the highveld, but not into Sydney's October, where they'd fill in the heat)
-    const r0 = fromCold(pr.rising, coldest, cap), wide = !!r0 && r0 !== pr.rising, rising = wide ? [r0[0], Math.min(cap, r0[1] + 4)] : r0;
+    const r0 = fromCold(pr.rising, coldest, cap), wide = !!r0 && coldest - pr.rising[0] >= 3, rising = wide ? [r0[0], Math.min(cap, r0[1] + 4)] : r0;
     if (!((warm && rising && T >= rising[0] && T <= rising[1]) || (!warm && pr.falling && T >= pr.falling[0] && T <= pr.falling[1]))) return false;
     // planted as it warms, the cold is behind it; planted as it cools, it has to be done before the cold — except crops
     // dug when frost takes the tops (autumn potatoes), which only need the growing weeks before that
@@ -127,7 +127,7 @@ export function sowWindow(cr) {
   const m2 = months(2); return m2.length ? m2 : months(1);
 }
 // every crop's months: yours if you've set them, otherwise worked out (the original chart is kept as sowRef)
-const SOW_RULES_VER = 8;   // bump when the rules change, so stored windows are worked out again
+const SOW_RULES_VER = 9;   // bump when the rules change, so stored windows are worked out again
 export function applySowWindows() {
   const crops = allCrops(), key = [SOW_RULES_VER, NORMAL_T.join(','), JSON.stringify((climateHere() || {}).frost || null), Math.round(gardenLat() * 10), crops.map(c => c.id + ':' + (c.like || '') + ':' + (c.daysHarvest || 0)).join(',')].join('|');
   const cache = S.sowCache && S.sowCache.key === key ? S.sowCache.m : null, worked = {};

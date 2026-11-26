@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.52.0",
+    "date": "2026-11-26",
+    "notes": [
+      "Your location’s usual weather (temperatures, rainfall and frost dates, which set the sowing months) now comes from the app’s own world climate map, made from the ERA5 records for 2016–2025: one small download for your area, once, with nothing asked of a weather service. It allows for your garden being higher or lower than the surrounding land, and frost dates were checked against weather-station records around the world.",
+      "Gardens that already have a location update to it once, the next time the app opens online.",
+      "Credits lists the ERA5 records.",
+      "Leftover Japanese wording is gone: adding a crop of your own no longer asks for a Japanese name, and the place search, seed company and feeding examples are general."
+    ]
+  },
+  {
     "version": "1.51.1",
     "date": "2026-11-26",
     "notes": [

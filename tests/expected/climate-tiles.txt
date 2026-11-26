@@ -1,23 +1,23 @@
-Sydney        Jan 22.9° Jul 13.5° · rain 1025 mm/yr · grid 47 m · frost 0/10 winters —–—
-Higashiyamato Jan 4.7° Jul 26.9° · rain 1697 mm/yr · grid 201 m · frost 9/9 winters 15 Dec–12 Mar
-Oslo          Jan -2.5° Jul 18.5° · rain 1033 mm/yr · grid 204 m · frost 9/9 winters 29 Oct–28 Apr
-Denver        Jan -1.1° Jul 24.0° · rain 510 mm/yr · grid 1730 m · frost 9/9 winters 18 Oct–25 Apr
-Johannesburg  Jan 19.7° Jul 9.5° · rain 798 mm/yr · grid 1590 m · frost 10/10 winters 10 Jun–13 Aug
+Sydney        Jan 22.9° Jul 13.5° · rain 1025 mm/yr · grid 47 m · frost 1/10 winters 17 Jul–23 Jul
+Higashiyamato Jan 4.7° Jul 26.9° · rain 1697 mm/yr · grid 201 m · frost 9/9 winters 9 Dec–15 Mar
+Oslo          Jan -2.5° Jul 18.5° · rain 1033 mm/yr · grid 204 m · frost 9/9 winters 21 Oct–5 May
+Denver        Jan -1.1° Jul 24.0° · rain 510 mm/yr · grid 1730 m · frost 9/9 winters 10 Oct–27 Apr
+Johannesburg  Jan 19.7° Jul 9.5° · rain 798 mm/yr · grid 1590 m · frost 10/10 winters 5 Jun–21 Aug
 Nairobi       Jan 19.4° Jul 17.0° · rain 681 mm/yr · grid 1666 m · frost 0/10 winters —–—
-London        Jan 5.3° Jul 18.7° · rain 723 mm/yr · grid 64 m · frost 9/9 winters 23 Nov–27 Mar
-Reykjavik     Jan -0.2° Jul 11.9° · rain 1357 mm/yr · grid 119 m · frost 9/9 winters 16 Oct–5 May
+London        Jan 5.3° Jul 18.7° · rain 723 mm/yr · grid 64 m · frost 9/9 winters 10 Nov–3 Apr
+Reykjavik     Jan -0.2° Jul 11.9° · rain 1357 mm/yr · grid 119 m · frost 9/9 winters 9 Oct–13 May
 Quito         Jan 13.2° Jul 13.5° · rain 3360 mm/yr · grid 2785 m · frost 0/9 winters —–—
 Singapore     Jan 26.6° Jul 27.9° · rain 2793 mm/yr · grid 21 m · frost 0/9 winters —–—
-Christchurch  Jan 17.7° Jul 7.7° · rain 694 mm/yr · grid 67 m · frost 7/10 winters 9 Jun–16 Sept
-Phoenix       Jan 12.3° Jul 36.0° · rain 243 mm/yr · grid 392 m · frost 2/9 winters 9 Jan–12 Jan
-Winnipeg      Jan -13.9° Jul 20.4° · rain 609 mm/yr · grid 235 m · frost 9/9 winters 9 Oct–3 May
+Christchurch  Jan 17.7° Jul 7.7° · rain 694 mm/yr · grid 67 m · frost 7/10 winters 8 Jun–17 Sept
+Phoenix       Jan 12.3° Jul 36.0° · rain 243 mm/yr · grid 392 m · frost 5/9 winters 3 Jan–21 Jan
+Winnipeg      Jan -13.9° Jul 20.4° · rain 609 mm/yr · grid 235 m · frost 9/9 winters 3 Oct–14 May
 Cape Town     Jan 20.7° Jul 13.2° · rain 506 mm/yr · grid 38 m · frost 0/10 winters —–—
-Hobart        Jan 18.2° Jul 9.1° · rain 674 mm/yr · grid 191 m · frost 3/10 winters 21 Jul–8 Aug
-Fairbanks     Jan -17.4° Jul 18.4° · rain 481 mm/yr · grid 230 m · frost 9/9 winters 27 Sept–3 May
-16 tiles fetched, 16 kB each on average
-Denver +300 m: Jan -1.9° → -3.8°, frost 101–299 → 99–315 (days from 1 July)
+Hobart        Jan 18.2° Jul 9.1° · rain 674 mm/yr · grid 191 m · frost 5/10 winters 1 Jul–23 Aug
+Fairbanks     Jan -17.4° Jul 18.4° · rain 481 mm/yr · grid 230 m · frost 9/9 winters 24 Sept–6 May
+16 tiles fetched, 17 kB each on average
+Denver +300 m: Jan -1.9° → -3.8°, frost 101–303 → 98–325 (days from 1 July)
 open sea / Antarctica: [ 'open sea: no climate tile', 'no climate tile here' ]
-picked: Johannesburg 2016–2025 src era5-2016-2025 · Jan 19.7° Jul 9.5° · frost {"winters":10,"frosty":10,"first":160,"last":224,"south":true} · pending false
-frost text: Frosts usually from about 10 Jun to 13 Aug (10 of the last 10 winters had frost — in half of them it came earlier, or lasted later).
+picked: Johannesburg 2016–2025 src era5-2016-2025 · Jan 19.7° Jul 9.5° · frost {"winters":10,"frosty":10,"first":155,"last":232,"south":true} · pending false
+frost text: Frosts usually from about 5 Jun to 21 Aug (10 of the last 10 winters had frost — in half of them it came earlier, or lasted later).
 height 1953 m: Jan 18.4° Jul 8.2° | downloads 0
 errs []

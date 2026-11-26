@@ -37,6 +37,8 @@ export const cropName = id => crop(id).en;
 export const varieties = id => [...new Set((S.seeds || []).filter(s => s.cropId === id && s.variety).map(s => s.variety))];   // (yours: the app has no list of varieties)
 // its own icon, or one shaped like the crop named in its record (icon), or the crop it's like
 export const ic = (id, size = 22) => { const c = crop(id); return Icons.crop(id, size, c.color, c.icon || c.like || kin(id)); };
+// the same icon's drawing alone, to place inside another picture (a plant in the bed drawing)
+export const icBody = id => { const c = crop(id); return Icons.cropBody(id, c.color, c.icon || c.like || kin(id)); };
 // the fields every crop of your own needs: the crop it's most like (required — everything else comes from it unless you
 // give it), and from its packet: growing temperatures (生育適温) and days to planting out
 export const likeSelect = like => `<label>Most like <small>(it’s grown the same way: spacing, sowing months, feeding, care and pests come from it unless you give your own)</small><select name="like" required><option value="">Choose the closest crop…</option>${Object.entries(FAMILIES).map(([k, v]) => { const cs = CATALOG.filter(c => c.family === k); return cs.length ? `<optgroup label="${esc(v[0])}">${cs.map(c => `<option value="${c.id}"${c.id === like ? ' selected' : ''}>${esc(c.en)}</option>`).join('')}</optgroup>` : ''; }).join('')}</select></label>`;

@@ -3,7 +3,7 @@
 import { todayStr } from './core/util.js';
 import { activeIn, decorate, gaps, prevCrop } from './garden/garden.js';
 import { activeCovers } from './plants/covers.js';
-import { crop } from './plants/crops.js';
+import { crop, icBody } from './plants/crops.js';
 
 // Top-down drawing of beds and pots. Coordinates are in cm.
 // x = across the short side (width), y = down the long side (length). Long side is drawn vertically.
@@ -246,8 +246,13 @@ export const Draw = (() => {
       const band = drill ? Math.min(2 * r, (+p.rowSp || 2 * r) * 0.9) : 0;
       for (const ln of lines) s += (band > 1.5 / px ? `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drillband" stroke-width="${band.toFixed(2)}"/>` : '') + `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drill" ${ns}/>`;
       const editing = o.edit === p.id;
+      // a plant big enough to see is drawn as its crop's icon, once it's a plant of its own: planted out, thinned, or
+      // (a sowing never thinned) come up — a dot before that, when there are too many to draw, and while arranging
+      const own = p.method !== 'seed' || p.thinned || !(+p.thinSp > 0), body = own && !editing && pts.length <= 80 && p.cropId ? icBody(p.cropId) : null;
       pts.forEach((q, i) => {
-        s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(rOf(q), 6 / px) : rOf(q)}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;
+        const rq = rOf(q);
+        if (body && rq * px >= 6 && (!q[2] || q[2] <= (o.today || todayStr()))) { const d = rq * 2.1; s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${rq}" class="plant iconbg" ${ns}/><svg x="${(q[0] - d / 2).toFixed(2)}" y="${(q[1] - d / 2).toFixed(2)}" width="${d.toFixed(2)}" height="${d.toFixed(2)}" viewBox="0 0 32 32" class="picon">${body}</svg>`; return; }
+        s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(rq, 6 / px) : rq}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;
       });
       s += `</g>`;
     });

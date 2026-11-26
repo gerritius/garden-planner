@@ -98,10 +98,12 @@ export const Icons = (() => {
     cauliflower: ['cauli'], strawberry: ['strawberry'], nanohana: ['rosette', '#5c8f2e', { flowers: true, angs: [-40, 40, -15, 15] }],
   };
   // shaped like another crop's icon (`like`, for a crop without one of its own), in its own colour where it has one
-  function crop(id, size = 22, color, like) {
+  function cropBody(id, color, like) {
     const m = MAP[id] || (like && MAP[like] ? [MAP[like][0], color || MAP[like][1], ...MAP[like].slice(2)] : ['generic', color || G]);
-    const body = draw[m[0]](...m.slice(1));
-    return `<svg class="cicon" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${body}</svg>`;
+    return draw[m[0]](...m.slice(1));
+  }
+  function crop(id, size = 22, color, like) {
+    return `<svg class="cicon" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${cropBody(id, color, like)}</svg>`;
   }
   // Weather icons for WMO weather codes (Open-Meteo).
   function weather(code, size = 28) {
@@ -120,5 +122,5 @@ export const Icons = (() => {
     else b = cloud();
     return `<svg class="wicon" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">${b}</svg>`;
   }
-  return { crop, weather };
+  return { crop, cropBody, weather };
 })();

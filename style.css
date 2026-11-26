@@ -161,6 +161,9 @@ svg.plot { display: block; overflow: visible; }
 .plot .drillband { stroke: var(--c); stroke-linecap: butt; opacity: .45; }
 .plot .plant { fill: var(--c); stroke: rgba(30,18,6,.55); stroke-width: .8; opacity: .93; }
 .plot .plant.drag { stroke: #fff; stroke-width: 2; cursor: grab; }
+/* a plant drawn as its crop's icon, on a soft disc of its colour */
+.plot .plant.iconbg { opacity: .35; stroke: none; }
+.plot .picon { pointer-events: none; overflow: visible; }
 .plot .dim { opacity: .35; }
 .plot .cover { pointer-events: none; }   /* nets and fleece are drawn over the plants: taps go through to them */
 /* (the outline's width is set on each label, in the drawing's units, so it stays ~3 screen px at any zoom) */

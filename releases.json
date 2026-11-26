@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.50.0",
+    "date": "2026-11-26",
+    "notes": [
+      "Plants in bed and pot drawings are drawn as their crop — a cabbage, a lettuce, a tomato — once each is a plant of its own: planted out, thinned, or (a sowing that isn’t thinned) come up. Before that, and where they’re too small to see or too many to draw, they stay as dots."
+    ]
+  },
+  {
     "version": "1.49.0",
     "date": "2026-11-26",
     "notes": [

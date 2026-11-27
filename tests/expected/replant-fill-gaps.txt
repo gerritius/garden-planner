@@ -6,7 +6,7 @@ form layout: center
 by hand: plants to place 1
 saved: ["free",1,"2026-11-05","2026-11-18"]
 drawn size today (cm across): older peas 5.9 | seedling 3
-banner: 🩹 Snap pea sown 20 Oct is already growing here. Were these seedlings to fill its gaps? Yes — add them to it
+banner:  Snap pea sown 20 Oct is already growing here. Were these seedlings to fill its gaps? Yes — add them to it
 drawn after adding them: 5.9 5.9 3.3 3.3
 merged: #/plant/sp {"plantings":["sp"],"fills":["1 2026-11-18","1 2026-11-18"],"events":["out 1 sp fill","out 1 sp fill"]}
 log: ["Filled gaps in the snap pea with 1 seedling · Tray 1 → Pea bag","Filled gaps in the snap pea with 1 seedling · Tray 1 → Pea bag"]

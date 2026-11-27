@@ -2,7 +2,7 @@ custom: [{"id":"cust_ID","en":"Kincho Liquid 6-6-7","ja":"","form":"liquid","kin
 log renamed: Kincho Liquid 6-6-7
 counted: [["Kincho Liquid 6-6-7 10 mL per 5 L (strong)",0.633]]
 grams 5 mL: 4.80 | N: 0.288
-card: Feeding 1 Nov23 JanFed until about 3 Jan — but it’s the slow winter stretch: it only needs a little until growth picks up around 9 Mar. A light feed around 3 Jan, or a proper one around 9 Mar. Next: Kincho Liquid 6-6-7 5 mL 10 Nov.🔁 Every 7 days: Kincho Liqui
+card: Feeding 1 Nov23 JanFed until about 3 Jan — but it’s the slow winter stretch: it only needs a little until growth picks up around 9 Mar. A light feed around 3 Jan, or a proper one around 9 Mar. Next: Kincho Liquid 6-6-7 5 mL 10 Nov. Every 7 days: Kincho Liquid 
 dialog: Weak: 5 mL per 5 LStrong: 10 mL per 5 L | Amount = mL mixed into 5 L of water. Bag 1 (~44 L of soil) gets about 4.4 L of it ≈ 8.8 mL of concentrate → N 0.6 g · P 0.5 g · K 0.7 g per pot.
 dose for 0.15 g N: {"amount":5,"unit":"mL"} {"amount":5,"unit":"mL"}
 own section: Fertilisers & feeds🌿Chemical fertiliser 8-8-88-8-8 · Granular, quick (chemical)›🌿Bokashi4-4-2 · Organic / slow›🌿Tosho Super Fermented aburakasu3-3-2 · Organic / slow›🌿Chicken manure3-5-3 · Organic

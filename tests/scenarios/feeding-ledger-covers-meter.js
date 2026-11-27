@@ -53,7 +53,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   // 5) daikon window: set packet 55-80 via edit
   await pg.goto(U + '#/plant/dk/edit'); await pg.waitForTimeout(400); await pg.evaluate(() => { const m = document.querySelector('#pfMore'); if (m) m.open = true; }); await pg.fill('#pf input[name=daysFrom]', '55'); await pg.fill('#pf input[name=daysTo]', '80'); await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(400);
   await pg.goto(U + '#/plant/dk'); await pg.waitForTimeout(300);
-  console.log('daikon:', (await pg.textContent('p.pickby')).replace(/\s+/g, ' '));
+  console.log('daikon:', (await pg.textContent('.lifecycle')).replace(/\s+/g, ' '));
   console.log('pickby task', await pg.evaluate(() => (S.tasks.find(t => t.plantingId === 'dk' && t.kind === 'pickby') || {}).due));
   // 6) split: shrink spinach then plant in freed half
   await pg.evaluate(async () => { const p = planting('sp'); p.from = 100; p.to = 200; await save(); });

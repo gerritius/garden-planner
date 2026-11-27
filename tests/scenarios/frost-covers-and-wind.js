@@ -24,6 +24,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.click('[data-act=addCover]'); await pg.waitForTimeout(200); await pg.click('[data-t=fushokufu]'); await pg.click('#cvf button.primary'); await pg.waitForTimeout(300);
   console.log('frost after fleece', await pg.evaluate(() => frostRisk().map(x => x.hit.map(p => p.cropId))));
   console.log('wind advice', await pg.evaluate(() => { const t = S.tasks.find(t => t.kind === 'wx' && t.wx === 'wind'); return t ? wxAdvice(t) : 'no wind task'; }));
+  await pg.evaluate(async () => { S.homeView = 'beds'; await save(); });   // (the bed cards)
   await pg.goto(U); await pg.waitForTimeout(400); await pg.screenshot({ path: SP + '/cover_home.png', fullPage: true });
   console.log('card chips', await pg.$$eval('.covchips', x => x.map(e => e.textContent.trim())));
   // finish hakusai -> net over nothing

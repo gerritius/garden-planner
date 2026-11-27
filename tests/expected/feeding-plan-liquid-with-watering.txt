@@ -16,6 +16,6 @@ water (feed due today): ["2026-11-18","Water + liquid feed: Bag 1",1,"2026-11-18
 after tick: ["2026-11-18",[["Kincho Liquid 6-6-7",2,"mL","2026-11-18"]],"2026-11-18",["2026-11-25"]]
 water after tick: ["2026-11-21","Water pots & bags",0,"2026-11-25"]
 paused after heavy feed? ["enough",0]
-card: Feeding 1 Nov23 JanRunning short now — plan a feed soon. Next: Kincho Liquid 6-6-7 2 mL 25 Nov.🔁 Every 7 days: Kincho Liquid 6-6-7 2 mL 🌿 Record feeding📅 Feeding plan… What’s been counted Lettuce needs about 3.5 g of nitrogen over the season in this pot. Counted: 0.8 g + 0.4 g planned. Where it g
+card: Feeding 1 Nov23 JanRunning short now — plan a feed soon. Next: Kincho Liquid 6-6-7 2 mL 25 Nov. Every 7 days: Kincho Liquid 6-6-7 2 mL Record feeding Feeding plan… What’s been counted Lettuce needs about 3.5 g of nitrogen over the season in this pot. Counted: 0.8 g + 0.4 g planned. Where it goes: th
 task templates: ["Remove side shoots"]
 errs []

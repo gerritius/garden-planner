@@ -73,6 +73,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `feeding-plan-liquid-with-watering` | Feeding plan doses; weekly liquid feeds merged into the watering job |
 | `feeding-plan-suggestions` | Feeding plan suggestions for celery and cabbage; overfeeding guard |
 | `frost-covers-and-wind` | Frost warnings and covers, wind advice |
+| `garden-views-and-alerts` | The Garden tab's Today / Beds / Map views, picking a forecast day, weather tags and Skip on jobs, alert dots and label pills on the map, the Sun & Moisture overlay, soil chips, the harvest lifecycle bar, the Pick by job keeping to its date, the emergence bar and the quick log |
 | `garden-map` | The garden map: dragging beds, scrolling |
 | `garlic-feeding-model` | The day-by-day nitrogen model for garlic in a bag (drainage, uptake, "fed until") |
 | `garlic-feeding-plan` | Garlic's feeding card and plan, including the last feed (止め肥) |

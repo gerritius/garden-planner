@@ -54,7 +54,9 @@ const U = 'http://localhost:8765/';
   console.log('pot 450 cm:', await pg.$eval('#sizeWarn', e => e.hidden ? '(nothing)' : e.textContent));
 
   // the ruler
-  const ticks = async id => { await pg.goto(U + '#/container/' + id); await pg.waitForSelector('.plotwrap svg'); return pg.$$eval('.plotwrap svg text.tick', x => x.map(t => t.textContent).join(' ')); };
+  const ticks = async id => { await pg.goto(U + '#/container/' + id); await pg.waitForSelector('.plotwrap svg'); await pg.waitForTimeout(300);
+    if (await pg.$('.plotsz[aria-pressed=false]')) { await pg.click('.plotsz'); await pg.waitForTimeout(300); }   // (the full-size drawing)
+    return pg.$$eval('.plotwrap svg text.tick', x => x.map(t => t.textContent).join(' ')); };
   console.log('ruler 1 × 2 m bed:', await ticks('b1'));
   console.log('ruler 1.2 × 12 m bed:', await ticks('lb'));
   console.log('ruler round bag:', JSON.stringify(await ticks('g1')));

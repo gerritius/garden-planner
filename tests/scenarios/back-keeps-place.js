@@ -10,7 +10,7 @@ const U = 'http://localhost:8765/';
   await pg.goto(U); await pg.waitForTimeout(400);
   await pg.evaluate(async () => {
     S.containers = Array.from({ length: 14 }, (_, i) => ({ id: 'g' + i, type: 'round', name: 'Bag ' + (i + 1), diameter: 40, depth: 35, margin: 2, history: [] }));
-    S.plantings = []; S.tasks = []; await save();
+    S.plantings = []; S.tasks = []; S.homeView = 'beds'; await save();
   });
   await pg.goto(U + '#/'); await pg.waitForTimeout(500);
   const y = () => pg.evaluate(() => Math.round(scrollY));

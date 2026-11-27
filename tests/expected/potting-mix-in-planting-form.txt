@@ -11,7 +11,7 @@ edit shows: Potting mixRe-usedFresh mix Touikawa Peace Farm vegetable soil, fill
 after delete: [["2026-03-01","touikawa",true,false]]
 bed form has mix? false
 bed page feeding section? false
-bed more: 🧪Soil reading🪏Prepare the bed✓Add a job↕Sections🔄Rotation
-bag more: 🧪Soil reading🪏Prepare the pot✓Add a job🔄Rotation🪴Potting mix history
+bed more: Soil readingPrepare the bedAdd a jobSectionsRotation
+bag more: Soil readingPrepare the potAdd a jobRotationPotting mix history
 crop page buttons all the same height: true
 errs []

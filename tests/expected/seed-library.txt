@@ -1,4 +1,4 @@
-Tools tile: 📦Products & seeds | crops section gone from Tools: true
+Tools tile: Products & seeds | crops section gone from Tools: true
 tab: 🌱 Seeds & plants | The varieties you grow, with their seed packets — choose one when planting and i
 library: Cabbage · Shikidori · Takii · packet true | Okahijiki · Midori · - · packet false
 new crop: Okahijiki 40 days, in the crop list: true

@@ -1,0 +1,28 @@
+views: TodayBedsMap | on: Today
+forecast days: Today* Tmrw! Fri Sat! Sun Mon
+heads (all days): ["Frost risk Tmrw -1° — cover Lettuce","Hot Sat 35° — water pots & bags well","Daikon: 23 mm of rain on Tmrw after a dry week — pick what’s ready first, it may split.›"]
+jobs today: ["Earliest harvest – check crop Daikon · Bed 1 ⋯","Check seedlings are up (expected 7 Sept–9 Sept) Daikon · Bed 1 not counted yet · target 70% + ⋯","Fertilise Bed 2 – liquid feed Bed 223mm rain tmrwSkip to Fri ⋯","Cover before frost Tmrw (-1°): Lettuce Bag 1 ⋯"]
+picked: Tmrw | heads: ["Frost risk Tmrw -1° — cover Lettuce · Bag 1"]
+jobs heading: Jobs for tomorrow
+tapped again → all days: Today’s jobs | picked: Today
+feed tag: {"tone":"cold","icon":"rain","text":"23mm rain tmrw","act":"moveJob","to":"2026-11-20","why":"it would wash the feed through"}
+feed moved to: 2 days on, movedFor rain
+a watering job with a rain tag: false
+bed cards: [{"name":"Bed 1","chips":"Daikonready","dots":["ready:Ready to harvest"],"next":"Earliest harvest – check croptoday"},{"name":"Bed 2","chips":"Spinach13%","dots":["hot:Hot day coming"],"next":"Fertilise Bed 2 – liquid feed20 Nov"},{"name":"Bag 1","chips":"Lettuce12%","dots":["hot:Hot day coming","cold:Frost"],"next":"Earliest harvest – check crop1 Feb"}]
+pills: ["Bed 1 / ready / Daikon ready","Bed 2 / 13% / Spinach hot","Bag 1 / 12% / Lettuce hot+cold"]
+overlay: ["sun-full mdrop m2","sun-shade mdrop m0","sun-full mdrop m0"]
+moisture: ["Bed 1 {\"level\":2,\"src\":\"estimate\"}","Bed 2 {\"level\":0,\"src\":\"estimate\"}","Bag 1 {\"level\":0,\"src\":\"estimate\"}"]
+view remembered: map / sun
+bed chips: Brassica (cabbage family)pH 6.4 29 OctLime 19 Oct
+drawing compact, then bigger: true | Smaller
+lifecycle: Sown5 SeptHarvest from31 OctPeak~24 NovPast peak / pithy11 Jan | today pin: true
+pick by job = keeps until: true
+drifted date put back: true
+overdue pick-by: ["Pick by now – after this roots go pithy Overdue since Sun 15 Nov ⋯"]
+emergence (going): not counted yet · target 70% +
+dialog pct: 10
+recorded: [{"date":"2026-11-18","pct":10}]
+quick log: ["Log harvest","Update emergence %","Record feed / spray","Add note / photo"] | small: Job Seedlings More…
+emergence for: DaikonBed 1 · not counted yet›SpinachBed 2 · about 10% up›
+feed / spray: Feed / fertiliserSpraySomething else
+errs []

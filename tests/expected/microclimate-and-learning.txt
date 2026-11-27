@@ -1,5 +1,5 @@
 {"l":"initial","v":["Bag sun: thin 2026-11-29 harvest 2027-01-03","Bag shade: thin 2026-12-02 harvest 2027-01-25","Small pot: thin 2026-11-28 harvest 2026-12-31"]}
-chip ☁️ Shade · outdoors ✎
+chip  Shade · outdoors 
 {"l":"shade bag moved indoors","v":["Bag sun: thin 2026-11-29 harvest 2027-01-03","Bag shade: thin 2026-11-24 harvest 2026-12-13","Small pot: thin 2026-11-28 harvest 2026-12-31"]}
 water pots [ 'Bag sun', 'Small pot' ]
 learned Learned from your gardenKomatsuna · coming up40% slower than the model (3 records)Komatsuna · first harvest20% slower than the model (3 records) Each time you record germination, thinning, planting out or a first harvest, the app compares it with its estimate and adjusts future dates for that crop. One record only nudges it; several move it properly.

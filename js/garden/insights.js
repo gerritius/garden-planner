@@ -2,6 +2,7 @@
 // pot is, weather tags on jobs, and the soil chips (family, pH, what's been dug in) for a bed or a crop.
 // Everything here is worked out from what the app already keeps; nothing new is saved.
 
+import { normalRain } from '../climate/climate.js';
 import { dayName, frostRisk, NETTED, TALL, Weather } from '../climate/weather.js';
 import { S } from '../core/state.js';
 import { addDays, daysBetween, esc, shortDate, todayStr } from '../core/util.js';
@@ -68,7 +69,7 @@ export function moistureOf(c) {
   else if (c.type === 'bed') {
     const w = bedPlan(c), rain = rainByDay(), last = lastWatered('bed:' + c.id);
     let d = last && daysBetween(last, td) <= 45 ? last : addDays(td, -21), used = 0;
-    while (d < td) { d = addDays(d, 1); const mm = rain[d] != null ? rain[d] : 0; used = Math.min(25, Math.max(0, used + bedLoss(d) - mm)); }
+    while (d < td) { d = addDays(d, 1); const mm = rain[d] != null ? rain[d] : normalRain(d); used = Math.min(25, Math.max(0, used + bedLoss(d) - mm)); }   // (days with no record: the usual rain, as the watering job counts them)
     frac = 1 - used / w.allow;
   } else {
     const pots = waterPots(); if (!pots.includes(c)) return { level: null, src: null };

@@ -34,7 +34,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   console.log('crop diary:', JSON.stringify(await pg.evaluate(() => planting('hk').diary.map(x => [x.note, x.photo]))));
   // quick add
   await pg.evaluate(() => quickAdd()); await pg.waitForTimeout(200);
-  console.log('quick add:', (await pg.textContent('#modal .tiles')).replace(/\s+/g, ' ').trim());
+  console.log('quick add:', (await pg.textContent('#modal .sheet')).replace(/\s+/g, ' ').trim());
   await pg.locator('#modal .sheet').screenshot({ path: `${SP}/qa.png` });
   await pg.click('[data-q=more]'); await pg.waitForTimeout(200); console.log('more:', (await pg.textContent('#modal .tiles')).replace(/\s+/g, ' ').trim());
   await pg.click('[data-q=seedlings]'); await pg.waitForTimeout(300); console.log('→', pg.url().split('#')[1]);

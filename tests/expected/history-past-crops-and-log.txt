@@ -8,6 +8,6 @@ fert [
 bag1 [ 'Sprayed: BT spray', 'Planted Garlic' ]
 edit dlg BT spray
 search okra Beds & notesPast crop: OkraPlot A · 31 Aug›
-search BT Running log💦Sprayed: BT spray1000× dilution8 Nov · Whole garden›
+search BT Running logSprayed: BT spray1000× dilution8 Nov · Whole garden›
 qa log true
 errs []

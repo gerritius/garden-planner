@@ -7,7 +7,7 @@ wind advice [
   'Pick what’s ready first: Chinese cabbage (napa)',
   'Afterwards: check for snapped stems and earth up anything rocked loose'
 ]
-card chips [ '🕸️ insect net tunnel', '🧣 fleece tunnel' ]
+card chips [ 'insect net tunnel', 'fleece tunnel' ]
 notes [
   'Insect net tunnel still on Bed 2 (0–100 cm) — nothing is growing under it.'
 ]

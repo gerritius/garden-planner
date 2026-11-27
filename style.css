@@ -745,3 +745,97 @@ button.banner { width: 100%; text-align: left; font: inherit; font-size: 14px; c
 .tour-h { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
 .tour-n { font-weight: 700; color: var(--green); text-transform: uppercase; letter-spacing: .05em; }
 .tour-pick { padding-left: 0; list-style: none; } .tour-pick li { margin: 6px 0; }
+
+/* ---------- 1.53 redesign: line icons, Garden tab views, forecast picks, map pills & overlay, soil chips, lifecycle bar ---------- */
+:root { --slate: #5b7896; --slate-ink: #3e5a78; --slate-bg: rgba(91,120,150,.13); --amber: #d69a2d; --amber-ink: #85540f; --amber-bg: rgba(214,154,45,.17); }
+:root[data-theme="dark"] { --slate: #7f9fc0; --slate-ink: #a9c6e4; --slate-bg: rgba(127,159,192,.16); --amber: #e0a84a; --amber-ink: #ecc27a; --amber-bg: rgba(224,168,74,.16); }
+.uic { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; vertical-align: -0.22em; flex: none; }
+.uic .d { fill: currentColor; fill-opacity: .16; }
+.tile span { color: var(--green); display: flex; }
+.tile span .uic { stroke-width: 1.6; }
+summary .uic, h3 .uic, .btn .uic { color: var(--green); }
+.btn.primary .uic, .btn.danger .uic { color: inherit; }
+.seg.tabs .uic { margin-right: 2px; }
+.seg button.on .uic { color: inherit; }
+
+/* Garden tab: Today | Beds | Map */
+.seg.gview { margin: 0 0 12px; background: var(--card); }
+.seg.gview button { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.seg.gview button .uic { color: var(--green); }
+.seg.gview button.on .uic { color: inherit; }
+
+/* forecast strip: each day can be picked */
+button.wxd { font: inherit; font-size: 12px; color: inherit; cursor: pointer; position: relative; -webkit-tap-highlight-color: transparent; }
+.wxd.now:not(.sel) { box-shadow: none; border-style: dashed; }
+.wxd.sel { border-color: var(--terra); box-shadow: inset 0 0 0 1.5px var(--terra); background: var(--today); }
+.wxd .wxmark { position: absolute; top: 4px; right: 4px; width: 7px; height: 7px; border-radius: 50%; background: var(--slate); }
+.wxd.frost .wxmark { background: var(--slate); }
+section.heads.picked { border-color: var(--terra); }
+.headsday { margin: 8px 0 0; font-family: var(--head); font-weight: 700; font-size: 14px; color: var(--terra-2); display: flex; align-items: center; gap: 6px; }
+:root[data-theme="dark"] .headsday { color: var(--terra); }
+section.heads .hi { color: var(--muted); display: flex; justify-content: center; }
+section.heads .t-cold .hi { color: var(--slate-ink); }
+section.heads .t-hot .hi { color: var(--amber-ink); }
+.today .more.link { background: none; border: 0; padding: 0; font: inherit; font-size: 14px; color: var(--green); cursor: pointer; }
+
+/* alert dots: amber heat / dry, slate rain / frost / wind, terracotta ready to pick */
+.adot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--slate); box-shadow: 0 0 0 1.5px var(--card); }
+.adot.hot { background: var(--amber); } .adot.ready { background: var(--terra); }
+circle.adot { fill: var(--slate); stroke: var(--card); stroke-width: .25; } circle.adot.hot { fill: var(--amber); } circle.adot.ready { fill: var(--terra); }
+.bedcard .dots, .ptile .dots { position: absolute; top: 9px; right: 10px; display: flex; gap: 3px; z-index: 1; }
+.ptile { position: relative; }
+.chip small.pct { color: var(--muted); font-size: 11.5px; margin-left: 3px; font-variant-numeric: tabular-nums; }
+.mbar { height: 5px; border-radius: 3px; background: var(--chip); overflow: hidden; margin: 7px 0 2px; width: 100%; }
+.mbar i { display: block; height: 100%; background: var(--green); border-radius: 3px; }
+.nextjob { display: flex; align-items: center; gap: 4px; font-size: 12.5px; color: var(--muted); margin-top: 5px; min-width: 0; }
+.nextjob span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
+.nextjob .uic { color: var(--green); }
+
+/* map: area switch, Layout | Sun & Moisture, label pills, overlay */
+.mapsub { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
+.mapsub .seg { margin: 0; flex: 0 1 auto; }
+.pilltog { display: inline-flex; border: 1.5px solid var(--line-2); border-radius: 999px; overflow: hidden; background: var(--card); }
+.pilltog button { border: 0; background: none; font: 600 13px/1 var(--head); color: var(--ink); padding: 8px 12px; min-height: 34px; cursor: pointer; }
+.pilltog button.on { background: var(--green); color: var(--green-ink); }
+.mpill rect { fill: var(--card); stroke: var(--line-2); stroke-width: .6; vector-effect: non-scaling-stroke; }
+.mpill text { fill: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-weight: 600; }
+.mov .sun-full { fill: #f2c94c; fill-opacity: .2; } .mov .sun-part { fill: #f2c94c; fill-opacity: .09; }
+.mov .sun-shade { fill: #4d6177; fill-opacity: .28; } .mov .sun-in { fill: #8a7a6a; fill-opacity: .2; }
+.mov rect { stroke: none; }
+.mdrop { stroke: var(--ink); stroke-width: .5; vector-effect: non-scaling-stroke; }
+.mdrop.m0 { fill: #e9d6b0; } .mdrop.m1 { fill: #c3d6e6; } .mdrop.m2 { fill: #7fa7c9; } .mdrop.m3 { fill: #3d74a8; }
+i.mdrop { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--ink); border-radius: 50% 0 50% 50%; transform: rotate(-45deg); margin: 0 2px 0 1px; }
+i.mdrop.m0 { background: #e9d6b0; } i.mdrop.m1 { background: #c3d6e6; } i.mdrop.m2 { background: #7fa7c9; } i.mdrop.m3 { background: #3d74a8; }
+.mapkey { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); margin: 6px 0; }
+.mapkey span { display: inline-flex; align-items: center; gap: 4px; }
+.mapkey .uic { color: var(--ink); }
+
+/* jobs: weather tags, Skip, and the emergence bar */
+.tw { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.wxtag { display: inline-flex; align-items: center; gap: 4px; font-size: 12.5px; font-weight: 600; padding: 2px 8px 2px 6px; border-radius: 999px; background: var(--slate-bg); color: var(--slate-ink); }
+.wxtag.hot { background: var(--amber-bg); color: var(--amber-ink); }
+.wxskip { display: inline-flex; align-items: center; gap: 3px; font: 600 12.5px/1 var(--head); color: var(--green); background: var(--card); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 4px 9px 4px 7px; cursor: pointer; min-height: 28px; }
+.emerge { display: grid; grid-template-columns: 1fr auto; grid-template-rows: auto auto; column-gap: 10px; align-items: center; margin-top: 6px; max-width: 340px; }
+.emerge .ebar { position: relative; height: 8px; border-radius: 4px; background: var(--chip); overflow: visible; }
+.emerge .ebar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--green); border-radius: 4px; }
+.emerge .ebar b { position: absolute; top: -3px; bottom: -3px; width: 2px; margin-left: -1px; background: var(--terra); border-radius: 1px; }
+.emerge .etxt { grid-column: 1; font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.emerge .estep { grid-column: 2; grid-row: 1 / span 2; width: 34px; height: 34px; border-radius: 50%; border: 0; background: var(--terra); color: var(--terra-ink); font: 700 22px/1 var(--head); cursor: pointer; box-shadow: 0 2px 0 var(--terra-2); }
+
+/* soil & rotation chips under a bed's or crop's header */
+.schips { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.schip { display: inline-flex; align-items: center; gap: 5px; font: inherit; font-size: 13px; color: var(--ink); background: var(--chip); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px 3px 6px; text-decoration: none; line-height: 1.3; }
+.schip .uic { color: var(--green); }
+.schip small { color: var(--muted); }
+.schip.add { border-style: dashed; cursor: pointer; background: var(--card); color: var(--green); font-weight: 600; }
+.schip.muted { color: var(--muted); }
+
+/* form rhythm: 6 px from a label to its field, 16 px between groups */
+.form { gap: 16px; }
+.form label { gap: 6px; }
+.mpill text.mpn { font-family: var(--head); font-weight: 700; }
+.mpill text.mpc { font-weight: 500; fill: var(--muted); }
+.mbadge { fill: var(--card); stroke: var(--line-2); stroke-width: .6; vector-effect: non-scaling-stroke; }
+.msun { fill: none; stroke: var(--amber-ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.msun .d { fill: var(--amber); fill-opacity: .5; }
+.mpill text.mpp { font-weight: 700; fill: var(--green); font-variant-numeric: tabular-nums; }

@@ -5,8 +5,10 @@ import { S, save } from '../core/state.js';
 import { confirmBox, dragZone, modal } from '../core/ui.js';
 import { $, esc, go, todayStr, uid } from '../core/util.js';
 import { Draw } from '../draw.js';
+import { ui } from '../data/ui-icons.js';
 import { crop, ic } from '../plants/crops.js';
 import { activeIn, container, decorate, noteVacated, planting } from './garden.js';
+import { bedDots, isReady, maturity, moistureOf, SUN, sunOf } from './insights.js';
 
 // ---------- garden map ----------
 let mapZoom = 1;   // ×1 shows the whole area; zooming in is for when a big bed makes the rest tiny
@@ -44,10 +46,33 @@ export function maxZoom(areaId, width) {
   let z = 1; while (z < 64 && smallest * px1 * z < 60 && px1 * z * 2 <= 4) z *= 2;
   return z;
 }
-export function mapSVG(areaId, { edit = false, width = 360, sel = null } = {}) {
+// a bed's label on the map: its name, then its crops and how far along, with a dot for each alert that applies to it.
+// It's kept about as wide as the bed (at least 92 px), so neighbours don't run into each other.
+function pillSVG(c, cx, y, px, bw, xmin, xmax) {
+  const ps = activeIn(c.id), ms = ps.map(maturity).filter(v => v != null), m = ms.length ? Math.max(...ms) : null;
+  const names = [...new Set(ps.map(p => crop(p.cropId).en))], dots = bedDots(c);
+  const dotW = dots.length ? dots.length * 9 + 2 : 0, wpx = Math.max(bw * px < 60 ? 80 : 96, Math.min(bw * px + 24, 210));
+  const fit = (t, n) => t.length > n ? t.slice(0, Math.max(1, n - 1)) + '…' : t;
+  const pct = m != null ? (ps.some(isReady) ? 'ready' : m + '%') : '';
+  const l1 = fit(c.name, Math.floor((wpx - 14 - pct.length * 5.8) / 6.3)), l2 = names.length ? fit(names.join(', '), Math.floor((wpx - 14 - dotW) / 5.6)) : 'empty';
+  const w = wpx / px, h = 32 / px, x = Math.max(xmin, Math.min(xmax - w, cx - w / 2));
+  return `<g class="mpill" transform="translate(${x} ${y})"><rect width="${w}" height="${h}" rx="${7 / px}"/>
+    <text x="${7 / px}" y="${12 / px}" font-size="${11.5 / px}" class="mpn">${esc(l1)}</text>${pct ? `<text x="${w - 7 / px}" y="${12 / px}" font-size="${10.5 / px}" text-anchor="end" class="mpp">${pct}</text>` : ''}
+    ${dots.map((d, i) => `<circle cx="${(10 + i * 9) / px}" cy="${23.5 / px}" r="${3.5 / px}" class="adot ${d.tone}"><title>${esc(d.t)}</title></circle>`).join('')}
+    <text x="${(7 + dotW) / px}" y="${25 / px}" font-size="${10 / px}" class="mpc">${esc(l2)}</text></g>`;
+}
+// sun / shade tint over a bed, with a sun badge and an estimated-moisture drop in its corners (plants stay visible)
+function overlaySVG(c, x, y, w, h, px) {
+  const sun = sunOf(c), m = moistureOf(c), r = Math.min(10 / px, w / 4, h / 4), k = r * 2 / 24;
+  const badge = (bx, inner) => `<g transform="translate(${bx} ${y + r * 1.25})"><circle r="${r}" class="mbadge"/>${inner}</g>`;
+  return `<g class="mov" pointer-events="none"><rect x="${x}" y="${y}" width="${w}" height="${h}" class="sun-${sun}"/>
+    ${badge(x + r * 1.25, `<g transform="translate(${-r * .8} ${-r * .8}) scale(${k * .8})" class="msun">${ui(SUN[sun][1], 24).replace(/^<svg[^>]*>|<\/svg>$/g, '')}</g>`)}
+    ${m.level != null ? badge(x + w - r * 1.25, `<path d="M0 ${-r * .7} C ${r * .65} ${-r * .05}, ${r * .55} ${r * .62}, 0 ${r * .62} C ${-r * .55} ${r * .62}, ${-r * .65} ${-r * .05}, 0 ${-r * .7}Z" class="mdrop m${m.level}"/>`) : ''}</g>`;
+}
+export function mapSVG(areaId, { edit = false, width = 360, sel = null, pills = false, overlay = false } = {}) {
   const { cs, maxX, maxY } = mapExtent(areaId);
   if (!cs.length) return '<p class="muted center">No beds or pots in this area yet.</p>';
-  const pad = 30, W = maxX + pad * 2, H = maxY + pad * 2 + 20 + (edit ? 250 : 0), px = width / W;
+  const pad = 30, W = maxX + pad * 2, px = width / W, H = maxY + pad * 2 + (pills ? 38 / px : 20) + (edit ? 250 : 0);
   const cell = [50, 100, 200, 500, 1000, 2000, 5000].find(g => g * px >= 12) || 5000;   // grid squares at least 12 px
   let s = `<svg class="map" viewBox="${-pad} ${-pad} ${W} ${H}" width="${width}" height="${(H * px).toFixed(0)}" data-grid="${cell}" xmlns="http://www.w3.org/2000/svg">`;
   s += `<defs><pattern id="mg" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse"><path d="M${cell} 0H0V${cell}" fill="none" class="mapgrid" vector-effect="non-scaling-stroke"/></pattern></defs><rect x="${-pad}" y="${-pad}" width="${W}" height="${H}" fill="url(#mg)" class="mapbg"/>`;
@@ -59,7 +84,8 @@ export function mapSVG(areaId, { edit = false, width = 360, sel = null } = {}) {
     inner = inner.replace(/<svg [^>]*?viewBox="[^"]+"[^>]*>/, `<svg class="plot" x="${cx - vb[2] / 2}" y="${cy - vb[3] / 2}" width="${vb[2]}" height="${vb[3]}" viewBox="${vb.join(' ')}" overflow="visible">`);
     const g = c.rot ? `<g transform="rotate(90 ${cx} ${cy})">${inner}</g>` : inner;
     s += `<g class="mapc${sel === c.id ? ' sel' : ''}" data-cid="${c.id}">${g}<rect x="${c.pos[0]}" y="${c.pos[1]}" width="${bw}" height="${bh}" class="hit"/>
-      <text x="${cx}" y="${c.pos[1] + bh + 13 / px}" font-size="${12 / px}" text-anchor="middle" class="mapl">${esc(c.name)}</text></g>`;
+      ${overlay ? overlaySVG(c, c.pos[0], c.pos[1], bw, bh, px) : ''}
+      ${pills ? pillSVG(c, cx, c.pos[1] + bh + 3 / px, px, bw, -pad, W - pad) : `<text x="${cx}" y="${c.pos[1] + bh + 13 / px}" font-size="${12 / px}" text-anchor="middle" class="mapl">${esc(c.name)}</text>`}</g>`;
     void cw; void cl;
   }
   return s + '</svg>';
@@ -103,14 +129,14 @@ export function pageMap(q) {
   const html = `<div class="seg wrap">${S.areas.map(a => `<button type="button" data-act="area" data-id="${a.id}" class="${a.id === areaId ? 'on' : ''}">${esc(a.name)}</button>`).join('')}</div>
     ${zmax > 1 ? `<div class="mapzoom"><button type="button" class="btn small" data-act="zoomOut" aria-label="Zoom out">－</button><span id="zoomTxt"></span><button type="button" class="btn small" data-act="zoomIn" aria-label="Zoom in">＋</button></div>` : ''}
     <div id="mapbox" class="mapbox"></div>
-    <div id="selbar" class="btnrow" hidden><button class="btn small" data-act="rot">⟳ Rotate</button><button class="btn small" data-act="moveTo">Move to area…</button></div>
+    <div id="selbar" class="btnrow" hidden><button class="btn small" data-act="rot">${ui('rotate', 18)} Rotate</button><button class="btn small" data-act="moveTo">Move to area…</button></div>
     ${edit ? `<div class="btnrow"><a class="btn primary" href="#/map?a=${areaId}" onclick="location.replace(this.href);return false;">Done</a></div>
       <div class="btnrow"><button class="btn small" data-act="newArea">＋ New area</button><button class="btn small" data-act="renameArea">Rename area</button><button class="btn small danger" data-act="delArea">Delete area</button></div>
       <p class="hint"><span id="gridTxt">Grid squares are 50 cm.</span> Drag beds and pots roughly where they are; exact placement doesn’t matter.</p>`
-      : `<div class="btnrow"><a class="btn" href="#/map?a=${areaId}&edit=1" onclick="location.replace(this.href);return false;">✥ Arrange map</a><button class="btn" data-act="newArea">＋ New area</button></div>`}`;
+      : `<div class="btnrow"><a class="btn" href="#/map?a=${areaId}&edit=1" onclick="location.replace(this.href);return false;">${ui('move', 18)} Arrange map</a><button class="btn" data-act="newArea">＋ New area</button></div>`}`;
   function draw() {
     const box = $('#mapbox');
-    box.innerHTML = mapSVG(areaId, { edit, width: vw * mapZoom, sel });
+    box.innerHTML = mapSVG(areaId, { edit, width: vw * mapZoom, sel, pills: !edit, overlay: !edit && S.mapOverlay === 'sun' });
     box.classList.toggle('zoomed', mapZoom > 1);
     $('#selbar').hidden = !(edit && sel);
     const zt = $('#zoomTxt'); if (zt) zt.textContent = mapZoom > 1 ? `×${mapZoom}` : 'Whole area';

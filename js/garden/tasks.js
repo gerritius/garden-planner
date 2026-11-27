@@ -1,20 +1,22 @@
 // Jobs: the task list, repeating jobs, who does them, job templates, grouping, ticking off, and the job dialogs.
 
-import { dayName, frostTaskDialog, WX, wxAdvice, wxTaskDialog } from '../climate/weather.js';
-import { render } from '../core/router.js';
+import { dayName, frostTaskDialog, wxAdvice, wxTaskDialog } from '../climate/weather.js';
+import { A, render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { confirmBox, modal } from '../core/ui.js';
 import { addDays, addInterval, daysBetween, esc, niceDate, num, shortDate, todayStr, uid, unitOpts } from '../core/util.js';
 import { JOB_TEMPLATES } from '../data/catalog.js';
+import { ui } from '../data/ui-icons.js';
 import { amtFor } from '../feeding/nutrients.js';
 import { completeWaterFeeds, feedTaskProduct, tickFeedTask } from '../feeding/plans.js';
 import { crop, cropName, ic } from '../plants/crops.js';
-import { germDialog, moveGermCheck, notUpYet, removeGermCheck } from '../plants/germination.js';
+import { emergenceBar, germDialog, moveGermCheck, notUpYet, removeGermCheck } from '../plants/germination.js';
 import { syncCareTasks } from '../plants/growth.js';
 import { plantOutDialog, start, startDialog, startTaskMeta, startWhere } from '../plants/seedlings.js';
 import { myProducts, productByName } from '../products/library.js';
 import { activeIn, container, isLive, isPlanned, planting, sizeLabel } from './garden.js';
 import { activatePlan, planTrayPreset, syncPlanTasks, undoActivate } from './planning.js';
+import { jobWeather } from './insights.js';
 import { moistureToday } from './soil.js';
 import { bedLoss, bedPlan, groupOf, lastWatered, rainByDay, setLastWatered, skipWatering, syncWater, waterPlan, waterPots } from './watering.js';
 
@@ -31,21 +33,34 @@ function dueText(t) {
   const d = effDue(t), n = daysBetween(todayStr(), d);
   return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${niceDate(d)} · in ${n} days`;
 }
+// a job the forecast gets in the way of: the tag, and Skip (watering: until after the rain; feeds and sprays: to the next dry day)
+function wxTag(t) {
+  const w = jobWeather(t); if (!w) return '';
+  A.wxSkip = async el => {
+    const j = S.tasks.find(x => x.id === el.dataset.id), v = j && jobWeather(j); if (!v || !v.act) return;
+    if (v.act === 'skipWater') { skipWatering(groupOf(j), v.to); syncWater(); }
+    else { j.due = v.to; j.movedFor = 'rain'; }
+    await save(); render();
+  };
+  return `<span class="wxtag ${w.tone}">${ui(w.icon, 14)}${esc(w.text)}</span>${w.act ? `<button type="button" class="wxskip" data-act="wxSkip" data-id="${t.id}" title="${w.act === 'skipWater' ? 'Skip watering until after the rain' : `Move to ${niceDate(w.to)} — ${w.why}`}">${ui('skip', 14)}Skip${w.act === 'moveJob' ? ` to ${dayName(w.to) === 'Tmrw' ? 'tmrw' : dayName(w.to)}` : ''}</button>` : ''}`;
+}
 export function taskLi(t, showCrop = true) {
   const { p, c } = taskOwner(t);
   const meta = [];
+  A.germPlus = el => { const q = planting(el.dataset.p); if (q) germDialog(q, { task: el.dataset.t ? S.tasks.find(x => x.id === el.dataset.t) : null, pct: +el.dataset.pct }); };
   if (t.kind === 'water') meta.push(`${CAN_ICON(22)}<span>${esc(t.note || '')}</span>`);
   else if (t.startId) meta.push(startTaskMeta(t));
-  else if (t.kind === 'wx') meta.push(`<span>${(WX[t.wx] || {}).icon || '⚠️'} ${esc(wxAdvice(t)[0] || '')}</span>`);
-  else if (t.plan && p && showCrop) meta.push(`📅 ${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''} <span class="planchip">planned</span>`);
-  else if (t.kind === 'frost') meta.push(`<span>❄️ ${esc((t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '))}</span>`);
+  else if (t.kind === 'wx') meta.push(`<span>${ui({ wind: 'wind', rain: 'rain', heat: 'heat' }[t.wx] || 'warn', 16)} ${esc(wxAdvice(t)[0] || '')}</span>`);
+  else if (t.plan && p && showCrop) meta.push(`${ui('calendar', 16)} ${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''} <span class="planchip">planned</span>`);
+  else if (t.kind === 'frost') meta.push(`<span>${ui('frost', 16)} ${esc((t.cids || []).map(id => (container(id) || {}).name).filter(Boolean).join(', '))}</span>`);
   else if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
   else if (showCrop && c) meta.push(`${BED_ICON(20)}<b>${esc(c.name)}</b>`);
   if (!showCrop && !t.done) meta.push(dueText(t));
   if (t.done) meta.push('Done ' + shortDate(t.doneOn));
   return `<li class="task${t.done ? ' done' : ''}"><label class="chk"><input type="checkbox" data-task="${t.id}"${t.done ? ' checked' : ''}><span></span></label>
     <div class="tbody" data-act="editTask" data-id="${t.id}"><div class="tt">${esc(t.title)}${t.seriesId && !t.done ? ' <span class="rep">↻</span>' : ''}</div>
-    ${meta.length ? `<div class="tm">${meta.join(' · ')}</div>` : ''}</div>
+    ${meta.length ? `<div class="tm">${meta.join(' · ')}</div>` : ''}${t.done ? '' : (() => { const g = wxTag(t); return g ? `<div class="tw">${g}</div>` : ''; })()}
+    ${t.kind === 'germ' && !t.done && p ? emergenceBar(p, t) : ''}</div>
     <button class="tmore" data-act="editTask" data-id="${t.id}" aria-label="Edit or delete">⋯</button></li>`;
 }
 export function upsertAuto(p, kind, want, due, title) {
@@ -221,9 +236,9 @@ function waterTaskDialog(t) {
     <p class="hint">A full watering is about <b>${perL} L per 40 L bag</b> — the same as ~${Math.round(w.pw.fullMM)} mm of rain. Rain tops the bags up in proportion (e.g. 10 mm ≈ ${L(10)} L into a ${esc(sizeLabel(w.pw.rep))} bag), each day uses about a ${w.iv === 1 ? 'full watering' : `1/${w.iv} of one`}, and if rain is due the next day the watering waits for it. Forecast rain only counts when the chance is 50% or more.</p>
     ${rows ? `<div class="tscroll"><table class="reg rain"><tr><th>Day</th><th>Rain</th><th>Per bag</th></tr>${rows}</table></div>` : ''}` : ''}
     ${!S.weather || S.weather.lat == null ? '<p class="hint">Set your garden’s location in Tools so rain can be counted.</p>' : ''}
-    ${moistureToday().length ? `<p class="hint">🧪 Meter today: ${esc(moistureToday().join(', '))}. Trust the meter (and your finger) over the schedule.</p>` : ''}
-    ${S.containers.some(c => c.indoor && activeIn(c.id).length) ? '<p class="hint">🏠 Indoor pots aren’t included — rain doesn’t reach them, so water them as they need it.</p>' : ''}
-    ${S.starts && S.starts.some(x => x.status === 'growing') ? '<p class="hint">🌱 Seedling trays and small pots aren’t included — they dry out fast, so check them daily.</p>' : ''}
+    ${moistureToday().length ? `<p class="hint">${ui('flask', 16)} Meter today: ${esc(moistureToday().join(', '))}. Trust the meter (and your finger) over the schedule.</p>` : ''}
+    ${S.containers.some(c => c.indoor && activeIn(c.id).length) ? `<p class="hint">${ui('home', 16)} Indoor pots aren’t included — rain doesn’t reach them, so water them as they need it.</p>` : ''}
+    ${S.starts && S.starts.some(x => x.status === 'growing') ? `<p class="hint">${ui('sprout', 16)} Seedling trays and small pots aren’t included — they dry out fast, so check them daily.</p>` : ''}
     <form id="wpf" class="form"><label>Water per 40 L bag (L)<input name="perL" type="number" inputmode="decimal" step="0.5" min="0.5" value="${perL}"></label></form>
     <div class="btns"><button class="btn" data-x="skip">Skip today</button><button class="btn primary" data-x="ok">Close</button></div>`, (m, close) => {
     const f = m.querySelector('#wpf');

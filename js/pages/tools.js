@@ -17,6 +17,7 @@ import { harvestTotalsSection } from '../records/review.js';
 import { IS_TEST } from '../core/site.js';
 import { allReleaseNotes } from '../core/updates.js';
 import { APP_VERSION } from '../version.js';
+import { ui } from '../data/ui-icons.js';
 
 // ---------- the Tools page ----------
 // ---------- time travel (test site) ----------
@@ -25,7 +26,7 @@ function timeTravelSection() {
   A.ttStep = el => go(addDays(td, +el.dataset.d));
   A.ttGo = () => { const v = $('#ttDate').value; if (v) go(v); };
   A.ttBack = () => travelTo(null);
-  return `<section class="timetravel"><h3>⏩ Time travel</h3>
+  return `<section class="timetravel"><h3>${ui('skip', 20)} Time travel</h3>
     <p>Move the test garden to another date to see how plantings, jobs, feeding and harvests play out. ${n ? `<b>The app thinks today is ${niceDate(td)}</b> — ${Math.abs(n)} day${Math.abs(n) === 1 ? '' : 's'} ${n > 0 ? 'ahead' : 'back'} (really ${niceDate(realToday())}).` : 'It’s on today’s date.'}</p>
     <p class="small muted">The weather shown is what it actually did on those days — that year’s records, or the latest year that has them yet. Anything you tick off or record while travelling keeps the travelled date.</p>
     <div class="btnrow">${[[-30, '−30 d'], [-7, '−7 d'], [-1, '−1 d'], [1, '+1 d'], [7, '+7 d'], [30, '+30 d']].map(([d, l]) => `<button type="button" class="btn small" data-act="ttStep" data-d="${d}">${l}</button>`).join('')}</div>
@@ -40,29 +41,29 @@ export function pageSettings() {
   A.import = () => $('#impf').click();
   A.persist = async () => { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist().catch(() => false); storageNote(true); };
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
-  const tile = (h, i, l) => `<a class="tile" href="${h}"><span>${i}</span>${l}</a>`;
+  const tile = (h, i, l) => `<a class="tile" href="${h}"><span>${ui(i, 26)}</span>${l}</a>`;
   const bOld = !S.lastBackup || daysBetween(S.lastBackup, todayStr()) >= 7;
   const html = `<h3 class="grp">Plan &amp; grow</h3><div class="tiles">
-      ${tile('#/plan', '📅', 'Season plan')}${tile('#/rotation', '🔄', 'Rotation')}${tile('#/seedlings', '🌱', 'Seedlings')}${tile('#/sow', '🗓️', 'Sowing calendar')}
-      ${tile('#/mycrops', '🧺', 'My crops')}${tile('#/products', '📦', 'Products &amp; seeds')}${tile('#/sprayday', '💦', 'Sprays')}${tile('#/doctor', '🩺', 'What’s wrong?')}${tile('#/map', '🗺️', 'Garden map')}</div>
+      ${tile('#/plan', 'calendar', 'Season plan')}${tile('#/rotation', 'rotate', 'Rotation')}${tile('#/seedlings', 'sprout', 'Seedlings')}${tile('#/sow', 'seed', 'Sowing calendar')}
+      ${tile('#/mycrops', 'basket', 'My crops')}${tile('#/products', 'box', 'Products &amp; seeds')}${tile('#/sprayday', 'spray', 'Sprays')}${tile('#/doctor', 'doctor', 'What’s wrong?')}</div>
     <h3 class="grp">Records</h3><div class="tiles">
-      ${tile('#/review', '📒', 'Seasons')}${tile('#/spend', '💴', 'Spending &amp; use')}${tile('#/varieties', '🏷️', 'Varieties')}${tile('#/timeline', '📷', 'Photos')}</div>
-    ${IS_TEST ? `<section><h3>🧪 Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
+      ${tile('#/review', 'journal', 'Seasons')}${tile('#/spend', 'money', 'Spending &amp; use')}${tile('#/varieties', 'tag', 'Varieties')}${tile('#/timeline', 'camera', 'Photos')}</div>
+    ${IS_TEST ? `<section><h3>${ui('flask', 20)} Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
       <button class="btn wide" data-act="copyMain">Copy my real garden here</button></section>${timeTravelSection()}` : ''}
-    <h3 class="grp">Help</h3><div class="btnrow"><button type="button" class="btn" data-act="tourStart">🧭 Guided setup</button></div>
+    <h3 class="grp">Help</h3><div class="btnrow"><button type="button" class="btn" data-act="tourStart">${ui('compass')} Guided setup</button></div>
         <h3 class="grp">Settings</h3>
-    <details class="set"${bOld ? ' open' : ''}><summary>💾 Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
+    <details class="set"${bOld ? ' open' : ''}><summary>${ui('save')} Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>
       <p>Everything is stored only on this phone. Back up regularly — connect Google Drive below to have it done every day, or export a file and save it somewhere safe.</p>
       <p class="muted">Last backup: ${S.lastBackup ? niceDate(S.lastBackup) : 'never'}</p>
-      <div class="btnrow"><button class="btn primary" data-act="export">💾 Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
+      <div class="btnrow"><button class="btn primary" data-act="export">${ui('save')} Export backup</button><button class="btn" data-act="import">Restore from backup…</button></div>
       <input type="file" id="impf" accept=".json,application/json,text/plain" hidden>
       <p class="hint" id="persist"></p><div id="snaps"></div></section>${driveSection()}</details>
-    <details class="set"><summary>🔔 Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>Watering jobs for pots &amp; bags, each bed in the ground (they hold far more water, so much less often), indoor pots and seedlings — spaced by the temperature, and put off when enough rain has fallen or is forecast (needs the weather location for the rain).</p>
+    <details class="set"><summary>${ui('bell')} Reminders <small>${S.notify && S.notify.on ? 'morning reminder on' : 'morning reminder off'}</small></summary>${morningSection()}    <section><h3>Watering reminders</h3><p>Watering jobs for pots &amp; bags, each bed in the ground (they hold far more water, so much less often), indoor pots and seedlings — spaced by the temperature, and put off when enough rain has fallen or is forecast (needs the weather location for the rain).</p>
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
-    <details class="set"><summary>🌤️ Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
-    <details class="set"><summary>🎨 Appearance</summary>${themeSettings()}</details>
-    <details class="set"><summary>🧠 Learned from your garden</summary>${learnSection()}</details>
-    <details class="set"><summary>🧺 Harvest totals</summary>${harvestTotalsSection()}</details>
+    <details class="set"><summary>${ui('weather')} Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
+    <details class="set"><summary>${ui('palette')} Appearance</summary>${themeSettings()}</details>
+    <details class="set"><summary>${ui('bulb')} Learned from your garden</summary>${learnSection()}</details>
+    <details class="set"><summary>${ui('basket')} Harvest totals</summary>${harvestTotalsSection()}</details>
     ${eraseSection()}
     <p class="hint center">Garden Planner · v${APP_VERSION}${IS_TEST ? ' · test site' : ''} · <a href="#/settings" data-act="relNotes">What’s new</a> · <a href="#/credits">Credits</a></p>`;
   const after = async () => {
@@ -78,25 +79,25 @@ async function storageNote(retried) {
   const ios = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
   let t;
-  if (ok) t = '🔒 Storage is marked as protected — the phone won’t clear it on its own.';
-  else if (ios && installed) t = '🔒 Installed on your Home Screen, so iOS keeps this app’s data (it isn’t cleared like ordinary Safari websites). It’s only lost if you delete the app from the Home Screen — keep exporting backups.';
-  else if (ios) t = 'ℹ️ Opened in Safari: Safari may clear data for sites you haven’t visited in a while. Use Share → <b>Add to Home Screen</b> and open the app from there — keep your data by exporting a backup first and restoring it in the installed app.';
-  else if (installed) t = `ℹ️ Your phone’s browser hasn’t marked storage as “protected”. It decides this itself (there’s no setting to force it) and normally only clears app data when the phone is almost out of space. Your backups are the real safety net. <button class="link" data-act="persist">${retried ? 'Still not granted — try again' : 'Ask again'}</button>`;
-  else t = 'ℹ️ Opened in the browser. Install it (browser menu → <b>Install app</b> / Add to Home screen) for the safest storage, and keep exporting backups.';
+  if (ok) t = ui('lock', 18) + ' Storage is marked as protected — the phone won’t clear it on its own.';
+  else if (ios && installed) t = ui('lock', 18) + ' Installed on your Home Screen, so iOS keeps this app’s data (it isn’t cleared like ordinary Safari websites). It’s only lost if you delete the app from the Home Screen — keep exporting backups.';
+  else if (ios) t = ui('info', 18) + ' Opened in Safari: Safari may clear data for sites you haven’t visited in a while. Use Share → <b>Add to Home Screen</b> and open the app from there — keep your data by exporting a backup first and restoring it in the installed app.';
+  else if (installed) t = `${ui('info', 18)} Your phone’s browser hasn’t marked storage as “protected”. It decides this itself (there’s no setting to force it) and normally only clears app data when the phone is almost out of space. Your backups are the real safety net. <button class="link" data-act="persist">${retried ? 'Still not granted — try again' : 'Ask again'}</button>`;
+  else t = ui('info', 18) + ' Opened in the browser. Install it (browser menu → <b>Install app</b> / Add to Home screen) for the safest storage, and keep exporting backups.';
   el.innerHTML = t;
 }
 
 // ---------- tabs between related tool pages ----------
 // related Tools pages share one tile and switch with tabs (tabs replace the history entry, so Back goes to Tools)
 const TOOL_GROUPS = [
-  [['sprayday', '💦 Spray days'], ['picksafe', '✅ OK to pick?']],
-  [['spend', '💴 Spending'], ['totals', '🧮 Product use']],
-  [['review', '📒 Season review'], ['compare', '📊 Compare years']],
+  [['sprayday', 'spray', 'Spray days'], ['picksafe', 'ok', 'OK to pick?']],
+  [['spend', 'money', 'Spending'], ['totals', 'calc', 'Product use']],
+  [['review', 'journal', 'Season review'], ['compare', 'chart', 'Compare years']],
 ];
 export function groupTabs(route) {
   const g = TOOL_GROUPS.find(x => x.some(([r]) => r === route)); if (!g) return '';
   A.tabGo = el => location.replace('#/' + el.dataset.r);
-  return `<div class="seg tabs">${g.map(([r, l]) => `<button type="button" data-act="tabGo" data-r="${r}" class="${r === route ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  return `<div class="seg tabs">${g.map(([r, i, l]) => `<button type="button" data-act="tabGo" data-r="${r}" class="${r === route ? 'on' : ''}">${ui(i, 18)} ${l}</button>`).join('')}</div>`;
 }
 
 // ---------- credits: the data and fonts the app uses, and their licences ----------

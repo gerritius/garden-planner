@@ -125,6 +125,15 @@ export function germText(p, short) {
   return `${pctText(last).replace(' up', '')}${when ? ` · ${g.over ? 'came' : 'coming'} up ${when}` : ''}`;
 }
 
+// ---------- the emergence bar: % up now against the 70% that counts as come up well, with a + to log a look ----------
+export function emergenceBar(p, t) {
+  if (!p || p.method !== 'seed' || !p.sowDate || p.sowDate > todayStr()) return '';
+  const last = lastCheck(p), cur = last ? last.pct : 0, next = Math.min(100, (cur || 0) + 10);
+  return `<div class="emerge"><div class="ebar" role="img" aria-label="${cur}% up of ${MOSTLY}% target"><i style="width:${cur}%"></i><b style="left:${MOSTLY}%"></b></div>
+    <span class="etxt">${last ? `${cur}% up` : 'not counted yet'} <small>· target ${MOSTLY}%</small></span>
+    <button type="button" class="estep" data-act="germPlus" data-p="${p.id}"${t ? ` data-t="${t.id}"` : ''} data-pct="${next}" aria-label="Log how many are up (${next}%)">+</button></div>`;
+}
+
 // ---------- recording a look ----------
 export function germDialog(p, opts = {}) {
   const gw = gwOf(p), cs = germChecks(p), td = todayStr(), since = daysBetween(p.sowDate, td), st = isStart(p);
@@ -139,7 +148,7 @@ export function germDialog(p, opts = {}) {
     <p class="muted small">Sown ${shortDate(p.sowDate)} (${since} day${since === 1 ? '' : 's'} ago)${gw ? ` · expected ${shortDate(gw[0])}–${shortDate(gw[1])}` : ''}${cs.length ? `<br>So far: ${cs.map(x => `${shortDate(x.date)} ${esc(pctText(x))}`).join(' · ')}` : ''}</p>
     <form id="gcf" class="form">
       <div class="sowchips">${chips.map(([v, l]) => `<button type="button" class="chip big" data-pct="${v}">${l}</button>`).join('')}</div>
-      <label>Roughly what share has come up? <small>(a guess is fine)</small><span class="pctin"><input name="pct" type="number" inputmode="numeric" min="0" max="100" step="1" required placeholder="e.g. 20"> %</span></label>
+      <label>Roughly what share has come up? <small>(a guess is fine)</small><span class="pctin"><input name="pct" type="number" inputmode="numeric" min="0" max="100" step="1" required placeholder="e.g. 20" value="${opts.pct ?? ''}"> %</span></label>
       ${drill ? `<label>…or count the seedlings along ${stretch} cm of row <small>(about ${per} seeds sown there — one every ${sp} cm)</small><span class="pctin"><input name="cnt" type="number" inputmode="numeric" min="0" step="1"> up</span></label>`
         : st && per > 1 ? `<label>…or count the ${unit}s with a seedling up <small>(of ${per} ${unit}s sown)</small><span class="pctin"><input name="cnt" type="number" inputmode="numeric" min="0" max="${per}" step="1"> up</span></label>`
         : per > 1 ? `<label>…or count them <small>(of about ${per.toLocaleString('en-AU')} spots sown)</small><span class="pctin"><input name="cnt" type="number" inputmode="numeric" min="0" step="1"> up</span></label>` : ''}
@@ -148,6 +157,7 @@ export function germDialog(p, opts = {}) {
     const f = m.querySelector('#gcf');
     const mark = () => m.querySelectorAll('[data-pct]').forEach(b => b.classList.toggle('on', f.pct.value !== '' && +b.dataset.pct === +f.pct.value));
     m.querySelectorAll('[data-pct]').forEach(b => b.onclick = () => { f.pct.value = b.dataset.pct; if (f.cnt) f.cnt.value = ''; mark(); });
+    mark();
     f.pct.oninput = () => { if (f.cnt) f.cnt.value = ''; mark(); };
     if (f.cnt) f.cnt.oninput = () => { if (f.cnt.value !== '') f.pct.value = Math.min(100, Math.round(+f.cnt.value / per * 100)); mark(); };
     m.querySelector('[data-x=no]').onclick = () => { close(); render(); };

@@ -20,7 +20,7 @@ import { syncTasks, toggleTask } from './tasks.js';
 
 // ---------- planned plantings → jobs counted back from planting day ----------
 export const raisable = id => tpDays(id) > 0;
-export const linkedStart = p => (S.starts || []).find(s => s.planId === p.id && s.status === 'growing');
+export const linkedStart = p => (S.starts || []).find(s => s.status === 'growing' && (p.planStart ? s.id === p.planStart : s.planId === p.id));
 function planItems(p) {
   const c = container(p.containerId), cr = crop(p.cropId), sd = p.sowDate, td = todayStr(), items = [], dayOf = [];
   const where = c ? c.name + (sectionOf(p) ? ' ' + sectionOf(p) : '') : '';
@@ -56,13 +56,15 @@ export function activatePlan(p, date, n) {
     for (const s of p.series || []) if (s.start) s.start = addDays(s.start, delta);
   }
   const s = linkedStart(p);
-  if (s && startLeft(s) > 0) startPlanted({ startId: s.id, startN: Math.min(startLeft(s), n || startLeft(s)) }, p);
+  // the number you planned (or the plants the drawing holds) — any spare seedlings stay where they are
+  let use = n ? null : p.planN; if (!n && !use) { const c = container(p.containerId); try { use = c ? Draw.count(c, p) : 0; } catch (e) { use = 0; } }
+  if (s && startLeft(s) > 0) startPlanted(use ? { startId: s.id, startUse: use } : { startId: s.id, startN: Math.min(startLeft(s), n || startLeft(s)) }, p);
   syncTasks(p);
 }
 export function undoActivate(p) {
   p.status = 'planned';
   if (p.plannedFor && p.plannedFor !== p.sowDate) { const back = daysBetween(p.sowDate, p.plannedFor); p.sowDate = p.plannedFor; if (p.harvestDate) p.harvestDate = addDays(p.harvestDate, back); if (p.thinDate) p.thinDate = addDays(p.thinDate, back); for (const s of p.series || []) if (s.start) s.start = addDays(s.start, back); }
-  for (const s of S.starts || []) { const i = (s.events || []).findIndex(e => e.pid === p.id); if (i >= 0) { s.events.splice(i, 1); s.status = 'growing'; s.planId = p.id; syncStartTasks(s); } }
+  for (const s of S.starts || []) { const i = (s.events || []).findIndex(e => e.pid === p.id); if (i >= 0) { s.events.splice(i, 1); s.status = 'growing'; if (!p.planStart) s.planId = p.id; syncStartTasks(s); } }
   S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && !t.done && !t.plan));
   syncPlanTasks(p);
 }
@@ -134,7 +136,7 @@ function monthTicks(t0, t1) {
 const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 function planRange() { const now = new Date(); const t0 = ymd(new Date(now.getFullYear(), now.getMonth(), 1)), t1 = ymd(new Date(now.getFullYear(), now.getMonth() + 9, 1)); return [t0, t1]; }
 export function pagePlan() {
-  setChrome('Season plan', { back: true, kicker: 'What’s growing when — and what could go in the gaps' });
+  setChrome('Season plan', { tab: 'plan', kicker: 'What’s growing when — and what could go in the gaps' });
   const [t0, t1] = planRange(), cs = S.containers.filter(c => c.type !== 'nursery').sort((a, b) => (a.type === 'bed') === (b.type === 'bed') ? 0 : a.type === 'bed' ? -1 : 1);
   const html = `<div class="btnrow"><a class="btn small" href="#/rotation">🔄 Rotation for next year</a><a class="btn small" href="#/shop">🛒 What to buy</a></div><p class="hint">Bars run from sowing/planting to the end of picking. <span class="tlkey planned">Striped</span> = planned. Tap a free gap’s crop to plan it — prep jobs are added counting back from the planting date.</p>
     ${cs.map(c => { const gs = freeGaps(c).slice(0, 4); return `<section class="plan"><h3><a href="#/container/${c.id}">${esc(c.name)}</a> <small class="muted">${esc(sizeLabel(c))}</small></h3>

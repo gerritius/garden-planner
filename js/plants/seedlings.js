@@ -12,7 +12,7 @@ import { Draw } from '../draw.js';
 import { applyCrop, recalc } from '../pages/planting-form.js';
 import { crop, cropOptions, ic, varieties } from './crops.js';
 import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
-import { KEPT, keptText, lastLeaves, leafDialog, moveKept, startReady } from './growth.js';
+import { harvestEstimate, KEPT, keptText, lastLeaves, leafDialog, moveKept, startReady } from './growth.js';
 import { TRANSPLANT } from '../data/catalog.js';
 import { ui } from '../data/ui-icons.js';
 
@@ -63,6 +63,18 @@ const DISCARD = ['Spare / too many', 'Weak or leggy', 'Pests or disease', 'Died 
 export const start = id => (S.starts || []).find(s => s.id === id);
 export const startLeft = s => (s.count || 0) - (s.events || []).reduce((a, e) => a + (+e.n || 0), 0);
 export const startsGrowing = () => (S.starts || []).filter(s => s.status === 'growing');
+// crops planned with a group's seedlings: the plans that take some of them (p.planStart, how many: p.planN plants), or
+// all of them (a tray sown for a plan: s.planId)
+export const plansUsing = s => S.plantings.filter(p => isPlanned(p) && (p.planStart === s.id || (s.planId === p.id && !p.planStart)));
+// pots or cells set aside for planned crops — the rest are free to plant somewhere else
+export function startReserved(s, exceptPid) {
+  let n = 0;
+  for (const p of plansUsing(s)) if (p.id !== exceptPid) n += p.planN ? Math.ceil(p.planN / perOf(s)) : startLeft(s);
+  return Math.min(startLeft(s), n);
+}
+export const startFree = (s, exceptPid) => startLeft(s) - startReserved(s, exceptPid);
+// how many plants go in each spot: peas go in pairs, to hold each other up
+export const perSpotOf = id => (id && crop(id).perSpot) || 1;
 export const startWhere = s => s.kind === 'tray' ? `Tray ${s.tray || 1}` : ntype(s).name;
 const inTray = (no, exceptId) => startsGrowing().filter(s => s.kind === 'tray' && (s.tray || 1) === no && s.id !== exceptId);
 // the type of tray number `no` (from what's growing in it)
@@ -84,9 +96,9 @@ export function syncStartTasks(s) {
   };
   syncStartGerm(s);   // looks at how many are up, until they are
   const tp = transplantOf(s.cropId);
-  const pp = s.planId && planting(s.planId);
   const ready = startReady(s);   // (none when the crop's days to planting out aren't known)
-  upsert('transplant', !!ready && !s.no_transplant && !(pp && isPlanned(pp)), ready, `Plant out seedlings${tp && tp[1] ? ` (${tp[1].replace(/^./, c => c.toLowerCase())})` : ''}`);
+  // (seedlings all set aside for planned crops go out with them; any spare still need planting out — or discarding)
+  upsert('transplant', !!ready && !s.no_transplant && startFree(s) > 0, ready, `Plant out seedlings${tp && tp[1] ? ` (${tp[1].replace(/^./, c => c.toLowerCase())})` : ''}`);
 }
 export function startTaskMeta(t) {
   const s = start(t.startId); if (!s) return '';
@@ -258,11 +270,11 @@ export function startDialog(s, preset) {
 // planting there), or into another tray or pots to grow on (they become their own group). The rest stay where they are.
 export function replantDialog(s) {
   if (!s) return;
-  const left = startLeft(s), td = todayStr(), spots = S.containers.filter(c => c.type !== 'nursery'), pp = s.planId && planting(s.planId);
+  const left = startLeft(s), td = todayStr(), spots = S.containers.filter(c => c.type !== 'nursery'), plans = plansUsing(s);
   const nursery = nurseryChoices(s);
   modal(`<h3>Replant ${esc(crop(s.cropId).en)} seedlings</h3><p class="muted small">${left} ${unitOf(s)}${left === 1 ? '' : 's'} in ${esc(startWhere(s))} · sown ${shortDate(s.sowDate)}</p>
     <form id="pof" class="form"><div class="two"><label>${perOf(s) > 1 ? `How many ${unitOf(s)}s? <small>(${perOf(s)} plants each)</small>` : 'How many?'}<input name="n" type="number" inputmode="numeric" min="1" max="${left}" value="${left}"></label><label>When<input name="date" type="date" value="${td}" min="${s.sowDate}" max="${td}"></label></div></form>
-    ${pp && isPlanned(pp) ? `<p class="small">Planned spot</p><ul class="plist pick"><li><a href="#" data-plan="${pp.id}">📅 <span class="grow"><b>${esc((container(pp.containerId) || {}).name || '')}${sectionOf(pp) ? ' · ' + sectionOf(pp) : ''}</b><small>planned for ${shortDate(pp.sowDate)}</small></span>›</a></li></ul>` : ''}
+    ${plans.length ? `<p class="small">Planned spot${plans.length > 1 ? 's' : ''}</p><ul class="plist pick">${plans.map(pp => `<li><a href="#" data-plan="${pp.id}">📅 <span class="grow"><b>${esc((container(pp.containerId) || {}).name || '')}${sectionOf(pp) ? ' · ' + sectionOf(pp) : ''}</b><small>planned for ${shortDate(pp.sowDate)}${pp.planN ? ` · ${pp.planN} plant${pp.planN === 1 ? '' : 's'}` : ''}</small></span>›</a></li>`).join('')}</ul>` : ''}
     <p class="small">Into the garden</p><ul class="plist pick">${spots.map(c => {
       // the same crop growing there already: these can fill its gaps (one that never came up, one that died) instead
       const same = activeIn(c.id).filter(p => p.cropId === s.cropId);
@@ -277,10 +289,10 @@ export function replantDialog(s) {
     const f = m.querySelector('#pof'), fn = m.querySelector('#pon'), newType = wireNewSize(m, fn);
     const howMany = () => Math.max(1, Math.min(left, +f.n.value || left)), when = () => (f.date.value && f.date.value <= td ? f.date.value : td);
     m.querySelector('[data-x=no]').onclick = close;
-    const pl = m.querySelector('[data-plan]');
-    if (pl) pl.onclick = async e => { e.preventDefault(); const n = howMany(), p = planting(pl.dataset.plan);
+    // a planned spot takes the number planned for it — unless you've changed how many
+    m.querySelectorAll('[data-plan]').forEach(pl => pl.onclick = async e => { e.preventDefault(); const p = planting(pl.dataset.plan), n = +f.n.value === left && p.planN ? null : howMany();
       const t = S.tasks.find(t => t.plantingId === p.id && t.kind === 'plan_sow' && !t.done); if (t) { t.done = true; t.doneOn = when(); }
-      activatePlan(p, when(), n); await save(); close(); location.hash = '#/plant/' + p.id; };
+      activatePlan(p, when(), n); await save(); close(); location.hash = '#/plant/' + p.id; });
     m.querySelectorAll('[data-c]').forEach(a => a.onclick = e => {
       e.preventDefault(); const n = howMany(), date = when();
       close(); location.hash = `#/plant/new/${a.dataset.c}?crop=${encodeURIComponent(s.cropId)}&start=${s.id}&n=${n}${date !== td ? '&date=' + date : ''}`;
@@ -383,15 +395,18 @@ export function discardDialog(s) {
 // called from the planting form when it was opened from "Plant out"
 export function prefillFromStart(d, q) {
   const s = start(q.get('start')); if (!s) return;
-  const cr = crop(s.cropId);
-  d.startId = s.id; d.startN = Math.min(+q.get('n') || startLeft(s), startLeft(s)); d.startPlants = plantsOf(s, d.startN);
+  const cr = crop(s.cropId), left = startLeft(s);
+  d.startId = s.id; d.startN = Math.min(+q.get('n') || left, left); d.startPlants = plantsOf(s, d.startN);
   d.method = 'seedling'; d.variety = s.variety || d.variety;
   if (cr.method === 'seed') {   // seed crops raised in a tray: final spacing, and harvest still counts from sowing
     if (cr.thinSp) d.plantSp = Math.max(+cr.sowSp || 0, +cr.thinSp);
     d.seededOn = s.sowDate; d.harvestManual = false; recalc(d);
   }
   d.notes = d.notes || `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
-  placeFew(d, d.startPlants);
+  // into a pot or bag, as many as you said; into a bed (or all of them), as many as the layout takes — the rest stay
+  // where they are (how many can be changed on the form)
+  const c = container(d.containerId);
+  setStartCount(c, d, d.startN < left && c && c.type !== 'bed' ? d.startPlants : defaultStartCount(c, d, d.startPlants));
 }
 // where n seedlings go in a bag or pot: spaced round the middle of the section (one in the middle) — null in a bed
 export function fewSpots(c, d, n) {
@@ -401,17 +416,63 @@ export function fewSpots(c, d, n) {
   const rx = Math.max(2, (W / 2 - m) * 0.5), ry = Math.max(2, ((+d.to - +d.from) / 2 - m) * 0.5);
   return Array.from({ length: n }, (_, i) => { const a = Math.PI * 2 * i / n + (n === 2 ? 0 : -Math.PI / 2); return [Math.round((W / 2 + rx * Math.cos(a)) * 10) / 10, Math.round((cy + ry * Math.sin(a)) * 10) / 10]; });
 }
-// a few seedlings into a bag or pot: that many plants (beds keep their rows)
-function placeFew(d, n) {
-  const pts = fewSpots(container(d.containerId), d, n); if (!pts) return;
-  if (n === 1) { d.layout = 'center'; return; }
-  d.layout = 'free'; d.positions = pts;
+// ---------- how many seedlings go in, and where ----------
+// the form's layout as numbers (what the drawing reads)
+const laid = d => Object.assign({}, d, { from: +d.from || 0, to: +d.to, rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
+// the seedlings the form is planting (or planning) and how many of them it can have
+export function formStart(d) {
+  const s = d.startId ? start(d.startId) : d.useStart ? start(d.useStart) : d._pid && isPlanned(d) ? linkedStart(d) : null;
+  if (!s) return null;
+  return { s, have: d.startId ? plantsOf(s, startLeft(s)) : plantsOf(s, startFree(s, d._pid)), asked: d.startId ? d.startPlants : null };
+}
+// how many go in by default: what the layout holds (a diamond's 4 — pairs of peas, 8), no more than you have
+export function defaultStartCount(c, d, have) {
+  let spots = 0; try { const L = laid(d); spots = !c ? 0 : d.layout === 'free' ? (d.positions || []).length : Draw.count(c, L) <= Draw.MAX_ARRANGE ? Draw.layout(c, L).pts.length : Draw.count(c, L); } catch (e) { spots = 0; }
+  return Math.max(1, Math.min(have, (spots || have) * perSpotOf(d.cropId)));
+}
+// n seedlings in the drawing: the layout as it is when that's what it holds; otherwise each one placed (pairs of peas
+// side by side) at the layout's spots, round the middle of a pot or along the rows — then they can be dragged
+export function setStartCount(c, d, n) {
+  n = Math.max(1, Math.round(+n || 1)); d.startCount = n;
+  if (!c) return;
+  const per = perSpotOf(d.cropId), L = laid(d), r1 = v => Math.round(v * 10) / 10;
+  let pat;
+  try { pat = d.layout === 'free' ? (d.positions || []) : Draw.count(c, L) <= Draw.MAX_ARRANGE ? Draw.layout(c, L).pts : null; } catch (e) { pat = null; }
+  if (!pat || n > Draw.MAX_ARRANGE) return;   // too many to place one by one: the layout says where
+  if (d.layout !== 'free' && pat.length === n) { d.positions = null; return; }   // (one to a spot)
+  // spots for k more plants, as far from the ones already there as they can be
+  const more = (have, k) => {
+    const spots = Math.ceil(k / per), cand = (fewSpots(c, L, Math.min(12, Math.max(spots, have.length + spots))) || Draw.layout(c, Object.assign({}, L, { layout: 'rows' })).pts).map(q => q.slice(0, 2));
+    const out = [], far = q => Math.min(Infinity, ...have.concat(out).map(h => Math.hypot(h[0] - q[0], h[1] - q[1])));
+    for (let i = 0; i < spots && cand.length; i++) { cand.sort((a, b) => far(b) - far(a)); out.push(cand.shift()); }
+    return out;
+  };
+  // a spot's plants: one, or a pair 6 cm apart
+  const fill = (spots, k) => { const pts = []; for (const q of spots) { if (pts.length >= k) break; if (per > 1 && k - pts.length >= 2) pts.push([q[0] - 3, q[1]], [q[0] + 3, q[1]]); else pts.push(q.slice(0, 2)); } return pts; };
+  let pts;
+  if (d.layout === 'free') pts = pat.length >= n ? pat.slice(0, n) : pat.concat(fill(more(pat, n - pat.length), n - pat.length));
+  else { const spots = Math.ceil(n / per); pts = fill(pat.length >= spots ? pat.slice(0, spots) : pat.concat(more(pat, (spots - pat.length) * per)), n); }
+  d.layout = 'free'; d.positions = pts.map(q => [r1(q[0]), r1(q[1])].concat(q[2] ? [q[2]] : []));
+  d.startCount = d.positions.length;
+}
+// would these seedlings be any use in a space free from gs until ge? Ready to go out while it's free, not long past
+// ready (a month on they're getting old in the tray), and cropping in time: first pickings at least two weeks before
+// the space is needed. { ok, P: when they'd go in, ready, hv: first harvest, why }
+export function startFit(s, c, gs, ge) {
+  const td = todayStr(), ready = startReady(s) || td, P = [gs || td, td, ready].sort().pop();
+  let hv = null; try { hv = harvestEstimate({ id: 'fit', cropId: s.cropId, sowDate: P, method: 'seedling', seededOn: s.sowDate, containerId: c && c.id }); } catch (e) { hv = null; }
+  const o = { P, ready, hv, ok: true, why: '' };
+  if (gs && gs > addDays(ready, 30)) return Object.assign(o, { ok: false, why: `ready ~${shortDate(ready)} — too long before ${shortDate(gs)}` });
+  if (ge && P > addDays(ge, -14)) return Object.assign(o, { ok: false, why: `not ready to plant out until ~${shortDate(ready)}` });
+  if (ge && hv && hv > addDays(ge, -14)) return Object.assign(o, { ok: false, why: `first picking ~${shortDate(hv)}, too late for ${shortDate(ge)}` });
+  if (hv && daysBetween(P, hv) > 300) return Object.assign(o, { ok: false, why: 'too long to crop' });
+  return o;
 }
 export function startPlanted(d, p) {
   const s = start(d.startId); if (!s) return;
   p.startId = s.id; p.seededOn = s.sowDate; p.raisedIn = s.kind; p.raisedName = ntype(s).name;
   // (the cells the drawing's plants came from — any more stay in the tray)
-  const cells = d.startUse ? Math.ceil(d.startUse / perOf(s)) : d.startN || startLeft(s);
+  const cells = d.startUse ? Math.ceil(d.startUse / perOf(s)) : d.startN || startLeft(s);   // (the plants the drawing holds — or a planned number)
   (s.events = s.events || []).push({ id: uid(), type: 'out', date: p.sowDate || todayStr(), n: Math.min(startLeft(s), cells), pid: p.id });
   if (startLeft(s) <= 0) s.status = 'done';
   const tt = S.tasks.find(t => t.startId === s.id && t.kind === 'transplant' && !t.done);
@@ -439,45 +500,66 @@ export function startLogItems() {
 }
 
 // ---------- seedlings already started ----------
-const freeStarts = exceptPid => startsGrowing().filter(s => { const pp = s.planId && planting(s.planId); return !pp || !isPlanned(pp) || pp.id === exceptPid; });
-export function startChooser(d) {
-  const list = freeStarts(); if (!list.length) return '';
-  const td = todayStr();
-  return `<div class="usestart"><small>Use seedlings you’ve started</small><div class="sowchips">${list.map(s => { const ready = startReady(s);
-    return `<button type="button" class="chip${d.useStart === s.id ? ' on' : ''}" data-act="useStart" data-id="${s.id}">${ic(s.cropId, 20)}${esc(crop(s.cropId).en)}${s.variety ? ' · ' + esc(s.variety) : ''} <small>×${startLeft(s)} · ${esc(startWhere(s))} · ${ready <= td ? 'ready' : 'ready ~' + shortDate(ready)}</small></button>`; }).join('')}</div></div>`;
+const freeStarts = exceptPid => startsGrowing().filter(s => startFree(s, exceptPid) > 0);
+// on the planting form: your seedlings that would crop in this space first; the rest folded away, with why
+export function startChooser(d, c, ge) {
+  const list = freeStarts(d._pid); if (!list.length) return '';
+  const td = todayStr(), all = list.map(s => ({ s, f: startFit(s, c, d.sowDate || td, ge) }));
+  const chip = ({ s, f }) => `<button type="button" class="chip${d.useStart === s.id ? ' on' : ''}" data-act="useStart" data-id="${s.id}">${ic(s.cropId, 20)}${esc(crop(s.cropId).en)}${s.variety ? ' · ' + esc(s.variety) : ''} <small>×${plantsOf(s, startFree(s, d._pid))} · ${esc(startWhere(s))} · ${f.ready <= td ? 'ready' : 'ready ~' + shortDate(f.ready)}${f.ok ? '' : ' · ' + esc(f.why)}</small></button>`;
+  const good = all.filter(x => x.f.ok || x.s.id === d.useStart), poor = all.filter(x => !good.includes(x));
+  return `<div class="usestart"><small>Use seedlings you’ve started</small>${good.length ? `<div class="sowchips">${good.map(chip).join('')}</div>` : ''}${poor.length ? `<details class="fold"><summary class="muted small">${good.length ? 'Others' : 'Yours'} — won’t crop in time here (${poor.length})</summary><div class="sowchips">${poor.map(chip).join('')}</div></details>` : ''}</div>`;
 }
 export function applyStart(d, s, c) {
-  if (d.useStart === s.id) { d.useStart = null; d.startId = null; d.startN = null; return; }
+  if (d.useStart === s.id) { d.useStart = null; d.startId = null; d.startN = null; d.startCount = null; return; }
   const keepSow = d.sowDate, cr = crop(s.cropId);
   if (d.cropId !== s.cropId) applyCrop(d, cr, c);
   d.sowDate = keepSow; d.variety = s.variety || d.variety; d.method = 'seedling'; d.useStart = s.id; d.raise = s.kind;
   if (cr.method === 'seed' && cr.thinSp) d.plantSp = Math.max(+cr.sowSp || 0, +cr.thinSp);
   d.seededOn = s.sowDate; d.harvestManual = false; recalc(d);
   if (!d.notes) d.notes = `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
+  if (d.layout === 'free') d.positions = null;
+  setStartCount(c, d, defaultStartCount(c, d, plantsOf(s, startFree(s, d._pid))));
 }
-// on save of a new planting that uses started seedlings
+// on save of a new planting that uses started seedlings: a plan sets that many aside; planting now takes them
 export function linkStartOnSave(d, p) {
   const s = d.useStart && start(d.useStart); if (!s) return;
-  if (p.status === 'planned') { s.planId = p.id; p.raise = s.kind; syncStartTasks(s); }
-  else { d.startId = s.id; d.startN = d.startN || startLeft(s); }
+  const have = plantsOf(s, startFree(s, p.id)), n = Math.min(have, d.startCount || have);
+  if (p.status === 'planned') { p.planStart = s.id; p.planN = n; p.raise = s.kind; syncStartTasks(s); }
+  else { d.startId = s.id; d.startUse = n; }
+}
+// editing a plan that uses your seedlings: how many it takes
+export function planStartOnSave(d, p) {
+  const s = isPlanned(p) && linkedStart(p); if (!s || !d.startCount) return;
+  p.planStart = s.id; p.planN = Math.min(plantsOf(s, startFree(s, p.id)), d.startCount); syncStartTasks(s);
 }
 export function startReadyNote(d) {
-  const s = d.useStart && start(d.useStart); if (!s) return '';
-  const ready = startReady(s);
-  return `<p class="hint">🌱 Using ${startLeft(s)} ${esc(crop(s.cropId).en)} seedlings from ${esc(startWhere(s).toLowerCase())}, ready about ${shortDate(ready)}${d.sowDate && ready > d.sowDate ? ` — <b>after</b> this date; they may need longer` : ''}.</p>`;
+  const fs = d.useStart && formStart(d); if (!fs) return '';
+  const { s, have } = fs, ready = startReady(s), n = Math.min(have, d.startCount || have), rest = have - n, where = startWhere(s).toLowerCase();
+  return `<p class="hint">🌱 Using ${n} of your ${have} ${esc(crop(s.cropId).en)} seedlings from ${esc(where)}, ready about ${shortDate(ready)}${d.sowDate && ready > d.sowDate ? ` — <b>after</b> this date; they may need longer` : ''}.${rest > 0 ? ` The other ${rest} stay in ${esc(where)} until you plant them out somewhere else or discard them.` : ''}</p>`;
+}
+// the "how many go in" field on the form
+export function startCountField(d) {
+  const fs = formStart(d); if (!fs) return '';
+  const per = perSpotOf(d.cropId);
+  return `<div class="startcount"><label class="inl">Seedlings going in <input name="startCount" type="number" inputmode="numeric" min="1" max="${fs.have}" value="${d.startCount || fs.have}"> <small>of ${fs.have} in ${esc(startWhere(fs.s))}</small></label>
+    <small class="hint">${per > 1 ? `${esc(crop(d.cropId).en)} go in pairs, ${per} to a spot, to hold each other up. ` : ''}Drag them in the picture to where they’ll go.</small></div>`;
 }
 // planned crop page: link seedlings started separately
 export function planStartLinks(p) {
   if (!isPlanned(p) || linkedStart(p)) return '';
   const m = freeStarts().filter(s => s.cropId === p.cropId); if (!m.length) return '';
-  A.linkStart = async el => { const s = start(el.dataset.id); s.planId = p.id; p.method = 'seedling'; p.raise = s.kind; if (!p.variety) p.variety = s.variety; syncStartTasks(s); syncTasks(p); await save(); render(); };
-  return `<div class="btnrow">${m.map(s => `<button class="btn small" data-act="linkStart" data-id="${s.id}">🌱 Use my ${esc(crop(s.cropId).en)} seedlings (${esc(startWhere(s))}, ×${startLeft(s)})</button>`).join('')}</div>`;
+  A.linkStart = async el => {
+    const s = start(el.dataset.id), c = container(p.containerId); let n = 0; try { n = c ? Draw.count(c, p) : 0; } catch (e) { n = 0; }
+    p.planStart = s.id; p.planN = Math.min(plantsOf(s, startFree(s)), n || plantsOf(s, startFree(s))); p.method = 'seedling'; p.raise = s.kind; if (!p.variety) p.variety = s.variety; syncStartTasks(s); syncTasks(p); await save(); render();
+  };
+  return `<div class="btnrow">${m.map(s => `<button class="btn small" data-act="linkStart" data-id="${s.id}">🌱 Use my ${esc(crop(s.cropId).en)} seedlings (${esc(startWhere(s))}, ×${startFree(s)})</button>`).join('')}</div>`;
 }
-// season plan gaps: offer started seedlings first
+// season plan gaps: offer started seedlings first — those that would crop before the space is needed
 export function gapStartChips(c, g) {
   const prevFam = g.prev ? crop(g.prev.cropId).family : null;
   return freeStarts().filter(s => !(prevFam && prevFam !== 'other' && crop(s.cropId).family === prevFam))
-    .map(s => `<a class="chip mine" href="#/plant/new/${c.id}?plan=1&from=${g.a}&to=${g.b}&date=${g.s}&usestart=${s.id}">🌱 ${esc(crop(s.cropId).en)} <small>your seedlings ×${startLeft(s)}</small></a>`).join('');
+    .map(s => ({ s, f: startFit(s, c, g.s, g.e) })).filter(x => x.f.ok)
+    .map(({ s, f }) => `<a class="chip mine" href="#/plant/new/${c.id}?plan=1&from=${g.a}&to=${g.b}&date=${f.P}&usestart=${s.id}">🌱 ${esc(crop(s.cropId).en)} <small>your seedlings ×${plantsOf(s, startFree(s))}${f.hv ? ' · pick ~' + shortDate(f.hv) : ''}</small></a>`).join('');
 }
 
 // ---------- your seed trays and small pots (sizes are yours to set) ----------
@@ -543,5 +625,5 @@ export function traySowPlan(id, plantDate) {
   }
   return last;   // even the warmest spot is slow: the earliest sensible date, kept as warm as possible
 }
-export function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
+export function trayDateOf(p) { if (p.seededOn) return { d: p.seededOn }; const s = p.id && (S.starts || []).find(x => x.id === p.planStart || x.planId === p.id); return s ? { d: s.sowDate, up: s.upOn } : null; }
 export { TRANSPLANT };   // (from the crop records)

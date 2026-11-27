@@ -4,7 +4,7 @@ import { DB } from '../core/db.js';
 import { compress, dropPhoto } from '../core/photos.js';
 import { A, draft, notFound, render, setChrome, setDraft } from '../core/router.js';
 import { S, save } from '../core/state.js';
-import { confirmBox } from '../core/ui.js';
+import { confirmBox, dragZone } from '../core/ui.js';
 import { $, addDays, daysBetween, esc, num, shortDate, todayStr, uid, unitOpts } from '../core/util.js';
 import { HANDFUL_G } from '../data/catalog.js';
 import { Draw } from '../draw.js';
@@ -21,7 +21,8 @@ import { crop, cropOptions, kin, newCropDialog, varieties } from '../plants/crop
 import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import {
-  applyStart, fewSpots, linkStartOnSave, perOf, plantsOf, prefillFromStart, start, startChooser, startLeft, startPlanted, startReadyNote, startWhere, unitOf
+  applyStart, defaultStartCount, fewSpots, formStart, linkStartOnSave, perOf, planStartOnSave, plantsOf, prefillFromStart, setStartCount, start, startChooser,
+  startCountField, startLeft, startPlanted, startReadyNote, startWhere, unitOf
 } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
 
@@ -72,6 +73,7 @@ export function pagePlantForm(p, c, q) {
       setDraft(JSON.parse(JSON.stringify(p))); draft.newPhotos = {}; draft.removePhotos = {};
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
       draft.harvestManual = true; draft.thinManual = true; draft._pid = p.id;
+      const fs = isPlanned(p) && formStart(draft); if (fs) draft.startCount = Math.min(fs.have, p.planN || fs.have);   // a plan using your seedlings: how many
     }
     if (c.type !== 'bed') { if (isNew) delete draft.mixFresh; mixDefaults(draft, c); if (draft.fertAuto && draft.cropId) try { draft.fert = baseFertPlan(draft.cropId, mixDraftC(c, draft), draft.from, draft.to, draft.sowDate); } catch (e) { console.warn(e); } }
   }
@@ -97,9 +99,9 @@ export function pagePlantForm(p, c, q) {
     return bits.filter(Boolean).join(' · ');
   };
   const html = `${d.startId && start(d.startId) ? `<div class="banner" id="startBanner"></div>` : ''}<form id="pf" class="form">
-    <div class="preview big" id="pprev"></div>
+    <div class="preview big" id="pprev"></div>${startCountField(d)}
     <fieldset><legend>Crop</legend>
-      ${isNew && !d.startId ? startChooser(d) : ''}
+      ${isNew && !d.startId ? startChooser(d, c, (gapAround(c, d.from, d.to, d.sowDate || todayStr()) || {}).e) : ''}
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
       ${isNew && !d.startId ? `<button type="button" class="link" data-act="formIdeas">💡 What could go here${d.sowDate > todayStr() ? ' then' : ' now'}?</button>` : ''}
       <label>Variety<input name="variety" list="vars" value="${esc(d.variety || '')}" placeholder="${esc(cr && varieties(cr.id)[0] ? 'e.g. ' + varieties(cr.id)[0] : 'from the seed packet or plant label')}" autocomplete="off">
@@ -113,7 +115,7 @@ export function pagePlantForm(p, c, q) {
       ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
         `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
-      <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d)}
+      <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">')}
       <div id="mixBits">${mixFormBits(d, c)}</div>
       ${d.cropId && (!d.sowDate || daysBetween(todayStr(), d.sowDate) <= 7) ? soilLine(d.cropId, d.method, c, d.from, d.to) : ''}
     </fieldset>
@@ -181,12 +183,13 @@ export function pagePlantForm(p, c, q) {
     d.from = num(d.from) ?? 0; d.to = num(d.to) ?? L;
     if (document.activeElement && /^fert\./.test(document.activeElement.name || '')) d.fertAuto = false;
   };
+  let shown = null;   // the planting as last drawn
   const preview = () => {
     const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
     tmp.thinned = p ? p.thinned : false;
     if (tmp.layout === 'free' && !(tmp.positions || []).length) {
       // placing by hand: start from the seedlings you're planting out (that many), or else from rows at this spacing
-      const n = d.startPlants || d.startN || (d.useStart && start(d.useStart) ? startLeft(start(d.useStart)) : 0), rows = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
+      const n = d.startCount || 0, rows = Draw.layout(c, Object.assign({}, tmp, { layout: 'rows' })).pts;
       tmp.positions = n ? fewSpots(c, d, n) || rows.slice(0, n) : rows;
       if (n) d.positions = tmp.positions.map(q => q.slice());
     }
@@ -200,14 +203,15 @@ export function pagePlantForm(p, c, q) {
     // planting out from a tray: the plants going in are the ones the drawing holds — the rest stay in the tray
     const sb = $('#startBanner'), st = d.startId && start(d.startId);
     if (sb && st) {
-      const have = d.startPlants || plantsOf(st, d.startN || startLeft(st)), fit = Draw.count(c, tmp), per = perOf(st), use = Math.min(have, fit);
+      const have = plantsOf(st, startLeft(st)), fit = Draw.count(c, tmp), per = perOf(st), use = Math.min(have, fit, d.startCount || fit);
       const cells = Math.min(startLeft(st), Math.ceil(use / per)), restCells = startLeft(st) - cells, unit = unitOf(st), n = crop(st.cropId).en;
       d.startUse = use;
       sb.innerHTML = `🌱 Planting out <b>${use}</b> of the ${have} ${esc(n)} seedling${have === 1 ? '' : 's'} from ${esc(startWhere(st))}${per > 1 ? ` (${cells} ${unit}${cells === 1 ? '' : 's'})` : ''}${use < have
-        ? ` — this layout holds ${fit}. The other ${restCells > 0 ? `${restCells} ${unit}${restCells === 1 ? '' : 's'}` : have - use} stay in ${esc(startWhere(st).toLowerCase())}, to replant somewhere else.`
+        ? `. The other ${restCells > 0 ? `${restCells} ${unit}${restCells === 1 ? '' : 's'}` : have - use} ${(restCells > 0 ? restCells : have - use) === 1 ? 'stays' : 'stay'} in ${esc(startWhere(st).toLowerCase())} until you plant them out somewhere else or discard them.`
         : fit > have ? ` — the layout has room for ${fit}, so the drawing would show ${fit - have} more than you have. <button type="button" class="link" data-act="fitStart">Place just these ${have} by hand</button> or make the section smaller.` : '.'}`;
-      A.fitStart = () => { const rows = Draw.layout(c, Object.assign({}, tmp, { layout: tmp.layout === 'free' ? 'rows' : tmp.layout })).pts; d.layout = 'free'; d.positions = (fewSpots(c, d, have) || rows.slice(0, have)).map(q => q.slice(0, 2)); render(); };
+      A.fitStart = () => { d.layout = 'free'; d.positions = null; setStartCount(c, d, have); render(); };
     }
+    shown = tmp;
     $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
@@ -236,12 +240,40 @@ export function pagePlantForm(p, c, q) {
     const f = $('#pf');
     const more = $('#pfMore'); if (more) more.addEventListener('toggle', () => { d._more = more.open; });
     preview();
+    // seedlings going in: drag them in the picture to where they'll go (the layout becomes "placed by hand")
+    if (formStart(d)) {
+      const box = $('#pprev'), { W, L: LL } = Draw.dims(c); let drag = null, raf = 0;
+      const toCm = e => { const svg = box.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const r = pt.matrixTransform(svg.getScreenCTM().inverse()); return [r.x, r.y]; };
+      const pts = () => (shown ? Draw.layout(c, shown).pts : []);
+      const near = e => { const q = toCm(e), px = box.querySelector('svg').getScreenCTM().a || 1, reach = 22 / px; let best = -1, bd = Infinity; pts().forEach((p0, i) => { const dd = Math.hypot(p0[0] - q[0], p0[1] - q[1]); if (dd < bd) { bd = dd; best = i; } }); return bd <= reach ? best : -1; };
+      const dz = dragZone(box, t => !!t.closest('.plant, .picon'));
+      box.addEventListener('pointerdown', e => {
+        if (!box.querySelector('svg')) return; const i = near(e); if (i < 0) return;
+        if (d.layout !== 'free' || !(d.positions || []).length) { d.positions = pts().map(q => q.slice()); d.layout = 'free'; if (f.layout) f.layout.value = 'free'; }
+        drag = i; box.setPointerCapture(e.pointerId); e.preventDefault();
+      });
+      const mv = e => {
+        if (drag == null) return;
+        const q = toCm(e); q[0] = Math.round(Math.max(0, Math.min(W, q[0])) * 10) / 10; q[1] = Math.round(Math.max(0, Math.min(LL, q[1])) * 10) / 10;
+        if (!Draw.inside(c, q[0], q[1])) return;
+        d.positions[drag] = q.concat(d.positions[drag][2] ? [d.positions[drag][2]] : []);
+        if (!raf) raf = requestAnimationFrame(() => { raf = 0; preview(); });
+      };
+      box.addEventListener('pointermove', e => { if (drag == null) return; mv(e); dz.move(e, mv); });
+      const end = () => { dz.stop(); drag = null; };
+      box.addEventListener('pointerup', end); box.addEventListener('pointercancel', end);
+    }
     f.addEventListener('input', e => {
       const n = e.target.name || '';
       if (e.target.dataset.manual) d[e.target.dataset.manual] = true;
       if (n === 'thinDate') d.thinUser = true;
       if (n === 'harvestDate') d.hvUser = true;
       read();
+      if (n === 'startCount') {   // how many seedlings go in: that many in the drawing
+        const fs = formStart(d), v = Math.round(+e.target.value);
+        if (fs && v >= 1) { setStartCount(c, d, Math.min(fs.have, v)); if (f.layout) f.layout.value = d.layout; const rn = $('#startNote'); if (rn) rn.outerHTML = startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">'); }
+        d.startCount = d.startCount || null;
+      }
       if (n === 'sowDate' || n === 'thinSp' || n === 'daysFrom') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
       if (n === 'sowDate') { const pb = $('#planBits'); if (pb) pb.innerHTML = planFormBits(d, c); const mb = $('#mixBits'); if (mb && !d.mixUser) { delete d.mixFresh; mb.innerHTML = mixFormBits(d, c); } }
       preview();
@@ -254,7 +286,12 @@ export function pagePlantForm(p, c, q) {
         if (e.target.value === '__new') { e.target.value = d.cropId; return newCropDialog(id => { applyCrop(d, crop(id), c); d.method = 'seed'; render(); }); }
         const keepSow = d.sowDate; applyCrop(d, crop(e.target.value), c); d.sowDate = keepSow; recalc(d); return render();
       }
-      if (n === 'layout' || n === 'dir' || /\.every$/.test(n)) { read(); return render(); }
+      if (n === 'layout' || n === 'dir' || /\.every$/.test(n)) {
+        read();
+        // seedlings going in: as many as the new layout takes (a diamond: 4 — or 4 pairs of peas)
+        const fs = n === 'layout' && formStart(d); if (fs) { if (d.layout !== 'free') d.positions = null; setStartCount(c, d, d.layout === 'free' && d.startCount ? d.startCount : defaultStartCount(c, d, fs.asked || fs.have)); }
+        return render();
+      }
       if (n === 'mixKind') { read(); d.mixUser = true; if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); return render(); }
       if (e.target.dataset.slot) {
         const file = e.target.files[0]; if (!file) return;
@@ -309,7 +346,7 @@ async function savePlanting(p, d, c) {
     const cj = careJobs(p.cropId);
     cj.forEach((j, i) => { if (d.sj && d.sj[i] === false) return; const am = jobAmount(j, c, p); p.series.push({ id: uid(), title: j[0], product: am.product, amount: am.amount, unit: am.unit, every: j[2] || 0, per: j[3] || 'week', start: careJobStart(p, j), end: /Pest check|^Side-dress$/.test(j[0]) && p.harvestDate && FRUITING.includes(p.cropId) === false ? p.harvestDate : '' }); });
   }
-  if (isNew && p.layout === 'free' && (d.positions || []).length) p.positions = d.positions.map(q => q.slice());   // placed for you (e.g. seedlings planted out)
+  if ((isNew || d.startCount) && p.layout === 'free' && (d.positions || []).length) p.positions = d.positions.map(q => q.slice());   // placed for you (e.g. seedlings planted out), or dragged on the form
   if (p.layout === 'free' && !(p.positions || []).length) p.positions = Draw.layout(c, Object.assign({}, p, { layout: 'rows' })).pts;
   // photos
   p.photos = p.photos || {};
@@ -321,7 +358,7 @@ async function savePlanting(p, d, c) {
     if (old && old !== want) await dropPhoto(old);
   }
   rememberSeed(p);   // a variety (or packet) you hadn't listed joins your seeds
-  if (isNew) linkStartOnSave(d, p);
+  if (isNew) linkStartOnSave(d, p); else planStartOnSave(d, p);
   if (isNew && d.startId) startPlanted(d, p);
   syncTasks(p);
   await save();

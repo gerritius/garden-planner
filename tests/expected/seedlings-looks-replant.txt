@@ -12,7 +12,7 @@ look 18 Nov: 17 of 20 cells
   then: 
   → {"up":"2026-11-14","germ":["good",85,true],"left":20,"ready":"2026-12-15","jobs":[["transplant","2026-12-15","Plant out seedlings (at 4–5 true leaves)"]]}
 replant offers: 🪴 Grow bag 1Snap pea› | 🌱 A new 49-cell trayTray 2› | 🌱 9 cm pots7.5 cm deep› | ＋ Another size of tray or pot…›
-form banner: 🌱 Planting out 2 of the 2 Chinese cabbage (napa) seedlings from Tray 1. | layout: free 2
+form banner: 🌱 Planting out 2 of the 12 Chinese cabbage (napa) seedlings from Tray 1. The other 10 cells stay in tray 1 until you plant them out somewhere else or discard them. | layout: free 2
 after saving: #/plant/… | asked: false
 groups: [["tray",20,9,"growing","2026-11-14","",["move 5","move 3","out 2","bin 1"]],["pot",5,5,"growing","2026-11-14","st",[]],["tray",3,3,"growing","2026-11-14","st",[]]]
 grow bag: [["snappea","g1","","seed","0–40","center",0,""],["hakusai","g1","st","seedling","0–40","free",2,"49-cell tray"]]

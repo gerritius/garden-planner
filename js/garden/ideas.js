@@ -13,7 +13,7 @@ import { addDays, daysBetween, esc, go, hashStr, iso, pd, queueIdle, shortDate, 
 import { Draw } from '../draw.js';
 import { crop, cropName, ic, myCrops } from '../plants/crops.js';
 import { harvestEstimate, harvestWindow } from '../plants/growth.js';
-import { gapStartChips, start, startLeft, startsGrowing, startWhere, tpDays, traySowFor } from '../plants/seedlings.js';
+import { gapStartChips, start, startFit, startFree, startsGrowing, startWhere, tpDays, traySowFor } from '../plants/seedlings.js';
 import { container, endOf, isLive, isPlanned } from './garden.js';
 import { freeGaps, raisable } from './planning.js';
 import { lastCropIn } from './rotation.js';
@@ -107,7 +107,7 @@ export function ideasDialog(c, a, b, s, e, onPick) {
   const draw = m => {
     // "won't be done in time" only lists real stop-gaps — not the next season's main crops that start just before the date
     const list = cropIdeas(c, a, b, s, clearBy), fit = list.filter(x => x.best.fits), late = list.filter(x => !x.best.fits && (!clearBy || x.best.P < addDays(clearBy, -30)));
-    const mine = startsGrowing().filter(st => list.some(x => x.cr.id === st.cropId));
+    const mine = startsGrowing().filter(st => startFree(st) > 0 && startFit(st, c, s, clearBy ? addDays(clearBy, 13) : null).ok);   // (yours that would crop before it's needed)
     const li = x => `<li data-idea="${x.cr.id}">${ic(x.cr.id)}<span class="grow"><b>${esc(cropName(x.cr.id))}</b>
       <small>${ideaText(x.best)} → ready ~${shortDate(x.best.ready)}, done ~${shortDate(x.best.done)}${x.alt ? ` · or ${ideaText(x.alt).replace(/^\S+ (\S)/, (m0, ch) => ch.toLowerCase())}, done ~${shortDate(x.alt.done)}` : ''}</small>
       ${ideaSoilNotes(c, a, b, x.cr.id) + ideaColdSoil(c, a, b, x.cr.id, x.best)}${x.sameFam ? `<small class="warn">⚠ same family as the ${esc(crop(x.prev.cropId).en.toLowerCase())} before it</small>` : ''}${x.cold && !x.best.cover ? '<small>❄ slow in the cold — a tunnel or fleece speeds it up</small>' : ''}</span>›</li>`;
@@ -116,7 +116,7 @@ export function ideasDialog(c, a, b, s, e, onPick) {
       ${ideaSoilBanner(c, a, b)}
       <label class="inl">Needs to be clear by <input type="date" id="clrBy" value="${clearBy || ''}" min="${s}"></label>
       <small class="hint">${e ? 'Your next planned crop here, less two weeks to prepare.' : clearBy ? 'So it’s free for the next season’s planting — change it if you plan something else.' : 'No date — showing everything.'}</small>
-      ${mine.length ? `<h4>Your seedlings</h4><ul class="plist">${mine.map(st => `<li data-start="${st.id}">${ic(st.cropId)}<span class="grow"><b>${esc(crop(st.cropId).en)}</b><small>${startLeft(st)} in ${esc(startWhere(st))} · sown ${shortDate(st.sowDate)}</small></span>›</li>`).join('')}</ul>` : ''}
+      ${mine.length ? `<h4>Your seedlings</h4><ul class="plist">${mine.map(st => `<li data-start="${st.id}">${ic(st.cropId)}<span class="grow"><b>${esc(crop(st.cropId).en)}</b><small>${startFree(st)} in ${esc(startWhere(st))} · sown ${shortDate(st.sowDate)}${startFit(st, c, s, null).hv ? ' · pick ~' + shortDate(startFit(st, c, s, null).hv) : ''}</small></span>›</li>`).join('')}</ul>` : ''}
       <h4>${clearBy ? `Done by ${shortDate(clearBy)}` : 'Can go in'} <small>(${fit.length})</small></h4>
       ${fit.length ? `<ul class="plist">${fit.map(li).join('')}</ul>` : '<p class="muted">Nothing fits before then — see below, or leave it to rest (or sow a green manure).</p>'}
       ${late.length ? `<details><summary class="muted">Would still be there after ${shortDate(clearBy)} (${late.length})</summary><ul class="plist">${late.map(li).join('')}</ul></details>` : ''}
@@ -129,7 +129,7 @@ export function ideasDialog(c, a, b, s, e, onPick) {
       if (onPick) { m._close(); return onPick(x.cr.id, o); }
       m._close(); go(ideaUrl(c, a, b, o, x.cr.id));
     });
-    m.querySelectorAll('[data-start]').forEach(li => li.onclick = () => { const st = start(li.dataset.start); m._close(); go(`#/plant/new/${c.id}?crop=${st.cropId}&from=${a}&to=${b}&start=${st.id}&n=${startLeft(st)}`); });
+    m.querySelectorAll('[data-start]').forEach(li => li.onclick = () => { const st = start(li.dataset.start); m._close(); const P = startFit(st, c, s, null).P; go(P > todayStr() ? `#/plant/new/${c.id}?plan=1&from=${a}&to=${b}&date=${P}&usestart=${st.id}` : `#/plant/new/${c.id}?crop=${st.cropId}&from=${a}&to=${b}&start=${st.id}&n=${startFree(st)}`); });
   };
   modal('<div></div>', m => draw(m));
 }

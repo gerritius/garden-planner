@@ -1,8 +1,8 @@
-bag, as opened: 🌱 Planting out 2 of the 38 Lettuce seedlings from Tray 1 (1 cell) — this layout holds 2. The other 18 cells stay in tray 1, to replant somewhere else.
-bag, diamond: 🌱 Planting out 4 of the 38 Lettuce seedlings from Tray 1 (2 cells) — this layout holds 4. The other 17 cells stay in tray 1, to replant somewhere else. | drawn 4
+bag, as opened: 🌱 Planting out 2 of the 38 Lettuce seedlings from Tray 1 (1 cell). The other 18 cells stay in tray 1 until you plant them out somewhere else or discard them.
+bag, diamond: 🌱 Planting out 4 of the 38 Lettuce seedlings from Tray 1 (2 cells). The other 17 cells stay in tray 1 until you plant them out somewhere else or discard them. | drawn 4
 saved: planting plants 4 | cells left in the tray 17 | tray still growing growing
-bed, rows: 🌱 Planting out 6 of the 6 Lettuce seedlings from Tray 1 (3 cells) — the layout has room for 18, so the drawing would show 12 more than you have. Place just these 6 by hand or make the section smaller.
-after "place just these": 🌱 Planting out 6 of the 6 Lettuce seedlings from Tray 1 (3 cells). | layout free | positions 6
+bed, rows: 🌱 Planting out 6 of the 34 Lettuce seedlings from Tray 1 (3 cells). The other 14 cells stay in tray 1 until you plant them out somewhere else or discard them.
+just these, placed: 🌱 Planting out 6 of the 34 Lettuce seedlings from Tray 1 (3 cells). The other 14 cells stay in tray 1 until you plant them out somewhere else or discard them. | layout free | positions 6
 saved: cells left 14 | tray growing | plants in the bed 6
 bag planting deleted: cells back in the tray 16
 errs []

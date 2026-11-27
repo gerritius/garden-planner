@@ -42,7 +42,7 @@ const KNOWN = {
   // the records themselves: every crop complete and every number in a sensible range
   console.log('records:', await pg.evaluate(() => {
     const probs = [], ids = new Set(), FLAGS = ['fruiting', 'heading', 'boltIfBig', 'heatBolt', 'dayBolt', 'splits', 'frostHeads', 'halfHardy', 'tall', 'netted', 'bees', 'noFreshCompost'];
-    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'varieties', 'like', 'icon', 'pests'];
+    const KEYS = ['id', 'en', 'ja', 'color', 'group', 'family', 'method', 'layout', 'pot', 'dir', 'depth', 'rowSp', 'sowSp', 'thinStage', 'thinSp', 'daysThin', 'daysHarvest', 'spread', 'sow', 'tender', 'frostEnd', 'germ', 'soilT', 'grow', 'profile', 'perSpot', 'transplant', 'win', 'cont', 'late', 'jobs', 'feed', 'n', 'p', 'k', 'stages', 'ph', 'lime', 'rest', 'flags', 'varieties', 'like', 'icon', 'pests'];
     for (const r of CROPS) {
       const bad = m => probs.push(`${r.id}: ${m}`);
       if (ids.has(r.id)) bad('duplicate id'); ids.add(r.id);

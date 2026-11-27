@@ -1,7 +1,7 @@
 // Planting out from a tray: the plants that go in are the ones the drawing holds, and only their cells leave the tray.
 // (A 20-cell tray, 19 cells sown with 2 plants kept in each — 38 plants — planted out into a grow bag as a diamond, which
-// holds 4: that's 2 cells; the other 17 stay in the tray to replant.) A layout with room for more than you have offers
-// to place just yours.
+// holds 4: that's 2 cells; the other 17 stay in the tray to replant.) A layout with room for more than you have places
+// just yours.
 const { newContext } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/';
@@ -27,8 +27,8 @@ const U = 'http://localhost:8765/';
   // 3 more cells (6 plants) into the bed, in rows: more room than seedlings → offer to place just these
   await pg.goto(U + '#/plant/new/b1?crop=lettuce&start=st&n=3'); await pg.waitForTimeout(600);
   console.log('bed, rows:', await banner());
-  await pg.click('[data-act=fitStart]'); await pg.waitForTimeout(500);
-  console.log('after "place just these":', await banner(), '| layout', await pg.inputValue('#pf select[name=layout]'), '| positions', await pg.evaluate(() => (draft.positions || []).length));
+  if (await pg.$('[data-act=fitStart]')) { await pg.click('[data-act=fitStart]'); await pg.waitForTimeout(500); }
+  console.log('just these, placed:', await banner(), '| layout', await pg.inputValue('#pf select[name=layout]'), '| positions', await pg.evaluate(() => (draft.positions || []).length));
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(500);
   console.log('saved: cells left', await pg.evaluate(() => startLeft(start('st'))), '| tray', await pg.evaluate(() => start('st').status), '| plants in the bed', await pg.evaluate(() => { const p = S.plantings.find(x => x.containerId === 'b1'); return Draw.count(container('b1'), p); }));
   // deleting a planting puts its seedlings back in the tray (to plant them out again, differently)

@@ -1,5 +1,15 @@
 [
   {
+    "version": "1.55.0",
+    "date": "2026-11-27",
+    "notes": [
+      "Planning or planting from your seedlings now asks how many go in. It starts with what the layout takes (a diamond takes 4, and peas go in pairs, so 8), shows them in the picture, and you can drag each one to where it will go.",
+      "Seedlings you don’t use stay in the tray, with their “Plant out” job, until you plant them somewhere else or discard them. A plan only sets aside the number it uses, so the rest can go into another plan.",
+      "Your seedlings are only suggested for a free space when they would be ready to plant out while it’s free and give a first picking at least two weeks before the next crop goes in. On the planting form the others are folded away with the reason.",
+      "The bottom bar now has the Season plan in place of the Log. The running log is on the Calendar page."
+    ]
+  },
+  {
     "version": "1.54.2",
     "date": "2026-11-27",
     "notes": [

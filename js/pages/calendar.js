@@ -19,5 +19,5 @@ export function pageCalendar() {
     const mh = mth !== lastMonth ? `<h2 class="month">${mth}</h2>` : ''; lastMonth = mth;
     return `${mh}<section class="day${d === td ? ' is-today' : ''}"><h3>${head(d)}</h3><ul class="tasks">${groups[d].map(t => taskLi(t)).join('')}</ul></section>`;
   }).join('') : `<div class="empty-state">No upcoming tasks.<br><small>Tasks come from your plantings — thinning, fertiliser, harvest, and anything you add.</small></div>`;
-  return { html: `<div class="btnrow"><a class="btn small" href="#/plan">📅 Season plan</a><a class="btn small" href="#/sprayday">💦 Spray days</a></div>` + html };
+  return { html: `<div class="btnrow"><a class="btn small" href="#/log">📝 Running log</a><a class="btn small" href="#/sprayday">💦 Spray days</a></div>` + html };
 }

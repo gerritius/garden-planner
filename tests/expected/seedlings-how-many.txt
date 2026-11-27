@@ -1,0 +1,19 @@
+season plan seedling chips:
+  Whole pot free now until 30 Apr (164 day → 🌱 Komatsuna your seedlings ×49 · pick ~13 Jan
+  Whole pot free now until 11 Mar (114 day → 🌱 Komatsuna your seedlings ×49 · pick ~13 Jan
+  Whole pot free from 23 Jul · after Potat → 
+  Whole pot free now → 🌱 Snow pea your seedlings ×49 · pick ~23 Apr / 🌱 Komatsuna your seedlings ×49 · pick ~13 Jan
+tab on plan
+peas default: count=4 layout=free plants=4 · 🌱 Using 4 of your 49 Snow pea seedlings from tray 4, ready about 17 Dec — after this date; they may need longer. The other 45 stay in tray 4 until you plant them out somewhere else or discard them.
+peas centre: count=2 layout=free plants=2 · 🌱 Using 2 of your 49 Snow pea seedlings from tray 4, ready about 17 Dec — after this date; they may need longer. The other 47 stay in tray 4 until you plant them out somewhere else or discard them.
+peas diamond: count=8 layout=free plants=8 · 🌱 Using 8 of your 49 Snow pea seedlings from tray 4, ready about 17 Dec — after this date; they may need longer. The other 41 stay in tray 4 until you plant them out somewhere else or discard them.
+peas 6: count=6 layout=free plants=6 · 🌱 Using 6 of your 49 Snow pea seedlings from tray 4, ready about 17 Dec — after this date; they may need longer. The other 43 stay in tray 4 until you plant them out somewhere else or discard them.
+dragged 17,8 → 20,13
+saved plan planned sayaendo planN=6 planStart=pea layout=free positions=6 tray: left 49, free 43, plant-out job yes
+chooser (bag 5, until Mar): Komatsuna ×49 · Tray 1 · ready ~13 Dec / [folded] Snow pea ×43 · Tray 4 · ready ~17 Dec · first picking ~23 Apr, too late for 11 Mar
+planted out 6 tray: left 43, free 43, plant-out job yes
+plant out now (bag 4): count=4 · 🌱 Planting out 4 of the 43 Snow pea seedlings from Tray 4. The other 39 cells stay in tray 4 until you plant them out somewhere else or discard them.
+after planting out tray: left 39, free 39, plant-out job yes
+calendar links 📝 Running log | 💦 Spray days
+log tab on cal tabs Garden,Calendar,Plan,Search,Tools
+errs []

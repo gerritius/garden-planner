@@ -21,7 +21,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   console.log('form', await pg.inputValue('#cropSel'), await pg.inputValue('#pf input[name=variety]'), await pg.inputValue('#pf input[name=sowDate]'), '|', (await pg.textContent('#pf')).match(/Using \d+ [^.]*\./)?.[0]);
   await pg.screenshot({ path: SP + '/usestart.png' });
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(500);
-  console.log('plan', JSON.stringify(await pg.evaluate(() => { const p = S.plantings.find(p => p.cropId === 'snappea'); const s = S.starts[0]; return [p.status, p.method, p.raise, s.planId === p.id, S.tasks.filter(t => !t.done && (t.plantingId === p.id || t.startId === s.id)).map(t => t.kind + ' ' + t.due)]; })));
+  console.log('plan', JSON.stringify(await pg.evaluate(() => { const p = S.plantings.find(p => p.cropId === 'snappea'); const s = S.starts[0]; return [p.status, p.method, p.raise, linkedStart(p) === s, S.tasks.filter(t => !t.done && (t.plantingId === p.id || t.startId === s.id)).map(t => t.kind + ' ' + t.due)]; })));
   // new hakusai planting in Bed 3 reusing the packet
   await pg.goto(U + '#/plant/new/b2'); await pg.waitForTimeout(400);
   console.log('chooser', await pg.$$eval('.usestart .chip', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim())));

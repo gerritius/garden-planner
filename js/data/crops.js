@@ -12,6 +12,7 @@
 //   germ: days to come up in warm soil [min, max] · soilT: soil °C for coming up [lowest, best, highest]
 //   grow: growth speed from temperature — none at tb, the packet's speed at tref, no faster above tcap; warm: [lo, opt]
 //         curve for warm-season crops (see growUnits) · profile: sowing-season rules (climate/sowing.js)
+//   perSpot: seedlings planted together in each spot (peas in pairs, to hold each other up)
 //   transplant: [days sowing → planting out when raised in trays, the sign it's ready] — 0: not raised in trays, and why
 //   win: days it stays good after the first harvest · cont: picked over a season · late: what happens if left
 //   jobs: suggested jobs [title, days after sowing/planting, repeat every N (0 = once), per]
@@ -152,7 +153,7 @@ export const CROPS = [
   { id: 'snappea', en: 'Snap pea', color: '#7cc576', group: 'beans', family: 'legume', method: 'seed', layout: 'rows', depth: 2,
     rowSp: 60, sowSp: 25, thinStage: 'Down to 2 plants at 2–3 true leaves', thinSp: 25, daysThin: 20, daysHarvest: 160, spread: 30, sow: [10, 11],
     germ: [7, 12], soilT: [5, 12, 25], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { winter: [11, 18], spring: [6, 12] },
-    transplant: [21, 'At 3–4 true leaves'], win: 30, cont: 1, late: 'pods get stringy',
+    perSpot: 2, transplant: [21, 'At 3–4 true leaves'], win: 30, cont: 1, late: 'pods get stringy',
     jobs: [['Put up net / trellis', 25], ['Side-dress in spring', 120]], feed: 'legume', n: 8, p: 10, k: 10,
     stages: [{ w: 'restart', t: 'when growth restarts in spring' }, { f: 0.8, t: 'when flowering starts — lightly' }], ph: [6.2, 7], rest: 4,
     flags: ['tall', 'bees'] },
@@ -254,7 +255,7 @@ export const CROPS = [
   { id: 'sayaendo', en: 'Snow pea', color: '#8bc34a', group: 'beans', family: 'legume', method: 'seed', layout: 'rows', depth: 2,
     rowSp: 60, sowSp: 25, thinStage: 'Down to 2 plants at 2–3 true leaves', thinSp: 25, daysThin: 20, daysHarvest: 160, spread: 30, sow: [10, 11],
     germ: [7, 12], soilT: [5, 12, 25], grow: { tb: 0, tref: 16, tcap: 20 }, profile: { winter: [11, 18], spring: [6, 12] },
-    transplant: [21, 'At 3–4 true leaves'], win: 30, cont: 1, late: 'pods get stringy',
+    perSpot: 2, transplant: [21, 'At 3–4 true leaves'], win: 30, cont: 1, late: 'pods get stringy',
     jobs: [['Put up net / trellis', 25], ['Side-dress in spring', 120]], feed: 'legume', n: 8, p: 10, k: 10,
     stages: [{ w: 'restart', t: 'when growth restarts in spring' }, { f: 0.8, t: 'at flowering — lightly' }], ph: [6.2, 7], rest: 4,
     flags: ['tall', 'bees'] },

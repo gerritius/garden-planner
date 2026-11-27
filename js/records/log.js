@@ -77,7 +77,7 @@ function logDays(items) {
 }
 export function pageLog(q) {
   const f = q.get('f') || 'all', cid = q.get('c') || '', lim = +q.get('n') || 120;
-  setChrome('Running log', { tab: 'log', kicker: 'Everything done in the garden' });
+  setChrome('Running log', { back: true, tab: 'cal', kicker: 'Everything done in the garden' });
   let items = logFeed().filter(x => x.date <= todayStr());
   if (f !== 'all') items = items.filter(x => filterOf(x.kind) === f);
   if (cid) items = items.filter(x => x.all || (x.cids || []).includes(cid));

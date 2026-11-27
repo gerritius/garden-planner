@@ -117,6 +117,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `replant-fill-gaps` | Back-up seedlings filling gaps in a crop already growing; one planted separately by mistake: placed by hand as one, drawn by its age, added to the first |
 | `seedlings-moved-outside` | Seedling trays started indoors, moved outside or under cover part-way: where they are and since when, and the plant-out date |
 | `seedlings-looks-replant` | A 49-cell tray: looks at how many cells are up, then replanting a few at a time — into 9 cm pots, a new 9-cell tray, a grow bag where snap peas grow — and throwing one away |
+| `seedlings-how-many` | Seedlings into a plan or a bag: how many go in (a diamond's 4, pairs of peas), dragging them, the rest staying in the tray; seedling suggestions only where they'd crop before the space is needed; the Plan tab |
 | `spray-days` | Good spraying days from the forecast |
 | `spray-mixing-and-legality` | Spray dilution helper and the registered-crop legality check |
 | `spray-registry-table` | What the pesticide registry allows for each crop |

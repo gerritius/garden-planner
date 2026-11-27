@@ -28,6 +28,8 @@ use — so to see where something comes from, look at the `import` lines.
 | `js/backup/` | Snapshots on the phone, export/restore, Google Drive backup |
 | `js/pages/` | The main pages: home, calendar, bed/pot, planting form, planting, search, Tools |
 
+How the app works out its dates, amounts and warnings (weather, growth, learning, watering, feeding…): [docs/how-it-works.md](docs/how-it-works.md).
+
 A few conventions:
 
 - **The garden is `S`** (`js/core/state.js`). Change it, then call `save()`. To replace it wholesale, use `restoreGarden()`

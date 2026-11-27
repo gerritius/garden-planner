@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.54.2",
+    "date": "2026-11-27",
+    "notes": [
+      "A bag’s potting mix no longer says it was filled on the day you added the bag to the app when a crop was already growing in it: the fill date moves back to that crop’s planting date. Bags you’ve already added are put right when you update.",
+      "Adding a pot or bag with its potting mix now asks when the mix went in."
+    ]
+  },
+  {
     "version": "1.54.1",
     "date": "2026-11-27",
     "notes": [

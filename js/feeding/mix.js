@@ -35,6 +35,21 @@ export function mixDialog(c) {
   });
 }
 
+// The fill recorded when a pot is added to the app is dated that day (or the day you gave). A crop that was already
+// growing in the pot then was planted into that mix, so the fill can't be later than it: move the fill back to the
+// earliest such crop's planting date. (Adding a bag on 17 Nov with potatoes planted 30 Aug said "filled fresh 17 Nov".)
+export function settleAddedFill(c) {
+  if (!c || c.type === 'bed' || !(c.mixLog || []).length) return false;
+  const e = c.mixLog.filter(x => !x.pid).sort(mixSort)[0];
+  if (!e || !(e.added || e.date === c.created)) return false;
+  const there = (sow, end) => sow && sow < e.date && (!end || end >= e.date);
+  const dates = [...S.plantings.filter(p => p.containerId === c.id && p.status !== 'planned' && there(p.sowDate, p.status === 'harvested' ? p.harvestedOn || p.harvestDate : '')).map(p => p.sowDate),
+    ...(c.history || []).filter(h => !S.plantings.some(p => p.id === h.plantingId) && there(h.sowDate, h.harvestedOn)).map(h => h.sowDate)].sort();
+  if (!dates.length) return false;
+  e.date = dates[0]; e.added = true;
+  return true;
+}
+
 // ---------- potting mix, chosen when planting a pot or bag ----------
 // Each planting can carry its own mix event (pid = the planting) — fresh fill or re-used — dated on its sow/plant date.
 // Older entries you added by hand (no pid) stay as the pot's history and are still counted.
@@ -67,6 +82,7 @@ export function mixDraftC(c, d) {
 }
 export function saveMixChoice(p, d, c) {
   if (!c || c.type === 'bed') return;
+  settleAddedFill(c);
   const ev = mixEventFor(Object.assign({}, d, { _pid: p.id }), c);
   c.mixLog = (c.mixLog || []).filter(e => e.pid !== p.id);
   if (ev) c.mixLog.push(Object.assign({ id: uid(), pid: p.id }, ev));

@@ -81,7 +81,8 @@ export function pageContainerForm(c) {
     ${(ensureAreas(), S.areas.length > 1) ? `<label>Area<select name="area">${S.areas.map(x => `<option value="${x.id}"${(d.area || S.areas[0].id) === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
     <label>Where<div class="seg wrap">${[['full', `${ui('sun', 18)} Full sun`], ['part', `${ui('partsun', 18)} Part sun`], ['shade', `${ui('shade', 18)} Shade`], ['in', `${ui('home', 18)} Indoors`]].map(([v, l]) => `<button type="button" data-act="where" data-v="${v}" class="${(d.indoor ? 'in' : d.sun || 'full') === v ? 'on' : ''}">${l}</button>`).join('')}</div><small>Used for growth estimates. You can switch it any time from the ${d.type === 'bed' ? 'bed' : 'pot'}’s page.</small></label>
     ${isNew && d.type !== 'bed' ? `<label>Potting mix<select name="mixKind"><option value="">— not recorded —</option>${mixList().map(([k, en, ja]) => `<option value="${k}"${d.mixKind === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
-      <label class="inl chkline"><input type="checkbox" name="mixFresh"${d.mixFresh === false ? '' : ' checked'}> <span>Fresh mix (not re-used)</span></label>` : ''}
+      <label class="inl chkline"><input type="checkbox" name="mixFresh"${d.mixFresh === false ? '' : ' checked'}> <span>Fresh mix (not re-used)</span></label>
+      <label>Filled on<input name="mixDate" type="date" value="${esc(d.mixDate || todayStr())}" max="${todayStr()}"><small>When this mix went in. If you then add a crop that was planted earlier, the fill moves back to that crop’s planting date.</small></label>` : ''}
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
     <div class="preview" id="cprev"></div><p class="banner warn" id="sizeWarn" hidden></p>
     <button class="btn primary wide" type="submit">${isNew ? 'Add' : 'Save'}</button></form>`;
@@ -113,7 +114,7 @@ export function pageContainerForm(c) {
       if (isNew) {
         const n = Math.max(1, Math.min(50, parseInt(d.count) || 1));
         for (let i = 0; i < n; i++) S.containers.push(Object.assign({ id: uid(), name: n > 1 ? `${name} ${i + 1}` : name, history: [], created: todayStr() }, base,
-          d.type !== 'bed' && d.mixKind ? { mixLog: [{ id: uid(), date: todayStr(), kind: d.mixKind, fresh: d.mixFresh !== false }] } : {}));
+          d.type !== 'bed' && d.mixKind ? { mixLog: [{ id: uid(), date: d.mixDate && d.mixDate <= todayStr() ? d.mixDate : todayStr(), kind: d.mixKind, fresh: d.mixFresh !== false, added: true }] } : {}));
         await save(); setDraft(null); go(n > 1 ? '#/' : '#/container/' + S.containers[S.containers.length - 1].id);
       } else {
         const L = base.type === 'round' ? base.diameter : base.length;

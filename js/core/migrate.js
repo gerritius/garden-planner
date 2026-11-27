@@ -6,6 +6,7 @@
 //   3. npm test — tests/scenarios/old-backups.js restores every saved backup and checks nothing is lost
 // Saves from before data versions existed have no dataVersion: they run every step.
 
+import { settleAddedFill } from '../feeding/mix.js';
 import { migrateCareJobTimes } from '../feeding/plans.js';
 import { migrateCovers } from '../plants/covers.js';
 import { migrateGermChecks } from '../plants/germination.js';
@@ -15,7 +16,7 @@ import { migrateNursery } from '../plants/seedlings.js';
 import { migrateFeed, migrateOwnProducts, migrateOwnRules, migrateProducts } from '../products/library.js';
 import { blank, S, setState } from './state.js';
 
-export const DATA_VERSION = 11;
+export const DATA_VERSION = 12;
 // a bracketed Japanese gloss, in text the app wrote: job and care-job titles, thinning advice
 const GLOSS = /\s*\((?:[^()]*?)[\u3040-\u30ff\u4e00-\u9fff][^()]*\)/g;
 function migrateGlosses() {
@@ -35,6 +36,7 @@ const STEPS = [
   { to: 9, what: 'seedlings: a list of your tray and pot sizes instead of one of each', run: migrateNursery },
   { to: 10, what: 'no built-in products: the ones your records use become yours, and sprays keep their crops, waiting times and limits as their own', run: migrateOwnRules },
   { to: 11, what: 'job names the app wrote lose their Japanese glosses; your own notes are untouched', run: migrateGlosses },
+  { to: 12, what: 'a pot’s potting mix, recorded when the pot was added, is dated no later than the crop already growing in it', run: () => S.containers.forEach(settleAddedFill) },
 ];
 
 // a new, empty garden — without the products older versions came with (the data steps still run: on an empty garden

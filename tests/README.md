@@ -96,6 +96,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `planting-form-more-options` | The short planting form and its "More options" |
 | `potato-harvest-dates` | Potato harvest dates for different planting dates |
 | `potting-mix-fertiliser` | Fertiliser in fresh and re-used potting mix |
+| `potting-mix-fill-date` | A bag added after its crop went in: the mix's fill date moves back to the planting date; older saves put right |
 | `potting-mix-in-planting-form` | Choosing fresh or re-used mix when planting; defaults from the pot's history |
 | `products-library` | Adding, editing, renaming and removing products; the catalogue; sprays without registry data |
 | `popup-then-move` | Answering a pop-up and moving to another page straight after (Save, Delete): the app stays on the new page |

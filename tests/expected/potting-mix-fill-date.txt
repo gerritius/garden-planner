@@ -1,0 +1,7 @@
+add form fill date: 2026-11-18
+bag added: [["2026-11-18","iris",true,false]]
+potatoes 30 Aug saved: [["2026-08-30","iris",true,false]]
+next crop form: Potting mixRe-usedFresh mix Iris Ohyama Golden Granular Soil, filled fresh 30 Aug 2026. Sieve out the old roots; the compost and fertiliser you mix in go under Starting fertiliser. 
+bag with its own fill date: [["2026-10-01","iris",true,false]]
+old saves: ["Growing: 2026-08-30, 2026-08-30(crop)","Harvested before: 2026-11-17","Refilled by hand: 2026-11-17"]
+errs []

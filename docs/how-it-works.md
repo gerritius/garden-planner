@@ -1,6 +1,6 @@
 # How Garden Planner works things out
 
-A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.54.0** (live on
+A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.54.1** (live on
 both the real site and the test site). It explains each calculation in outline and names the file where it lives. Each
 crop's own numbers are in its record in `js/data/crops.js` (the header there lists every field), and this guide
 doesn't repeat them.
@@ -294,6 +294,9 @@ seedlings. Each group remembers when it was last watered.
 - The amount suggested is that deficit in litres per m² times the bed's area.
 - A meter reading of DRY today makes it due now. A WET reading pushes it to tomorrow.
 
+**Drying off:** watering jobs leave out potatoes and other tubers for the last 10 days before harvest, so the skins
+firm up, and bulb onions and garlic for the last 14, so the necks dry. Roots like carrots keep steady water.
+
 **Indoor pots** are watered every 3 days, or every 2 at 24 °C or more. **Seedlings** are watered daily, or every other
 day below 12 °C. Trays outside skip a day after 3 mm or more of rain.
 
@@ -386,6 +389,10 @@ into the watering can. The usable share comes from the product's N-P-K and its a
 - Crops going into winter are kept lean: from 3 weeks before, or 5 weeks for heading brassicas grown for spring, which
   bolt if big in the cold. Their main feed is when growth restarts.
 - Garlic and onions have a **last feed**, and nothing goes on after it.
+- **The run-up to harvest:** feed takes a week or more to act, so nothing is scheduled in the last weeks before
+  harvest. That means 4 weeks for tubers and bulbs, 3 for roots and 2 for everything else, counted back from the first
+  harvest. Heads and one-off fruit (cabbage, corn, squash…) are counted back from "most ready by" instead. Crops picked
+  over a long season keep being fed.
 - The planner runs every planned dose in date order and leaves one out if it's more than 30% of the season's need in one
   go, or if the soil would hold more than the too-much limit then.
 - Repeating feeds pause through cold dormancy, skip while the soil holds plenty, stop when nothing more is needed, and

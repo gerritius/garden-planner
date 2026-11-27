@@ -8,6 +8,7 @@ import { addDays, daysBetween, esc, shortDate, todayStr } from '../core/util.js'
 import { container, isLive } from '../garden/garden.js';
 import { crop, ic } from '../plants/crops.js';
 import { myProducts, product } from './library.js';
+import { ui } from '../data/ui-icons.js';
 
 export const SPRAY_CAVEAT = 'The app doesn’t look up pesticide rules: crops, waiting times and limits are what you’ve entered from each label. Always follow the label and the rules where you live.';
 // a spray's rule for a crop: { listed, phi, max } — listed false: you've entered crops for it, and this isn't one;
@@ -58,13 +59,13 @@ export function sprayHolds(p, today = todayStr()) {
 }
 export function sprayBanner(p) {
   const h = sprayHolds(p)[0]; if (!h) return '';
-  return `<div class="banner warn">💦 Sprayed <b>${esc(h.e.product || 'pesticide')}</b> on ${shortDate(h.e.date)} — <b>don’t pick until ${shortDate(h.until)}</b> (${h.e.phi}-day wait).</div>`;
+  return `<div class="banner warn">${ui('spray', 18)} Sprayed <b>${esc(h.e.product || 'pesticide')}</b> on ${shortDate(h.e.date)} — <b>don’t pick until ${shortDate(h.until)}</b> (${h.e.phi}-day wait).</div>`;
 }
 export function sprayAlerts() {
   const act = S.plantings.filter(isLive), by = {};
   for (const p of act) { const h = sprayHolds(p)[0]; if (h) (by[h.until] = by[h.until] || []).push([p, h]); }
   const ks = Object.keys(by).sort(); if (!ks.length) return '';
-  return `<a class="banner warn" href="#/picksafe">💦 <b>Spray waiting period</b> — don’t pick ${ks.map(u => `${by[u].map(([p]) => esc(crop(p.cropId).en)).join(', ')} until <b>${shortDate(u)}</b>`).join('; ')}.</a>`;
+  return `<a class="banner warn" href="#/picksafe">${ui('spray', 18)} <b>Spray waiting period</b> — don’t pick ${ks.map(u => `${by[u].map(([p]) => esc(crop(p.cropId).en)).join(', ')} until <b>${shortDate(u)}</b>`).join('; ')}.</a>`;
 }
 
 // ---------- the "OK to pick?" board ----------

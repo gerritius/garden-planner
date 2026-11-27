@@ -64,6 +64,14 @@ const P = {
   family: '<circle class="d" cx="12" cy="5.5" r="2.2"/><circle class="d" cx="6" cy="17.5" r="2.2"/><circle class="d" cx="18" cy="17.5" r="2.2"/><path d="M12 7.7V12M12 12l-4.6 3.8M12 12l4.6 3.8"/>',
   ph: '<path class="d" d="M12 3.5s6.5 7 6.5 11a6.5 6.5 0 0 1-13 0c0-4 6.5-11 6.5-11z"/><path d="M9.3 17v-4.2h1.4a1.2 1.2 0 0 1 0 2.4H9.3M13.4 12.8V17M15.6 12.8V17M13.4 14.9h2.2" stroke-width="1.3"/>',
   info: '<circle class="d" cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.8h.01" stroke-width="2"/>',
+  can: '<path class="d" d="M4.5 10h10.5v8.5a2 2 0 0 1-2 2H6.5a2 2 0 0 1-2-2z"/><path d="M7 10a2.8 2.8 0 0 1 5.5 0M15 12.5l5.5-4.5M19.3 6.6l2.2 2.6"/><path d="M20.5 12v.01M21.5 14.5v.01M19.3 15v.01" stroke-width="2"/>',
+  bed: '<rect class="d" x="6.5" y="3" width="11" height="18" rx="1.2"/><path d="M9.5 7.5h5M9.5 12h5M9.5 16.5h5"/>',
+  fleece: '<path class="d" d="M3.5 19.5V14a8.5 8.5 0 0 1 17 0v5.5z"/><path d="M2.5 19.5h19M6 13.5c1.5-1 3-1 4.5 0s3 1 4.5 0 3-1 4.5 0"/>',
+  shadecloth: '<path class="d" d="M3 9.5 12 5l9 4.5z"/><path d="M5 9.5v11M19 9.5v11M7.5 9.5l-1 2.5M12 9.5v2.5M16.5 9.5l1 2.5"/>',
+  weed: '<path d="M12 20.5V9M12 14c-2.5 0-4.5-1.5-5-4.5 2.5 0 4.5 1.5 5 4.5zM12 11.5c2.5 0 4.5-1.5 5-4.5-2.5 0-4.5 1.5-5 4.5zM5 20.5h14"/>',
+  flag: '<path d="M5.5 21V3.5"/><path class="d" d="M5.5 4h12l-2.5 4 2.5 4h-12"/>',
+  no: '<circle class="d" cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/>',
+  water: '<path class="d" d="M12 3.5s6.5 7 6.5 11a6.5 6.5 0 0 1-13 0c0-4 6.5-11 6.5-11z"/><path d="M9 15a3 3 0 0 0 3 3"/>',
   more: '<path d="M6 12h.01M12 12h.01M18 12h.01" stroke-width="2.6"/>',
 };
 export const UI_ICONS = Object.keys(P);

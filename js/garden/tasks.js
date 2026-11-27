@@ -30,6 +30,7 @@ export function seriesTitle(s) {
   return 'Fertilise' + (s.product ? `: ${s.product}` : '') + amt;
 }
 function dueText(t) {
+  if (!t.done && t.kind === 'pickby' && t.due < todayStr()) return `<span class="overdue">Overdue since ${niceDate(t.due)}</span>`;
   const d = effDue(t), n = daysBetween(todayStr(), d);
   return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : `${niceDate(d)} · in ${n} days`;
 }
@@ -56,6 +57,7 @@ export function taskLi(t, showCrop = true) {
   else if (showCrop && p) meta.push(`${ic(p.cropId)}<b>${esc(crop(p.cropId).en)}</b>${c ? ' · ' + esc(c.name) : ''}`);
   else if (showCrop && c) meta.push(`${BED_ICON(20)}<b>${esc(c.name)}</b>`);
   if (!showCrop && !t.done) meta.push(dueText(t));
+  else if (showCrop && !t.done && t.kind === 'pickby' && t.due < todayStr()) meta.push(`<span class="overdue">overdue since ${shortDate(t.due)}</span>`);
   if (t.done) meta.push('Done ' + shortDate(t.doneOn));
   return `<li class="task${t.done ? ' done' : ''}"><label class="chk"><input type="checkbox" data-task="${t.id}"${t.done ? ' checked' : ''}><span></span></label>
     <div class="tbody" data-act="editTask" data-id="${t.id}"><div class="tt">${esc(t.title)}${t.seriesId && !t.done ? ' <span class="rep">↻</span>' : ''}</div>
@@ -161,8 +163,8 @@ export function taskOwner(t) {
   return { p, c };
 }
 export const taskVisible = t => (t.withWater && !t.done && (!S.water || S.water.on !== false)) ? false : t.kind === 'water' || t.kind === 'frost' || t.kind === 'wx' || (t.startId ? !!start(t.startId) : false) || !!(t.plantingId ? planting(t.plantingId) : t.containerId && container(t.containerId));
-export const BED_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><rect x="9" y="3" width="14" height="26" rx="1.5" fill="#8a6a4b" stroke="#3a2a1c" stroke-width="1.3"/><path d="M12 9h8M12 15h8M12 21h8" stroke="#7fb069" stroke-width="2.2" stroke-linecap="round"/></svg>`;
-const CAN_ICON = s => `<svg class="cicon" width="${s}" height="${s}" viewBox="0 0 32 32"><path d="M8 13h13v13a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2z" fill="#7aa7c7" stroke="#3a2a1c" stroke-width="1.3"/><path d="M21 16l7-6" stroke="#3a2a1c" stroke-width="2.4" stroke-linecap="round"/><path d="M11 13a4 4 0 0 1 7 0" fill="none" stroke="#3a2a1c" stroke-width="1.3"/><path d="M28 13v.1M29.5 15.5v.1M27 16.5v.1" stroke="#3d7fb8" stroke-width="1.8" stroke-linecap="round"/></svg>`;
+export const BED_ICON = s => ui('bed', s, 'cicon');
+const CAN_ICON = s => ui('can', s, 'cicon');
 
 // ---------- job templates ----------
 function templatePicker() {

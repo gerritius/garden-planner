@@ -5,6 +5,7 @@
 import { A, render } from '../core/router.js';
 import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
+import { ui } from '../data/ui-icons.js';
 import { $, addDays, daysBetween, esc, pd, shortDate, todayStr } from '../core/util.js';
 import { _season } from '../feeding/stages.js';
 import { container } from '../garden/garden.js';
@@ -216,7 +217,7 @@ export function growUnits(id, T) {
 }
 
 // ---------- microclimate: indoors/outdoors, sun, container size ----------
-const SUN = [['full', '☀️ Full sun'], ['part', '⛅ Part sun'], ['shade', '☁️ Shade']];
+const SUN = [['full', `${ui('sun', 18)} Full sun`], ['part', `${ui('partsun', 18)} Part sun`], ['shade', `${ui('shade', 18)} Shade`]];
 export function potVolume(c) {
   if (!c || c.type === 'bed') return null;
   const dep = +c.depth || 30;
@@ -254,7 +255,7 @@ export function tempFor(cid, p) {
   return d => { const T = adj(dayTemp(d, daily)); return cov ? T + cov(d, T) : T; };
 }
 export function climateLabel(c) {
-  if (c.indoor) return '🏠 Indoors';
+  if (c.indoor) return `${ui('home', 18)} Indoors`;
   return (SUN.find(s => s[0] === (c.sun || 'full')) || SUN[0])[1] + ' · outdoors';
 }
 export function climateDialog(c) {

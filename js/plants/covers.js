@@ -10,9 +10,10 @@ import { Draw } from '../draw.js';
 import { activeIn, container } from '../garden/garden.js';
 import { crop, kin } from './crops.js';
 import { NEEDS_BEES } from '../data/catalog.js';
+import { ui } from '../data/ui-icons.js';
 
 const COVER_TYPES = [
-  ['insect', '🕸️', 'Insect net tunnel', ''], ['fushokufu', '🧣', 'Fleece tunnel', ''], ['shade', '🕶️', 'Shade cloth', ''],
+  ['insect', ui('net', 16), 'Insect net tunnel', ''], ['fushokufu', ui('fleece', 16), 'Fleece tunnel', ''], ['shade', ui('shadecloth', 16), 'Shade cloth', ''],
 ];
 const COVER_OLD = { fleece: 'fushokufu', cloche: 'fushokufu', bird: 'insect' };
 export const coverType = t => COVER_TYPES.find(x => x[0] === (COVER_OLD[t] || t)) || COVER_TYPES[0];

@@ -1,6 +1,8 @@
 // Shared pieces of the interface: pop-up dialogs, confirm boxes and drag areas that still let the page scroll.
 
 import { $, esc } from './util.js';
+import { A, render } from './router.js';
+import { ui } from '../data/ui-icons.js';
 
 // ---------- pop-up dialogs ----------
 // each pop-up gets its own step in the back history, so the phone's Back button closes it instead of leaving the page
@@ -61,4 +63,12 @@ export function dragZone(box, grab) {
     move(e, fn) { last = { clientX: e.clientX, clientY: e.clientY }; onMove = fn; if (!raf) raf = requestAnimationFrame(tick); },
     stop() { last = null; onMove = null; if (raf) cancelAnimationFrame(raf); raf = 0; },
   };
+}
+
+// ---------- bed drawings: compact first, so what's under them shows without scrolling; a toggle makes them full size ----------
+let tallPlot = false;   // (for this visit)
+export const plotMaxH = full => tallPlot ? full : Math.min(full, Math.max(140, Math.round(window.innerHeight * 0.28)));
+export function plotSizeBtn() {
+  A.plotSize = () => { tallPlot = !tallPlot; render(); };
+  return `<button type="button" class="plotsz" data-act="plotSize" aria-pressed="${tallPlot}">${ui(tallPlot ? 'collapse' : 'expand', 16)}${tallPlot ? 'Smaller' : 'Bigger'}</button>`;
 }

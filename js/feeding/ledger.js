@@ -16,6 +16,7 @@ import { feedPlanner } from './planner.js';
 import { feedDialog, feedEnd, schedPlanned } from './plans.js';
 import { coverBar, fateLine, feedSim, simVerdict } from './sim.js';
 import { actsOn, feedSeason, inLean, leanWhy } from './stages.js';
+import { ui } from '../data/ui-icons.js';
 
 export function feedLedger(p) {
   const c = container(p.containerId); if (!c || !p.sowDate) return null;
@@ -128,16 +129,16 @@ export function feedingSection(p) {
   const cell = v => `<td>${v == null ? '—' : v < 0.05 ? '·' : gN(v)}</td>`;
   const rows = `<tr class="hd"><th></th><th>N</th><th>P</th><th>K</th></tr>` + Object.keys(grp).map(k => { const ls = L.lines.filter(l => l.g === k); return ls.length ? `<tr class="fg"><th colspan="4">${grp[k]}</th></tr>${ls.map(l => `<tr${l.logId ? ` data-act="editFeed" data-id="${l.logId}"` : ''}><td>${l.date ? `<small>${shortDate(l.date)}</small> ` : ''}${esc(l.label)}${l.note ? `<small>${esc(l.note)}</small>` : ''}</td>${cell(l.n)}${cell(l.p)}${cell(l.k)}</tr>`).join('')}` : ''; }).join('');
   const nextUp = L.planned.slice().sort((a, b) => (a.t.due < b.t.due ? -1 : 1))[0];
-  const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `🔁 Every ${s.every} days: ${esc(s.product)} ${amtFor(s.product, s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
+  const scheds = (p.feedPlan || []).filter(s => !s.stopped && !s.done).map(s => `${ui('rotate', 16)} Every ${s.every} days: ${esc(s.product)} ${amtFor(s.product, s.amount, s.unit)}${s.paused ? ` — <b>paused</b>: ${s.paused === 'salt' ? 'meter shows salt DANGER' : 'enough nitrogen for the season'}` : ''}`).join('<br>');
   const sim = feedSim(p, L);
   const salt = L.c && soilReadingAdvice(L.c, p.from, p.to, p.cropId);
   return `<section class="feeding"><h3>Feeding</h3>
-    ${salt && salt.feed < 1 ? `<div class="banner warn">🧪 Your meter read salt <b>DANGER</b> on ${shortDate(salt.r.date)} — too much fertiliser in the soil. Hold off feeding (repeating feeds are paused) and water through well; take another reading in a week or so.</div>` : ''}
+    ${salt && salt.feed < 1 ? `<div class="banner warn">${ui('flask', 18)} Your meter read salt <b>DANGER</b> on ${shortDate(salt.r.date)} — too much fertiliser in the soil. Hold off feeding (repeating feeds are paused) and water through well; take another reading in a week or so.</div>` : ''}
     ${sim ? `${coverBar(sim)}<p class="small">${simVerdict(sim, L, p)}</p>` : `<p class="small">${feedVerdict(L, p)}</p>`}
-    ${(() => { const se = feedSeason(p), bad = se && se.bolt ? L.planned.filter(x => !x.t.schedId && inLean(se, actsOn(x.name, x.t.due))) : []; return bad.length ? `<div class="banner warn">📅 ${bad.map(x => `${esc(x.text)} (${shortDate(x.t.due)})`).join(', ')} ${bad.length > 1 ? 'are' : 'is'} planned in the lean stretch before winter — ${esc(leanWhy(p, se))}. Better to skip ${bad.length > 1 ? 'them' : 'it'} (tap the job → Delete) and feed around ${shortDate(se.we)}; open 📅 Feeding plan to re-plan.</div>` : ''; })()}
+    ${(() => { const se = feedSeason(p), bad = se && se.bolt ? L.planned.filter(x => !x.t.schedId && inLean(se, actsOn(x.name, x.t.due))) : []; return bad.length ? `<div class="banner warn">${ui('calendar', 18)} ${bad.map(x => `${esc(x.text)} (${shortDate(x.t.due)})`).join(', ')} ${bad.length > 1 ? 'are' : 'is'} planned in the lean stretch before winter — ${esc(leanWhy(p, se))}. Better to skip ${bad.length > 1 ? 'them' : 'it'} (tap the job → Delete) and feed around ${shortDate(se.we)}; open Feeding plan to re-plan.</div>` : ''; })()}
     ${nextUp || scheds ? `<p class="small">${nextUp ? `Next: <b>${esc(nextUp.text)}</b> ${shortDate(nextUp.t.due)}.` : ''}${scheds ? `<br>${scheds}` : ''}</p>` : ''}
-    ${L.bag && !mixState(L.c) ? `<div class="banner warn">🪴 This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <a class="btn small" href="#/plant/${p.id}/edit">Set it in Edit planting</a></div>` : ''}
-    <div class="btnrow"><button class="btn small primary" data-act="feedNow">🌿 Record feeding</button>${isLive(p) ? '<button class="btn small" data-act="addSideDress">📅 Feeding plan…</button>' : ''}</div>
+    ${L.bag && !mixState(L.c) ? `<div class="banner warn">${ui('pot', 18)} This pot’s potting mix isn’t recorded, so the fertiliser in the mix isn’t counted. <a class="btn small" href="#/plant/${p.id}/edit">Set it in Edit planting</a></div>` : ''}
+    <div class="btnrow"><button class="btn small primary" data-act="feedNow">${ui('feed', 18)} Record feeding</button>${isLive(p) ? `<button class="btn small" data-act="addSideDress">${ui('calendar', 18)} Feeding plan…</button>` : ''}</div>
     <details class="fold inner"><summary>What’s been counted</summary>
       ${L.need ? `<p class="small">${esc(crop(p.cropId).en)} needs about <b>${gN(L.need)}</b> of ${NAME_N} over the season ${L.bag ? 'in this pot' : `in this ${L.area.toFixed(1)} m² section`}. Counted: <b>${gN(L.total)}</b>${L.plannedN ? ` + ${gN(L.plannedN)} planned` : ''}.</p>` : ''}
       ${sim && L.need ? `<p class="small">${fateLine(sim, L, p)}</p>` : ''}

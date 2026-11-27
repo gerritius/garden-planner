@@ -9,6 +9,7 @@ import { $, $$, daysBetween, esc, iso, niceDate, shortDate, todayStr, uid } from
 import { container } from '../garden/garden.js';
 import { crop, cropName, ic } from '../plants/crops.js';
 import { pestName, pestPicker, readPests } from '../plants/problems.js';
+import { ui } from '../data/ui-icons.js';
 
 // ---------- photo diary ----------
 const dayN = (p, date) => p.sowDate ? daysBetween(p.sowDate, date) : null;
@@ -85,12 +86,12 @@ export function noteEntryDialog(t, blob, guess) {
   let photo = blob || null;
   const p = t.p, c = t.c || (p && container(p.containerId));
   const where = p ? `${crop(p.cropId).en}${c ? ' · ' + c.name : ''}` : c ? c.name : '';
-  modal(`<h3>📝 Note</h3><p class="muted small">${esc(where)}</p>
+  modal(`<h3>${ui('note')} Note</h3><p class="muted small">${esc(where)}</p>
     <form id="nef" class="form">
       <div class="notephoto"><label class="phslot ph" id="neph">${photo ? `<img src="${URL.createObjectURL(photo)}" alt="">` : '<span>📷 ＋ Photo<br><small>optional</small></span>'}<input type="file" accept="image/*" hidden></label></div>
       <label>Date<input type="date" name="date" value="${guess && guess <= todayStr() ? guess : todayStr()}" max="${todayStr()}"></label>
       <label>Note<textarea name="note" rows="3" placeholder="${p ? 'e.g. first true leaves, holes in leaves…' : 'e.g. added 2 L compost, soil very wet…'}"></textarea></label>
-      ${p ? `<details><summary class="muted">🐛 Spotted a problem?</summary>${pestPicker()}</details>` : ''}
+      ${p ? `<details><summary class="muted">${ui('bug', 18)} Spotted a problem?</summary>${pestPicker()}</details>` : ''}
       <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Save</button></div></form>`, (m, close) => {
     const f = m.querySelector('#nef'), inp = m.querySelector('#neph input');
     inp.onchange = async () => {

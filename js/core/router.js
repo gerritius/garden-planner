@@ -20,7 +20,7 @@ import { pagePlantForm } from '../pages/planting-form.js';
 import { pageArrange, pagePlant } from '../pages/planting.js';
 import { pageSearch } from '../pages/search.js';
 import { groupTabs, pageCredits, pageSettings } from '../pages/tools.js';
-import { syncHarvest, syncThin } from '../plants/growth.js';
+import { syncHarvest, syncPickBy, syncThin } from '../plants/growth.js';
 import { pageDoctor } from '../plants/problems.js';
 import { nurseryDialog, pageSeedlings } from '../plants/seedlings.js';
 import { pageVarieties, pageVariety } from '../plants/varieties.js';
@@ -90,7 +90,7 @@ export function render() {
   }
   A.nursery = () => nurseryDialog();
   try { syncThin(); } catch (e) { console.warn(e); }
-  try { syncHarvest(); } catch (e) { console.warn(e); }
+  try { syncHarvest(); syncPickBy(); } catch (e) { console.warn(e); }
   try { syncFeedPlans(); syncWater(); syncMeterJobs(); } catch (e) { console.warn(e); }
   let html = '', after = null;
   try {

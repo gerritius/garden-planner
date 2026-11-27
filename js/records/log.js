@@ -14,16 +14,17 @@ import { pestName } from '../plants/problems.js';
 import { startLogItems } from '../plants/seedlings.js';
 import { myProducts, product } from '../products/library.js';
 import { sprayBanner, sprayRule, usesSoFar, waitText } from '../products/sprays.js';
+import { ui } from '../data/ui-icons.js';
 
 // ---------- running log ----------
 const LOG_KINDS = [
-  ['fert', '🌿', 'Fertilised'], ['spray', '💦', 'Sprayed'], ['water', '🚿', 'Watered'], ['weed', '🌾', 'Weeded'],
-  ['soil', '🪏', 'Soil / compost'], ['cover', '🕸️', 'Net / cover'], ['pest', '🐛', 'Pest check'], ['other', '✎', 'Other'],
+  ['fert', ui('feed'), 'Fertilised'], ['spray', ui('spray'), 'Sprayed'], ['water', ui('water'), 'Watered'], ['weed', ui('weed'), 'Weeded'],
+  ['soil', ui('trowel'), 'Soil / compost'], ['cover', ui('net'), 'Net / cover'], ['pest', ui('bug'), 'Pest check'], ['other', ui('edit'), 'Other'],
 ];
 const LOG_FILTERS = [['all', 'All'], ['fert', 'Fertiliser'], ['spray', 'Sprays'], ['water', 'Watering'], ['job', 'Jobs'], ['harvest', 'Harvests'], ['sow', 'Sowing'], ['note', 'Notes & diary']];
 export const logKind = k => LOG_KINDS.find(x => x[0] === k) || LOG_KINDS[LOG_KINDS.length - 1];
 const kindOfTitle = s => /fertil|feed|bokashi|manure|side-dress/i.test(s) ? 'fert' : /spray|insecticide|fungicide|neem|bt\b/i.test(s) ? 'spray' : /lime|compost|dig/i.test(s) ? 'soil' : 'job';
-export const KIND_ICON = { fert: '🌿', spray: '💦', water: '🚿', soil: '🪏', job: '✓', harvest: '🧺', sow: '🌱', note: '📝', diary: '📷', weed: '🌾', cover: '🕸️', pest: '🐛', other: '✎', done: '🏁' };
+export const KIND_ICON = { fert: ui('feed'), spray: ui('spray'), water: ui('water'), soil: ui('trowel'), job: ui('check'), harvest: ui('basket'), sow: ui('sprout'), note: ui('note'), diary: ui('camera'), weed: ui('weed'), cover: ui('net'), pest: ui('bug'), other: ui('edit'), done: ui('flag') };
 const filterOf = k => ['diary', 'pest', 'note'].includes(k) ? 'note' : ['weed', 'cover', 'other', 'done', 'job'].includes(k) ? 'job' : k;
 export function logWhere(e) {
   const ps = (e.pids || []).map(planting).filter(Boolean), cs = (e.cids || []).map(container).filter(Boolean);
@@ -85,7 +86,7 @@ export function pageLog(q) {
   A.newLog = () => logDialog(null, cid ? { cids: [cid] } : {});
   A.editLog = el => logDialog((S.log || []).find(e => e.id === el.dataset.id));
   A.more = () => location.replace(url({ n: lim + 200 }));
-  const html = `<div class="btnrow"><button class="btn primary grow" data-act="newLog">📝 Log something</button><a class="btn" href="#/totals">📊 Totals</a></div>
+  const html = `<div class="btnrow"><button class="btn primary grow" data-act="newLog">${ui('note', 18)} Log something</button><a class="btn" href="#/totals">${ui('chart', 18)} Totals</a></div>
     <div class="sowchips filt">${LOG_FILTERS.map(([k, l]) => `<a class="chip big${k === f ? ' on' : ''}" href="${url({ f: k, n: '' })}" onclick="location.replace(this.href);return false;">${l}</a>`).join('')}</div>
     <label class="inline">Bed / pot <select id="logc"><option value="">All</option>${S.containers.map(c => `<option value="${c.id}"${c.id === cid ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}</select></label>
     ${shown.length ? logDays(shown) : '<div class="empty-state">Nothing logged yet.<br><small>Ticked jobs, harvests, sowings, notes and anything you log here all show up by day.</small></div>'}
@@ -99,7 +100,7 @@ export function logSection(c, p) {
   A.newLog = () => logDialog(null, p ? { pids: [p.id] } : { cids: [c.id] });
   A.editLog = el => logDialog((S.log || []).find(e => e.id === el.dataset.id));
   return `<section><h3>Running log</h3>${items.length ? `<ul class="plist log">${items.map(x => logLi(Object.assign({}, x, { sub: shortDate(x.date) + (x.sub ? ' · ' + x.sub : '') }))).join('')}</ul>` : '<p class="muted">Nothing logged yet.</p>'}
-    <div class="btnrow"><button class="btn small" data-act="newLog">📝 Log something</button>${c ? `<a class="btn small" href="#/log?c=${c.id}">See all</a>` : ''}</div></section>`;
+    <div class="btnrow"><button class="btn small" data-act="newLog">${ui('note', 18)} Log something</button>${c ? `<a class="btn small" href="#/log?c=${c.id}">See all</a>` : ''}</div></section>`;
 }
 export function logDialog(e, preset = {}) {
   const isNew = !e;
@@ -205,7 +206,7 @@ export const harvestTotal = p => (p.harvests || []).reduce((s, h) => s + (+h.cou
 export function harvestSection(p) {
   const hs = (p.harvests || []).slice().sort((a, b) => (a.date < b.date ? 1 : -1));
   return `<section><h3>Harvest log</h3>
-    <div class="hvbar"><div class="hvtotal"><b>${harvestTotal(p)}</b><span>picked so far</span></div><button class="btn primary" data-act="logHarvest">🧺 Log a harvest</button></div>
+    <div class="hvbar"><div class="hvtotal"><b>${harvestTotal(p)}</b><span>picked so far</span></div><button class="btn primary" data-act="logHarvest">${ui('basket', 18)} Log a harvest</button></div>
     ${hs.length ? `<ul class="plist hvlist">${hs.map(h => `<li data-act="editHarvest" data-id="${h.id}"><span class="hvn">+${h.count}</span><span class="grow">${niceDate(h.date)}${h.note ? `<small>${esc(h.note)}</small>` : ''}</span><span class="muted">✎</span></li>`).join('')}</ul>` : ''}
   </section>`;
 }

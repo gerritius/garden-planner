@@ -3,7 +3,7 @@
 import { dropPhoto } from '../core/photos.js';
 import { A, draft, notFound, render, setChrome, setDraft } from '../core/router.js';
 import { S, save } from '../core/state.js';
-import { confirmBox, dragZone, modal } from '../core/ui.js';
+import { confirmBox, dragZone, modal, plotMaxH, plotSizeBtn } from '../core/ui.js';
 import { $, $$, addDays, daysBetween, esc, go, niceDate, shortDate, todayStr, uid } from '../core/util.js';
 import { Draw, plotSVG } from '../draw.js';
 import { feedingSection } from '../feeding/ledger.js';
@@ -11,11 +11,13 @@ import { amtFor } from '../feeding/nutrients.js';
 import { activeIn, container, decorate, isLive, isPlanned, occupants, planRotation, planting } from '../garden/garden.js';
 import { planBanner, planNextButton } from '../garden/planning.js';
 import { rotationNote } from '../garden/rotation.js';
-import { readingText, soilAdvice, soilReadingAdvice } from '../garden/soil.js';
+import { readingDialog, readingText, soilAdvice, soilReadingAdvice } from '../garden/soil.js';
+import { soilChips } from '../garden/insights.js';
+import { ui } from '../data/ui-icons.js';
 import { BED_ICON, seriesTitle, sortTasks, syncTasks, taskDialog, taskLi } from '../garden/tasks.js';
 import { crop, cropName, ic } from '../plants/crops.js';
-import { germChecks, germDialog, germText, pctText } from '../plants/germination.js';
-import { germWindow, harvestNote, harvestWindowText, lastLeaves, leafDialog, thinNote } from '../plants/growth.js';
+import { emergenceBar, germChecks, germDialog, germText, pctText } from '../plants/germination.js';
+import { germWindow, harvestNote, lastLeaves, leafDialog, lifecycleBar, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
 import { drawFill, fillTarget, mergeAsFill, start, startLeft, startWhere, syncStartTasks } from '../plants/seedlings.js';
 import { sprayBanner, spraySection, spraysFor } from '../products/sprays.js';
@@ -68,6 +70,9 @@ export function pagePlant(p) {
   ].filter(Boolean);
 
   A.addTask = () => taskDialog(null, p);
+  A.addReading = () => c && readingDialog(c);
+  A.germPlus = el => germDialog(p, { task: germOpen, pct: +el.dataset.pct });
+  const germOpen = !harvested && !isPlanned(p) && p.method === 'seed' ? S.tasks.find(t => t.plantingId === p.id && t.kind === 'germ' && !t.done) || null : null;
   A.drawFill = async el => { const f = p.fills[+el.dataset.i], s = start(f.startId); drawFill(p, f, s ? s.sowDate : f.date); await save(); render(); };
   A.mergeFill = async el => {
     const into = planting(el.dataset.id); if (!into) return;
@@ -96,32 +101,33 @@ export function pagePlant(p) {
       <div class="chtitle">${ic(p.cropId, 52)}<h2>${esc(cr.en)}</h2></div>
       <div class="datebar">
         <div><small>${isPlanned(p) ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown' : 'Planted'}</small><b>${shortDate(p.sowDate)}</b><small>${sowN == null ? '' : sowN === 0 ? 'today' : sowN > 0 ? sowN + ' days ago' : 'in ' + -sowN + ' days'}</small></div>
-        <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : '🧺 ready now'}</small></div>
+        <div><small>${harvested ? 'Harvested' : 'Harvest from'}</small><b>${harvested ? shortDate(p.harvestedOn) : shortDate(p.harvestDate)}</b><small>${harvested ? '' : hvN == null ? '' : hvN > 0 ? 'in ' + hvN + ' days' : `${ui('basket', 16)} ready now`}</small></div>
       </div></div>
-    ${harvested ? '' : harvestWindowText(p)}
+    ${c && !isPlanned(p) ? soilChips(c, p) : ''}
+    ${harvested ? '' : lifecycleBar(p)}
     <div class="varrow"><div class="grow"><small>Variety</small><a class="variety" href="#/variety?c=${encodeURIComponent(p.cropId)}&v=${encodeURIComponent(p.variety || '')}">${esc(p.variety || '—')} <small>notes ›</small></a></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
     ${planBanner(p)}
-    ${(() => { const t = isLive(p) && fillTarget(p); return t ? `<div class="banner">🩹 ${esc(cr.en)} sown ${shortDate(t.sowDate)} is already growing here. Were these seedlings to fill its gaps? <button class="link" data-act="mergeFill" data-id="${t.id}">Yes — add them to it</button></div>` : ''; })()}
+    ${(() => { const t = isLive(p) && fillTarget(p); return t ? `<div class="banner">${ui('bandage', 18)} ${esc(cr.en)} sown ${shortDate(t.sowDate)} is already growing here. Were these seedlings to fill its gaps? <button class="link" data-act="mergeFill" data-id="${t.id}">Yes — add them to it</button></div>` : ''; })()}
     ${isLive(p) ? qualityWarnings(p).map(([, , t]) => `<div class="banner warn">${esc(t)}</div>`).join('') : ''}
     ${harvested || isPlanned(p) ? '' : sprayBanner(p)}
     ${harvested ? `<div class="banner">This crop was harvested on ${niceDate(p.harvestedOn)}. <button class="link" data-act="unharvest">Undo</button></div>` : ''}
     <section><h3>To do</h3>
       ${open.length ? `<ul class="tasks">${open.map(t => taskLi(t, false)).join('')}</ul>` : '<p class="muted">Nothing to do.</p>'}
-      ${harvested ? '' : `<div class="actbar"><button class="btn small" data-act="addTask">＋ Task</button>${isLive(p) ? `<button class="btn small" data-act="logHarvest">🧺 Harvest</button><a class="btn small" href="#/doctor?p=${p.id}">🩺 Problem?</a>${seed && p.thinSp && !p.thinned ? '<button class="btn small" data-act="leaves">🌿 Leaves</button>' : ''}` : ''}</div>`}</section>
+      ${harvested ? '' : `<div class="actbar"><button class="btn small" data-act="addTask">＋ Task</button>${isLive(p) ? `<button class="btn small" data-act="logHarvest">${ui('basket', 18)} Harvest</button><a class="btn small" href="#/doctor?p=${p.id}">${ui('doctor', 18)} Problem?</a>${seed && p.thinSp && !p.thinned ? `<button class="btn small" data-act="leaves">${ui('feed', 18)} Leaves</button>` : ''}` : ''}</div>`}</section>
     ${done.length ? `<details class="donelog"><summary>Done log (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}
     ${isPlanned(p) || !((p.harvests || []).length || harvested || (p.harvestDate && p.harvestDate <= addDays(td, 7))) ? '' : harvestSection(p)}
     ${diarySection(p)}
-    ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = spraysFor(p).length; return `<details class="fold"><summary>💦 Your sprays <small>${n ? `${n} for ${esc(crop(p.cropId).en)}` : 'none entered for this crop'}</small></summary>${sp}</details>`; })()}
-    ${harvested || isPlanned(p) ? '' : `<details class="fold"><summary>📝 Running log <small>${logFeed().filter(x => (x.pids || []).includes(p.id)).length} entries</small></summary>${logSection(null, p)}</details>`}
-    ${c ? `<section><h3>In ${esc(c.name)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: 320, highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id)), today: isPlanned(p) ? p.sowDate : undefined })}</a>
-      ${harvested || isPlanned(p) || (p.layout === 'continuous' && !p.thinned) || (p.layout !== 'free' && plantsNow > Draw.MAX_ARRANGE) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">✥ Arrange plants by hand</a>`}</section>` : ''}
+    ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = spraysFor(p).length; return `<details class="fold"><summary>${ui('spray')} Your sprays <small>${n ? `${n} for ${esc(crop(p.cropId).en)}` : 'none entered for this crop'}</small></summary>${sp}</details>`; })()}
+    ${harvested || isPlanned(p) ? '' : `<details class="fold"><summary>${ui('note')} Running log <small>${logFeed().filter(x => (x.pids || []).includes(p.id)).length} entries</small></summary>${logSection(null, p)}</details>`}
+    ${c ? `<section><h3>In ${esc(c.name)}${plotSizeBtn()}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: plotMaxH(320), highlight: p.id, labels: true, grid: true, plantings: decorate(harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id)), today: isPlanned(p) ? p.sowDate : undefined })}</a>
+      ${harvested || isPlanned(p) || (p.layout === 'continuous' && !p.thinned) || (p.layout !== 'free' && plantsNow > Draw.MAX_ARRANGE) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">${ui('move', 18)} Arrange plants by hand</a>`}</section>` : ''}
     ${(() => { const KEY = ['Germination', 'Thinning', 'Harvest estimate', 'Soil test', 'Fed so far', 'Soil'], key = dl.filter(r => KEY.includes(r[0])), rest = dl.filter(r => !KEY.includes(r[0]));
       const t = rows => `<dl class="details">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
-      return `${!harvested && !isPlanned(p) ? feedingSection(p) : ''}<section><h3>How it’s going</h3>${key.length ? t(key) : '<p class="muted">Nothing to report yet.</p>'}</section><details class="fold"><summary>🌱 Planting details</summary><section>${t(rest)}`; })()}
+      return `${!harvested && !isPlanned(p) ? feedingSection(p) : ''}<section class="going"><h3>How it’s going</h3>${germOpen ? emergenceBar(p, germOpen) : ''}${key.length ? t(key) : '<p class="muted">Nothing to report yet.</p>'}</section><details class="fold"><summary>${ui('sprout')} Planting details</summary><section>${t(rest)}`; })()}
       ${p.notes ? `<p class="pre">${esc(p.notes)}</p>` : ''}</section></details>
-    ${S.plantings.filter(x => x.cropId === p.cropId).length > 1 ? `<a class="btn small" href="#/compare?crop=${p.cropId}">📊 Compare with other years</a>` : ''}
-    <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested || isPlanned(p) ? '' : `<button class="btn primary" data-act="harvest">🧺 Harvest finished</button>`}${planNextButton(p)}</div>
+    ${S.plantings.filter(x => x.cropId === p.cropId).length > 1 ? `<a class="btn small" href="#/compare?crop=${p.cropId}">${ui('chart', 18)} Compare with other years</a>` : ''}
+    <div class="btnrow"><a class="btn" href="#/plant/${p.id}/edit">Edit</a>${harvested || isPlanned(p) ? '' : `<button class="btn primary" data-act="harvest">${ui('basket', 18)} Harvest finished</button>`}${planNextButton(p)}</div>
     ${harvested ? '' : `<button class="btn small wide" data-act="copyTo">⧉ Same in other ${c && c.type === 'bed' ? 'beds' : 'pots'}…</button>`}
     <div class="btnrow"><button class="link danger" data-act="del">Delete planting</button></div>`;
   return { html, after: () => diaryAfter(p) };

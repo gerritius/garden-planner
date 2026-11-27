@@ -3,7 +3,9 @@
 import { climateDialog, climateLabel } from '../climate/climate.js';
 import { A, draft, notFound, render, setChrome, setDraft } from '../core/router.js';
 import { S, save } from '../core/state.js';
-import { confirmBox, modal } from '../core/ui.js';
+import { confirmBox, modal, plotMaxH, plotSizeBtn } from '../core/ui.js';
+import { ui } from '../data/ui-icons.js';
+import { soilChips } from '../garden/insights.js';
 import { $, $$, esc, go, niceDate, num, shortDate, todayStr, uid } from '../core/util.js';
 import { Draw, plotSVG } from '../draw.js';
 import { mixDialog, mixList } from '../feeding/mix.js';
@@ -36,10 +38,11 @@ export function pageContainer(c) {
     S.tasks = S.tasks.filter(t => t.containerId !== c.id);
     S.containers = S.containers.filter(x => x !== c); await save(); go('#/');
   };
-  const html = `<div class="plotwrap">${plotSVG(c, { width: vw, maxH: window.innerHeight * 0.62, labels: true, gaps: true, showMargin: true, grid: true })}</div>
+  A.addReading = () => readingDialog(c);
+  const html = `${soilChips(c)}<div class="plotwrap">${plotSizeBtn()}${plotSVG(c, { width: vw, maxH: plotMaxH(window.innerHeight * 0.62), labels: true, gaps: true, showMargin: true, grid: true })}</div>
     ${sizeProblem(c) ? `<p class="banner warn">${esc(sizeProblem(c))} <a href="#/container/${c.id}/edit">Edit size</a></p>` : ''}
     <p class="hint center">${typeLabel(c)} · ${sizeLabel(c)}${c.margin ? ` · ${c.margin} cm edge margin` : ''}${c.type !== 'round' ? ' · top → bottom = long side' : ''}</p>
-    <div class="center"><button class="chip big" data-act="climate">${climateLabel(c)} ✎</button></div>
+    <div class="center"><button class="chip big" data-act="climate">${climateLabel(c)} ${ui('edit', 15)}</button></div>
     <section><h3>Growing now</h3>
       ${ps.length ? `<ul class="plist">${ps.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}
         <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
@@ -52,10 +55,10 @@ export function pageContainer(c) {
       const hasCov = (c.covers || []).length, hasSoil = (c.soil || []).length, hasBed = S.tasks.some(t => t.containerId === c.id) || (c.log || []).length;
       const hasPlan = S.plantings.some(p => p.containerId === c.id && isPlanned(p)) || freeGaps(c).some(g => g.s > todayStr());
       A.feedBed = () => feedDialog({ cids: [c.id] }); A.bedMore = () => bedMoreMenu(c); A.bedNote = () => noteEntryDialog({ c });
-      return `<div class="carebar four"><a class="btn small" href="#/plant/new/${c.id}?plan=1">📅 Plan</a><button class="btn small" data-act="feedBed">🌿 Feed</button><button class="btn small" data-act="addCover">🕸️ Cover</button><button class="btn small" data-act="bedNote">📝 Note</button><button class="btn small" data-act="bedMore">⋯ More</button></div>
+      return `<div class="carebar four"><a class="btn small" href="#/plant/new/${c.id}?plan=1">${ui('calendar', 18)} Plan</a><button class="btn small" data-act="feedBed">${ui('feed', 18)} Feed</button><button class="btn small" data-act="addCover">${ui('net', 18)} Cover</button><button class="btn small" data-act="bedNote">${ui('note', 18)} Note</button><button class="btn small" data-act="bedMore">${ui('more', 18)} More</button></div>
         ${hasCov ? cov : ''}${hasSoil ? soil : ''}${hasPlan ? plan : ''}${hasBed ? bed : ''}
-        <details class="fold"><summary>🕰️ History <small>${(c.history || []).length} past crop${(c.history || []).length === 1 ? '' : 's'}</small></summary>${historySection(c)}</details>
-        <details class="fold"><summary>📝 Running log</summary>${logSection(c)}</details>`;
+        <details class="fold"><summary>${ui('clock')} History <small>${(c.history || []).length} past crop${(c.history || []).length === 1 ? '' : 's'}</small></summary>${historySection(c)}</details>
+        <details class="fold"><summary>${ui('note')} Running log</summary>${logSection(c)}</details>`;
     })()}
     ${c.notes ? `<section><h3>About this ${c.type === 'bed' ? 'bed' : 'pot'}</h3><p class="pre">${esc(c.notes)}</p></section>` : ''}
     <div class="btnrow"><a class="btn" href="#/container/${c.id}/edit">Edit ${typeLabel(c).toLowerCase()}</a><button class="btn danger" data-act="del">Delete</button></div>`;
@@ -67,7 +70,7 @@ export function pageContainerForm(c) {
   if (!draft) setDraft(isNew ? { type: 'bed', name: '', width: 100, length: 200, diameter: 40, depth: 35, margin: 10, count: 1, notes: '' } : Object.assign({}, c));
   const d = draft;
   const html = `<form id="cf" class="form">
-    ${isNew ? `<button type="button" class="btn wide preset" data-act="preset">🛍️ Fabric grow bag preset (40 L · ⌀40 × 35 cm)</button>` : ''}
+    ${isNew ? `<button type="button" class="btn wide preset" data-act="preset">${ui('bag', 18)} Fabric grow bag preset (40 L · ⌀40 × 35 cm)</button>` : ''}
     <label>Type<div class="seg">${[['bed', 'Bed'], ['round', 'Round pot / bag'], ['rect', 'Square / rect pot']].map(([v, l]) => `<button type="button" data-act="type" data-v="${v}" class="${d.type === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>
     <label>Name<input name="name" value="${esc(d.name)}" placeholder="${d.type === 'bed' ? 'e.g. Plot A – north' : 'e.g. Bag'}" required></label>
     ${d.type === 'round' ? `<div class="two"><label>Diameter (cm)<input name="diameter" type="number" inputmode="decimal" value="${esc(d.diameter)}"></label><label>Depth (cm)<input name="depth" type="number" inputmode="decimal" value="${esc(d.depth)}"></label></div>` :
@@ -76,7 +79,7 @@ export function pageContainerForm(c) {
     <label>Margin from edges (cm)<input name="margin" type="number" inputmode="decimal" value="${esc(d.margin)}"><small>First and last rows start this far in from the edge.</small></label>
     ${isNew ? `<label>How many?<input name="count" type="number" min="1" max="50" value="${esc(d.count)}"><small>More than 1 numbers them, e.g. “Bag 1”, “Bag 2”…</small></label>` : ''}
     ${(ensureAreas(), S.areas.length > 1) ? `<label>Area<select name="area">${S.areas.map(x => `<option value="${x.id}"${(d.area || S.areas[0].id) === x.id ? ' selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>` : ''}
-    <label>Where<div class="seg wrap">${[['full', '☀️ Full sun'], ['part', '⛅ Part sun'], ['shade', '☁️ Shade'], ['in', '🏠 Indoors']].map(([v, l]) => `<button type="button" data-act="where" data-v="${v}" class="${(d.indoor ? 'in' : d.sun || 'full') === v ? 'on' : ''}">${l}</button>`).join('')}</div><small>Used for growth estimates. You can switch it any time from the ${d.type === 'bed' ? 'bed' : 'pot'}’s page.</small></label>
+    <label>Where<div class="seg wrap">${[['full', `${ui('sun', 18)} Full sun`], ['part', `${ui('partsun', 18)} Part sun`], ['shade', `${ui('shade', 18)} Shade`], ['in', `${ui('home', 18)} Indoors`]].map(([v, l]) => `<button type="button" data-act="where" data-v="${v}" class="${(d.indoor ? 'in' : d.sun || 'full') === v ? 'on' : ''}">${l}</button>`).join('')}</div><small>Used for growth estimates. You can switch it any time from the ${d.type === 'bed' ? 'bed' : 'pot'}’s page.</small></label>
     ${isNew && d.type !== 'bed' ? `<label>Potting mix<select name="mixKind"><option value="">— not recorded —</option>${mixList().map(([k, en, ja]) => `<option value="${k}"${d.mixKind === k ? ' selected' : ''}>${esc(en)} ${esc(ja)}</option>`).join('')}</select></label>
       <label class="inl chkline"><input type="checkbox" name="mixFresh"${d.mixFresh === false ? '' : ' checked'}> <span>Fresh mix (not re-used)</span></label>` : ''}
     <label>Notes<textarea name="notes" rows="2">${esc(d.notes || '')}</textarea></label>
@@ -134,7 +137,7 @@ function bedSection(c) {
   A.editNote = el => noteDialog(c, (c.log || []).find(x => x.id === el.dataset.id));
   return `<section><h3>Bed jobs</h3>
       ${jobs.length ? `<ul class="tasks">${jobs.map(t => taskLi(t, false)).join('')}</ul>` : '<p class="muted">No jobs for the bed itself.</p>'}
-      <div class="btnrow"><button class="btn small" data-act="bedJob">＋ Add job</button><button class="btn small" data-act="prep">🪏 Prepare bed…</button></div>
+      <div class="btnrow"><button class="btn small" data-act="bedJob">＋ Add job</button><button class="btn small" data-act="prep">${ui('trowel', 18)} Prepare bed…</button></div>
       ${done.length ? `<details class="donelog"><summary>Done (${done.length})</summary><ul class="tasks">${done.map(t => taskLi(t, false)).join('')}</ul></details>` : ''}</section>
     <section><h3>Bed notes</h3>
       ${log.length ? `<ul class="plist">${log.map(n => `<li data-act="editNote" data-id="${n.id}">${n.photo ? `<img class="nthumb" data-photo="${n.photo}" alt="">` : ''}<span class="grow"><small>${niceDate(n.date)}</small>${esc(n.text)}</span><span class="muted">✎</span></li>`).join('')}</ul>` : '<p class="muted">Soil, compost, lime, anything worth remembering.</p>'}
@@ -190,15 +193,15 @@ function splitDialog(c) {
 function bedMoreMenu(c) {
   const nPh = bedPhotos(c.id).length, ps = activeIn(c.id).length;
   const items = [
-    ['reading', '🧪', 'Soil reading', () => readingDialog(c)],
-    ['prep', '🪏', `Prepare the ${c.type === 'bed' ? 'bed' : 'pot'}`, () => prepDialog(c)],
-    ['job', '✓', 'Add a job', () => bedTaskDialog(c)],
-    nPh && ['photos', '📷', `Photos (${nPh})`, `#/timeline?c=${c.id}`],
-    ps && ['sections', '↕', 'Sections', `#/container/${c.id}/sections`],
-    ['rotation', '🔄', 'Rotation', '#/rotation'],
-    c.type !== 'bed' && ['mix', '🪴', 'Potting mix history', () => mixDialog(c)],
+    ['reading', 'flask', 'Soil reading', () => readingDialog(c)],
+    ['prep', 'trowel', `Prepare the ${c.type === 'bed' ? 'bed' : 'pot'}`, () => prepDialog(c)],
+    ['job', 'check', 'Add a job', () => bedTaskDialog(c)],
+    nPh && ['photos', 'camera', `Photos (${nPh})`, `#/timeline?c=${c.id}`],
+    ps && ['sections', 'ruler', 'Sections', `#/container/${c.id}/sections`],
+    ['rotation', 'rotate', 'Rotation', '#/rotation'],
+    c.type !== 'bed' && ['mix', 'pot', 'Potting mix history', () => mixDialog(c)],
   ].filter(Boolean);
-  modal(`<h3>${esc(c.name)}</h3><div class="tiles qa3">${items.map(([k, i, l]) => `<button class="tile" data-m="${k}"><span>${i}</span>${l}</button>`).join('')}</div>
+  modal(`<h3>${esc(c.name)}</h3><div class="tiles qa3">${items.map(([k, i, l]) => `<button class="tile" data-m="${k}"><span>${ui(i, 26)}</span>${l}</button>`).join('')}</div>
     <div class="btns"><button class="btn" data-x="no">Close</button></div>`, (m, close) => {
     m.querySelector('[data-x=no]').onclick = close;
     items.forEach(([k, , , act]) => { m.querySelector(`[data-m=${k}]`).onclick = () => { if (typeof act === 'string') { close(); go(act); } else act(); }; });

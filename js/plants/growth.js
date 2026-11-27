@@ -276,6 +276,32 @@ export function harvestWindowText(p) {
     : `Harvest window: from <b>${shortDate(w.earliest)}</b> · most ready by ~<b>${shortDate(w.mature)}</b> · keeps until about <b>${shortDate(w.keep)}</b>${w.keepSet ? ' (your date)' : ''}`}${w.late ? ` — after that ${esc(w.late)}` : ''}. <small class="muted">Packet: ${w.a}${w.b > w.a ? '–' + w.b : ''} days${w.b > w.a ? '' : ' (add the range in Edit)'}.</small></p>`;
 }
 
+// the harvest window as a bar: growing → harvest from → peak → past its best, with today's pin and the dates underneath
+export function lifecycleBar(p) {
+  const w = harvestWindow(p); if (!w || !p.sowDate) return '';
+  const td = todayStr(), cr = crop(p.cropId);
+  const start = p.sowDate, tail = Math.max(10, Math.round(daysBetween(w.mature, w.keep) * 0.45)), end = addDays(w.keep, tail);
+  const span = Math.max(1, daysBetween(start, end)), at = d => Math.max(0, Math.min(100, daysBetween(start, d) / span * 100));
+  const seg = (a, b, cls, label) => `<i class="lc-${cls}" style="left:${at(a).toFixed(1)}%;width:${(at(b) - at(a)).toFixed(1)}%" title="${label}"></i>`;
+  const past = w.cont ? 'Season over' : w.frost ? 'Frost' : (cr.late && /pithy/.test(cr.late) ? 'Past peak / pithy' : 'Past peak');
+  const stops = [[start, p.method === 'seed' ? 'Sown' : 'Planted', 'grow'], [w.earliest, w.cont ? 'Picking from' : 'Harvest from', 'from'], [w.mature, w.cont ? 'Full swing' : 'Peak', 'peak'], [w.keep, past, 'past']];
+  const now = td >= start && td <= end ? `<span class="lc-today" style="left:${at(td).toFixed(1)}%"><em>Today</em></span>` : '';
+  const phase = td < w.earliest ? 'grow' : td < w.mature ? 'from' : td <= w.keep ? 'peak' : 'past';
+  return `<div class="lifecycle${w.keep < td ? ' late' : ''}" role="img" aria-label="Harvest from ${shortDate(w.earliest)}, best by ${shortDate(w.mature)}, keeps until ${shortDate(w.keep)}">
+    <div class="lc-bar">${seg(start, w.earliest, 'grow', 'Growing')}${seg(w.earliest, w.mature, 'from', 'Ready to start picking')}${seg(w.mature, w.keep, 'peak', 'At its best')}${seg(w.keep, end, 'past', 'Past its best')}${now}</div>
+    <div class="lc-stops">${stops.map(([d, l, k]) => `<div class="${k === phase ? 'on' : ''}"><i class="lc-${k}"></i><small>${l}</small><b>${k === 'peak' ? '~' : ''}${shortDate(d)}</b></div>`).join('')}</div>
+    <p class="lc-note">${w.late ? `After ${shortDate(w.keep)}${w.keepSet ? ' (your date)' : ''}: ${esc(w.late)}. ` : ''}<span class="muted">Packet: ${w.a}${w.b > w.a ? '–' + w.b : ''} days${w.b > w.a ? '' : ' (add the range in Edit)'}.</span></p></div>`;
+}
+// the "Pick by now" job follows the window's last day as the weather moves it (it's set when the planting changes, and
+// the forecast can shift keeps-until a day or two either way on its own)
+export function syncPickBy() {
+  for (const p of S.plantings) {
+    if (!isLive(p) || !p.harvestDate) continue;
+    const t = S.tasks.find(x => x.plantingId === p.id && x.kind === 'pickby' && !x.done); if (!t) continue;
+    const pb = pickBy(p); if (pb && pb.date && t.due !== pb.date) t.due = pb.date;
+  }
+}
+
 // ---------- sprouting time from the soil temperature ----------
 // days to come up: catalogue days, stretched by how cold the soil is — from the meter / forecast for sowings around now,
 // otherwise by the time of year

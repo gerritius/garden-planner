@@ -14,6 +14,7 @@ import { crop, cropOptions, ic, varieties } from './crops.js';
 import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
 import { KEPT, keptText, lastLeaves, leafDialog, moveKept, startReady } from './growth.js';
 import { TRANSPLANT } from '../data/catalog.js';
+import { ui } from '../data/ui-icons.js';
 
 // ---------- your trays and pots ----------
 // The kinds of tray and pot you raise seedlings in (S.nursery.items): a tray type has cells (and how many across), a pot
@@ -89,7 +90,7 @@ export function syncStartTasks(s) {
 }
 export function startTaskMeta(t) {
   const s = start(t.startId); if (!s) return '';
-  return `${ic(s.cropId)}<b>${esc(crop(s.cropId).en)}</b> · 🌱 ${esc(startWhere(s))}`;
+  return `${ic(s.cropId)}<b>${esc(crop(s.cropId).en)}</b> · ${ui('sprout', 16)} ${esc(startWhere(s))}`;
 }
 
 // ---------- drawing trays and pots ----------

@@ -10,10 +10,11 @@ import { FAMILIES } from '../data/catalog.js';
 import { ui } from '../data/ui-icons.js';
 import { feedTaskProduct } from '../feeding/plans.js';
 import { crop, kin } from '../plants/crops.js';
+import { lastFeedBy } from '../plants/growth.js';
 import { logFeed } from '../records/log.js';
 import { activeIn, container, isLive, planting } from './garden.js';
 import { latestReading } from './soil.js';
-import { bedLoss, bedPlan, groupOf, lastWatered, rainByDay, waterInterval, waterPots } from './watering.js';
+import { bedLoss, bedPlan, groupOf, lastWatered, rainByDay, thirsty, waterInterval, waterPots } from './watering.js';
 
 // ---------- how far along ----------
 // 0–100 from sowing / planting to the first harvest date; null when there's no estimate
@@ -58,12 +59,13 @@ export function dayAlerts(date) {
 export const forecastAlerts = () => Weather.days().slice(0, 5).flatMap(d => dayAlerts(d.date));
 
 // ---------- how wet: an estimate from the watering sums, unless the meter was read today ----------
-// level: 0 dry · 1 drying · 2 moist · 3 wet; src: 'meter' | 'estimate' | null (nothing growing to estimate for)
+// level: 0 dry · 1 drying · 2 moist · 3 wet; src: 'meter' | 'estimate' | 'dryoff' (no watering before harvest) | null (nothing growing)
 export function moistureOf(c) {
   const td = todayStr();
   const r = (c.soil || []).filter(x => x.date === td && x.moistLvl).pop();
   if (r) { const l = /^DRY/.test(r.moistLvl) ? 0 : /^WET/.test(r.moistLvl) ? 3 : 2; return { level: l, src: 'meter' }; }
   if (!activeIn(c.id).length) return { level: null, src: null };
+  if (!thirsty(c)) return { level: null, src: 'dryoff' };   // potatoes, onions…: left to dry before harvest
   let frac;   // share of the usable water left
   if (c.indoor) { const iv = 3, last = lastWatered('indoor'); frac = last ? 1 - daysBetween(last, td) / iv : 0.5; }
   else if (c.type === 'bed') {
@@ -107,6 +109,8 @@ const isSpray = t => /spray/i.test(t.title || '');
 const isSowing = t => ['plan_sow', 'sow'].includes(t.kind) || /^(sow|plant out|plant)\b/i.test(t.title || '');
 export function jobWeather(t) {
   if (t.done || t.kind === 'wx' || t.kind === 'frost') return null;
+  const fp = isFeed(t) && t.plantingId ? planting(t.plantingId) : null, by = fp && lastFeedBy(fp);   // a feed in the run-up to harvest can't help
+  if (by && (t.due < todayStr() ? todayStr() : t.due) > by) return { tone: 'hot', icon: 'basket', text: 'too close to harvest', act: 'dropJob', why: 'a feed now can’t help it' };
   const days = Weather.days(); if (!days.length) return null;
   const td = todayStr(), due = t.due < td ? td : t.due, at = d => days.find(x => x.date === d);
   const word = d => { const n = dayName(d); return n === 'Today' ? 'today' : n === 'Tmrw' ? 'tmrw' : n; };

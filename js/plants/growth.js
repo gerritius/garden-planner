@@ -269,6 +269,40 @@ export function harvestWindow(p) {
   }
   return { earliest: p.harvestDate, mature, keep: p.keepUntil || keepsUntil(p, mature), keepSet: !!p.keepUntil, a, b, late: cr.late, cont: !!cr.cont };
 }
+// ---------- the run-up to harvest: last feed, and drying off ----------
+// Feed takes a week or more to act, so a dose in the last few weeks can't help the crop — and late nitrogen in roots,
+// tubers and bulbs delays skins and necks setting and hurts keeping. Crops picked over a long season keep being fed.
+const BULBS = ['onion', 'garlic', 'rakkyo', 'eshalot', 'shallot'];
+export function feedLead(cropId) {
+  const cr = crop(cropId); if (cr.cont) return 0;
+  if (cr.group === 'tubers' || BULBS.includes(kin(cropId))) return 28;
+  if (cr.group === 'roots') return 21;
+  return 14;
+}
+// the last day worth feeding (null: no harvest date, or picked over a long season)
+// (counted back from the first harvest date — except heads and one-off fruit like corn or squash, which are fed until
+// they're at their best: the first date is only the earliest a small head could be cut)
+export function lastFeedBy(p) {
+  const n = feedLead(p.cropId); if (!n || !p.harvestDate) return null;
+  const w = ['heads', 'fruit', 'beans', 'berries'].includes(crop(p.cropId).group) ? harvestWindow(p) : null;
+  return addDays(w ? w.mature : p.harvestDate, -n);
+}
+// Potatoes and other tubers: stop watering 1–2 weeks before digging so the skins firm up for storage; bulb onions and
+// garlic: ease off about 2 weeks before so the necks dry. (Carrots, beetroot and other roots keep steady water — a dry
+// spell then a soaking splits them.)
+export function dryOffDays(cropId) { const cr = crop(cropId); return cr.group === 'tubers' ? 10 : BULBS.includes(kin(cropId)) ? 14 : 0; }
+export function dryingOff(p, d = todayStr()) { const n = dryOffDays(p.cropId); return !!(n && p.harvestDate && d >= addDays(p.harvestDate, -n)); }
+
+// on the crop page: what to stop doing in the run-up to harvest
+function dryOffNote(p) {
+  const td = todayStr(), by = lastFeedBy(p), n = dryOffDays(p.cropId), dry = n && p.harvestDate ? addDays(p.harvestDate, -n) : null;
+  if (!isLive(p) || !p.harvestDate || (!by && !dry)) return '';
+  const tuber = crop(p.cropId).group === 'tubers', bits = [];
+  if (dry && td >= addDays(dry, -7)) bits.push(td >= dry ? `<b>Stop watering</b> — ${tuber ? 'the skins firm up for storing' : 'the necks dry off for keeping'}` : `Stop watering from ${shortDate(dry)} — ${tuber ? 'so the skins firm up for storing' : 'so the necks dry off for keeping'}`);
+  if (by && td >= addDays(by, -7)) bits.push(td > by ? '<b>no more feeding</b> — it can’t help this close to harvest' : `last feed by ${shortDate(by)}`);
+  if (bits.length) bits[0] = bits[0].replace(/^(<b>)?([a-z])/, (m, b, ch) => (b || '') + ch.toUpperCase());
+  return bits.length ? `<p class="lc-note lc-run">${bits.join('; ')}.</p>` : '';
+}
 export function harvestWindowText(p) {
   const w = harvestWindow(p); if (!w) return '';
   const td = todayStr();
@@ -290,7 +324,7 @@ export function lifecycleBar(p) {
   return `<div class="lifecycle${w.keep < td ? ' late' : ''}" role="img" aria-label="Harvest from ${shortDate(w.earliest)}, best by ${shortDate(w.mature)}, keeps until ${shortDate(w.keep)}">
     <div class="lc-bar">${seg(start, w.earliest, 'grow', 'Growing')}${seg(w.earliest, w.mature, 'from', 'Ready to start picking')}${seg(w.mature, w.keep, 'peak', 'At its best')}${seg(w.keep, end, 'past', 'Past its best')}${now}</div>
     <div class="lc-stops">${stops.map(([d, l, k]) => `<div class="${k === phase ? 'on' : ''}"><i class="lc-${k}"></i><small>${l}</small><b>${k === 'peak' ? '~' : ''}${shortDate(d)}</b></div>`).join('')}</div>
-    <p class="lc-note">${w.late ? `After ${shortDate(w.keep)}${w.keepSet ? ' (your date)' : ''}: ${esc(w.late)}. ` : ''}<span class="muted">Packet: ${w.a}${w.b > w.a ? '–' + w.b : ''} days${w.b > w.a ? '' : ' (add the range in Edit)'}.</span></p></div>`;
+    ${dryOffNote(p)}<p class="lc-note">${w.late ? `After ${shortDate(w.keep)}${w.keepSet ? ' (your date)' : ''}: ${esc(w.late)}. ` : ''}<span class="muted">Packet: ${w.a}${w.b > w.a ? '–' + w.b : ''} days${w.b > w.a ? '' : ' (add the range in Edit)'}.</span></p></div>`;
 }
 // the "Pick by now" job follows the window's last day as the weather moves it (it's set when the planting changes, and
 // the forecast can shift keeps-until a day or two either way on its own)

@@ -861,6 +861,7 @@ h3 .plotsz { float: right; margin-top: -2px; }
 .lc-stops > div.on b { color: var(--green); }
 .lifecycle.late .lc-stops > div:last-child b { color: var(--danger); }
 .lc-note { font-size: 13px; margin: 8px 0 0; }
+.lc-note.lc-run { color: var(--amber-ink); background: var(--amber-bg); border-radius: 8px; padding: 6px 10px; }
 section.going .emerge { margin: 0 0 10px; max-width: none; }
 .overdue { color: var(--danger); font-weight: 600; }
 .plotwrap { position: relative; }

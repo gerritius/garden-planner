@@ -6,7 +6,7 @@ import { S } from '../core/state.js';
 import { addDays, daysBetween, shortDate, todayStr } from '../core/util.js';
 import { container } from '../garden/garden.js';
 import { crop, kin } from '../plants/crops.js';
-import { growParams, harvestWindow, isWarmCrop } from '../plants/growth.js';
+import { growParams, harvestWindow, isWarmCrop, lastFeedBy } from '../plants/growth.js';
 import { productByName } from '../products/library.js';
 import { gN, leadText } from './nutrients.js';
 import { BOLT_IF_BIG, FRUITING as FRUIT_EVERY, SIDE_STAGES } from '../data/catalog.js';
@@ -67,7 +67,8 @@ export function sideStages(p) {
   for (const r of raw) {
     let { date, t } = r, why = '';
     const orig = date;
-    if (!FRUIT_EVERY.includes(kin(p.cropId)) && orig > addDays(hv, -14)) continue;   // too close to harvest to help
+    const by = lastFeedBy(p) || addDays(hv, -14);
+    if (!FRUIT_EVERY.includes(kin(p.cropId)) && (orig > by || td > by)) continue;   // too close to harvest to help (roots, tubers and bulbs: 3–4 weeks)
     let light = false;
     if (date < td) {
       if (daysBetween(date, td) > 21) continue;

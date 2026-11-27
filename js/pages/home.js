@@ -44,7 +44,7 @@ function bedInfo(c) {
 const why = x => x.reasons.length ? `<div class="why">${x.reasons.map(r => `<span class="t-${r.tone}"><i class="adot ${r.tone}"></i>${esc(r.t)}</span>`).join('')}</div>` : '';
 function sunMoist(x) {
   const [sl, si] = SUN[sunOf(x.c)], lv = x.moist.level;
-  return `<div class="sunm"><span>${ui(si, 16)}${sl}</span><span>${lv == null ? '<i class="mdrop none"></i>No estimate' : `<i class="mdrop m${lv}"></i>${MOIST[lv]}${x.moist.src === 'meter' ? ' (meter)' : ''}`}</span></div>`;
+  return `<div class="sunm"><span>${ui(si, 16)}${sl}</span><span>${lv == null ? `<i class="mdrop none"></i>${x.moist.src === 'dryoff' ? 'Drying off for harvest' : 'No estimate'}` : `<i class="mdrop m${lv}"></i>${MOIST[lv]}${x.moist.src === 'meter' ? ' (meter)' : ''}`}</span></div>`;
 }
 // a bed or pot card: drawing, crops with how far along they are, what needs attention and the next job
 function nextJob(c) {

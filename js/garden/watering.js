@@ -6,6 +6,7 @@ import { dayName, Weather } from '../climate/weather.js';
 import { S } from '../core/state.js';
 import { addDays, daysBetween, iso, todayStr, uid } from '../core/util.js';
 import { Draw } from '../draw.js';
+import { dryingOff } from '../plants/growth.js';
 import { startsGrowing } from '../plants/seedlings.js';
 import { earliestWaterFeed, waterFeedsDue } from '../feeding/plans.js';
 import { activeIn, container, planting } from './garden.js';
@@ -26,7 +27,9 @@ export function rainByDay() {
   d.time.forEach((t, i) => { const mm = d.precipitation_sum[i] || 0, pop = (d.precipitation_probability_max || [])[i]; out[t] = t < td || pop == null || pop >= 50 ? mm : 0; });
   return out;
 }
-export const waterPots = () => S.containers.filter(c => c.type !== 'bed' && c.type !== 'nursery' && !c.indoor && activeIn(c.id).length);
+// beds and pots that want water: something growing in them that isn't drying off before harvest (potatoes, onions…)
+export const thirsty = c => activeIn(c.id).some(p => !dryingOff(p));
+export const waterPots = () => S.containers.filter(c => c.type !== 'bed' && c.type !== 'nursery' && !c.indoor && thirsty(c));
 // a full watering = water per 40 L bag (default 4 L ≈ 10% of the pot), so rain fills a pot when mm ≥ that share of its depth
 export function potWater(pots) {
   const perL = (S.water && +S.water.perBagL) || 4, frac = perL / 40;
@@ -121,7 +124,7 @@ function syncPotsWater(on) {
 // when about half is used (12 mm); young plantings (first three weeks) only reach the top few cm, so sooner (6 mm).
 const BED_STORE = 25;
 export const bedLoss = d => Math.max(0.4, 0.17 * dayTemp(d, S.weather && S.weather.daily));   // mm a day
-export const bedBeds = () => S.containers.filter(c => c.type === 'bed' && !c.indoor && activeIn(c.id).length);
+export const bedBeds = () => S.containers.filter(c => c.type === 'bed' && !c.indoor && thirsty(c));
 export function bedPlan(c) {
   const td = todayStr(), rain = rainByDay(), g = 'bed:' + c.id;
   const mm = d => rain[d] != null ? rain[d] : d < td ? normalRain(d) : 0;   // past days we have no record of: usual rain; beyond the forecast: none
@@ -161,7 +164,7 @@ function syncBedsWater(on) {
 // ---------- indoor pots, and seedlings ----------
 // Indoors no rain reaches them: every 3 days, every 2 in summer warmth.
 function syncIndoorWater(on) {
-  const cs = on ? S.containers.filter(c => c.indoor && activeIn(c.id).length) : [];
+  const cs = on ? S.containers.filter(c => c.indoor && thirsty(c)) : [];
   if (!cs.length) return dropJob('indoor');
   const td = todayStr(), iv = normalT(td) >= 24 ? 2 : 3, last = lastWatered('indoor');
   let due = last ? addDays(last, iv) : td, note = '';

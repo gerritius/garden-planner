@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.54.1",
+    "date": "2026-11-27",
+    "notes": [
+      "No feeding in the run-up to harvest: the last feed is 4 weeks before for potatoes and other tubers, onions and garlic, 3 weeks for carrots, daikon and other roots, and 2 weeks for most other crops. Feeds planned later say “too close to harvest” with a Skip button. Crops picked over a long season, like tomatoes, keep being fed.",
+      "Potatoes and other tubers stop getting watering jobs 10 days before harvest so the skins firm up for storing; onions and garlic 2 weeks before so the necks dry. The crop page says so. Carrots and other roots keep steady watering, since a dry spell then a soaking splits them."
+    ]
+  },
+  {
     "version": "1.54.0",
     "date": "2026-11-27",
     "notes": [

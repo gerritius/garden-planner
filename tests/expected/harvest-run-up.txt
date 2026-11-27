@@ -1,0 +1,7 @@
+run-up note: Stop watering — the skins firm up for storing; no more feeding — it can’t help this close to harvest.
+feeding card: No more feeding — it’s within 4 weeks of harvest, so a feed now can’t help it — and late nitrogen slows the skins setting, so they keep worse. It finishes on what’s in the soil.
+last feed by: -18 days | lettuce: 63 days
+feed job tag: {"tone":"hot","icon":"basket","text":"too close to harvest","act":"dropJob","why":"a feed now can’t help it"}
+watered pots: Bag 2 | Bag 1 moisture: {"level":null,"src":"dryoff"}
+after Skip, feed job gone: true
+errs []

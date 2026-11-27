@@ -13,7 +13,7 @@ import { feedOf, gramsFor, limeRate, soilAdvice, soilM2, soilReadingAdvice } fro
 import { finishToggle } from '../garden/tasks.js';
 import { waterPots } from '../garden/watering.js';
 import { crop, kin } from '../plants/crops.js';
-import { growthDate, harvestWindow } from '../plants/growth.js';
+import { growthDate, harvestWindow, lastFeedBy } from '../plants/growth.js';
 import { myProducts, pickRole, productByName } from '../products/library.js';
 import { spraysFor } from '../products/sprays.js';
 import { feedLedger } from './ledger.js';
@@ -24,13 +24,15 @@ import { feedSeason, inLean, nextGrowing, restartTemp } from './stages.js';
 
 export const effOf = (name, amount, unit, c) => usable3(feedGrams(amount, unit, name, c), name) || { n: 0, p: 0, k: 0 };
 export const isPotOutdoor = c => c && c.type !== 'bed' && !c.indoor;
+// a repeating feed's last day: never past the last day worth feeding before harvest
+export const feedStopOf = (p, end) => { const by = lastFeedBy(p); return by && by < end ? by : end; };
 export function feedEnd(p) { const w = p.harvestDate ? harvestWindow(p) : null; return w ? (crop(p.cropId).cont ? w.keep : w.mature) : addDays(p.sowDate, 120); }
 
 // ---------- repeating feeds ----------
 // outdoors, no feeding while it's too cold for roots to take it up — the schedule picks up again when growth restarts
 const dormant = (p, d) => { const c = container(p.containerId); if (c && c.indoor) return false; if (normalT(d) < restartTemp(p.cropId)) return true; const se = feedSeason(p); return !!(se && se.bolt && inLean(se, d)); };   // + heading brassicas' lean stretch before winter
 export function schedOccurrences(p, s, fromDate) {
-  const out = [], end = s.end || feedEnd(p);
+  const out = [], end = feedStopOf(p, s.end || feedEnd(p));
   for (let d = fromDate || (s.last ? addDays(s.last, s.every) : s.start), i = 0; d <= end && i < 80; d = addDays(d, s.every), i++) if (!dormant(p, d)) out.push(d);
   return out;
 }
@@ -54,7 +56,7 @@ export function syncFeedPlans() {
     for (const s of p.feedPlan) {
       let open = S.tasks.find(t => t.schedId === s.id && !t.done);
       if (!live || s.stopped) { if (open) S.tasks = S.tasks.filter(x => x !== open); continue; }
-      let next = s.last ? addDays(s.last, s.every) : s.start; const end = s.end || feedEnd(p);
+      let next = s.last ? addDays(s.last, s.every) : s.start; const end = feedStopOf(p, s.end || feedEnd(p));
       if (dormant(p, next < td ? td : next)) next = nextGrowing(p.cropId, next < td ? td : next);
       if (next > end) { if (open) S.tasks = S.tasks.filter(x => x !== open); s.done = true; continue; }
       const L = feedLedger(p), c = container(p.containerId), e = effOf(s.product, s.amount, s.unit, c), sr = c && soilReadingAdvice(c, p.from, p.to, p.cropId);

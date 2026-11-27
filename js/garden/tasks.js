@@ -40,10 +40,11 @@ function wxTag(t) {
   A.wxSkip = async el => {
     const j = S.tasks.find(x => x.id === el.dataset.id), v = j && jobWeather(j); if (!v || !v.act) return;
     if (v.act === 'skipWater') { skipWatering(groupOf(j), v.to); syncWater(); }
+    else if (v.act === 'dropJob') S.tasks = S.tasks.filter(x => x !== j);
     else { j.due = v.to; j.movedFor = 'rain'; }
     await save(); render();
   };
-  return `<span class="wxtag ${w.tone}">${ui(w.icon, 14)}${esc(w.text)}</span>${w.act ? `<button type="button" class="wxskip" data-act="wxSkip" data-id="${t.id}" title="${w.act === 'skipWater' ? 'Skip watering until after the rain' : `Move to ${niceDate(w.to)} — ${w.why}`}">${ui('skip', 14)}Skip${w.act === 'moveJob' ? ` to ${dayName(w.to) === 'Tmrw' ? 'tmrw' : dayName(w.to)}` : ''}</button>` : ''}`;
+  return `<span class="wxtag ${w.tone}">${ui(w.icon, 14)}${esc(w.text)}</span>${w.act ? `<button type="button" class="wxskip" data-act="wxSkip" data-id="${t.id}" title="${w.act === 'skipWater' ? 'Skip watering until after the rain' : w.act === 'dropJob' ? 'Skip this feed: too close to harvest to help' : `Move to ${niceDate(w.to)} — ${w.why}`}">${ui('skip', 14)}Skip${w.act === 'moveJob' ? ` to ${dayName(w.to) === 'Tmrw' ? 'tmrw' : dayName(w.to)}` : ''}</button>` : ''}`;
 }
 export function taskLi(t, showCrop = true) {
   const { p, c } = taskOwner(t);

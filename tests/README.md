@@ -74,6 +74,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `feeding-plan-suggestions` | Feeding plan suggestions for celery and cabbage; overfeeding guard |
 | `frost-covers-and-wind` | Frost warnings and covers, wind advice |
 | `garden-views-and-alerts` | The Garden tab's Today / Beds views, picking a forecast day, weather tags and Skip on jobs, the Beds view's sort, filters, search and Sun & Moisture, alert dots and their key, areas, the made-up test garden, soil chips, the harvest lifecycle bar, the Pick by job keeping to its date, the emergence bar and the quick log |
+| `harvest-run-up` | Close to harvest: no feed suggestion or late feeds for potatoes (Skip on a planned one), no watering job while they dry off, other pots still watered |
 | `garlic-feeding-model` | The day-by-day nitrogen model for garlic in a bag (drainage, uptake, "fed until") |
 | `garlic-feeding-plan` | Garlic's feeding card and plan, including the last feed (止め肥) |
 | `germination-looks` | Looking at slow seeds every few days with roughly how many are up: nothing yet (thinning waits), a few, counted; when they came up; stopping; re-sowing |

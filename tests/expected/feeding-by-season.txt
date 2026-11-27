@@ -11,7 +11,7 @@ cabbage seedling 2026-08-25 → harvest 2026-11-20 | no winter
    card: Running short now — plan a feed soon.
 cabbage seedling 2026-03-20 → harvest 2026-06-05 | no winter
 
-   card: Fed through to 23 Jun with what’s in and planned.
+   card: No more feeding — it’s ready to harvest, so a feed now can’t help it. It finishes on what’s in the soil.
 broccoli seedling 2026-09-20 → harvest 2026-12-12 | no winter
    2026-11-18 when the buds appear — was due around 13 Nov — still worth doing now
    card: Running short now — plan a feed soon.
@@ -24,10 +24,10 @@ garlic seedling 2026-10-10 → harvest 2027-05-19 | winter 2026-12-13→2027-03-
    card: Running short now — plan a feed soon.
 spinach seed 2026-10-15 → harvest 2026-11-26 | no winter
 
-   card: Running short now — plan a feed soon.
+   card: No more feeding — it’s within 2 weeks of harvest, so a feed now can’t help it. It finishes on what’s in the soil.
 daikon seed 2026-09-10 → harvest 2026-11-07 | no winter
 
-   card: Fed through to 4 Dec with what’s in and planned.
+   card: No more feeding — it’s ready to harvest, so a feed now can’t help it. It finishes on what’s in the soil.
 snappea seed 2026-11-05 → harvest 2027-04-18 | winter 2026-12-13→2027-03-09 lean from 2026-11-22
    2027-03-09 when growth restarts in spring / when flowering starts — lightly
    card: Fed until about 3 May — plan a feed before then.

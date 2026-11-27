@@ -7,7 +7,7 @@
   --hand: 'Caveat', 'Zilla Slab', cursive;
   --gap: rgba(255,255,255,.05);
   /* Cream (default, lighter) */
-  --paper: #faf6ec; --paper-2: #f3ecdc; --card: #fffdf7; --ink: #33291d; --muted: #857660; --line: #e6dcc6; --line-2: #d3c4a3;
+  --paper: #faf6ec; --paper-2: #f3ecdc; --card: #fffdf7; --ink: #33291d; --muted: #726450; --line: #e6dcc6; --line-2: #d3c4a3;
   --green: #4d7039; --green-2: #3f5d2f; --green-ink: #fffdf7; --terra: #c0663c; --terra-ink: #fffaf2; --terra-2: #9a4c28; --danger: #a33a24;
   --soil: #8a6a4b; --rim: #654529; --chip: #f1e9d6; --today: #fbf5e4;
   --hd1: #7a9a63; --hd2: #62824e; --hd-edge: #4f6b3e;
@@ -478,7 +478,7 @@ section.plan h3 small { font-weight: 400; font-size: 12px; }
 .tlb.planned { background: repeating-linear-gradient(135deg, var(--c) 0 6px, color-mix(in srgb, var(--c) 45%, white) 6px 12px); border-style: dashed; }
 .tlb.done { opacity: .45; }
 .tlnow { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #c0502c; }
-.tlkey.planned { padding: 0 6px; border-radius: 4px; background: repeating-linear-gradient(135deg, #b5cf8f 0 5px, #e3eed3 5px 10px); }
+.tlkey.planned { padding: 0 6px; border-radius: 4px; background: repeating-linear-gradient(135deg, #b5cf8f 0 5px, #e3eed3 5px 10px); color: #33291d; }
 ul.gaps { list-style: none; padding: 0; margin: 8px 0 0; }
 li.gap { padding: 8px 0; border-top: 1px dashed var(--line); font-size: 14px; }
 li.gap .sowchips { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
@@ -513,7 +513,7 @@ section.dx h3 { margin-top: 0; }
 .usestart { margin: 2px 0 10px; }
 .usestart > small { display: block; color: var(--muted); margin-bottom: 4px; }
 .usestart .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
-.usestart .chip small { opacity: .8; margin-left: 4px; }
+.usestart .chip small { margin-left: 4px; }
 .chip.mine { border-color: var(--green); font-weight: 600; }
 details.pktpick { margin: 4px 0 10px; }
 details.pktpick summary { font-size: 14px; color: var(--green); cursor: pointer; }
@@ -689,7 +689,8 @@ label > .dd-field, .two > label { min-width: 0; }
 .rothist i { font-style: normal; font-weight: 700; color: var(--ink); margin-right: 4px; }
 .rotavoid { display: flex; flex-wrap: wrap; gap: 4px; }
 .chip.no { border-color: #c9573e; color: #a8432d; background: rgba(201,87,62,.08); font-size: 13px; }
-.okline { color: var(--accent, #4f7a3a); }
+:root[data-theme="dark"] .chip.no { color: var(--danger); }
+.okline { color: var(--green); }
 .rotfam { padding: 10px 0; }
 .rotfam .rfh { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
 .rotfam .rfh .muted { margin-left: auto; }

@@ -1,5 +1,13 @@
 [
   {
+    "version": "1.52.2",
+    "date": "2026-11-27",
+    "notes": [
+      "Dark theme: the rotation plan’s “not until” chips and its “anything can go here” line are readable, as are the “Striped” key on the season plan and the seedling details when planting.",
+      "Cream theme: hints, labels and small grey text are a little darker, so they’re easier to read."
+    ]
+  },
+  {
     "version": "1.52.1",
     "date": "2026-11-26",
     "notes": [

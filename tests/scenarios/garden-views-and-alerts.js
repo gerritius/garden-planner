@@ -1,6 +1,7 @@
-// The 1.53 Garden tab and what hangs off it: Today | Beds | Map, picking a forecast day, weather tags and Skip on jobs,
-// alert dots and label pills on the map, the Sun & Moisture overlay, soil chips, the harvest lifecycle bar, the
-// "Pick by" job keeping to its date, the emergence bar and the quick log sheet.
+// The Garden tab and what hangs off it: Today | Beds, picking a forecast day, weather tags and Skip on jobs, the Beds
+// view's sort / filters / search / Sun & Moisture and its alert dots with what they mean, areas, soil chips, the harvest
+// lifecycle bar, the "Pick by" job keeping to its date, the emergence bar, the quick log sheet and (test site) the
+// made-up garden.
 const { newContext } = require('../lib');
 const { chromium } = require('playwright');
 const U = 'http://localhost:8765/', SP = process.argv[2];
@@ -63,21 +64,41 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
     console.log('after skip, due in days:', await pg.evaluate(() => S.tasks.filter(x => x.kind === 'water' && !x.done).map(t => groupOf(t) + ' ' + daysBetween(todayStr(), t.due)).join(', ')));
   }
 
-  // Beds: maturity on the chips, alert dots, next job
+  // Beds: maturity on the chips, alert dots with what they mean, next job
   await pg.click('[data-act=hv][data-v=beds]'); await pg.waitForTimeout(400);
+  const cards = () => pg.$$eval('.bedcard, .ptile', x => x.filter(e => !e.hidden).map(e => (e.querySelector('.cname, b') || {}).textContent));
   console.log('bed cards:', JSON.stringify(await pg.$$eval('.bedcard', x => x.map(e => ({ name: e.querySelector('.cname').textContent, chips: e.querySelector('.chips').textContent.replace(/\s+/g, ' ').trim(),
-    dots: [...e.querySelectorAll('.adot')].map(d => d.className.replace('adot ', '') + ':' + d.title), next: (e.querySelector('.nextjob') || {}).textContent }))), null, 0));
+    dots: [...e.querySelectorAll('.dots .adot')].map(d => d.className.replace('adot ', '') + ':' + d.title), why: (e.querySelector('.why') || {}).textContent, next: (e.querySelector('.nextjob') || {}).textContent }))), null, 0));
+  console.log('dot key:', await txt('.dotkey'));
+  console.log('filters:', await txt('.bedfilt'));
   await pg.screenshot({ path: SP + '/beds.png', fullPage: true });
-
-  // Map: label pills; the overlay with sun and moisture
-  await pg.click('[data-act=hv][data-v=map]'); await pg.waitForTimeout(400);
-  console.log('pills:', JSON.stringify(await pg.$$eval('#homemap .mpill', x => x.map(g => [...g.querySelectorAll('text')].map(t => t.textContent).join(' / ') + ' ' + [...g.querySelectorAll('circle.adot')].map(c => c.getAttribute('class').replace('adot ', '')).join('+')))));
-  await pg.click('[data-act=mapOv][data-v=sun]'); await pg.waitForTimeout(400);
-  console.log('overlay:', JSON.stringify(await pg.$$eval('#homemap .mov', x => x.map(g => g.querySelector('rect').getAttribute('class') + ' ' + ((g.querySelector('.mdrop') || { getAttribute: () => '-' }).getAttribute('class'))))));
+  // sort, filter, search
+  await pg.evaluate(() => { const s = document.querySelector('#bedsort'); s.value = 'ready'; s.dispatchEvent(new Event('change')); }); await pg.waitForTimeout(300);
+  console.log('closest to harvest first:', JSON.stringify(await cards()));
+  await pg.click('[data-act=bedFilt][data-v=ready]'); await pg.waitForTimeout(300);
+  console.log('ready to pick:', JSON.stringify(await cards()));
+  await pg.click('[data-act=bedFilt][data-v=all]'); await pg.waitForTimeout(300);
+  await pg.fill('#bedq', 'spin'); await pg.waitForTimeout(200);
+  console.log('search "spin":', JSON.stringify(await cards()), '| pots heading hidden:', await pg.$eval('.bgrp[data-g=pots]', e => e.hidden));
+  await pg.fill('#bedq', 'zzz'); await pg.waitForTimeout(200);
+  console.log('search "zzz":', await txt('#noq'));
+  await pg.click('#clrq'); await pg.waitForTimeout(200);
+  console.log('cleared:', (await cards()).length, 'cards');
+  // Sun & Moisture on the cards
+  await pg.click('[data-act=bedsShow][data-v=sun]'); await pg.waitForTimeout(400);
+  console.log('sun & moisture:', JSON.stringify(await pg.$$eval('.sunm', x => x.map(e => e.textContent.replace(/\s+/g, ' ').trim()))));
   console.log('moisture:', JSON.stringify(await pg.evaluate(() => S.containers.map(c => c.name + ' ' + JSON.stringify(moistureOf(c))))));
-  await pg.screenshot({ path: SP + '/map_sun.png', fullPage: true });
-  console.log('view remembered:', await pg.evaluate(() => S.homeView + ' / ' + S.mapOverlay));
-  await pg.evaluate(async () => { S.homeView = 'today'; S.mapOverlay = 'layout'; await save(); });
+  await pg.screenshot({ path: SP + '/beds_sun.png', fullPage: true });
+  console.log('view remembered:', await pg.evaluate(() => [S.homeView, S.bedsShow, S.bedSort, S.bedFilter].join(' / ')));
+  // the old map address goes to the Beds view
+  await pg.evaluate(async () => { S.homeView = 'today'; await save(); });
+  await pg.goto(U + '#/map'); await pg.waitForTimeout(400);
+  console.log('old map link →', await pg.evaluate(() => location.hash), '| view:', await txt('.seg.gview .on'));
+  // areas: managed from the Beds view
+  await pg.click('[data-act=areas]'); await pg.waitForTimeout(200);
+  console.log('areas sheet:', await txt('#modal .plist'));
+  await pg.click('#modal [data-x=ok]'); await pg.waitForTimeout(200);
+  await pg.evaluate(async () => { S.homeView = 'today'; S.bedsShow = 'crops'; S.bedSort = 'name'; await save(); });
 
   // bed page: soil chips, compact drawing with a Bigger toggle
   await pg.goto(U + '#/container/b1'); await pg.waitForTimeout(400);
@@ -118,5 +139,18 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.click('#modal [data-x=no]'); await pg.waitForTimeout(200);
   await pg.click('.fab'); await pg.waitForTimeout(200); await pg.click('[data-q=feedspray]'); await pg.waitForTimeout(200);
   console.log('feed / spray:', await txt('#modal .tiles'));
+
+  // test site: fill with a made-up garden
+  await pg.goto(U + '#/'); await pg.waitForTimeout(300);
+  pg.evaluate(() => import('/js/backup/sample-garden.js').then(m => m.fillSampleGarden()));
+  await pg.waitForSelector('#modal .btn.danger, #modal button.primary'); await pg.click('#modal .btn.danger, #modal button.primary'); await pg.waitForTimeout(800);
+  console.log('made-up garden:', await pg.evaluate(() => JSON.stringify({ areas: S.areas.map(a => a.name), beds: S.containers.filter(c => c.type === 'bed').length, pots: S.containers.filter(c => c.type !== 'bed').length,
+    plantings: S.plantings.length, planned: S.plantings.filter(p => p.status === 'planned').length, ready: S.plantings.filter(isReady).length, starts: S.starts.length, jobs: S.tasks.filter(t => !t.done).length > 10 })));
+  await pg.evaluate(async () => { S.homeView = 'beds'; await save(); }); await pg.reload(); await pg.waitForTimeout(600);
+  console.log('area switch:', await txt('.mapsub .seg'));
+  await pg.click('[data-act=bedArea]:nth-child(3)'); await pg.waitForTimeout(300);
+  console.log('Backyard only:', (await cards()).length, 'cards');
+  await pg.click('[data-act=bedFilt][data-v=empty]'); await pg.waitForTimeout(300);
+  console.log('Backyard, empty:', JSON.stringify(await cards()));
   console.log('errs', errs); await b.close();
 })();

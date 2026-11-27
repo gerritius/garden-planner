@@ -1,6 +1,7 @@
 // The Tools page (settings and every tool), and the tabs between related tool pages.
 
 import { copyFromMainSite, exportBackup, importBackup, snapshotSection } from '../backup/backup.js';
+import { fillSampleGarden } from '../backup/sample-garden.js';
 import { driveSection } from '../backup/drive.js';
 import { eraseSection } from '../backup/erase.js';
 import { climateSection } from '../climate/climate.js';
@@ -38,6 +39,7 @@ export function pageSettings() {
   A.export = exportBackup;
   A.relNotes = allReleaseNotes;
   A.copyMain = copyFromMainSite;
+  A.sampleGarden = fillSampleGarden;
   A.import = () => $('#impf').click();
   A.persist = async () => { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist().catch(() => false); storageNote(true); };
   A.waterTog = async () => { S.water = Object.assign({}, S.water, { on: !(S.water && S.water.on === false) ? false : true }); await save(); render(); };
@@ -49,7 +51,9 @@ export function pageSettings() {
     <h3 class="grp">Records</h3><div class="tiles">
       ${tile('#/review', 'journal', 'Seasons')}${tile('#/spend', 'money', 'Spending &amp; use')}${tile('#/varieties', 'tag', 'Varieties')}${tile('#/timeline', 'camera', 'Photos')}</div>
     ${IS_TEST ? `<section><h3>${ui('flask', 20)} Test site</h3><p>This is the test site: new versions arrive here first. It has its own garden — nothing you do here touches your real one, and nothing is backed up to Google Drive.</p>
-      <button class="btn wide" data-act="copyMain">Copy my real garden here</button></section>${timeTravelSection()}` : ''}
+      <button class="btn wide" data-act="copyMain">Copy my real garden here</button>
+      <button class="btn wide" data-act="sampleGarden">${ui('sprout', 18)} Fill with a made-up garden</button>
+      <p class="hint">Beds and bags in two areas, crops from just sown to past their best, and seedlings in trays. Replaces this test garden.</p></section>${timeTravelSection()}` : ''}
     <h3 class="grp">Help</h3><div class="btnrow"><button type="button" class="btn" data-act="tourStart">${ui('compass')} Guided setup</button></div>
         <h3 class="grp">Settings</h3>
     <details class="set"${bOld ? ' open' : ''}><summary>${ui('save')} Backup <small>${S.lastBackup ? 'last ' + shortDate(S.lastBackup) : 'never backed up'}</small></summary><section><h3>Backup</h3>

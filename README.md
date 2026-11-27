@@ -19,7 +19,7 @@ use — so to see where something comes from, look at the `import` lines.
 | `js/core/` | The garden state (`S`) and saving, the database, the page router, dialogs, drop-downs, photos, themes, helpers |
 | `js/data/` | Built-in data: the crop catalog, product catalogue, pesticide registry, icons |
 | `js/plants/` | Crops, how plants develop with temperature (sprouting, thinning, harvest), seedlings, covers, problems, varieties |
-| `js/garden/` | Beds and pots, the map, jobs, watering, soil readings, rotation, season planning, "what could go here?" |
+| `js/garden/` | Beds and pots, areas, jobs, watering, soil readings, rotation, season planning, "what could go here?" |
 | `js/climate/` | Climate from your location, sowing windows, weather forecast and alerts |
 | `climate/` | The world climate tiles the app reads its location's usual weather from (made by `tools/era5/build.py` from ERA5; one 5° tile per download) |
 | `js/feeding/` | Nutrients, the feeding card, the day-by-day food model, side-dressing stages, feeding plans, potting mix |

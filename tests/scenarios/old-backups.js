@@ -41,7 +41,7 @@ const files = fs.readdirSync(DIR).filter(f => f.endsWith('.json')).sort((a, b) =
     if ((st.starts || []).length) console.log(`  seedlings: ${r.nursery}`);
     console.log(`  seeds: ${r.seeds.join(', ') || 'none'}${r.oldVarieties ? ' (old variety list still there!)' : ''} | thinning: ${r.thin.join(' / ') || 'none'}`);
     // every page, every bed and pot, every planting and its form
-    const routes = ['#/', '#/cal', '#/log', '#/settings', '#/products', '#/map', '#/sow', '#/plan', '#/rotation', '#/seedlings', '#/review', '#/totals', '#/spend', '#/shop', '#/picksafe', '#/varieties', '#/timeline', '#/doctor']
+    const routes = ['#/', '#/cal', '#/log', '#/settings', '#/products', '#/sow', '#/plan', '#/rotation', '#/seedlings', '#/review', '#/totals', '#/spend', '#/shop', '#/picksafe', '#/varieties', '#/timeline', '#/doctor']
       .concat(await pg.evaluate(() => [...S.containers.map(c => '#/container/' + c.id), ...S.plantings.flatMap(p => ['#/plant/' + p.id, '#/plant/' + p.id + '/edit'])]));
     const broken = [];
     for (const h of routes) { await pg.goto(U + h); await pg.waitForTimeout(120); if (/Something went wrong/.test(await pg.textContent('#view'))) broken.push(h); }

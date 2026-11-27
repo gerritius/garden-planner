@@ -1,4 +1,4 @@
-views: TodayBedsMap | on: Today
+views: TodayBeds | on: Today
 forecast days: Today* Tmrw! Fri Sat! Sun Mon
 heads (all days): ["Frost risk Tmrw -1° — cover Lettuce","Hot Sat 35° — water pots & bags well","Daikon: 23 mm of rain on Tmrw after a dry week — pick what’s ready first, it may split.›"]
 jobs today: ["Earliest harvest – check crop Daikon · Bed 1 ⋯","Check seedlings are up (expected 7 Sept–9 Sept) Daikon · Bed 1 not counted yet · target 70% + ⋯","Fertilise Bed 2 – liquid feed Bed 223mm rain tmrwSkip to Fri ⋯","Cover before frost Tmrw (-1°): Lettuce Bag 1 ⋯"]
@@ -8,11 +8,19 @@ tapped again → all days: Today’s jobs | picked: Today
 feed tag: {"tone":"cold","icon":"rain","text":"23mm rain tmrw","act":"moveJob","to":"2026-11-20","why":"it would wash the feed through"}
 feed moved to: 2 days on, movedFor rain
 a watering job with a rain tag: false
-bed cards: [{"name":"Bed 1","chips":"Daikonready","dots":["ready:Ready to harvest"],"next":"Earliest harvest – check croptoday"},{"name":"Bed 2","chips":"Spinach13%","dots":["hot:Hot day coming"],"next":"Fertilise Bed 2 – liquid feed20 Nov"},{"name":"Bag 1","chips":"Lettuce12%","dots":["hot:Hot day coming","cold:Frost"],"next":"Earliest harvest – check crop1 Feb"}]
-pills: ["Bag 1 / 12% / Lettuce hot+cold","Bed 1 / ready / Daikon ready","Bed 2 / 13% / Spinach hot"]
-overlay: ["sun-full mdrop m2","sun-shade mdrop m0","sun-full mdrop m0"]
+bed cards: [{"name":"Bed 1","chips":"Daikonready","dots":["ready:Ready to harvest"],"why":"Ready to harvest","next":"Earliest harvest – check croptoday"},{"name":"Bed 2","chips":"Spinach13%","dots":["hot:Hot day coming"],"why":"Hot day coming","next":"Fertilise Bed 2 – liquid feed20 Nov"},{"name":"Bag 1","chips":"Lettuce12%","dots":["hot:Hot day coming","cold:Frost"],"why":"Hot day comingFrost","next":"Earliest harvest – check crop1 Feb"}]
+dot key: Ready to pickHeat or dryRain, frost or wind
+filters: AllNeeds attention 3Ready to pick 1Dry 2Empty 0
+closest to harvest first: ["Bed 1","Bed 2","Bag 1"]
+ready to pick: ["Bed 1"]
+search "spin": ["Bed 2"] | pots heading hidden: true
+search "zzz": Nothing called that. Clear the search
+cleared: 3 cards
+sun & moisture: ["Full sunMoist","ShadeDry","Full sunDry"]
 moisture: ["Bed 1 {\"level\":2,\"src\":\"estimate\"}","Bed 2 {\"level\":0,\"src\":\"estimate\"}","Bag 1 {\"level\":0,\"src\":\"estimate\"}"]
-view remembered: map / sun
+view remembered: beds / sun / ready / all
+old map link → #/ | view: Beds
+areas sheet: Garden · 3 beds or pots Rename
 bed chips: Brassica (cabbage family)pH 6.4 29 OctLime 19 Oct
 drawing compact, then bigger: true | Smaller
 lifecycle: Sown5 SeptHarvest from31 OctPeak~24 NovPast peak / pithy11 Jan | today pin: true
@@ -25,4 +33,8 @@ recorded: [{"date":"2026-11-18","pct":10}]
 quick log: ["Log harvest","Update emergence %","Record feed / spray","Add note / photo"] | small: Job Seedlings More…
 emergence for: DaikonBed 1 · not counted yet›SpinachBed 2 · about 10% up›
 feed / spray: Feed / fertiliserSpraySomething else
+made-up garden: {"areas":["Farm","Backyard"],"beds":6,"pots":10,"plantings":17,"planned":1,"ready":3,"starts":4,"jobs":true}
+area switch: All areasFarmBackyard
+Backyard only: 10 cards
+Backyard, empty: ["Bag 9","Bag 10"]
 errs []

@@ -7,10 +7,7 @@ size note on the bed page: A bed can be up to 50 m (5000 cm) on each side. For a
 planting page: true | 110,723 plants | arrange offered: false
 arrange page: This planting has about 110,723 plants — too many to place one by one
 home: true
-map zoom offered: true | Whole area | move/rotate bar hidden: true
-zoomed to ×64 | scrolls sideways: true | a bag is at least 60 px: true
-tapping a bag opens it: true
-grid note: Grid squares are 50 cm.
+beds view: true | cards: 6
 edit form says: A bed can be up to 50 m (5000 cm) on each side. For a bigger area, add it as several beds.
 save refused: A bed can be up to 50 m (5000 cm) on each side. For a bigger area, add it as several beds. | still 10000
 5000 × 5000: (nothing)

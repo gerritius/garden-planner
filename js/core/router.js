@@ -9,7 +9,7 @@ import { pageMyCrops, pageWelcome } from '../pages/welcome.js';
 import { pageSprayDay, syncFrost, syncWx } from '../climate/weather.js';
 import { syncFeedPlans } from '../feeding/plans.js';
 import { container, planting } from '../garden/garden.js';
-import { pageMap, pageSections } from '../garden/map.js';
+import { pageSections } from '../garden/areas.js';
 import { pagePlan, pageShop } from '../garden/planning.js';
 import { pageRotation } from '../garden/rotation.js';
 import { syncMeterJobs, syncWater } from '../garden/watering.js';
@@ -31,7 +31,7 @@ import { pageDiary, pagePhotos, pageTimeline } from '../records/notes.js';
 import { pageCompare, pageReview, pageSpend, pageTotals } from '../records/review.js';
 import { tourCard } from '../pages/tour.js';
 import { hydrate } from './photos.js';
-import { savingAllowed } from './state.js';
+import { S, savingAllowed } from './state.js';
 import { $, $$, esc } from './util.js';
 
 // ---------- per-page state ----------
@@ -67,6 +67,7 @@ export function setChrome(title, { back = false, tab = null, kicker = '', sub = 
 export function render() {
   if (failure) return showRecovery();   // the garden couldn't be loaded: nothing else until that's sorted
   const { parts, q } = route();
+  if (parts[0] === 'map') { S.homeView = 'beds'; location.replace('#/'); return; }   // the old garden map: its job is the Beds view's now
   const key = location.hash, same = key === lastRoute;
   // redrawing the page you're on (a button that changes something): keep the sections you had open or shut, and your place
   const kept = same ? keptDetails() : null, y = window.scrollY;
@@ -102,7 +103,6 @@ export function render() {
     else if (a === 'products') ({ html, after } = pageProducts(q));
     else if (a === 'product') ({ html, after } = pageProductLib(b));
     else if (a === 'search') ({ html, after } = pageSearch(q));
-    else if (a === 'map') ({ html, after } = pageMap(q));
     else if (a === 'review') ({ html, after } = pageReview(q));
     else if (a === 'compare') ({ html, after } = pageCompare(q));
     else if (a === 'container' && c === 'sections') ({ html, after } = pageSections(container(b)));

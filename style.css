@@ -361,19 +361,6 @@ legend { font-family: var(--hand); font-weight: 600; font-size: 24px; padding: 0
 .seg a { flex: 1; text-align: center; padding: 10px 6px; text-decoration: none; color: var(--ink); font-family: var(--head); font-weight: 700; border-left: 1.5px solid var(--line-2); background: var(--card); }
 .seg a:first-child { border-left: 0; }
 .seg a.on { background: var(--green); color: var(--green-ink); }
-.mapbox { display: flex; justify-content: center; margin: 10px 0; }
-.mapbox.zoomed { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-.mapbox.zoomed svg { max-width: none; }
-.mapzoom { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 8px; }
-.mapzoom .btn { min-width: 44px; font-size: 20px; padding: 2px 10px; }
-.mapzoom span { min-width: 90px; text-align: center; color: var(--muted); font-size: 14px; }
-.mapbox svg { max-width: 100%; height: auto; background: var(--card); border: 1px solid var(--line); border-radius: 6px; }
-.map .mapgrid { stroke: var(--line); stroke-width: 1; }
-.map .mapbg { fill: transparent; }
-.map .mapc { cursor: pointer; }
-.map .mapc .hit { fill: transparent; }
-.map .mapc.sel .hit { stroke: var(--terra); stroke-width: 3; stroke-dasharray: 8 5; vector-effect: non-scaling-stroke; }
-.map .mapl { fill: var(--ink); font-family: 'Zilla Slab', Georgia, serif; font-weight: 700; }
 .handle { cursor: ns-resize; }
 .handle .hhit { fill: transparent; }
 .handle .hline { stroke: #fff; stroke-width: 3; }
@@ -401,7 +388,6 @@ mark { background: #f6e3a1; color: inherit; border-radius: 2px; }
 
 .plot .gap.newsec { fill: rgba(255,240,200,.35); stroke: #fff; stroke-dasharray: 5 3; }
 
-.map .mapc, .plot .handle { cursor: grab; }
 
 /* running log */
 .plist.log li { align-items: flex-start; }
@@ -781,7 +767,6 @@ section.heads .t-hot .hi { color: var(--amber-ink); }
 /* alert dots: amber heat / dry, slate rain / frost / wind, terracotta ready to pick */
 .adot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--slate); box-shadow: 0 0 0 1.5px var(--card); }
 .adot.hot { background: var(--amber); } .adot.ready { background: var(--terra); }
-circle.adot { fill: var(--slate); stroke: var(--card); stroke-width: .25; } circle.adot.hot { fill: var(--amber); } circle.adot.ready { fill: var(--terra); }
 .bedcard .dots, .ptile .dots { position: absolute; top: 9px; right: 10px; display: flex; gap: 3px; z-index: 1; }
 .ptile { position: relative; }
 .chip small.pct { color: var(--muted); font-size: 11.5px; margin-left: 3px; font-variant-numeric: tabular-nums; }
@@ -791,19 +776,35 @@ circle.adot { fill: var(--slate); stroke: var(--card); stroke-width: .25; } circ
 .nextjob span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink); }
 .nextjob .uic { color: var(--green); }
 
-/* map: area switch, Layout | Sun & Moisture, label pills, overlay */
+/* Beds view: search, sort, filter chips, area switch, Crops | Sun & Moisture, what needs attention */
+.bedtools { display: flex; gap: 8px; align-items: center; margin: 0 0 8px; }
+.bedsearch { flex: 1 1 56%; min-width: 0; min-height: 44px; box-sizing: border-box; display: flex; align-items: center; gap: 6px; background: var(--card); border: 1.5px solid var(--line-2); border-radius: 10px; padding: 0 10px; color: var(--muted); }
+.bedtools .bedsearch input { flex: 1; width: 100%; min-width: 0; min-height: 40px; border: 0; border-radius: 0; background: none; font: inherit; font-size: 16px; color: var(--ink); padding: 8px 0; outline: none; }
+.bedsearch:focus-within { border-color: var(--green); }
+.bedtools .dd-field { flex: 0 1 44%; width: auto; min-width: 0; min-height: 44px; margin: 0; font-size: 14.5px; background: var(--card); border-radius: 10px; }
+.bedfilt { display: flex; gap: 6px; overflow-x: auto; margin: 0 -16px 8px; padding: 0 16px 2px; scrollbar-width: none; }
+.bedfilt::-webkit-scrollbar { display: none; }
+.fchip { flex: none; display: inline-flex; align-items: center; gap: 5px; font: 600 13px/1 var(--head); color: var(--ink); background: var(--card); border: 1.5px solid var(--line-2); border-radius: 999px; padding: 7px 12px; min-height: 34px; cursor: pointer; }
+.fchip small { font: 600 11.5px/1 var(--body, inherit); color: var(--muted); font-variant-numeric: tabular-nums; }
+.fchip.on { background: var(--green); border-color: var(--green); color: var(--green-ink); }
+.fchip.on small { color: var(--green-ink); opacity: .85; }
+.dotkey { margin-top: 0; }
+.nobeds { margin: 10px 0; }
+.why { display: flex; flex-wrap: wrap; gap: 3px 10px; margin-top: 6px; font-size: 12.5px; font-weight: 600; }
+.why span { display: inline-flex; align-items: center; gap: 5px; }
+.why .t-ready { color: var(--terra-2); } .why .t-hot { color: var(--amber-ink); } .why .t-cold { color: var(--slate-ink); } .why .t-late { color: var(--danger); }
+.adot.late { background: var(--danger); }
+.sunm { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 12.5px; color: var(--ink); margin: 4px 0 2px; }
+.sunm span { display: inline-flex; align-items: center; gap: 4px; }
+.sunm .uic { color: var(--amber-ink); }
+.ptile .sunm { justify-content: center; font-size: 11.5px; }
+i.mdrop.none { background: transparent; border-style: dashed; }
+:root[data-theme="dark"] .why .t-ready { color: var(--terra); }
 .mapsub { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin: 0 0 8px; }
 .mapsub .seg { margin: 0; flex: 0 1 auto; }
 .pilltog { display: inline-flex; border: 1.5px solid var(--line-2); border-radius: 999px; overflow: hidden; background: var(--card); }
 .pilltog button { border: 0; background: none; font: 600 13px/1 var(--head); color: var(--ink); padding: 8px 12px; min-height: 34px; cursor: pointer; }
 .pilltog button.on { background: var(--green); color: var(--green-ink); }
-.mpill rect { fill: var(--card); stroke: var(--line-2); stroke-width: .6; vector-effect: non-scaling-stroke; }
-.mpill text { fill: var(--ink); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-weight: 600; }
-.mov .sun-full { fill: #f2c94c; fill-opacity: .2; } .mov .sun-part { fill: #f2c94c; fill-opacity: .09; }
-.mov .sun-shade { fill: #4d6177; fill-opacity: .28; } .mov .sun-in { fill: #8a7a6a; fill-opacity: .2; }
-.mov rect { stroke: none; }
-.mdrop { stroke: var(--ink); stroke-width: .5; vector-effect: non-scaling-stroke; }
-.mdrop.m0 { fill: #e9d6b0; } .mdrop.m1 { fill: #c3d6e6; } .mdrop.m2 { fill: #7fa7c9; } .mdrop.m3 { fill: #3d74a8; }
 i.mdrop { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--ink); border-radius: 50% 0 50% 50%; transform: rotate(-45deg); margin: 0 2px 0 1px; }
 i.mdrop.m0 { background: #e9d6b0; } i.mdrop.m1 { background: #c3d6e6; } i.mdrop.m2 { background: #7fa7c9; } i.mdrop.m3 { background: #3d74a8; }
 .mapkey { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--muted); margin: 6px 0; }
@@ -833,12 +834,6 @@ i.mdrop.m0 { background: #e9d6b0; } i.mdrop.m1 { background: #c3d6e6; } i.mdrop.
 /* form rhythm: 6 px from a label to its field, 16 px between groups */
 .form { gap: 16px; }
 .form label { gap: 6px; }
-.mpill text.mpn { font-family: var(--head); font-weight: 700; }
-.mpill text.mpc { font-weight: 500; fill: var(--muted); }
-.mbadge { fill: var(--card); stroke: var(--line-2); stroke-width: .6; vector-effect: non-scaling-stroke; }
-.msun { fill: none; stroke: var(--amber-ink); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.msun .d { fill: var(--amber); fill-opacity: .5; }
-.mpill text.mpp { font-weight: 700; fill: var(--green); font-variant-numeric: tabular-nums; }
 
 /* bed drawings: compact first, with a Bigger / Smaller toggle */
 .plothead { display: flex; justify-content: flex-end; margin: -4px 0 2px; }

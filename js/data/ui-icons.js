@@ -10,6 +10,7 @@ const P = {
   basket: '<path d="M7 10a5 5 0 0 1 10 0"/><path class="d" d="M3 10h18l-2.1 9.3a1.6 1.6 0 0 1-1.6 1.2H6.7a1.6 1.6 0 0 1-1.6-1.2z"/><path d="M9 13.5v3.8M12 13.5v3.8M15 13.5v3.8"/>',
   spray: '<path class="d" d="M7 11h7v8.5a1.5 1.5 0 0 1-1.5 1.5h-4A1.5 1.5 0 0 1 7 19.5z"/><path d="M8.5 11V7.5h4V11M8.5 7.5 9.5 4h5.5l1.5 2.2M18.5 3.5l2-.8M18.8 6.5h2.4M18.5 9.5l2 .8"/>',
   doctor: '<path d="M6 3.5V8a4 4 0 0 0 8 0V3.5M4.5 3.5H7M13 3.5h2.5"/><path d="M10 12v2.5a4.8 4.8 0 0 0 9.6 0V13"/><circle class="d" cx="19.6" cy="10.8" r="2.2"/>',
+  search: '<circle class="d" cx="10.5" cy="10.5" r="6"/><path d="m15 15 5 5"/>',
   map: '<path class="d" d="M3.5 6.2 9 4l6 2.2L20.5 4v13.8L15 20l-6-2.2-5.5 2.2z"/><path d="M9 4v13.8M15 6.2V20"/>',
   journal: '<path class="d" d="M5 5.5A2 2 0 0 1 7 3.5h12v14H7a2 2 0 0 0-2 2z"/><path d="M5 19.5a2 2 0 0 0 2 2h12v-4M9 7.5h6M9 10.5h4"/>',
   money: '<rect class="d" x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.8"/><path d="M6 9.5v5M18 9.5v5"/>',

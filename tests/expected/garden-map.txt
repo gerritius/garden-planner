@@ -1,6 +1,0 @@
-map is taller than the screen: true
-map fills the width: true
-swipe on empty space scrolls the page: true
-bed b1 [ 0, 0 ] -> [ 0, 80 ] | page stayed put: true
-autoscroll: page scrolled true | g1 stayed in its column: true | moved well down: true
-errs []

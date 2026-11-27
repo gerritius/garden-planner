@@ -1,12 +1,23 @@
 [
   {
+    "version": "1.54.0",
+    "date": "2026-11-27",
+    "notes": [
+      "The garden map is gone: the Beds view does its job. Find a bed or crop by name, sort by name, what needs attention, driest, closest to harvest or newest sowing, and filter to what needs attention, is ready to pick, is dry or is empty.",
+      "Each card says what its coloured dot means (for example “Probably dry” or “Ready to harvest”), and a key above the cards explains the colours. Overdue jobs count as needing attention too.",
+      "“Sun & Moisture” on the Beds view shows each bed’s sun and how wet it probably is (or what the meter read today).",
+      "Areas such as Farm and Backyard: switch between them at the top of the Beds view, and add, rename or delete them from the Areas button.",
+      "Test site only: Tools → Fill with a made-up garden, for trying things out with beds, bags and seedlings at every stage."
+    ]
+  },
+  {
     "version": "1.53.0",
     "date": "2026-11-27",
     "notes": [
-      "The Garden tab has three views: Today (the forecast, crop alerts and today’s jobs), Beds (a card for each bed and pot, with how far along each crop is and its next job) and Map. It remembers the one you used last.",
+      "The Garden tab has two views: Today (the forecast, crop alerts and today’s jobs) and Beds (a card for each bed and pot, with how far along each crop is and its next job). It remembers the one you used last.",
       "Tap a day in the forecast to see that day’s crop risks and jobs; tap Today to see everything again.",
       "Jobs the weather gets in the way of say so, for example “23mm rain tmrw” on watering, with a Skip button. Skipping a feed or spray moves it to the next dry day.",
-      "On the map, each bed has a label with its crops, how far along they are, and a coloured dot for anything that needs you: amber for heat or dry soil, blue for rain, frost or wind, terracotta for ready to pick. “Sun & Moisture” shows each bed’s sun and an estimate of how wet it is.",
+      "Beds and pots show a coloured dot for anything that needs you: amber for heat or dry soil, blue for rain, frost or wind, terracotta for ready to pick.",
       "Bed and crop pages show the crop family, your latest pH reading and what you’ve dug in this year. Bed drawings start smaller, with a Bigger button.",
       "The harvest window is a bar from sowing to past its best, with today marked. The “Pick by” job now keeps to its date as the forecast moves it, and says when it’s overdue.",
       "Seedling checks show how many have come up against the 70% target, with a + to log a new count. The + button opens a quick log: harvest, emergence, feed or spray, and note or photo.",

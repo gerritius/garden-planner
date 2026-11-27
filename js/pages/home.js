@@ -5,13 +5,13 @@ import { sowNowSection, sowPick } from '../climate/sowing.js';
 import { climateNotice } from '../climate/climate.js';
 import { dayName, sprayDays, Weather } from '../climate/weather.js';
 import { ui } from '../data/ui-icons.js';
-import { bedDots, dayAlerts, dotsHTML, isReady, maturity, MOIST, SUN } from '../garden/insights.js';
+import { bedDots, dayAlerts, dotsHTML, isReady, maturity, moistureOf, MOIST, SUN, sunOf } from '../garden/insights.js';
 import { A, render, route, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
-import { $, daysBetween, esc, go, pd, shortDate, todayStr } from '../core/util.js';
+import { $, daysBetween, esc, pd, shortDate, todayStr } from '../core/util.js';
 import { Draw, plotSVG } from '../draw.js';
 import { activeIn, container, isLive, sizeLabel } from '../garden/garden.js';
-import { ensureAreas, mapSVG } from '../garden/map.js';
+import { areasDialog, ensureAreas } from '../garden/areas.js';
 import { effDue, jobsList, sortTasks, taskVisible } from '../garden/tasks.js';
 import { coverChips, coverNotes, coverType } from '../plants/covers.js';
 import { crop, ic } from '../plants/crops.js';
@@ -20,54 +20,97 @@ import { seedlingsHomeSection } from '../plants/seedlings.js';
 import { sprayHolds } from '../products/sprays.js';
 import { quickAdd } from './search.js';
 
-// ---------- the home page: Today | Beds | Map ----------
+// ---------- the home page: Today | Beds ----------
 // the forecast day picked in the strip (null: everything); it isn't saved — a new visit starts on all of them
 let wxSel = null;
-const VIEWS = [['today', 'today', 'Today'], ['beds', 'grid', 'Beds'], ['map', 'map', 'Map']];
-const homeViewNow = () => { const v = S.homeView === 'cards' ? 'beds' : S.homeView; return VIEWS.some(x => x[0] === v) ? v : 'today'; };
-function homeMap() {
-  ensureAreas();
-  const aid = S.mapArea && S.areas.find(x => x.id === S.mapArea) ? S.mapArea : S.areas[0].id, ov = S.mapOverlay === 'sun' ? 'sun' : 'layout';
-  A.harea = async el => { S.mapArea = el.dataset.id; await save(); render(); };
-  A.mapOv = async el => { S.mapOverlay = el.dataset.v; await save(); render(); };
-  setTimeout(() => { const b = $('#homemap'); if (b) b.addEventListener('click', e => { const g = e.target.closest('[data-cid]'); if (g) go('#/container/' + g.dataset.cid); }); });
-  return `<div class="mapsub">${S.areas.length > 1 ? `<div class="seg small wrap">${S.areas.map(x => `<button type="button" data-act="harea" data-id="${x.id}" class="${x.id === aid ? 'on' : ''}">${esc(x.name)}</button>`).join('')}</div>` : '<span></span>'}
-      <div class="pilltog" role="group" aria-label="Map overlay">${[['layout', 'Layout'], ['sun', 'Sun &amp; Moisture']].map(([v, l]) => `<button type="button" data-act="mapOv" data-v="${v}" class="${v === ov ? 'on' : ''}">${l}</button>`).join('')}</div></div>
-    <div class="mapbox" id="homemap">${mapSVG(aid, { width: Math.min(window.innerWidth, 680) - 32, pills: true, overlay: ov === 'sun' })}</div>
-    ${ov === 'sun' ? mapKey() : `<p class="mapkey">${['ready', 'hot', 'cold'].map(t => `<span><i class="adot ${t}"></i>${{ ready: 'Ready to pick', hot: 'Heat or dry', cold: 'Rain, frost or wind' }[t]}</span>`).join('')}</p>`}
-    <div class="btnrow"><a class="btn small" href="#/map?a=${aid}&edit=1">${ui('move', 18)} Arrange map &amp; areas</a></div>`;
+const VIEWS = [['today', 'today', 'Today'], ['beds', 'grid', 'Beds']];
+const homeViewNow = () => { const v = S.homeView === 'cards' || S.homeView === 'map' ? 'beds' : S.homeView; return VIEWS.some(x => x[0] === v) ? v : 'today'; };
+// ---------- Beds: every bed and pot, sorted and filtered ----------
+let bedQ = '';   // what's typed in the search box (not saved)
+const SORTS = [['name', 'Name'], ['attention', 'Needs attention first'], ['dry', 'Driest first'], ['ready', 'Closest to harvest'], ['sown', 'Newest sowing']];
+const FILTERS = [['all', 'All'], ['attention', 'Needs attention'], ['ready', 'Ready to pick'], ['dry', 'Dry'], ['empty', 'Empty']];
+const DOT_KEY = { ready: 'Ready to pick', hot: 'Heat or dry', cold: 'Rain, frost or wind' };
+// everything worth a look on a bed: its dots plus any overdue job
+function overdueOf(c) {
+  const ids = new Set(activeIn(c.id).map(p => p.id)), td = todayStr();
+  return S.tasks.filter(t => !t.done && taskVisible(t) && t.kind !== 'water' && (ids.has(t.plantingId) || t.containerId === c.id) && effDue(t) < td);
 }
-function mapKey() {
-  return `<p class="mapkey">${Object.entries(SUN).map(([, [l, i]]) => `<span>${ui(i, 16)}${l}</span>`).join('')}</p>
-    <p class="mapkey">${MOIST.map((l, i) => `<span><i class="mdrop m${i}"></i>${l}</span>`).join('')}</p>
-    <p class="hint">Sun is each bed’s own setting. Moisture is estimated from the rain and your watering, unless the meter was read today.</p>`;
+function bedInfo(c) {
+  const ps = activeIn(c.id), ms = ps.map(maturity).filter(x => x != null), dots = bedDots(c), over = overdueOf(c);
+  const reasons = dots.concat(over.length ? [{ tone: 'late', t: over.length === 1 ? '1 job overdue' : `${over.length} jobs overdue` }] : []);
+  return { c, ps, m: ms.length ? Math.max(...ms) : null, dots, reasons, moist: moistureOf(c), sown: ps.map(p => p.sowDate || '').sort().pop() || '',
+    q: [c.name, ...ps.map(p => crop(p.cropId).en), ...ps.map(p => p.variety || '')].join(' ').toLowerCase() };
 }
-// a bed or pot card for the Beds view: drawing, crops with how far along they are, alert dots and the next job
+const why = x => x.reasons.length ? `<div class="why">${x.reasons.map(r => `<span class="t-${r.tone}"><i class="adot ${r.tone}"></i>${esc(r.t)}</span>`).join('')}</div>` : '';
+function sunMoist(x) {
+  const [sl, si] = SUN[sunOf(x.c)], lv = x.moist.level;
+  return `<div class="sunm"><span>${ui(si, 16)}${sl}</span><span>${lv == null ? '<i class="mdrop none"></i>No estimate' : `<i class="mdrop m${lv}"></i>${MOIST[lv]}${x.moist.src === 'meter' ? ' (meter)' : ''}`}</span></div>`;
+}
+// a bed or pot card: drawing, crops with how far along they are, what needs attention and the next job
 function nextJob(c) {
   const ids = new Set(activeIn(c.id).map(p => p.id));
   const t = sortTasks(S.tasks.filter(t => !t.done && taskVisible(t) && t.kind !== 'water' && (ids.has(t.plantingId) || t.containerId === c.id)))[0];
   if (!t) return '';
   const n = daysBetween(todayStr(), effDue(t));
-  return `<div class="nextjob">${ui('check', 14)}<span>${esc(t.title)}</span><small>${n <= 0 ? 'today' : n === 1 ? 'tmrw' : shortDate(effDue(t))}</small></div>`;
+  return `<div class="nextjob">${ui('check', 14)}<span>${esc(t.title)}</span><small>${n < 0 ? 'overdue' : n === 0 ? 'today' : n === 1 ? 'tmrw' : shortDate(effDue(t))}</small></div>`;
 }
-function bedCard(c) {
-  const ps = activeIn(c.id), { W, L } = Draw.dims(c);
-  const chips = ps.map(p => { const m = maturity(p); return `<span class="chip">${ic(p.cropId)}${esc(crop(p.cropId).en)}${m != null ? `<small class="pct">${isReady(p) ? 'ready' : m + '%'}</small>` : ''}</span>`; }).join('') || '<span class="chip muted">empty</span>';
-  const ms = ps.map(maturity).filter(x => x != null), m = ms.length ? Math.max(...ms) : null;
-  return `<a class="card bedcard" href="#/container/${c.id}"><span class="dots">${dotsHTML(bedDots(c))}</span><div class="thumb">${plotSVG(c, { px: Math.min(150 / L, 150 / W), minPx: 1.2 })}</div>
-    <div class="cname">${esc(c.name)}</div><div class="csize">${sizeLabel(c)}</div><div class="chips">${chips}</div>
-    ${m != null ? `<div class="mbar" title="How far along: ${m}%"><i style="width:${m}%"></i></div>` : ''}${nextJob(c)}${coverChips(c)}</a>`;
+function bedCard(x, sun) {
+  const { c, ps, m } = x, { W, L } = Draw.dims(c);
+  const chips = ps.map(p => { const mm = maturity(p); return `<span class="chip">${ic(p.cropId)}${esc(crop(p.cropId).en)}${mm != null ? `<small class="pct">${isReady(p) ? 'ready' : mm + '%'}</small>` : ''}</span>`; }).join('') || '<span class="chip muted">empty</span>';
+  return `<a class="card bedcard" href="#/container/${c.id}" data-q="${esc(x.q)}"><span class="dots">${dotsHTML(x.dots)}</span><div class="thumb">${plotSVG(c, { px: Math.min(150 / L, 150 / W), minPx: 1.2 })}</div>
+    <div class="cname">${esc(c.name)}</div><div class="csize">${sizeLabel(c)}</div>${sun ? sunMoist(x) : ''}<div class="chips">${chips}</div>
+    ${m != null ? `<div class="mbar" title="How far along: ${m}%"><i style="width:${m}%"></i></div>` : ''}${why(x)}${nextJob(c)}${coverChips(c)}</a>`;
 }
-function potTile(c) {
-  const ps = activeIn(c.id), { W, L } = Draw.dims(c), ms = ps.map(maturity).filter(x => x != null), m = ms.length ? Math.max(...ms) : null;
-  return `<a class="ptile" href="#/container/${c.id}"><span class="dots">${dotsHTML(bedDots(c))}</span><div class="thumb">${plotSVG(c, { px: Math.min(84 / L, 84 / W), minPx: 1.2 })}</div><b>${esc(c.name)}</b><small>${ps.map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small>${m != null ? `<div class="mbar"><i style="width:${m}%"></i></div>` : ''}${coverChips(c)}</a>`;
+function potTile(x, sun) {
+  const { c, ps, m } = x, { W, L } = Draw.dims(c);
+  return `<a class="ptile" href="#/container/${c.id}" data-q="${esc(x.q)}"><span class="dots">${dotsHTML(x.dots)}</span><div class="thumb">${plotSVG(c, { px: Math.min(84 / L, 84 / W), minPx: 1.2 })}</div><b>${esc(c.name)}</b><small>${ps.map(p => esc(crop(p.cropId).en)).join(', ') || 'empty'}</small>${m != null ? `<div class="mbar"><i style="width:${m}%"></i></div>` : ''}${sun ? sunMoist(x) : ''}${coverChips(c)}</a>`;
 }
+const byName = (a, b) => a.c.name.localeCompare(b.c.name, undefined, { numeric: true });
+const SORT_FN = {
+  name: byName,
+  attention: (a, b) => b.reasons.length - a.reasons.length || byName(a, b),
+  dry: (a, b) => (a.moist.level ?? 9) - (b.moist.level ?? 9) || byName(a, b),
+  ready: (a, b) => (b.m ?? -1) - (a.m ?? -1) || byName(a, b),
+  sown: (a, b) => (b.sown).localeCompare(a.sown) || byName(a, b),
+};
+const FILTER_FN = { all: () => true, attention: x => x.reasons.length > 0, ready: x => x.ps.some(isReady), dry: x => x.moist.level != null && x.moist.level <= 1, empty: x => !x.ps.length };
 function bedsView() {
-  const beds = S.containers.filter(c => c.type === 'bed'), pots = S.containers.filter(c => c.type !== 'bed');
-  return `${beds.length ? `<h3 class="grp">Beds</h3><div class="grid">${beds.map(bedCard).join('')}</div>` : ''}
-    ${pots.length ? `<h3 class="grp">Pots &amp; bags</h3>${pots.length > 4 ? `<div class="grid3">${pots.map(potTile).join('')}</div>` : `<div class="grid">${pots.map(bedCard).join('')}</div>`}` : ''}
-    ${seedlingsHomeSection()}
-    <div class="btnrow"><a class="btn small" href="#/container/new">${ui('plus', 18)} Add a bed or pot</a></div>`;
+  ensureAreas();
+  const sort = SORT_FN[S.bedSort] ? S.bedSort : 'name', filt = FILTER_FN[S.bedFilter] ? S.bedFilter : 'all', sun = S.bedsShow === 'sun';
+  const area = S.areas.length > 1 && S.areas.some(a => a.id === S.bedArea) ? S.bedArea : null;
+  A.bedFilt = async el => { S.bedFilter = el.dataset.v; await save(); render(); };
+  A.bedArea = async el => { S.bedArea = el.dataset.id || null; await save(); render(); };
+  A.bedsShow = async el => { S.bedsShow = el.dataset.v; await save(); render(); };
+  A.areas = () => areasDialog();
+  const all = S.containers.filter(c => !area || c.area === area).map(bedInfo), counts = Object.fromEntries(FILTERS.map(([k]) => [k, all.filter(FILTER_FN[k]).length]));
+  const list = all.filter(FILTER_FN[filt]).sort(SORT_FN[sort]);
+  const beds = list.filter(x => x.c.type === 'bed'), pots = list.filter(x => x.c.type !== 'bed');
+  setTimeout(() => { const so = $('#bedsort'); if (so) so.onchange = async () => { S.bedSort = so.value; await save(); render(); };
+    const i = $('#bedq'); if (i) { i.addEventListener('input', () => { bedQ = i.value; findBeds(); }); findBeds(); } });
+  return `<div class="bedtools">
+      <label class="bedsearch">${ui('search', 18)}<input id="bedq" type="search" placeholder="Find a bed or crop" value="${esc(bedQ)}" aria-label="Find a bed or crop"></label>
+      <select id="bedsort" aria-label="Sort beds">${SORTS.map(([v, l]) => `<option value="${v}"${v === sort ? ' selected' : ''}>${l}</option>`).join('')}</select>
+    </div>
+    <div class="bedfilt">${FILTERS.map(([v, l]) => `<button type="button" data-act="bedFilt" data-v="${v}" class="fchip${v === filt ? ' on' : ''}" aria-pressed="${v === filt}">${l}${v !== 'all' ? ` <small>${counts[v]}</small>` : ''}</button>`).join('')}</div>
+    <div class="mapsub">${S.areas.length > 1 ? `<div class="seg small wrap">${[[null, 'All areas']].concat(S.areas.map(a => [a.id, a.name])).map(([id, n]) => `<button type="button" data-act="bedArea"${id ? ` data-id="${id}"` : ''} class="${id === area ? 'on' : ''}">${esc(n)}</button>`).join('')}</div>` : '<span></span>'}
+      <div class="pilltog" role="group" aria-label="What the cards show">${[['crops', 'Crops'], ['sun', 'Sun &amp; Moisture']].map(([v, l]) => `<button type="button" data-act="bedsShow" data-v="${v}" class="${(v === 'sun') === sun ? 'on' : ''}" aria-pressed="${(v === 'sun') === sun}">${l}</button>`).join('')}</div></div>
+    <p class="mapkey dotkey">${Object.entries(DOT_KEY).map(([t, l]) => `<span><i class="adot ${t}"></i>${l}</span>`).join('')}</p>
+    ${sun ? `<p class="mapkey">${MOIST.map((l, i) => `<span><i class="mdrop m${i}"></i>${l}</span>`).join('')}</p><p class="hint">Sun is each bed’s own setting. Moisture is estimated from the rain and your watering, unless the meter was read today.</p>` : ''}
+    ${!list.length ? `<p class="muted nobeds">No beds or pots match. <button type="button" class="link" data-act="bedFilt" data-v="all">Show all</button></p>` : ''}
+    <div class="bgrp" data-g="beds"${beds.length ? '' : ' hidden'}><h3 class="grp">Beds</h3><div class="grid">${beds.map(x => bedCard(x, sun)).join('')}</div></div>
+    <div class="bgrp" data-g="pots"${pots.length ? '' : ' hidden'}><h3 class="grp">Pots &amp; bags</h3>${pots.length > 4 ? `<div class="grid3">${pots.map(x => potTile(x, sun)).join('')}</div>` : `<div class="grid">${pots.map(x => bedCard(x, sun)).join('')}</div>`}</div>
+    <p class="muted nobeds" id="noq" hidden>Nothing called that. <button type="button" class="link" id="clrq">Clear the search</button></p>
+    ${filt === 'all' && !area ? seedlingsHomeSection() : ''}
+    <div class="btnrow"><a class="btn small" href="#/container/new">${ui('plus', 18)} Add a bed or pot</a><button type="button" class="btn small" data-act="areas">${ui('map', 18)} Areas</button></div>`;
+}
+// the search box hides cards as you type, without redrawing the page (so the keyboard stays up)
+function findBeds() {
+  const q = bedQ.trim().toLowerCase(); let shown = 0;
+  document.querySelectorAll('.bgrp').forEach(g => {
+    let n = 0; g.querySelectorAll('[data-q]').forEach(a => { const ok = !q || a.dataset.q.includes(q); a.hidden = !ok; n += ok; });
+    g.hidden = !n; shown += n;
+  });
+  const nq = $('#noq'); if (nq) { nq.hidden = !(q && !shown); const b = $('#clrq'); if (b) b.onclick = () => { bedQ = ''; $('#bedq').value = ''; findBeds(); }; }
 }
 function todayView(td, today) {
   const days = Weather.days(), sel = wxSel && wxSel !== td && days.some(d => d.date === wxSel) ? wxSel : null;
@@ -102,7 +145,7 @@ export function pageHome() {
     ${driveBanner()}${backupNote}
     ${S.firstRun ? `<a class="banner" href="#/welcome?s=2">${ui('sprout', 18)} <b>Finish setting up</b> — where your garden is and which crops you grow ›</a>` : ''}
     ${!S.containers.length ? `<div class="empty-state"><p>No beds or pots yet.</p><a class="btn primary" href="#/container/new">＋ Add a bed or pot</a></div>` : ''}
-    ${view === 'map' ? homeMap() : view === 'beds' ? bedsView() : todayView(td, today)}
+    ${view === 'beds' ? bedsView() : todayView(td, today)}
     <button class="fab" data-act="quick" aria-label="Quick log">＋</button>`;
   A.quick = () => quickAdd();
   A.hv = async el => { S.homeView = el.dataset.v; await save(); render(); };

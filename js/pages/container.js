@@ -12,7 +12,7 @@ import { mixDialog, mixList } from '../feeding/mix.js';
 import { feedDialog } from '../feeding/plans.js';
 import { activeIn, decorate, gaps, isPlanned, planting, prevCrop, sizeLabel, sizeProblem, typeLabel } from '../garden/garden.js';
 import { ideasBtn } from '../garden/ideas.js';
-import { ensureAreas } from '../garden/map.js';
+import { ensureAreas } from '../garden/areas.js';
 import { freeGaps, planSection } from '../garden/planning.js';
 import { prepDialog, readingDialog, soilSection } from '../garden/soil.js';
 import { bedTaskDialog, sortTasks, taskLi } from '../garden/tasks.js';

@@ -13,7 +13,7 @@ const U = 'http://localhost:8765/';
   const loaded = new Set();
   pg.on('request', r => { const u = new URL(r.url()); if (u.host === 'localhost:8765' && u.pathname !== '/__test_bridge.js') loaded.add(u.pathname === '/' ? './' : u.pathname.slice(1)); });
   await pg.goto(U); await pg.waitForTimeout(800);
-  for (const h of ['#/settings', '#/cal', '#/log', '#/map', '#/sow', '#/products']) { await pg.goto(U + h); await pg.waitForTimeout(150); }
+  for (const h of ['#/settings', '#/cal', '#/log', '#/sow', '#/products']) { await pg.goto(U + h); await pg.waitForTimeout(150); }
   const notListed = [...loaded].filter(f => !assets.includes(f) && f !== 'sw.js').sort();
   console.log('every file the app loads is on the offline list:', notListed.length === 0, notListed);
   const missing = [];

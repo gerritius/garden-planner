@@ -73,8 +73,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `feeding-plan-liquid-with-watering` | Feeding plan doses; weekly liquid feeds merged into the watering job |
 | `feeding-plan-suggestions` | Feeding plan suggestions for celery and cabbage; overfeeding guard |
 | `frost-covers-and-wind` | Frost warnings and covers, wind advice |
-| `garden-views-and-alerts` | The Garden tab's Today / Beds / Map views, picking a forecast day, weather tags and Skip on jobs, alert dots and label pills on the map, the Sun & Moisture overlay, soil chips, the harvest lifecycle bar, the Pick by job keeping to its date, the emergence bar and the quick log |
-| `garden-map` | The garden map: dragging beds, scrolling |
+| `garden-views-and-alerts` | The Garden tab's Today / Beds views, picking a forecast day, weather tags and Skip on jobs, the Beds view's sort, filters, search and Sun & Moisture, alert dots and their key, areas, the made-up test garden, soil chips, the harvest lifecycle bar, the Pick by job keeping to its date, the emergence bar and the quick log |
 | `garlic-feeding-model` | The day-by-day nitrogen model for garlic in a bag (drainage, uptake, "fed until") |
 | `garlic-feeding-plan` | Garlic's feeding card and plan, including the last feed (止め肥) |
 | `germination-looks` | Looking at slow seeds every few days with roughly how many are up: nothing yet (thinning waits), a few, counted; when they came up; stopping; re-sowing |
@@ -83,7 +82,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `history-past-crops-and-log` | Adding past crops, bed history, logging feeds and sprays |
 | `install-chrome` | Chrome's own verdict: the real app and the test site, opened at their folder addresses, are each installable, inside their own scope |
 | `install-scopes` | The real app and the test site install as two separate apps; the real app keeps its identity |
-| `large-beds-and-ruler` | A 100 m bed never freezes the app (plants counted, drawn as a pattern); size limits in the bed form; map zoom; the ruler |
+| `large-beds-and-ruler` | A 100 m bed never freezes the app (plants counted, drawn as a pattern); size limits in the bed form; the Beds view; the ruler |
 | `lime-amounts` | Lime from a pH reading, sized to the bed section or pot, the same everywhere |
 | `liquid-feed-doses` | A liquid feed with doses mixed into the can (e.g. 5 or 10 mL per 5 L) and how it's counted |
 | `log-sprays-frost-alerts` | Logging sprays (days to wait before picking), frost jobs, weather alerts |

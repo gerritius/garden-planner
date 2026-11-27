@@ -30,13 +30,9 @@ const U = 'http://localhost:8765/';
   console.log('arrange page:', (await pg.textContent('#view')).trim().split('.')[0]);
   console.log('home:', await within(10000, async () => { await pg.goto(U + '#/'); await pg.waitForTimeout(400); }));
 
-  // the map: zoom appears because the bags are tiny next to the huge bed
-  await pg.goto(U + '#/map'); await pg.waitForSelector('#mapbox svg');
-  console.log('map zoom offered:', !!(await pg.$('.mapzoom')), '|', await pg.textContent('#zoomTxt'), '| move/rotate bar hidden:', !(await pg.isVisible('#selbar')));
-  for (let i = 0; i < 10; i++) { const t = await pg.textContent('#zoomTxt'); await pg.click('[data-act=zoomIn]'); if (await pg.textContent('#zoomTxt') === t) break; }
-  console.log('zoomed to', await pg.textContent('#zoomTxt'), '| scrolls sideways:', await pg.$eval('#mapbox', x => x.scrollWidth > x.clientWidth), '| a bag is at least 60 px:', await pg.$eval('[data-cid=g1] .hit', x => x.getBoundingClientRect().width >= 60));
-  await pg.click('[data-cid=g1] .hit'); await pg.waitForTimeout(300); console.log('tapping a bag opens it:', pg.url().endsWith('#/container/g1'));
-  await pg.goto(U + '#/map?edit=1'); await pg.waitForSelector('#mapbox svg'); console.log('grid note:', await pg.textContent('#gridTxt'));
+  // the Beds view draws the huge bed and the tiny bags side by side without freezing
+  console.log('beds view:', await within(10000, async () => { await pg.evaluate(async () => { S.homeView = 'beds'; await save(); }); await pg.reload(); await pg.waitForSelector('.bedcard'); }), '| cards:', await pg.$$eval('.bedcard, .ptile', x => x.length));
+  await pg.evaluate(async () => { S.homeView = 'today'; await save(); });
 
   // the form refuses sizes the app isn't made for, and says why as you type
   await pg.goto(U + '#/container/hu/edit'); await pg.waitForSelector('#cf'); await pg.waitForTimeout(200);

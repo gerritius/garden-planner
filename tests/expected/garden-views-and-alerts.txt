@@ -9,7 +9,7 @@ feed tag: {"tone":"cold","icon":"rain","text":"23mm rain tmrw","act":"moveJob","
 feed moved to: 2 days on, movedFor rain
 a watering job with a rain tag: false
 bed cards: [{"name":"Bed 1","chips":"Daikonready","dots":["ready:Ready to harvest"],"next":"Earliest harvest – check croptoday"},{"name":"Bed 2","chips":"Spinach13%","dots":["hot:Hot day coming"],"next":"Fertilise Bed 2 – liquid feed20 Nov"},{"name":"Bag 1","chips":"Lettuce12%","dots":["hot:Hot day coming","cold:Frost"],"next":"Earliest harvest – check crop1 Feb"}]
-pills: ["Bed 1 / ready / Daikon ready","Bed 2 / 13% / Spinach hot","Bag 1 / 12% / Lettuce hot+cold"]
+pills: ["Bag 1 / 12% / Lettuce hot+cold","Bed 1 / ready / Daikon ready","Bed 2 / 13% / Spinach hot"]
 overlay: ["sun-full mdrop m2","sun-shade mdrop m0","sun-full mdrop m0"]
 moisture: ["Bed 1 {\"level\":2,\"src\":\"estimate\"}","Bed 2 {\"level\":0,\"src\":\"estimate\"}","Bag 1 {\"level\":0,\"src\":\"estimate\"}"]
 view remembered: map / sun

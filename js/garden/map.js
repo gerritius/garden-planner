@@ -48,14 +48,17 @@ export function maxZoom(areaId, width) {
 }
 // a bed's label on the map: its name, then its crops and how far along, with a dot for each alert that applies to it.
 // It's kept about as wide as the bed (at least 92 px), so neighbours don't run into each other.
-function pillSVG(c, cx, y, px, bw, xmin, xmax) {
+function pillSVG(c, cx, y, px, bw, xmin, xmax, placed = []) {
   const ps = activeIn(c.id), ms = ps.map(maturity).filter(v => v != null), m = ms.length ? Math.max(...ms) : null;
   const names = [...new Set(ps.map(p => crop(p.cropId).en))], dots = bedDots(c);
   const dotW = dots.length ? dots.length * 9 + 2 : 0, wpx = Math.max(bw * px < 60 ? 80 : 96, Math.min(bw * px + 24, 210));
   const fit = (t, n) => t.length > n ? t.slice(0, Math.max(1, n - 1)) + '…' : t;
   const pct = m != null ? (ps.some(isReady) ? 'ready' : m + '%') : '';
   const l1 = fit(c.name, Math.floor((wpx - 14 - pct.length * 5.8) / 6.3)), l2 = names.length ? fit(names.join(', '), Math.floor((wpx - 14 - dotW) / 5.6)) : 'empty';
-  const w = wpx / px, h = 32 / px, x = Math.max(xmin, Math.min(xmax - w, cx - w / 2));
+  const w = wpx / px, h = 32 / px, x = Math.max(xmin, Math.min(xmax - w, cx - w / 2)), gap = 3 / px;
+  // a label that would sit on one already drawn moves down below it
+  for (let i = 0; i < 6; i++) { const hit = placed.find(r => x < r.x + r.w + gap && r.x < x + w + gap && y < r.y + r.h + gap && r.y < y + h + gap); if (!hit) break; y = hit.y + hit.h + gap; }
+  placed.push({ x, y, w, h });
   return `<g class="mpill" transform="translate(${x} ${y})"><rect width="${w}" height="${h}" rx="${7 / px}"/>
     <text x="${7 / px}" y="${12 / px}" font-size="${11.5 / px}" class="mpn">${esc(l1)}</text>${pct ? `<text x="${w - 7 / px}" y="${12 / px}" font-size="${10.5 / px}" text-anchor="end" class="mpp">${pct}</text>` : ''}
     ${dots.map((d, i) => `<circle cx="${(10 + i * 9) / px}" cy="${23.5 / px}" r="${3.5 / px}" class="adot ${d.tone}"><title>${esc(d.t)}</title></circle>`).join('')}
@@ -72,10 +75,10 @@ function overlaySVG(c, x, y, w, h, px) {
 export function mapSVG(areaId, { edit = false, width = 360, sel = null, pills = false, overlay = false } = {}) {
   const { cs, maxX, maxY } = mapExtent(areaId);
   if (!cs.length) return '<p class="muted center">No beds or pots in this area yet.</p>';
-  const pad = 30, W = maxX + pad * 2, px = width / W, H = maxY + pad * 2 + (pills ? 38 / px : 20) + (edit ? 250 : 0);
+  const pad = 30, W = maxX + pad * 2, px = width / W;
+  let H = maxY + pad * 2 + (pills ? 38 / px : 20) + (edit ? 250 : 0);
   const cell = [50, 100, 200, 500, 1000, 2000, 5000].find(g => g * px >= 12) || 5000;   // grid squares at least 12 px
-  let s = `<svg class="map" viewBox="${-pad} ${-pad} ${W} ${H}" width="${width}" height="${(H * px).toFixed(0)}" data-grid="${cell}" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<defs><pattern id="mg" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse"><path d="M${cell} 0H0V${cell}" fill="none" class="mapgrid" vector-effect="non-scaling-stroke"/></pattern></defs><rect x="${-pad}" y="${-pad}" width="${W}" height="${H}" fill="url(#mg)" class="mapbg"/>`;
+  let s = '';
   for (const c of cs) {
     const { W: cw, L: cl } = Draw.dims(c), [bw, bh] = boxOf(c);
     let inner = Draw.svg(c, decorate(activeIn(c.id)), { px: 1, minPx: 1.6, today: todayStr() });
@@ -85,10 +88,20 @@ export function mapSVG(areaId, { edit = false, width = 360, sel = null, pills = 
     const g = c.rot ? `<g transform="rotate(90 ${cx} ${cy})">${inner}</g>` : inner;
     s += `<g class="mapc${sel === c.id ? ' sel' : ''}" data-cid="${c.id}">${g}<rect x="${c.pos[0]}" y="${c.pos[1]}" width="${bw}" height="${bh}" class="hit"/>
       ${overlay ? overlaySVG(c, c.pos[0], c.pos[1], bw, bh, px) : ''}
-      ${pills ? pillSVG(c, cx, c.pos[1] + bh + 3 / px, px, bw, -pad, W - pad) : `<text x="${cx}" y="${c.pos[1] + bh + 13 / px}" font-size="${12 / px}" text-anchor="middle" class="mapl">${esc(c.name)}</text>`}</g>`;
+      ${pills ? '' : `<text x="${cx}" y="${c.pos[1] + bh + 13 / px}" font-size="${12 / px}" text-anchor="middle" class="mapl">${esc(c.name)}</text>`}</g>`;
     void cw; void cl;
   }
-  return s + '</svg>';
+  if (pills) {   // the labels go on top, top row first, each moved down past any it would sit on
+    const placed = [];
+    for (const c of cs.slice().sort((a, b) => (a.pos[1] + boxOf(a)[1]) - (b.pos[1] + boxOf(b)[1]) || a.pos[0] - b.pos[0])) {
+      const [bw, bh] = boxOf(c);
+      s += `<g class="mapc" data-cid="${c.id}">${pillSVG(c, c.pos[0] + bw / 2, c.pos[1] + bh + 3 / px, px, bw, -pad, W - pad, placed)}</g>`;
+    }
+    H = Math.max(H, Math.max(...placed.map(r => r.y + r.h)) + pad / 2 + pad);
+  }
+  return `<svg class="map" viewBox="${-pad} ${-pad} ${W} ${H}" width="${width}" height="${(H * px).toFixed(0)}" data-grid="${cell}" xmlns="http://www.w3.org/2000/svg">`
+    + `<defs><pattern id="mg" width="${cell}" height="${cell}" patternUnits="userSpaceOnUse"><path d="M${cell} 0H0V${cell}" fill="none" class="mapgrid" vector-effect="non-scaling-stroke"/></pattern></defs><rect x="${-pad}" y="${-pad}" width="${W}" height="${H}" fill="url(#mg)" class="mapbg"/>`
+    + s + '</svg>';
 }
 export function pageMap(q) {
   ensureAreas();

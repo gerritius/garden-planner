@@ -15,7 +15,7 @@
   color-scheme: light;
 }
 :root[data-theme="kraft"] {
-  --paper: #efe5cf; --paper-2: #e7dbc0; --card: #fbf6e9; --ink: #2f2418; --muted: #7a6a54; --line: #d6c6a4; --line-2: #c4b089;
+  --paper: #efe5cf; --paper-2: #e7dbc0; --card: #fbf6e9; --ink: #2f2418; --muted: #6b5c47; --line: #d6c6a4; --line-2: #c4b089;
   --green: #3f5f2f; --green-2: #34492b; --green-ink: #fbf6e9; --terra: #b5562f; --terra-ink: #fff6ec; --terra-2: #8a3f20; --danger: #a33a24;
   --soil: #7b5a3c; --rim: #5a3d24; --chip: #eadfc6; --today: #f3ecd6;
   --hd1: #3f5a33; --hd2: #2f4427; --hd-edge: #24341e;

@@ -115,10 +115,10 @@ export function pagePlantForm(p, c, q) {
     <fieldset><legend>Where &amp; when</legend>
       <div id="rotWarn"></div>
       ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
-        `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
+        `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>${partBtns('part', L)}`}
       ${c.type === 'round' ? '' : `<details class="fold across"${Draw.narrow(c, d) ? ' open' : ''}><summary>Side by side <small>${Draw.narrow(c, d) ? `${esc(d.xFrom || 0)}–${esc(d.xTo ?? W)} cm across` : 'the whole width'}</small></summary>
         <div class="two"><label>Across, from (cm from left)<input name="xFrom" type="number" inputmode="decimal" min="0" max="${W}" value="${esc(d.xFrom ?? 0)}"></label><label>To (cm)<input name="xTo" type="number" inputmode="decimal" min="0" max="${W}" value="${esc(d.xTo ?? W)}"></label></div>
-        <small class="hint">The short side is ${W} cm. For strips that run down the bed side by side — say peas along both edges and spinach in the middle — give each crop part of the width: 0 to 25, 25 to 75 and 75 to ${W}.</small></details>`}
+        <small class="hint">The short side is ${W} cm. For strips that run down the bed side by side — say peas along both edges and spinach in the middle — give each crop part of the width: 0 to 25, 25 to 75 and 75 to ${W}.</small>${partBtns('xpart', W)}</details>`}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">')}
       <div id="mixBits">${mixFormBits(d, c)}</div>
@@ -223,6 +223,11 @@ export function pagePlantForm(p, c, q) {
   };
   A.searchVar = () => { read(); const q = `${cr ? cr.en : ''} ${d.variety || ''} growing from seed`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
   A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
+  // quick parts of the bed: halves and thirds, down its length (part) or across its width (xpart)
+  const setPart = (a, b, el) => { read(); const [i, n] = el.dataset.p.split('/').map(Number), len = el.dataset.act === 'part' ? L : W, lo = Math.round(len * i / n), hi = Math.round(len * (i + 1) / n);
+    d[a] = lo; d[b] = hi; if (formStart(d) && d.layout === 'free') { d.positions = null; d.layout = d.patLayout || 'rows'; setStartCount(c, d, defaultStartCount(c, d, formStart(d).have)); } render(); };
+  A.part = el => setPart('from', 'to', el);
+  A.xpart = el => setPart('xFrom', 'xTo', el);
   A.raise = el => { read(); d.raise = el.dataset.v; render(); };
   A.useStart = el => { read(); applyStart(d, start(el.dataset.id), c); render(); };
   // another batch of the same seedlings goes in too (or not): as many as there are room for
@@ -382,6 +387,12 @@ async function savePlanting(p, d, c) {
   await save();
   setDraft(null);
   if (isNew) location.replace('#/plant/' + p.id); else history.back();
+}
+
+// quick buttons for part of the bed: halves and thirds of its length (top…bottom) or width (left…right)
+function partBtns(act, len) {
+  const names = act === 'part' ? [['Top half', 'Bottom half'], ['Top third', 'Middle third', 'Bottom third']] : [['Left half', 'Right half'], ['Left third', 'Middle third', 'Right third']];
+  return `<div class="partbtns">${names.map(ns => ns.map((l, i) => `<button type="button" class="chip" data-act="${act}" data-p="${i}/${ns.length}">${l} <small>${Math.round(len * i / ns.length)}–${Math.round(len * (i + 1) / ns.length)}</small></button>`).join('')).join('')}</div>`;
 }
 
 // ---------- re-using seed packet photos ----------

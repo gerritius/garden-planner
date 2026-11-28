@@ -520,6 +520,9 @@ section.dx h3 { margin-top: 0; }
 .usestart .chip small { margin-left: 4px; }
 .usestart .chip.on small, .morestart .chip.on small { color: inherit; opacity: .85; }
 .morestart { margin: 6px 0 4px; }
+.partbtns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
+.partbtns .chip { cursor: pointer; }
+.partbtns .chip small { color: var(--muted); margin-left: 3px; }
 .morestart > small { display: block; color: var(--muted); margin-bottom: 4px; }
 .morestart .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 .morestart .chip small { margin-left: 4px; }

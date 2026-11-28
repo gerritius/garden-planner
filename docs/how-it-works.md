@@ -1,6 +1,6 @@
 # How Garden Planner works things out
 
-A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.57.0** (live on
+A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.58.0** (live on
 both the real site and the test site). It explains each calculation in outline and names the file where it lives. Each
 crop's own numbers are in its record in `js/data/crops.js` (the header there lists every field), and this guide
 doesn't repeat them.
@@ -540,7 +540,9 @@ section on its form starts it again from the plan.
 **Strips side by side:** a planting in a bed can use part of the width as well as part of the length (Side by side
 on the planting form: `xFrom`–`xTo`, cm from the left). Its rows, spacing and centre stay inside that strip, with the
 bed's margin at the bed's sides and half the spacing where it meets the next strip. Strips that don't meet don't
-count as sharing space, so peas along both edges and spinach down the middle can be planned for the same weeks. The
+count as sharing space, so peas along both edges and spinach down the middle can be planned for the same weeks.
+Quick buttons on the form fill in halves and thirds of the length (top, middle, bottom) or the width (left, middle,
+right). The
 free spaces in the Season plan and rotation still go by length only, so a bed with strips down its whole length
 shows no free space and counts each strip's crop as the previous crop for the whole length.
 

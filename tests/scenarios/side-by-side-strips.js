@@ -16,6 +16,11 @@ const U = 'http://localhost:8765/';
   });
   // spinach down the middle, on the form
   await pg.goto(U + '#/plant/new/bd?plan=1&crop=spinach&date=2026-12-05&from=0&to=200'); await pg.waitForTimeout(500);
+  // the quick buttons: thirds across and down
+  await pg.click('[data-act=xpart][data-p="1/3"]'); await pg.waitForTimeout(300);
+  await pg.click('[data-act=part][data-p="2/3"]'); await pg.waitForTimeout(300);
+  console.log('quick thirds:', await pg.evaluate(() => { const f = document.querySelector('#pf'); return `from ${f.from.value} to ${f.to.value}, across ${f.xFrom.value}–${f.xTo.value}`; }));
+  await pg.fill('#pf input[name=from]', '0'); await pg.fill('#pf input[name=to]', '200');
   await pg.fill('#pf input[name=xFrom]', '25'); await pg.fill('#pf input[name=xTo]', '75'); await pg.dispatchEvent('#pf input[name=xTo]', 'input'); await pg.waitForTimeout(300);
   await pg.screenshot({ path: require('path').join(process.argv[2] || '.', 'form.png') });
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(600);

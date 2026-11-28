@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.58.0",
+    "date": "2026-11-28",
+    "notes": [
+      "Quick buttons on the planting form put a crop in half or a third of a bed without typing centimetres: top, middle or bottom down its length, or left, middle or right across its width (under “Side by side”)."
+    ]
+  },
+  {
     "version": "1.57.0",
     "date": "2026-11-28",
     "notes": [

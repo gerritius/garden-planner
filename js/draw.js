@@ -1,6 +1,5 @@
 // Top-down drawing of beds and pots. Coordinates are in cm.
 
-import { S } from './core/state.js';
 import { todayStr } from './core/util.js';
 import { activeIn, decorate, gaps, prevCrop } from './garden/garden.js';
 import { activeCovers } from './plants/covers.js';
@@ -107,8 +106,7 @@ export const Draw = (() => {
   const unthinnedDrill = p => p.layout === 'continuous' && !(p.thinned && p.method === 'seed');
   // How many plants a planting has, by its layout (cheap, even for a huge bed). For a drill not yet thinned: how many
   // it'll be once thinned (at the sowing spacing when there's no thinning distance).
-  function count(c, p, real) {
-    if (real && Array.isArray(p.real)) return p.real.length;
+  function count(c, p) {
     if (unthinnedDrill(p) && p.method === 'seed' && +p.thinSp > 0) return count(c, Object.assign({}, p, { thinned: true }));
     if (p.layout === 'free') return (p.positions || []).length;
     if (p.layout === 'center') return 1;
@@ -120,10 +118,7 @@ export const Draw = (() => {
 
   // Returns plant centres and drill lines for a planting. With more than MAX_DRAWN plants it returns no centres and
   // `many` (the count) instead: draw those as a pattern (see svg), and don't offer to arrange them by hand.
-  // real: the plants really there (p.real — once some were harvested, thinned to a number you counted, or never went
-  // in) rather than the planned layout; without p.real the two are the same.
-  function layout(c, p, real) {
-    if (real && Array.isArray(p.real)) return { pts: p.real.map(q => q.slice(0, 3)), lines: [] };
+  function layout(c, p) {
     const m = +c.margin || 0;
     const s = Math.max(0.5, spacingNow(p));
     const lines = [];
@@ -221,8 +216,7 @@ export const Draw = (() => {
   const escT = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
   // o: { px (screen px per cm), today, highlight (planting id), labels, gaps:[[from,to]], showMargin, edit (planting id), cls,
-  //      plan (draw the planned layouts, not the plants really there), pick: { id, sel: Set of plant numbers } (plants
-  //      being chosen — e.g. to take out — on that planting) }
+  //      pick: { id, sel: Set of plant numbers } (plants being chosen on that planting) }
   function svg(c, plantings, o = {}) {
     const { W, L } = dims(c);
     if (!(W > 0 && L > 0)) return '<svg viewBox="0 0 10 10"></svg>';
@@ -253,7 +247,7 @@ export const Draw = (() => {
       const dim = o.highlight && o.highlight !== p.id;
       s += `<g class="pl${dim ? ' dim' : ''}" data-pid="${p.id}" style="--c:${p._color}">`;
       { const [xa, xb] = xSpan(c, p); s += `<rect x="${xa}" y="${p.from}" width="${xb - xa}" height="${p.to - p.from}" class="sec"/>`; }
-      const { pts, lines, many, drill } = layout(c, p, !o.plan);
+      const { pts, lines, many, drill } = layout(c, p);
       let r = Math.max(minR, radius(p, o.today)), cap = Infinity;
       if (many) { s += manyPlants(c, p, `${key}m${pi}`, r) + `</g>`; return; }
       if (pts.length > 1) {   // crowded plants: draw each no wider than its share, so they don't swallow the pot
@@ -331,5 +325,5 @@ export function plotSVG(c, o = {}) {
   const px = o.width ? Math.min(o.width / W, (o.maxH || 1e9) / L) : (o.px || 2);
   const gs = o.gaps ? gaps(c).map(g => { const pc = prevCrop(c, g[0], g[1]); return [g[0], g[1], pc ? `empty · was ${crop(pc.cropId).en}` : '+ empty']; }) : [];
   const list = o.plantings || decorate(activeIn(c.id));
-  return Draw.svg(c, list, Object.assign({ plan: S.mapView === 'plan' }, o, { px, today: o.today || todayStr(), gaps: gs }));
+  return Draw.svg(c, list, Object.assign({}, o, { px, today: o.today || todayStr(), gaps: gs }));
 }

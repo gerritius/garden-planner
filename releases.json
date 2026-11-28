@@ -1,5 +1,18 @@
 [
   {
+    "version": "1.59.0",
+    "date": "2026-11-28",
+    "notes": [
+      "Bed drawings are back to being for planting: they show the ideal layout, and you can still move or remove plants. Harvesting no longer takes plants off the drawing, and the “What’s there / The plan” switch is gone.",
+      "A big plant counter on each crop page shows how many plants the space holds. Once you thin, it shows the number you counted, or what the thinning distance leaves. If your count is more than the spacing allows (say 59 spinach where there’s room for 50), it turns red so you can check the thinning.",
+      "Planting seedlings: the number you choose is kept when you change the part of the bed, the layout or the spacing. If they won’t all fit, a red note says how many do. When you use seedlings you’ve started, the From seed choice is hidden and “Seedlings going in” takes its place.",
+      "To use only part of a bed, tick “Planting multiple crops here” and choose Vertical (Full length, Top ½, Middle ⅓…) and Horizontal (Full width, Left ½…). Untick it to go back to the whole bed.",
+      "Number boxes show cm inside the box, so the labels are shorter. Rows go whichever way fits the most plants, and the layout list shows Recommended and Not recommended layouts for the crop.",
+      "Changing a starting fertiliser to another product sets the amount for that product, and the suggestion follows it.",
+      "Longer explanations across the app are tucked behind a small ⓘ: tap it to read one. To show them all, go to Tools → Settings → Appearance."
+    ]
+  },
+  {
     "version": "1.58.0",
     "date": "2026-11-28",
     "notes": [

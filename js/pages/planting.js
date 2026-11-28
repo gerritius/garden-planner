@@ -19,7 +19,7 @@ import { crop, cropName, ic } from '../plants/crops.js';
 import { emergenceBar, germChecks, germDialog, germText, pctText } from '../plants/germination.js';
 import { germWindow, harvestNote, lastLeaves, leafDialog, lifecycleBar, thinNote } from '../plants/growth.js';
 import { qualityWarnings } from '../plants/problems.js';
-import { hasReal, mapViewBtn, nearestPlant, plantCountText } from '../plants/onmap.js';
+import { nearestPlant, plantCounter } from '../plants/onmap.js';
 import { drawFill, fillTarget, mergeAsFill, start, startLeft, startWhere, syncStartTasks } from '../plants/seedlings.js';
 import { sprayBanner, spraySection, spraysFor } from '../products/sprays.js';
 import { pastCropDialog } from '../records/history.js';
@@ -42,13 +42,11 @@ export function pagePlant(p) {
   const rowish = ['rows', 'continuous', 'staggered'].includes(p.layout);
   const rowsUsed = c && rowish ? Draw.rowCount(c, p) : null;
   const plantsNow = c ? Draw.count(c, p) : 0;
-  // a drill is sown thickly: what counts is how many plants it'll be once thinned
-  const thinnedTo = c && p.layout === 'continuous' && seed && !p.thinned && +p.thinSp > 0 ? Draw.count(c, Object.assign({}, p, { thinned: true })) : 0;
   const dl = [
     ['Planting', seed ? 'From seed' : 'Seedlings / tubers'],
     p.startId || p.seededOn ? ['Raised from seed', `in ${p.raisedName ? (p.raisedIn === 'pot' ? '' : 'a ') + esc(p.raisedName) : p.raisedIn === 'pot' ? 'small pots' : 'a cell tray'}, sown ${shortDate(p.seededOn)}${p.sowDate ? ` (${daysBetween(p.seededOn, p.sowDate)} days before planting out)` : ''}`] : null,
     c && (p.from > 0 || p.to < L) ? ['Section', `${p.from}–${p.to} cm from top`] : null,
-    ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '') + (plantsNow && (p.layout !== 'continuous' || p.thinned) ? ` · ${plantCountText(c, p)}` : '') + (thinnedTo ? ` · about ${thinnedTo.toLocaleString('en-AU')} plants once thinned to ${p.thinSp} cm` : '')],
+    ['Layout', (LAYOUTS.find(l => l[0] === p.layout) || [, p.layout])[1] + (rowish && p.dir === 'along' ? ' (lengthways)' : '') + (rowsUsed ? ` · ${rowsUsed} row${rowsUsed > 1 ? 's' : ''}` : '')],
     (p.fills || []).length ? ['Gaps filled', p.fills.map((f, i) => `${f.n} seedling${f.n === 1 ? '' : 's'} ${shortDate(f.date)}${start(f.startId) ? ` <small class="muted">(from ${esc(startWhere(start(f.startId)))})</small>` : ''}${!f.drawn && !harvested ? ` <button class="link" data-act="drawFill" data-i="${i}">show ${f.n === 1 ? 'it' : 'them'} in the drawing</button>` : ''}`).join('<br>')
       + (p.fills.some(f => f.drawn) && !harvested ? `<br><small class="muted">Move them to where they are — and take out any that didn’t make it — with <a href="#/plant/${p.id}/arrange">Arrange plants by hand</a>.</small>` : '')] : null,
     seed && p.depth != null ? ['Sowing depth', p.depth + ' cm'] : null,
@@ -106,6 +104,7 @@ export function pagePlant(p) {
     ${harvested ? '' : lifecycleBar(p)}
     <div class="varrow"><div class="grow"><small>Variety</small><a class="variety" href="#/variety?c=${encodeURIComponent(p.cropId)}&v=${encodeURIComponent(p.variety || '')}">${esc(p.variety || '—')} <small>notes ›</small></a></div>
       <a class="packet ph" href="#/plant/${p.id}/photos">${p.photos && (p.photos.front || p.photos.back) ? `<img data-photo="${p.photos.front || p.photos.back}" alt="Seed packet">` : '<span>No packet photo<br><small>tap to view / add</small></span>'}</a></div>
+    ${c && !harvested ? plantCounter(c, p) : ''}
     ${planBanner(p)}
     ${(() => { const t = isLive(p) && fillTarget(p); return t ? `<div class="banner">${ui('bandage', 18)} ${esc(cr.en)} sown ${shortDate(t.sowDate)} is already growing here. Were these seedlings to fill its gaps? <button class="link" data-act="mergeFill" data-id="${t.id}">Yes — add them to it</button></div>` : ''; })()}
     ${isLive(p) ? qualityWarnings(p).map(([, , t]) => `<div class="banner warn">${esc(t)}</div>`).join('') : ''}
@@ -120,7 +119,7 @@ export function pagePlant(p) {
     ${harvested || isPlanned(p) ? '' : (() => { const sp = spraySection(p); if (!sp) return ''; const n = spraysFor(p).length; return `<details class="fold"><summary>${ui('spray')} Your sprays <small>${n ? `${n} for ${esc(crop(p.cropId).en)}` : 'none entered for this crop'}</small></summary>${sp}</details>`; })()}
     ${harvested || isPlanned(p) ? '' : `<details class="fold"><summary>${ui('note')} Running log <small>${logFeed().filter(x => (x.pids || []).includes(p.id)).length} entries</small></summary>${logSection(null, p)}</details>`}
     ${c ? (() => { const shown = harvested ? [p] : isPlanned(p) ? [p, ...occupants(c.id, 0, 1e9, p.sowDate, p.sowDate, p.id)] : activeIn(c.id);
-      return `<section><h3>In ${esc(c.name)}${plotSizeBtn()}${mapViewBtn(shown)}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: plotMaxH(320), highlight: p.id, labels: true, grid: true, plantings: decorate(shown), today: isPlanned(p) ? p.sowDate : undefined })}</a>
+      return `<section><h3>In ${esc(c.name)}${plotSizeBtn()}</h3><a class="plotwrap small" href="#/container/${c.id}">${plotSVG(c, { width: Math.min(window.innerWidth, 640) - 32, maxH: plotMaxH(320), highlight: p.id, labels: true, grid: true, plantings: decorate(shown), today: isPlanned(p) ? p.sowDate : undefined })}</a>
       ${harvested || isPlanned(p) || (p.layout === 'continuous' && !p.thinned) || (p.layout !== 'free' && plantsNow > Draw.MAX_ARRANGE) ? '' : `<a class="btn small" href="#/plant/${p.id}/arrange">${ui('move', 18)} Arrange plants by hand</a>`}</section>`; })() : ''}
     ${(() => { const KEY = ['Germination', 'Thinning', 'Harvest estimate', 'Soil test', 'Fed so far', 'Soil'], key = dl.filter(r => KEY.includes(r[0])), rest = dl.filter(r => !KEY.includes(r[0]));
       const t = rows => `<dl class="details">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`;
@@ -151,10 +150,9 @@ export function pageArrange(p) {
   setChrome('Arrange plants', { back: true, kicker: crop(p.cropId).en + (c ? ' · ' + c.name : '') });
   if (!c) return { html: notFound() };
   if (p.layout === 'continuous' && !p.thinned) return { html: `<div class="empty-state">Sown in a continuous line: the line shows where you sowed, so there are no single plants to place yet.<br>Once they’re thinned, you can arrange the plants by hand.<br><a class="btn" href="#/plant/${p.id}">Back</a></div>` };
-  const n = Draw.count(c, p, true), real = hasReal(p);
+  const n = Draw.count(c, p);
   if (n > Draw.MAX_ARRANGE) return { html: `<div class="empty-state">This planting has about ${n.toLocaleString('en-AU')} plants — too many to place one by one.<br>Its layout (rows, spacing) sets where they go.<br><a class="btn" href="#/plant/${p.id}">Back</a></div>` };
-  // (the plants really there, once some have come out — else the planting's layout, which this then changes)
-  if (!draft) setDraft({ pts: Draw.layout(c, p, true).pts.map(q => q.slice()), mode: 'move' });
+  if (!draft) setDraft({ pts: Draw.layout(c, p).pts.map(q => q.slice()), mode: 'move' });
   const d = draft;
   const vw = Math.min(window.innerWidth, 640) - 32;
   const { W, L } = Draw.dims(c);
@@ -162,24 +160,24 @@ export function pageArrange(p) {
   let px = px0 * plotZoom();
   const draw = () => {
     px = px0 * plotZoom();
-    const tmp = decorate([Object.assign({}, p, { layout: 'free', positions: d.pts, real: null })])[0];
+    const tmp = decorate([Object.assign({}, p, { layout: 'free', positions: d.pts })])[0];
     const others = decorate(activeIn(c.id).filter(x => x.id !== p.id));
     $('#arr').innerHTML = Draw.svg(c, [...others, tmp], { px, today: todayStr(), highlight: p.id, edit: p.id, showMargin: true, grid: true });
-    $('#cnt').textContent = `${d.pts.length} plant${d.pts.length === 1 ? '' : 's'}${real ? ` · ${Draw.count(c, p)} in the plan` : ''}`;
+    $('#cnt').textContent = `${d.pts.length} plant${d.pts.length === 1 ? '' : 's'}`;
   };
   A.mode = el => { d.mode = el.dataset.v; $$('[data-act=mode]').forEach(b => b.classList.toggle('on', b.dataset.v === d.mode)); };
-  A.reset = () => { d.pts = (real ? Draw.layout(c, p) : Draw.layout(c, Object.assign({}, p, { layout: p.layout === 'free' ? 'rows' : p.layout }))).pts.map(q => q.slice()); draw(); };
+  A.reset = () => { d.pts = Draw.layout(c, Object.assign({}, p, { layout: p.layout === 'free' ? 'rows' : p.layout })).pts.map(q => q.slice()); draw(); };
   A.clear = () => { d.pts = []; draw(); };
   A.save = async () => {
     const pts = d.pts.map(q => [Math.round(q[0] * 10) / 10, Math.round(q[1] * 10) / 10].concat(q[2] ? [q[2]] : []));
-    if (real) p.real = pts; else { p.layout = 'free'; p.positions = pts; }
+    p.layout = 'free'; p.positions = pts;
     await save(); setDraft(null); history.back();
   };
-  const html = `<p class="hint">Drag plants to where they really are — touching near one is enough. Switch to “Add” and tap to add a plant, or “Remove” and tap one to remove it.${real ? ' This moves the plants that are there now; the plan stays as it was.' : ''}</p>
+  const html = `<p class="hint">Drag plants to where they really are — touching near one is enough. Switch to “Add” and tap to add a plant, or “Remove” and tap one to remove it.</p>
     <div class="seg">${[['move', '✥ Move'], ['add', '＋ Add'], ['remove', '✕ Remove']].map(([v, l]) => `<button type="button" data-act="mode" data-v="${v}" class="${d.mode === v ? 'on' : ''}">${l}</button>`).join('')}</div>
     <div class="zoomrow">${zoomBar(() => { draw(); centreZoom($('#arr')); })}</div>
     <div class="plotwrap zoombox" id="arr"></div><p class="center muted" id="cnt"></p>
-    <div class="btnrow"><button class="btn" data-act="reset">${real ? 'Back to the plan' : 'Reset to pattern'}</button><button class="btn" data-act="clear">Clear all</button></div>
+    <div class="btnrow"><button class="btn" data-act="reset">Reset to pattern</button><button class="btn" data-act="clear">Clear all</button></div>
     <button class="btn primary wide" data-act="save">Save arrangement</button>`;
   const after = () => {
     draw();
@@ -237,7 +235,7 @@ function copyPlanting(p, c, hist) {
   Object.assign(q, { id: uid(), containerId: c.id, created: todayStr(), photos: {}, diary: [], harvests: [], prevSpans: [], notes: '' });
   if (c.type === 'bed') { q.from = Math.min(p.from, L - 1); q.to = Math.min(p.to, L); } else { q.from = 0; q.to = L; }
   if (!sameSize) delete q.positions;
-  delete q.real; delete q.thinPrev; delete q.thinCount;   // (a fresh copy: all its plants)
+  delete q.thinCount;   // (a fresh copy: not thinned yet)
   const sMap = {};
   q.series = (q.series || []).map(s => { const id = uid(); sMap[s.id] = id; return Object.assign(s, { id }); });
   q.feedPlan = (q.feedPlan || []).map(s => { const id = uid(); sMap[s.id] = id; return Object.assign(s, { id }); });

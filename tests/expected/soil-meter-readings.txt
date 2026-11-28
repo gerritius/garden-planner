@@ -7,7 +7,7 @@ form bag1: [
   2,
   [
     '<circle cx="20" cy="20" r="20" class="soil"></circle>',
-    '<p class="hint soil s1">🌡 This week: soil cool (~14°) — slow to come up (best 15°+). <small>(your meter, 18 Nov — warme'
+    '<p class="hint soil s1 tipped" data-tip="1">🌡 This week: soil cool (~14°) — slow to come up (best 15°+). <small>(your m'
   ]
 ]
 form bed:  | 🧪 pH 5.5 is acid for Spinach (best 6.5–7.2): mix about 480 g of oyster shell lime into this section (240 g/m²).

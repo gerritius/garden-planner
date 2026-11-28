@@ -21,7 +21,6 @@ import { crop, cropName, ic } from '../plants/crops.js';
 import { historySection } from '../records/history.js';
 import { logSection } from '../records/log.js';
 import { bedPhotos, noteDialog, noteEntryDialog } from '../records/notes.js';
-import { mapViewBtn } from '../plants/onmap.js';
 import { removePlanting } from './planting.js';
 
 // ---------- the bed / pot page and form ----------
@@ -40,7 +39,7 @@ export function pageContainer(c) {
     S.containers = S.containers.filter(x => x !== c); await save(); go('#/');
   };
   A.addReading = () => readingDialog(c);
-  const html = `${soilChips(c)}<div class="plotwrap">${plotSizeBtn()}${mapViewBtn(ps)}${plotSVG(c, { width: vw, maxH: plotMaxH(window.innerHeight * 0.62), labels: true, gaps: true, showMargin: true, grid: true })}</div>
+  const html = `${soilChips(c)}<div class="plotwrap">${plotSizeBtn()}${plotSVG(c, { width: vw, maxH: plotMaxH(window.innerHeight * 0.62), labels: true, gaps: true, showMargin: true, grid: true })}</div>
     ${sizeProblem(c) ? `<p class="banner warn">${esc(sizeProblem(c))} <a href="#/container/${c.id}/edit">Edit size</a></p>` : ''}
     <p class="hint center">${typeLabel(c)} · ${sizeLabel(c)}${c.margin ? ` · ${c.margin} cm edge margin` : ''}${c.type !== 'round' ? ' · top → bottom = long side' : ''}</p>
     <div class="center"><button class="chip big" data-act="climate">${climateLabel(c)} ${ui('edit', 15)}</button></div>

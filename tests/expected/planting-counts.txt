@@ -1,0 +1,27 @@
+seedling mode: no From seed true · count box in the Crop part true
+one batch: count box 8 · drawn 8 · layout shown rows
+both batches: count box 10 · drawn 10 · layout shown rows
+planted: active, 10 plants · p8: left 0 done · p2: left 0 done
+kale, whole bed: count box 6 · drawn 6 · layout shown staggered
+layouts: Recommended: staggered, rows, free | Not recommended: continuous, scatter, diamond, center
+chose 2: count box 2 · drawn 2 · layout shown staggered
+top ½: count box 2 · drawn 2 · layout shown staggered
+staggered: count box 2 · drawn 2 · layout shown staggered
+6 in the top ⅓: count box 6 · drawn 2 · layout shown staggered · Only 2 of your 6 fit here at this spacing — the drawing shows 2, and 4 would stay where they are. Use more of the bed, another layout or closer spacing to fit them all.
+back to the full length: count box 6 · drawn 6 · layout shown staggered
+unticked: whole bed 0–200 · part hidden true
+fertiliser: Cow manure compost 4 kg, Oyster shell lime 300 g, Bokashi 13.5 handful
+another base fertiliser: Cow manure compost 4 kg, Oyster shell lime 300 g, Chemical fertiliser 8-8-8 140 g · suggestion names it true
+cabbage: laid out 8 · seedlings left 0
+cabbage counter: 8plantsthe space holds
+carrot counter before thinning: 55plantsonce thinned to 8 cm
+thin dialog: How do you want to record it?Count what’s leftUse the spacing Plants left after thinning−＋ Thinned to 8 cm that’s about 55. The crop page counts the number you enter. The crop page counts about 55 plants, 8 cm apart. Thinned on Always do it this way (change it later in Tools → Settings) CancelDone
+counted 9 over: pcount over · 64plantscounted after thinning The spacing allows about 55 here — 9 more than that. Check the thinning: plants this close compete for light, water and food. · remembered count
+unticked: thinned=false count kept=false
+by the spacing: 55plantsthinned to 8 cm
+tips: 8 tips, 0 showing
+tapped one: 8 tips, 1 showing
+explain mode: 8 tips, 8 showing
+zoomed: drawing wider than its box true
+dragged from beside it: [50,48] → [58,53]
+errs []

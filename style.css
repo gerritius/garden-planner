@@ -520,9 +520,6 @@ section.dx h3 { margin-top: 0; }
 .usestart .chip small { margin-left: 4px; }
 .usestart .chip.on small, .morestart .chip.on small { color: inherit; opacity: .85; }
 .morestart { margin: 6px 0 4px; }
-.partbtns { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 8px; }
-.partbtns .chip { cursor: pointer; }
-.partbtns .chip small { color: var(--muted); margin-left: 3px; }
 .morestart > small { display: block; color: var(--muted); margin-bottom: 4px; }
 .morestart .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 .morestart .chip small { margin-left: 4px; }
@@ -904,3 +901,28 @@ section.going .emerge { margin: 0 0 10px; max-width: none; }
 .qsmall .chip.big { padding: 6px 12px 6px 8px; }
 .qsmall .uic { color: var(--green); }
 .tm .uic, .plist .uic.cicon { color: var(--green); }
+
+/* the plant counter on the crop page: how many plants the space holds, or the count after thinning */
+.pcount { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 12px 0; padding: 12px 16px; background: var(--card); border: 2px solid var(--green); border-radius: 14px; }
+.pcount > b { font-family: var(--head); font-size: 44px; line-height: 1; color: var(--green); }
+.pcount > span { display: flex; flex-direction: column; font-weight: 700; font-size: 17px; }
+.pcount > span small { font-weight: 400; font-size: 13px; color: var(--muted); }
+.pcount > p, .pcount > small { flex-basis: 100%; margin: 4px 0 0; }
+.pcount.over { border-color: var(--danger); background: #fbe1d2; color: #6b2a10; }
+.pcount.over > b { color: var(--danger); }
+.pcount.over > span small { color: inherit; }
+:root[data-theme="dark"] .pcount.over { background: #43281c; color: #f6c9ad; }
+
+/* a number box with its unit inside it */
+.unitin { position: relative; display: block; }
+.unitin input { width: 100%; padding-right: 2.8em; box-sizing: border-box; }
+.unitin i { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font-style: normal; font-weight: 400; color: var(--muted); pointer-events: none; font-size: 14px; }
+/* part of the bed */
+.where { display: flex; flex-direction: column; gap: 8px; margin: 4px 0 10px; }
+
+/* explanations as tips: a small ⓘ that opens the text (Settings → Appearance can show them all) */
+.tipb::before { content: "ⓘ"; }
+.tipb { display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; width: 26px; height: 26px; margin: 2px 0; padding: 0; border: 1px solid var(--line-2); border-radius: 50%; background: var(--card); color: var(--muted); font-size: 15px; line-height: 1; cursor: pointer; }
+.tipb.on { background: var(--green); border-color: var(--green); color: var(--green-ink); }
+html:not(.explain) .hint.tipped:not(.open) { display: none; }
+html.explain .tipb { display: none; }

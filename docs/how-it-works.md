@@ -1,6 +1,6 @@
 # How Garden Planner works things out
 
-A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.58.0** (live on
+A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.59.0** (live on
 both the real site and the test site). It explains each calculation in outline and names the file where it lives. Each
 crop's own numbers are in its record in `js/data/crops.js` (the header there lists every field), and this guide
 doesn't repeat them.
@@ -206,9 +206,9 @@ Thinning and harvest are counted from that day. While nothing is up, nothing is 
   where it is. A plan keeps how many it takes from each (`planN` for the first, `planMore` for the others), so each
   batch only sets aside its share.
 - **Ticking off thinning:** the app asks how many plants are left, with the number the thinning distance would leave
-  filled in, or lets you use the distance instead. You can make either choice stick (Tools → Settings → Garden map);
-  with "use the spacing" it doesn't ask. A counted number goes on the map (section 16), spread evenly over the thinned
-  spots, or over the sowing spots if you kept more than the distance allows. Unticking puts things back.
+  filled in, or lets you use the distance instead. You can make either choice stick (Tools → Settings → Thinning);
+  with "use the spacing" it doesn't ask. A counted number becomes the crop page's plant counter (section 16), and the
+  counter warns when it's more than the thinning distance allows. Unticking takes the count away again.
 
 ---
 
@@ -516,33 +516,50 @@ This replaced the garden map in 1.54. Each bed or pot gets a card, and these are
 - **Filters:** all, needs attention, ready to pick, dry (Dry or Drying), or empty. Areas (Farm, Backyard…) show one at
   a time, and search matches bed names, crops and varieties.
 
-### The drawings: what's there, and the plan
+### The drawings are for planting; the counter is for growing
 
 `js/plants/onmap.js`, `js/draw.js`
 
-A planting's layout (rows and spacing, or plants placed by hand) is its **plan**. The plants **really there** are kept
-apart from it only once they differ (`real` on the planting, a list of spots):
+A bed drawing shows a planting's **ideal layout**: its rows and spacing, or the plants placed by hand. Plants can still
+be dragged about or taken out on the arrange page, and the drawing follows. It doesn't change as the crop grows: no
+plants come off when you harvest.
 
-- **Fewer seedlings went in than the plan has room for** (a plan for 10 that got 8): the 8 are spread over the planned
-  spots.
-- **Harvesting whole plants:** the harvest dialog asks how many plants were pulled up and lets you tap which ones. It
-  starts at the number harvested for crops cut whole (lettuce, cabbage, roots) and at 0 for crops picked over a
-  season (peas, tomatoes). The plants that came out are kept with the harvest, so deleting it puts them back. When
-  the last one is out, the app offers to mark the harvest finished.
-- **Thinning to a counted number** (section 6).
-- **Arranging plants by hand** moves the plants that are there; while nothing differs from the plan it changes the
-  plan, as before.
+How many plants are **growing** is a number, shown big on the crop page (`plantCounter`):
 
-Drawings show what's there. A switch over the drawing (and in Tools → Settings → Garden map) shows the plan instead;
-it only appears where the two differ. Per-plant feeding amounts count the plants that are there. Moving a crop's
-section on its form starts it again from the plan.
+- **Before thinning** (or for seedlings): what the layout holds. For a sowing with a thinning distance, it's what
+  thinning to that distance will leave ("once thinned to 8 cm").
+- **After thinning:** the number you counted, if you gave one, or else what the thinning distance leaves.
+- **More than the spacing allows:** if the count is higher than the layout's number (say 59 spinach where the spacing
+  allows 50), the counter turns red and says how many more, so you can check the thinning.
 
-**Strips side by side:** a planting in a bed can use part of the width as well as part of the length (Side by side
-on the planting form: `xFrom`–`xTo`, cm from the left). Its rows, spacing and centre stay inside that strip, with the
+Per-plant feeding amounts use the counter's number. If fewer seedlings went in than a plan had room for (a plan for
+10 that got 8), the plan's layout becomes those 8, spread over its spots.
+
+### Seedlings on the planting form
+
+`js/plants/seedlings.js` (`setStartCount`, `relayStarts`), `js/pages/planting-form.js`
+
+- In seedling mode (planting out, or "use seedlings you've started"), the From seed / Seedlings choice is hidden and
+  the **Seedlings going in** box takes its place.
+- The number starts at as many as the layout holds, no more than you have. Once you type a number, or chose one when
+  planting out, it's kept through changes of section, layout, row direction or spacing (`startWant`); adding or
+  removing another batch goes back to as many as fit.
+- The seedlings are laid out along the chosen layout, spread evenly over its spots. In a bed no more go in than the
+  layout has spots for (pairs of peas: two to a spot). If your number won't fit, a red note says how many do and how
+  many stay where they are.
+- **Row direction** goes whichever way fits more plants (across or lengthways), unless you chose it.
+- **Layouts** are listed as Recommended and Not recommended for the crop, best first: the crop's own layout, then
+  those that suit its size (staggered rows for big plants in a bed, a single plant for a pot) and how it's sown
+  (a drill for crops that are thinned).
+- **Starting fertiliser:** choosing another product for a line sets its amount for this crop and space, the same way
+  as the suggestion, and the suggestion's text names your product.
+
+**Strips side by side:** a planting can use part of the bed. Tick "Planting multiple crops here" on the planting form,
+then choose Vertical (full length, top, middle or bottom halves and thirds, or your own numbers: `from`–`to`) and
+Horizontal (full width, left, middle or right, or your own: `xFrom`–`xTo`, cm from the left). Unticking puts the crop
+back over the whole bed. The box is ticked already when a planting uses part of the bed. Its rows, spacing and centre stay inside that strip, with the
 bed's margin at the bed's sides and half the spacing where it meets the next strip. Strips that don't meet don't
-count as sharing space, so peas along both edges and spinach down the middle can be planned for the same weeks.
-Quick buttons on the form fill in halves and thirds of the length (top, middle, bottom) or the width (left, middle,
-right). The
+count as sharing space, so peas along both edges and spinach down the middle can be planned for the same weeks. The
 free spaces in the Season plan and rotation still go by length only, so a bed with strips down its whole length
 shows no free space and counts each strip's crop as the previous crop for the whole length.
 
@@ -550,6 +567,10 @@ shows no free space and counts each strip's crop as the previous crop for the wh
 hit exactly. Zoom (1×, 2×, 3×) on the arrange page and the planting form makes the drawing bigger, and it scrolls in its
 own box, which follows a dragged plant near its edges. While a plant is held, the page doesn't scroll or pull down to
 refresh.
+
+**Explanations as tips:** across the app, a longer explanation (`.hint`, 70 characters or more, with nothing to tap in
+it) folds behind a small ⓘ that shows it when tapped (`js/core/forms.js`). Tools → Settings → Appearance can show
+them all in full instead (`S.explain`).
 
 ---
 

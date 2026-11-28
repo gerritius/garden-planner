@@ -1,4 +1,7 @@
+part of the bed hidden at first: true
+choices: Vertical: Full length, Top ½, Bottom ½, Top ⅓, Middle ⅓, Bottom ⅓, Custom… | Horizontal: Full width, Left ½, Right ½, Left ⅓, Middle ⅓, Right ⅓, Custom…
 quick thirds: from 133 to 200, across 33–67
+units in the boxes: xFrom cm, xTo cm
 saved without a clash question: true true
 snappea 0–200 cm · 0–25 cm across: 19 plants, x 10–10
 snappea 0–200 cm · 75–100 cm across: 19 plants, x 90–90

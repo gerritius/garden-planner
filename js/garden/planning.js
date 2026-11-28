@@ -73,7 +73,6 @@ export function undoActivate(p) {
   p.status = 'planned';
   if (p.plannedFor && p.plannedFor !== p.sowDate) { const back = daysBetween(p.sowDate, p.plannedFor); p.sowDate = p.plannedFor; if (p.harvestDate) p.harvestDate = addDays(p.harvestDate, back); if (p.thinDate) p.thinDate = addDays(p.thinDate, back); for (const s of p.series || []) if (s.start) s.start = addDays(s.start, back); }
   for (const s of S.starts || []) { const i = (s.events || []).findIndex(e => e.pid === p.id); if (i >= 0) { s.events.splice(i, 1); s.status = 'growing'; if (!p.planStart) s.planId = p.id; syncStartTasks(s); } }
-  delete p.real;   // (a plan again: all of it)
   S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && !t.done && !t.plan));
   syncPlanTasks(p);
 }

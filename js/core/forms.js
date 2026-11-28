@@ -106,6 +106,25 @@ new MutationObserver(muts => { for (const m of muts) for (const n of m.addedNode
   .observe(document.documentElement, { childList: true, subtree: true });
 document.addEventListener('DOMContentLoaded', () => enhanceAll());
 
+// ---------- explanations as tips ----------
+// A longer explanation (.hint) folds behind a small ⓘ you tap to read it, so the page isn't taken up by text — unless
+// you chose to show them all (html.explain). Hints with something to tap in them, or that update as you type (an id),
+// stay as they are, and so do short ones.
+const TIP_MIN = 70;
+function tipify(root) {
+  const hs = root.matches && root.matches('.hint') ? [root] : root.querySelectorAll ? root.querySelectorAll('.hint') : [];
+  for (const h of hs) {
+    if (h.dataset.tip || h.id || h.closest('.notip') || h.querySelector('a, button, input, select, textarea') || h.textContent.trim().length < TIP_MIN) continue;
+    h.dataset.tip = '1'; h.classList.add('tipped');
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'tipb'; b.setAttribute('aria-label', 'Explain'); b.setAttribute('aria-expanded', 'false');
+    b.onclick = e => { e.preventDefault(); e.stopPropagation(); const o = h.classList.toggle('open'); b.classList.toggle('on', o); b.setAttribute('aria-expanded', String(o)); };
+    h.before(b);
+  }
+}
+new MutationObserver(muts => { for (const m of muts) for (const n of m.addedNodes) if (n.nodeType === 1) tipify(n); })
+  .observe(document.documentElement, { childList: true, subtree: true });
+document.addEventListener('DOMContentLoaded', () => tipify(document.body));
+
 // ---------- every delete asks first ----------
 // Delete buttons whose own code already asks (with a more specific message) carry data-own-confirm or are listed here.
 const OWN_CONFIRM = '[data-own-confirm], [data-act=del], [data-act=delCrop], [data-act=delDiary], [data-act=delArea]';

@@ -57,7 +57,7 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   console.log('pickby task', await pg.evaluate(() => (S.tasks.find(t => t.plantingId === 'dk' && t.kind === 'pickby') || {}).due));
   // 6) split: shrink spinach then plant in freed half
   await pg.evaluate(async () => { const p = planting('sp'); p.from = 100; p.to = 200; await save(); });
-  await pg.goto(U + '#/plant/sp/edit'); await pg.waitForTimeout(300); await pg.fill('#pf input[name=from]', '150'); await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(400);
+  await pg.goto(U + '#/plant/sp/edit'); await pg.waitForTimeout(300); await pg.selectOption('[data-part=v]', 'custom'); await pg.waitForTimeout(300); await pg.fill('#pf input[name=from]', '150'); await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(400);
   await pg.goto(U + '#/plant/new/b2?crop=lettuce&from=100&to=150'); await pg.waitForTimeout(400);
   console.log('split prev:', (await pg.textContent('#rotWarn')).replace(/\s+/g, ' ').slice(0, 160));
   // 7) meter DRY on a bag -> water today

@@ -9,7 +9,7 @@ import { activeIn, container, isPlanned, planting, sectionOf } from '../garden/g
 import { activatePlan, linkedStart } from '../garden/planning.js';
 import { BED_ICON, syncTasks } from '../garden/tasks.js';
 import { Draw } from '../draw.js';
-import { hasReal } from './onmap.js';
+import { spreadPick } from './onmap.js';
 import { applyCrop, recalc } from '../pages/planting-form.js';
 import { crop, cropOptions, ic, varieties } from './crops.js';
 import { germDialog, germChecks, germText, pctText, syncStartGerm } from './germination.js';
@@ -331,7 +331,7 @@ export function drawFill(p, f, sown, pts) {
   // where: the spots round the middle furthest from the plants already there
   let add = pts;
   if (!add) {
-    const have = Draw.layout(c, p, true).pts, cand = fewSpots(c, p, Math.min(12, have.length + f.n)) || [];
+    const have = L.pts, cand = fewSpots(c, p, Math.min(12, have.length + f.n)) || [];
     add = []; for (let k = 0; k < f.n && cand.length; k++) {
       const far = q => Math.min(Infinity, ...have.concat(add).map(h => Math.hypot(h[0] - q[0], h[1] - q[1])));
       cand.sort((a, b) => far(b) - far(a)); add.push(cand.shift());
@@ -340,7 +340,6 @@ export function drawFill(p, f, sown, pts) {
   add = add.map(q => [q[0], q[1], sown || f.date]);
   if (!add.length) return;
   p.positions = L.pts.map(q => q.slice()).concat(add); p.layout = 'free'; f.drawn = true;
-  if (hasReal(p)) p.real = p.real.concat(add.map(q => q.slice()));   // they're in the ground too
 }
 // seedlings planted out as a planting of their own where the same crop already grows, that were really filling its
 // gaps: they join it — where they were placed — and the extra planting goes
@@ -412,7 +411,8 @@ export function prefillFromStart(d, q) {
   // into a pot or bag, as many as you said; into a bed (or all of them), as many as the layout takes — the rest stay
   // where they are (how many can be changed on the form)
   const c = container(d.containerId);
-  setStartCount(c, d, d.startN < left && c && c.type !== 'bed' ? d.startPlants : defaultStartCount(c, d, d.startPlants));
+  if (d.startN < left) d.startWant = d.startPlants;   // (the number you chose is kept: if it won't fit, the form says so)
+  setStartCount(c, d, wantedStarts(c, d));
 }
 // where n seedlings go in a bag or pot: spaced round the middle of the section (one in the middle) — null in a bed
 export function fewSpots(c, d, n) {
@@ -424,7 +424,7 @@ export function fewSpots(c, d, n) {
 }
 // ---------- how many seedlings go in, and where ----------
 // the form's layout as numbers (what the drawing reads)
-const laid = d => Object.assign({}, d, { real: null, from: +d.from || 0, to: +d.to, rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
+const laid = d => Object.assign({}, d, { from: +d.from || 0, to: +d.to, rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
 // the seedlings the form is planting (or planning) and how many of them it can have
 export function formStart(d) {
   const s = d.startId ? start(d.startId) : d.useStart ? start(d.useStart) : d._pid && isPlanned(d) ? linkedStart(d) : null;
@@ -450,19 +450,35 @@ export function defaultStartCount(c, d, have) {
   let spots = 0; try { const L = laid(d); spots = !c ? 0 : d.layout === 'free' ? (d.positions || []).length : Draw.count(c, L) <= Draw.MAX_ARRANGE ? Draw.layout(c, L).pts.length : Draw.count(c, L); } catch (e) { spots = 0; }
   return Math.max(1, Math.min(have, (spots || have) * perSpotOf(d.cropId)));
 }
+// how many seedlings the form puts in: the number you chose (never changed for you), or else as many as fit
+export function wantedStarts(c, d) {
+  const fs = formStart(d); if (!fs) return 0;
+  return d.startWant > 0 ? Math.min(fs.have, d.startWant) : defaultStartCount(c, d, fs.asked || fs.have);
+}
+// the layout changed (or the section): put the number you chose back along it — unless you moved them by hand
+export function relayStarts(c, d) {
+  if (!formStart(d)) return;
+  if (d.layout === 'free' && d.patLayout && !d._dragged) { d.layout = d.patLayout; d.positions = null; }
+  else if (d._dragged && d.layout === 'free') { d._dragged = false; d.layout = d.patLayout || 'rows'; d.positions = null; }
+  setStartCount(c, d, wantedStarts(c, d));
+}
 // n seedlings in the drawing: the layout as it is when that's what it holds; otherwise each one placed (pairs of peas
-// side by side) at the layout's spots, round the middle of a pot or along the rows — then they can be dragged
+// side by side) at the layout's spots, spread through them — or round the middle of a pot — then they can be dragged.
+// In a bed no more go in than the layout has spots for: d.startShort says how many of the number you chose fit.
 export function setStartCount(c, d, n) {
-  n = Math.max(1, Math.round(+n || 1)); d.startCount = n;
+  n = Math.max(1, Math.round(+n || 1)); d.startCount = n; delete d.startShort;
   if (!c) return;
-  const per = perSpotOf(d.cropId), L = laid(d), r1 = v => Math.round(v * 10) / 10;
-  let pat;
-  try { pat = d.layout === 'free' ? (d.positions || []) : Draw.count(c, L) <= Draw.MAX_ARRANGE ? Draw.layout(c, L).pts : null; } catch (e) { pat = null; }
+  if (d.layout === 'free' && d.patLayout && !d._dragged) { d.layout = d.patLayout; d.positions = null; }
+  const per = perSpotOf(d.cropId), L = laid(d), r1 = v => Math.round(v * 10) / 10, bed = c.type === 'bed';
+  const spotsOf = lay => { try { const P = Object.assign({}, L, { layout: lay }); return Draw.count(c, P) <= Draw.MAX_ARRANGE ? Draw.layout(c, P).pts.map(q => q.slice(0, 2)) : null; } catch (e) { return null; } };
+  const free = d.layout === 'free', pat = free ? (d.positions || []) : spotsOf(d.layout);
   if (!pat || n > Draw.MAX_ARRANGE) return;   // too many to place one by one: the layout says where
-  if (d.layout !== 'free' && pat.length === n) { d.positions = null; return; }   // (one to a spot)
+  const grid = bed ? (free ? spotsOf(d.patLayout || 'rows') || [] : pat) : null;   // (a bed's spots: the layout's)
+  if (bed) { const room = Math.max(free ? pat.length : 0, grid.length * per); if (room && n > room) { d.startShort = { want: n, fit: room }; n = room; d.startCount = n; } }
+  if (!free && pat.length === n) { d.positions = null; return; }   // (one to a spot)
   // spots for k more plants, as far from the ones already there as they can be
   const more = (have, k) => {
-    const spots = Math.ceil(k / per), cand = (fewSpots(c, L, Math.min(12, Math.max(spots, have.length + spots))) || Draw.layout(c, Object.assign({}, L, { layout: 'rows' })).pts).map(q => q.slice(0, 2));
+    const spots = Math.ceil(k / per), cand = (grid || fewSpots(c, L, Math.min(12, Math.max(spots, have.length + spots))) || Draw.layout(c, Object.assign({}, L, { layout: 'rows' })).pts).map(q => q.slice(0, 2));
     const out = [], far = q => Math.min(Infinity, ...have.concat(out).map(h => Math.hypot(h[0] - q[0], h[1] - q[1])));
     for (let i = 0; i < spots && cand.length; i++) { cand.sort((a, b) => far(b) - far(a)); out.push(cand.shift()); }
     return out;
@@ -470,9 +486,9 @@ export function setStartCount(c, d, n) {
   // a spot's plants: one, or a pair 6 cm apart
   const fill = (spots, k) => { const pts = []; for (const q of spots) { if (pts.length >= k) break; if (per > 1 && k - pts.length >= 2) pts.push([q[0] - 3, q[1]], [q[0] + 3, q[1]]); else pts.push(q.slice(0, 2)); } return pts; };
   let pts;
-  if (d.layout === 'free') pts = pat.length >= n ? pat.slice(0, n) : pat.concat(fill(more(pat, n - pat.length), n - pat.length));
-  else { const spots = Math.ceil(n / per); pts = fill(pat.length >= spots ? pat.slice(0, spots) : pat.concat(more(pat, (spots - pat.length) * per)), n); }
-  if (d.layout !== 'free') d.patLayout = d.layout;   // (the pattern they were laid out from, to lay out a different number again)
+  if (free) pts = pat.length >= n ? pat.slice(0, n) : pat.concat(fill(more(pat, n - pat.length), n - pat.length));
+  else { const spots = Math.ceil(n / per); pts = fill(pat.length >= spots ? spreadPick(pat, spots) : pat.concat(more(pat, (spots - pat.length) * per)), n); }
+  if (!free) d.patLayout = d.layout;   // (the pattern they were laid out from, to lay out a different number again)
   d.layout = 'free'; d.positions = pts.map(q => [r1(q[0]), r1(q[1])].concat(q[2] ? [q[2]] : []));
   d.startCount = d.positions.length;
 }
@@ -536,7 +552,7 @@ export function startChooser(d, c, ge) {
   return `<div class="usestart"><small>Use seedlings you’ve started</small>${good.length ? `<div class="sowchips">${good.map(chip).join('')}</div>` : ''}${poor.length ? `<details class="fold"><summary class="muted small">${good.length ? 'Others' : 'Yours'} — won’t crop in time here (${poor.length})</summary><div class="sowchips">${poor.map(chip).join('')}</div></details>` : ''}</div>`;
 }
 export function applyStart(d, s, c) {
-  if (d.useStart === s.id) { d.useStart = null; d.startId = null; d.startN = null; d.startCount = null; d.moreStarts = null; return; }
+  if (d.useStart === s.id) { d.useStart = null; d.startId = null; d.startN = null; d.startCount = null; d.startWant = null; d.startShort = null; d.moreStarts = null; if (d.layout === 'free' && d.patLayout) { d.layout = d.patLayout; d.positions = null; } return; }
   d.moreStarts = null;
   const keepSow = d.sowDate, cr = crop(s.cropId);
   if (d.cropId !== s.cropId) applyCrop(d, cr, c);
@@ -545,7 +561,8 @@ export function applyStart(d, s, c) {
   d.seededOn = s.sowDate; d.harvestManual = false; recalc(d);
   if (!d.notes) d.notes = `Raised in ${startWhere(s).toLowerCase()}, sown ${shortDate(s.sowDate)}`;
   if (d.layout === 'free') d.positions = null;
-  setStartCount(c, d, defaultStartCount(c, d, plantsOf(s, startFree(s, d._pid))));
+  d.startWant = null; d._dragged = false;
+  setStartCount(c, d, wantedStarts(c, d));
 }
 // on save of a new planting that uses started seedlings: a plan sets that many aside; planting now takes them
 export function linkStartOnSave(d, p) {
@@ -574,12 +591,17 @@ export function startReadyNote(d) {
   const from = fs.more.length ? al.map(a => `${a.plants} from ${esc(batchName(a.s))}`).join(' and ') : `from ${esc(where)}`;
   return `<p class="hint">🌱 Using ${n} of your ${have} ${esc(crop(s.cropId).en)} seedlings${fs.more.length ? ':' : ''} ${from}, ready about ${shortDate(ready)}${d.sowDate && ready > d.sowDate ? ` — <b>after</b> this date; they may need longer` : ''}.${rest > 0 ? ` The other ${rest} stay ${fs.more.length ? 'where they are' : `in ${esc(where)}`} until you plant them out somewhere else or discard them.` : ''}</p>`;
 }
+// the number you chose won't all fit in this layout and section: say so plainly
+export function startShortNote(d) {
+  const sh = d.startShort;
+  return `<p class="banner warn" id="startShort"${sh ? '' : ' hidden'}>${sh ? `Only <b>${sh.fit}</b> of your ${sh.want} fit here at this spacing — the drawing shows ${sh.fit}, and ${sh.want - sh.fit} would stay where they are. Use more of the bed, another layout or closer spacing to fit them all.` : ''}</p>`;
+}
 // the "how many go in" field on the form
 export function startCountField(d) {
   const fs = formStart(d); if (!fs) return '';
   const per = perSpotOf(d.cropId), others = otherBatches(d, fs.s), on = new Set(fs.more.map(x => x.s.id));
   const where = fs.more.length ? `— ${fs.own} in ${esc(batchName(fs.s))}${fs.more.map(x => ` + ${x.have} in ${esc(batchName(x.s))}`).join('')}` : `in ${esc(startWhere(fs.s))}`;
-  return `<div class="startcount"><label class="inl">Seedlings going in <input name="startCount" type="number" inputmode="numeric" min="1" max="${fs.have}" value="${d.startCount || fs.have}"> <small>of ${fs.have} ${where}</small></label>
+  return `<div class="startcount"><label class="inl">Seedlings going in <input name="startCount" type="number" inputmode="numeric" min="1" max="${fs.have}" value="${d.startShort ? d.startShort.want : d.startCount || fs.have}"> <small>of ${fs.have} ${where}</small></label>${startShortNote(d)}
     ${others.length ? `<div class="morestart"><small>Add seedlings from another batch:</small><div class="sowchips">${others.map(x => `<button type="button" class="chip${on.has(x.id) ? ' on' : ''}" data-act="moreStart" data-id="${x.id}">${on.has(x.id) ? '✓ ' : '＋ '}${esc(crop(x.cropId).en)} <small>×${plantsOf(x, startFree(x, d._pid))} · ${esc(batchName(x))}</small></button>`).join('')}</div></div>` : ''}
     <small class="hint">${per > 1 ? `${esc(crop(d.cropId).en)} go in pairs, ${per} to a spot, to hold each other up. ` : ''}Drag them in the picture to where they’ll go — touching near one is enough, and Zoom makes them bigger.</small></div>`;
 }

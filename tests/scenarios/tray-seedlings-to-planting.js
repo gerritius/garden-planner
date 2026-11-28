@@ -27,7 +27,9 @@ const U = 'http://localhost:8765/', SP = process.argv[2];
   await pg.goto(U + '#/seedlings'); await pg.waitForTimeout(300);
   console.log('tray ready line', (await pg.textContent('li.start')).replace(/\s+/g, ' ').match(/Sown.*?\)/)?.[0]);
   await pg.click('[data-act=replant]'); await pg.waitForTimeout(200); await pg.click('[data-c=b1]'); await pg.waitForTimeout(400);
-  await pg.fill('#pf input[name=from]', '100'); await pg.dispatchEvent('#pf input[name=from]', 'input');
+  if (!(await pg.isChecked('[data-multi]'))) { await pg.check('[data-multi]'); await pg.waitForTimeout(300); }
+  await pg.selectOption('[data-part=v]', 'custom'); await pg.waitForTimeout(300);
+  await pg.fill('#pf input[name=from]', '100'); await pg.dispatchEvent('#pf input[name=from]', 'change'); await pg.waitForTimeout(200);
   const hv3 = await pg.inputValue('#pf input[name=harvestDate]'); await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(400);
   // 4) planned with tray, then a typed harvest date that must stick
   await pg.goto(U + '#/plant/new/b2?plan=1&crop=hakusai&from=0&to=100&date=2027-08-30'); await pg.waitForTimeout(400);

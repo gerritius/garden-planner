@@ -9,7 +9,7 @@ import { $, addDays, daysBetween, esc, num, shortDate, todayStr, uid, unitOpts }
 import { HANDFUL_G } from '../data/catalog.js';
 import { Draw } from '../draw.js';
 import { lastMixKind, mixDefaults, mixDraftC, mixFormBits, saveMixChoice } from '../feeding/mix.js';
-import { baseFertNote, baseFertPlan, careJobStart, careJobs, FRUITING, jobAmount, jobAmountText } from '../feeding/plans.js';
+import { baseFertNote, baseFertPlan, careJobStart, fertLineFor, careJobs, FRUITING, jobAmount, jobAmountText } from '../feeding/plans.js';
 import { activeIn, container, decorate, endOf, gaps, isPlanned, noteVacated, occupants, planRotation, sideBySide } from '../garden/garden.js';
 import { gapAround, ideasDialog } from '../garden/ideas.js';
 import { linkedStart, planFormBits } from '../garden/planning.js';
@@ -22,8 +22,8 @@ import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
 import { nearestPlant } from '../plants/onmap.js';
 import {
-  applyStart, defaultStartCount, fewSpots, formStart, linkStartOnSave, startAlloc, perOf, planStartOnSave, prefillFromStart, setStartCount, start, startChooser,
-  startCountField, startLeft, startPlanted, startReadyNote, startWhere, unitOf
+  applyStart, fewSpots, formStart, linkStartOnSave, startAlloc, perOf, planStartOnSave, prefillFromStart, relayStarts, setStartCount, start, startChooser,
+  startCountField, startLeft, startPlanted, startReadyNote, startShortNote, startWhere, unitOf, wantedStarts
 } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
 
@@ -39,8 +39,9 @@ export function applyCrop(d, cr, c) {
   d.thinStage = cr.thinStage || ''; d.thinSp = cr.thinSp ?? ''; d.spread = cr.spread ?? '';
   d.daysThin = cr.daysThin; d.daysHarvest = cr.daysHarvest; d.harvestManual = false; d.thinManual = false;
   d.daysFrom = cr.daysHarvest || ''; d.daysTo = cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''; d.keepUntil = '';
-  d.dir = cr.dir || 'across'; d.rows = ''; d.variety = ''; d.sj = {};
+  d.dir = cr.dir || 'across'; d.dirUser = false; d.rows = ''; d.variety = ''; d.sj = {};
   if (!(d.fert || []).length || d.fertAuto) { try { d.fert = baseFertPlan(cr.id, mixDraftC(c, d), d.from, d.to, d.sowDate); d.fertAuto = true; } catch (e) { console.warn(e); } }
+  bestDir(c, d);
   recalc(d);
 }
 export function recalc(d) {
@@ -75,7 +76,7 @@ export function pagePlantForm(p, c, q) {
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
       draft.harvestManual = true; draft.thinManual = true; draft._pid = p.id;
       if ((p.planMore || []).length) draft.moreStarts = p.planMore.map(x => x.id);   // (and other batches it takes)
-      const fs = isPlanned(p) && formStart(draft); if (fs) draft.startCount = Math.min(fs.have, ((p.planN || 0) + (p.planMore || []).reduce((a, x) => a + x.n, 0)) || fs.have);   // a plan using your seedlings: how many
+      const fs = isPlanned(p) && formStart(draft); if (fs) draft.startCount = draft.startWant = Math.min(fs.have, ((p.planN || 0) + (p.planMore || []).reduce((a, x) => a + x.n, 0)) || fs.have);   // a plan using your seedlings: how many
     }
     if (c.type !== 'bed') { if (isNew) delete draft.mixFresh; mixDefaults(draft, c); if (draft.fertAuto && draft.cropId) try { draft.fert = baseFertPlan(draft.cropId, mixDraftC(c, draft), draft.from, draft.to, draft.sowDate); } catch (e) { console.warn(e); } }
   }
@@ -83,7 +84,8 @@ export function pagePlantForm(p, c, q) {
   setChrome(isNew ? 'New planting' : 'Edit planting', { back: true, kicker: c.name });
   const cr = d.cropId ? crop(d.cropId) : null;
   const seed = d.method === 'seed';
-  const rowish = ['rows', 'continuous', 'staggered'].includes(d.layout);
+  const lay = shownLayout(d), rowish = ['rows', 'continuous', 'staggered'].includes(lay), fs0 = formStart(d);
+  const multi = d._multi ?? (d.from > 0 || d.to < L || Draw.narrow(c, d));
   const cropOpts = `<option value="">Choose a crop…</option>` + cropOptions(d.cropId) + `<option value="__new">＋ Add a new crop…</option>`;
   const ph = slot => {
     const nb = d.newPhotos[slot], id = d.photos[slot];
@@ -101,7 +103,7 @@ export function pagePlantForm(p, c, q) {
     return bits.filter(Boolean).join(' · ');
   };
   const html = `${d.startId && start(d.startId) ? `<div class="banner" id="startBanner"></div>` : ''}<form id="pf" class="form">
-    ${formStart(d) ? `<div class="zoomrow">${zoomBar(() => { preview(); centreZoom($('#pprev')); })}</div>` : ''}<div class="preview big${formStart(d) ? ' zoombox' : ''}" id="pprev"></div>${startCountField(d)}
+    ${formStart(d) ? `<div class="zoomrow">${zoomBar(() => { preview(); centreZoom($('#pprev')); })}</div>` : ''}<div class="preview big${formStart(d) ? ' zoombox' : ''}" id="pprev"></div>
     <fieldset><legend>Crop</legend>
       ${isNew && !d.startId ? startChooser(d, c, (gapAround(c, d.from, d.to, d.sowDate || todayStr()) || {}).e) : ''}
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
@@ -110,15 +112,12 @@ export function pagePlantForm(p, c, q) {
         <datalist id="vars">${d.cropId ? varieties(d.cropId).map(v => `<option value="${esc(v)}">`).join('') : ''}</datalist>
         ${d.cropId ? `<button type="button" class="link" data-act="searchVar">🔎 Search this variety online</button>` : ''}
         ${d.cropId && kin(d.cropId) === 'onion' ? `<small class="hint">🌗 For here: ${esc(onionType()[1])}.</small>` : ''}</label>
-      <label>Planting type<div class="seg">${[['seed', 'From seed'], ['seedling', 'Seedlings / tubers']].map(([v, l]) => `<button type="button" data-act="method" data-v="${v}" class="${d.method === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>
+      ${fs0 ? startCountField(d) : `<label>Planting type<div class="seg">${[['seed', 'From seed'], ['seedling', 'Seedlings / tubers']].map(([v, l]) => `<button type="button" data-act="method" data-v="${v}" class="${d.method === v ? 'on' : ''}">${l}</button>`).join('')}</div></label>`}
     </fieldset>
     <fieldset><legend>Where &amp; when</legend>
       <div id="rotWarn"></div>
-      ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
-        `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>${partBtns('part', L)}`}
-      ${c.type === 'round' ? '' : `<details class="fold across"${Draw.narrow(c, d) ? ' open' : ''}><summary>Side by side <small>${Draw.narrow(c, d) ? `${esc(d.xFrom || 0)}–${esc(d.xTo ?? W)} cm across` : 'the whole width'}</small></summary>
-        <div class="two"><label>Across, from (cm from left)<input name="xFrom" type="number" inputmode="decimal" min="0" max="${W}" value="${esc(d.xFrom ?? 0)}"></label><label>To (cm)<input name="xTo" type="number" inputmode="decimal" min="0" max="${W}" value="${esc(d.xTo ?? W)}"></label></div>
-        <small class="hint">The short side is ${W} cm. For strips that run down the bed side by side — say peas along both edges and spinach in the middle — give each crop part of the width: 0 to 25, 25 to 75 and 75 to ${W}.</small>${partBtns('xpart', W)}</details>`}
+      <label class="inl chkline"><input type="checkbox" data-multi${multi ? ' checked' : ''}> <span>Planting multiple crops here</span></label>
+      ${multi ? whereBits(d, c) : ''}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">')}
       <div id="mixBits">${mixFormBits(d, c)}</div>
@@ -126,21 +125,21 @@ export function pagePlantForm(p, c, q) {
     </fieldset>
     <details class="fold more" id="pfMore"${d._more ? ' open' : ''}><summary>More options <small>${esc(moreSummary())}</small></summary>
     <fieldset><legend>Layout &amp; spacing</legend>
-      <label>Layout<select name="layout">${LAYOUTS.map(([v, l]) => `<option value="${v}"${v === d.layout ? ' selected' : ''}>${l}</option>`).join('')}</select></label>
-      ${d.layout === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
-      ${seed ? `<label>Sowing depth (cm)<input name="depth" type="number" step="0.1" inputmode="decimal" value="${esc(d.depth)}"></label>` : ''}
+      <label>Layout<select name="layout">${layoutOptions(cr, c, lay)}</select></label>
+      ${lay === 'free' ? `<small class="hint">After saving, use “Arrange plants” on the crop page to drag plants into place.</small>` : ''}
+      ${seed ? `<label>Sowing depth${cmBox('depth', d.depth, 'step="0.1"')}</label>` : ''}
       <div class="two">
-        <label>${seed ? 'Sowing distance' : 'Spacing between plants'} (cm)<input name="plantSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.plantSp)}"></label>
-        ${rowish ? `<label>Between rows (cm)<input name="rowSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.rowSp)}"></label>` : ''}
+        <label>${seed ? 'Sowing distance' : 'Plant spacing'}${cmBox('plantSp', d.plantSp, 'step="0.5"')}</label>
+        ${rowish ? `<label>Between rows${cmBox('rowSp', d.rowSp, 'step="0.5"')}</label>` : ''}
       </div>
-      ${rowish ? `<label>Row direction<select name="dir"><option value="across"${d.dir !== 'along' ? ' selected' : ''}>Across – rows stacked down the long side</option><option value="along"${d.dir === 'along' ? ' selected' : ''}>Lengthways – rows run down the long side</option></select></label>` : ''}
+      ${rowish ? `<label>Row direction<select name="dir"><option value="across"${d.dir !== 'along' ? ' selected' : ''}>Across the bed</option><option value="along"${d.dir === 'along' ? ' selected' : ''}>Lengthways</option></select></label>` : ''}
       ${rowish ? `<label>Number of rows<input name="rows" type="number" min="1" inputmode="numeric" value="${esc(d.rows)}" placeholder="auto">
         <small><span id="fitTxt"></span>If you enter a number, the rows are spread evenly between the margins.</small></label>` : ''}
       <small class="hint">Rows and plants start at the edge margin and are spread evenly, so actual spacing is never less than what you enter.</small>
     </fieldset>
     ${seed ? `<fieldset><legend>Thinning</legend>
       <label>When to thin<input name="thinStage" value="${esc(d.thinStage)}" placeholder="e.g. at 3 true leaves"></label>
-      <div class="two"><label>Thin to (cm)<input name="thinSp" type="number" step="0.5" inputmode="decimal" value="${esc(d.thinSp)}"></label>
+      <div class="two"><label>Thin to${cmBox('thinSp', d.thinSp, 'step="0.5"')}</label>
       <label>Approx. date<input name="thinDate" type="date" value="${esc(d.thinDate || '')}" data-manual="thinManual"></label></div>
       <small class="hint">The date is estimated from when they come up and the temperatures, and updates by itself — unless you change it here. Ticking the thinning task redraws the plot at the thinned spacing.</small></fieldset>` : ''}
     ${isNew && cr && careJobs(cr.id).length ? `<fieldset><legend>Suggested jobs</legend>
@@ -148,13 +147,13 @@ export function pagePlantForm(p, c, q) {
       <small class="hint">Untick any you don’t do. They become jobs on this crop’s page and the calendar.</small></fieldset>` : ''}
     <fieldset><legend>Harvest</legend>
       <div class="two"><label>Earliest harvest<input name="harvestDate" type="date" value="${esc(d.harvestDate || '')}" data-manual="harvestManual"></label>
-      <label>Mature size (cm across)<input name="spread" type="number" inputmode="decimal" value="${esc(d.spread)}"></label></div>
+      <label>Mature size${cmBox('spread', d.spread)}</label></div>
       <div class="two"><label>Packet: days to harvest, from<input name="daysFrom" type="number" inputmode="numeric" value="${esc(d.daysFrom ?? (cr ? cr.daysHarvest : ''))}"></label><label>to<input name="daysTo" type="number" inputmode="numeric" value="${esc(d.daysTo ?? (cr && cr.daysHarvest ? Math.round(cr.daysHarvest * 1.3) : ''))}"></label></div>
       <label>Keeps until (optional)<input name="keepUntil" type="date" value="${esc(d.keepUntil || '')}"><small>Leave empty and the app works it out from the crop and the temperatures — cold weather lets roots and brassicas hold much longer.</small></label>
       ${cr && cr.daysHarvest ? `<small class="hint">Estimated from the catalogue (about ${cr.daysHarvest} days from ${seed || (cr.method === 'seed' && (d.startId || d.useStart)) ? 'sowing' : 'planting'} at the usual time of year${cr.method === 'seed' && (d.startId || d.useStart) ? ', counted from the tray sowing' : ''}) and the temperatures — colder weather pushes it later. It updates by itself unless you change it here to match the packet.</small>` : ''}
     </fieldset>
     <fieldset><legend>Starting fertiliser</legend>
-      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d), d.sowDate))}.</p>` : ''}
+      ${cr && c ? `<p class="hint">Suggested from your products${(soilAdvice(c, d.from, d.to, cr.id) || {}).base !== undefined && soilAdvice(c, d.from, d.to, cr.id).base !== 1 ? ' (adjusted for the last crop)' : ''}: ${esc(baseFertNote(cr.id, mixDraftC(c, d), d.sowDate, d.fert))}.</p>` : ''}
       ${d.fert.map((f, i) => `<div class="fert"><input name="fert.${i}.product" list="fertNames" value="${esc(f.product)}" placeholder="Product (e.g. NPK 8-8-8)"><input name="fert.${i}.amount" type="number" inputmode="decimal" value="${esc(f.amount)}" placeholder="Amount">
         <select name="fert.${i}.unit">${unitOpts(f.unit)}</select><button type="button" class="x" data-act="rmFert" data-i="${i}">✕</button></div>`).join('')}
       <datalist id="fertNames">${myProducts(['fert', 'compost', 'lime', 'amend']).map(x => `<option value="${esc(x.en)}">`).join('')}</datalist>
@@ -184,13 +183,15 @@ export function pagePlantForm(p, c, q) {
 
   const read = () => {
     d.sj = d.sj || {};
+    const laidOut = d.layout === 'free' && d.patLayout && !d._dragged;   // (seedlings laid out along a layout: the select shows that layout)
     for (const el of $('#pf').elements) if (el.name) setPath(d, el.name, el.type === 'checkbox' ? el.checked : el.value);
     d.from = num(d.from) ?? 0; d.to = num(d.to) ?? L;
+    if (laidOut && d.layout === d.patLayout) d.layout = 'free';
     if (document.activeElement && /^fert\./.test(document.activeElement.name || '')) d.fertAuto = false;
   };
   let shown = null;   // the planting as last drawn
   const preview = () => {
-    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread), xFrom: num(d.xFrom), xTo: num(d.xTo), real: null });   // (the plan being edited — not the plants already there)
+    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread), xFrom: num(d.xFrom), xTo: num(d.xTo) });
     tmp.thinned = p ? p.thinned : false;
     if (tmp.layout === 'free' && !(tmp.positions || []).length) {
       // placing by hand: start from the seedlings you're planting out (that many), or else from rows at this spacing
@@ -223,19 +224,29 @@ export function pagePlantForm(p, c, q) {
   };
   A.searchVar = () => { read(); const q = `${cr ? cr.en : ''} ${d.variety || ''} growing from seed`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
   A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
-  // quick parts of the bed: halves and thirds, down its length (part) or across its width (xpart)
-  const setPart = (a, b, el) => { read(); const [i, n] = el.dataset.p.split('/').map(Number), len = el.dataset.act === 'part' ? L : W, lo = Math.round(len * i / n), hi = Math.round(len * (i + 1) / n);
-    d[a] = lo; d[b] = hi; if (formStart(d) && d.layout === 'free') { d.positions = null; d.layout = d.patLayout || 'rows'; setStartCount(c, d, defaultStartCount(c, d, formStart(d).have)); } render(); };
-  A.part = el => setPart('from', 'to', el);
-  A.xpart = el => setPart('xFrom', 'xTo', el);
+  // the section changed: the starting fertiliser follows its size, rows the way that fits most, and your seedlings
+  // (the number you chose) go back along the layout
+  const sectionChanged = () => {
+    if (d.fertAuto && d.cropId) try { d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); } catch (e) { console.warn(e); }
+    bestDir(c, d); relayStarts(c, d);
+  };
+  const setPartOf = (k, v) => {
+    const len = k === 'v' ? L : W, [a, b] = k === 'v' ? ['from', 'to'] : ['xFrom', 'xTo'];
+    d[k === 'v' ? '_cv' : '_ch'] = v === 'custom';
+    if (v === 'custom') return;
+    if (v === 'all') { d[a] = 0; d[b] = len; } else { const [i, n] = v.split('/').map(Number); d[a] = Math.round(len * i / n); d[b] = Math.round(len * (i + 1) / n); }
+    if (k === 'h' && v === 'all') { delete d.xFrom; delete d.xTo; }
+    sectionChanged();
+  };
   A.raise = el => { read(); d.raise = el.dataset.v; render(); };
   A.useStart = el => { read(); applyStart(d, start(el.dataset.id), c); render(); };
   // another batch of the same seedlings goes in too (or not): as many as there are room for
   A.moreStart = el => {
     read(); const id = el.dataset.id, cur = d.moreStarts || [];
     d.moreStarts = cur.includes(id) ? cur.filter(x => x !== id) : cur.concat(id);
+    d.startWant = null;   // (a batch added or taken away: as many as fit of them all)
     if (d.patLayout && !d._dragged) { d.layout = d.patLayout; d.positions = null; }   // not moved by hand yet: lay them all out along the pattern again
-    const fs = formStart(d); if (fs) setStartCount(c, d, defaultStartCount(c, d, fs.have));
+    if (formStart(d)) setStartCount(c, d, wantedStarts(c, d));
     render();
   };
   A.usePacket = el => { read(); usePacket(d, el.dataset.k, c); render(); };
@@ -268,7 +279,8 @@ export function pagePlantForm(p, c, q) {
       const dz = dragZone(box, (t, touch) => !!touch && near(touch) >= 0);
       box.addEventListener('pointerdown', e => {
         if (!box.querySelector('svg')) return; const i = near(e); if (i < 0) return;
-        if (d.layout !== 'free' || !(d.positions || []).length) { d.positions = pts().map(q => q.slice()); d.layout = 'free'; if (f.layout) f.layout.value = 'free'; }
+        if (d.layout !== 'free' || !(d.positions || []).length) { d.positions = pts().map(q => q.slice()); d.layout = 'free'; }
+        if (f.layout) f.layout.value = 'free';
         drag = i; d._dragged = true; box.setPointerCapture(e.pointerId); e.preventDefault();
       });
       const mv = e => {
@@ -290,7 +302,11 @@ export function pagePlantForm(p, c, q) {
       read();
       if (n === 'startCount') {   // how many seedlings go in: that many in the drawing
         const fs = formStart(d), v = Math.round(+e.target.value);
-        if (fs && v >= 1) { setStartCount(c, d, Math.min(fs.have, v)); if (f.layout) f.layout.value = d.layout; const rn = $('#startNote'); if (rn) rn.outerHTML = startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">'); }
+        if (fs && v >= 1) {
+          d.startWant = Math.min(fs.have, v); setStartCount(c, d, d.startWant); if (f.layout) f.layout.value = shownLayout(d);
+          const rn = $('#startNote'); if (rn) rn.outerHTML = startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">');
+          const sh = $('#startShort'); if (sh) sh.outerHTML = startShortNote(d);
+        }
         d.startCount = d.startCount || null;
       }
       if (n === 'sowDate' || n === 'thinSp' || n === 'daysFrom') { recalc(d); if (f.harvestDate) f.harvestDate.value = d.harvestDate || ''; if (f.thinDate) f.thinDate.value = d.thinDate || ''; }
@@ -305,11 +321,36 @@ export function pagePlantForm(p, c, q) {
         if (e.target.value === '__new') { e.target.value = d.cropId; return newCropDialog(id => { applyCrop(d, crop(id), c); d.method = 'seed'; render(); }); }
         const keepSow = d.sowDate; applyCrop(d, crop(e.target.value), c); d.sowDate = keepSow; recalc(d); return render();
       }
-      if (n === 'layout' || n === 'dir' || /\.every$/.test(n)) {
-        read();
-        // seedlings going in: as many as the new layout takes (a diamond: 4 — or 4 pairs of peas)
-        const fs = n === 'layout' && formStart(d); if (fs) { if (d.layout !== 'free') d.positions = null; setStartCount(c, d, d.layout === 'free' && d.startCount ? d.startCount : defaultStartCount(c, d, fs.asked || fs.have)); }
+      if (e.target.dataset.multi != null) {   // planting more than one crop here: choose the part; or back to the whole bed
+        read(); d._multi = e.target.checked;
+        if (!d._multi) { d.from = 0; d.to = L; delete d.xFrom; delete d.xTo; d._cv = d._ch = false; sectionChanged(); }
         return render();
+      }
+      if (e.target.dataset.part) { read(); setPartOf(e.target.dataset.part, e.target.value); return render(); }
+      if (['from', 'to', 'xFrom', 'xTo'].includes(n)) {   // your own numbers: the page stays as it is while you type them (just what follows them changes)
+        read(); sectionChanged();
+        if (f.dir) f.dir.value = d.dir === 'along' ? 'along' : 'across';
+        if (f.layout) f.layout.value = shownLayout(d);
+        d.fert.forEach((x, i) => { const am = f.elements['fert.' + i + '.amount'], un = f.elements['fert.' + i + '.unit']; if (am) am.value = x.amount ?? ''; if (un) un.value = x.unit || 'g'; });
+        const sh = $('#startShort'); if (sh) sh.outerHTML = startShortNote(d);
+        const rn = $('#startNote'); if (rn) rn.outerHTML = startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">');
+        return preview();
+      }
+      if (n === 'dir') { read(); d.dirUser = true; if (formStart(d) && !d._dragged) relayStarts(c, d); return render(); }
+      if (['plantSp', 'rowSp', 'rows'].includes(n) && formStart(d) && !d._dragged) { read(); bestDir(c, d); relayStarts(c, d); return render(); }
+      if (n === 'layout' || /\.every$/.test(n)) {
+        read();
+        // seedlings going in: the number you chose, along the new layout (or placed by hand from where they are)
+        if (n === 'layout' && formStart(d)) {
+          if (e.target.value === 'free') { d.layout = 'free'; if (shown && !(d.positions || []).length) d.positions = Draw.layout(c, shown).pts.map(q => q.slice()); d._dragged = true; }
+          else { d.layout = d.patLayout = e.target.value; d._dragged = false; d.positions = null; bestDir(c, d); setStartCount(c, d, wantedStarts(c, d)); }
+        } else if (n === 'layout') bestDir(c, d);
+        return render();
+      }
+      if (/^fert\.\d+\.product$/.test(n)) {   // another product: the amount it takes, and the suggestion follows
+        read(); const i = +n.split('.')[1], l = d.cropId && fertLineFor(e.target.value, d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate);
+        if (l && d.fert[i]) { d.fert[i].amount = l.amount; d.fert[i].unit = l.unit; }
+        d.fertAuto = false; return render();
       }
       if (n === 'mixKind') { read(); d.mixUser = true; if (d.fertAuto && d.cropId) d.fert = baseFertPlan(d.cropId, mixDraftC(c, d), d.from, d.to, d.sowDate); return render(); }
       if (e.target.dataset.slot) {
@@ -352,12 +393,11 @@ async function savePlanting(p, d, c) {
   saveMixChoice(p, d, c);
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
   p.raise = p.status === 'planned' && p.method === 'seedling' ? (linkedStart(p) ? 'tray' : d.raise === 'pot' ? 'tray' : d.raise || 'buy') : (p.raise || '');   // linked to seedlings you started: sown from seed
-  const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to, oldX = `${p.xFrom},${p.xTo}`;
+  const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
   // part of the width (strips side by side) — or the whole of it
   { const xa = num(d.xFrom) || 0, xb = num(d.xTo); if (c.type === 'round' || (xa <= 0 && (xb == null || xb >= Draw.dims(c).W))) { delete p.xFrom; delete p.xTo; } else { p.xFrom = xa; p.xTo = xb == null ? Draw.dims(c).W : xb; } }
   if (!isNew && p.status === 'active') noteVacated(p, oldFrom, oldTo);
-  if (!isNew && (oldFrom !== p.from || oldTo !== p.to || oldX !== `${p.xFrom},${p.xTo}`)) { delete p.real; delete p.thinPrev; }   // moved: the plants there are drawn from the new layout
   if (p.method !== 'seed') { p.depth = null; p.thinSp = null; p.thinDate = ''; p.thinStage = ''; }
   p.fert = (d.fert || []).filter(f => f.product || f.amount).map(f => ({ product: f.product, amount: num(f.amount), unit: f.unit || 'g' }));
   const oldSeries = p.series || [];
@@ -389,10 +429,51 @@ async function savePlanting(p, d, c) {
   if (isNew) location.replace('#/plant/' + p.id); else history.back();
 }
 
-// quick buttons for part of the bed: halves and thirds of its length (top…bottom) or width (left…right)
-function partBtns(act, len) {
-  const names = act === 'part' ? [['Top half', 'Bottom half'], ['Top third', 'Middle third', 'Bottom third']] : [['Left half', 'Right half'], ['Left third', 'Middle third', 'Right third']];
-  return `<div class="partbtns">${names.map(ns => ns.map((l, i) => `<button type="button" class="chip" data-act="${act}" data-p="${i}/${ns.length}">${l} <small>${Math.round(len * i / ns.length)}–${Math.round(len * (i + 1) / ns.length)}</small></button>`).join('')).join('')}</div>`;
+// a number box with its unit shown inside it (the unit can't be edited)
+const cmBox = (name, v, extra = '', unit = 'cm') => `<span class="unitin"><input name="${name}" type="number" inputmode="decimal" ${extra} value="${esc(v ?? '')}"><i>${unit}</i></span>`;
+// part of the bed: the whole of a side, halves and thirds of it, or your own numbers
+const PART_NAMES = { v: ['Full length', 'Top', 'Middle', 'Bottom'], h: ['Full width', 'Left', 'Middle', 'Right'] };
+const partOpts = k => { const [all, a, m, b] = PART_NAMES[k]; return [['all', all], ['0/2', a + ' ½'], ['1/2', b + ' ½'], ['0/3', a + ' ⅓'], ['1/3', m + ' ⅓'], ['2/3', b + ' ⅓'], ['custom', 'Custom…']]; };
+export function partOf(lo, hi, len) {
+  lo = +lo || 0; hi = hi == null || hi === '' ? len : +hi;
+  if (lo <= 0 && hi >= len) return 'all';
+  for (const n of [2, 3]) for (let i = 0; i < n; i++) if (Math.round(len * i / n) === Math.round(lo) && Math.round(len * (i + 1) / n) === Math.round(hi)) return i + '/' + n;
+  return 'custom';
+}
+function whereBits(d, c) {
+  const { L, W } = Draw.dims(c), v = d._cv ? 'custom' : partOf(d.from, d.to, L), h = d._ch ? 'custom' : partOf(d.xFrom, d.xTo, W);
+  const sel = (k, cur) => `<select data-part="${k}">${partOpts(k).map(([x, l]) => `<option value="${x}"${x === cur ? ' selected' : ''}>${l}</option>`).join('')}</select>`;
+  return `<div class="where"><label>Vertical${sel('v', v)}</label>
+    ${v === 'custom' ? `<div class="two"><label>From top${cmBox('from', d.from, `min="0" max="${L}"`)}</label><label>To${cmBox('to', d.to, `min="0" max="${L}"`)}</label></div>` : ''}
+    ${c.type === 'round' ? '' : `<label>Horizontal${sel('h', h)}</label>
+    ${h === 'custom' ? `<div class="two"><label>From left${cmBox('xFrom', d.xFrom ?? 0, `min="0" max="${W}"`)}</label><label>To${cmBox('xTo', d.xTo ?? W, `min="0" max="${W}"`)}</label></div>` : ''}`}</div>`;
+}
+// the layout as you chose it (seedlings laid out along it are kept as "by hand" spots, but it's still that layout)
+export const shownLayout = d => d.layout === 'free' && d.patLayout && !d._dragged ? d.patLayout : d.layout;
+// how well each layout suits a crop: the crop's own first, then those that suit its size and how it's sown
+function layoutScore(cr, c, v) {
+  const bed = !c || c.type === 'bed', big = (+cr.spread || 0) >= 35, small = (+cr.spread || 0) > 0 && +cr.spread <= 20, drill = cr.method === 'seed' && +cr.thinSp > 0;
+  const own = bed ? cr.layout || 'rows' : cr.pot || (big ? 'center' : cr.layout || 'rows');
+  if (v === own) return 100;
+  return {
+    rows: bed ? 80 : 40, staggered: big ? 75 : bed ? 55 : 30, continuous: drill ? 70 : 5,
+    scatter: small && cr.method === 'seed' ? 50 : 5, center: bed ? 2 : big ? 90 : 35, diamond: bed ? 3 : big ? 25 : 45, free: 20,
+  }[v] ?? 0;
+}
+function layoutOptions(cr, c, cur) {
+  const opt = ([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${l}</option>`;
+  if (!cr) return LAYOUTS.map(opt).join('');
+  const all = LAYOUTS.map(x => [x, layoutScore(cr, c, x[0])]).sort((a, b) => b[1] - a[1]);
+  const good = all.filter(x => x[1] >= 20).map(x => x[0]), poor = all.filter(x => x[1] < 20).map(x => x[0]);
+  return `<optgroup label="Recommended">${good.map(opt).join('')}</optgroup>${poor.length ? `<optgroup label="Not recommended">${poor.map(opt).join('')}</optgroup>` : ''}`;
+}
+// rows run whichever way fits the most plants — unless you chose the direction
+export function bestDir(c, d) {
+  const lay = shownLayout(d);
+  if (!c || d.dirUser || !['rows', 'continuous', 'staggered'].includes(lay)) return;
+  const n = dir => { try { return Draw.count(c, Object.assign({}, d, { layout: lay, dir, positions: null, from: +d.from || 0, to: +d.to, rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), xFrom: num(d.xFrom), xTo: num(d.xTo) })); } catch (e) { return 0; } };
+  const a = n('across'), b = n('along');
+  if (a !== b) d.dir = b > a ? 'along' : 'across';
 }
 
 // ---------- re-using seed packet photos ----------

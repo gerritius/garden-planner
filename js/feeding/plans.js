@@ -7,7 +7,7 @@ import { S, save } from '../core/state.js';
 import { modal } from '../core/ui.js';
 import { addDays, esc, num, todayStr, uid, unitOpts } from '../core/util.js';
 import { FRUITING, HANDFUL_G } from '../data/catalog.js';
-import { Draw } from '../draw.js';
+import { plantCount } from '../plants/onmap.js';
 import { container, isLive, planting } from '../garden/garden.js';
 import { feedOf, gramsFor, limeRate, soilAdvice, soilM2, soilReadingAdvice } from '../garden/soil.js';
 import { finishToggle } from '../garden/tasks.js';
@@ -142,7 +142,7 @@ export function migrateCareJobTimes() {
 // resolve a job's product amount for a planting at save time
 export function jobAmount(j, c, p) {
   const f = j[4]; if (!f) return { product: '', amount: null, unit: '' };
-  if (f.perPlant) { const n = c ? Draw.count(c, p, true) || 1 : 1; return { product: f.product, amount: f.perPlant * n, unit: 'handful' }; }
+  if (f.perPlant) { const n = c ? plantCount(c, p) || 1 : 1; return { product: f.product, amount: f.perPlant * n, unit: 'handful' }; }
   const area = c ? soilM2(c, p.from, p.to) : 0.12;
   return { product: f.product, amount: Math.max(10, Math.round(f.perM2 * area / 5) * 5), unit: 'g' };
 }
@@ -204,12 +204,29 @@ export function tickFeedTask(t) {
 // usable nitrogen to aim for at planting: per 40 L pot (quick or organic) or per m² of bed
 const BASE_N = { bagQuick: { heavy: 4, medium: 3.2, light: 1.6, legume: 0.8 }, bagSlow: { heavy: 2.8, medium: 2, light: 1.1, legume: 0.85 }, bedM2: { heavy: 5.6, medium: 4.2, light: 2.2, legume: 1.7 } };
 function gramsForN(pr, n) { const npk = npkOf(pr.en); return npk && npk[0] > 0 ? n / (npk[0] / 100 * (npk[3] || 0.7)) : 0; }
-export function baseFertPlan(cropId, c, from, to, sowDate) {
+// the products your starting-fertiliser lines use, by what they're for (compost, lime, base fertiliser)
+function rolesOf(lines) {
+  const o = {};
+  for (const l of lines || []) {
+    const pr = l && l.product && productByName(l.product); if (!pr) continue;
+    const u = pr.uses || [];
+    if (u.includes('base') && pr.npkv && pr.npkv[0] > 0 && pr.form !== 'liquid') o.base = o.base || pr;
+    else if (u.includes('compost')) o.compost = o.compost || pr;
+    else if (u.includes('lime')) o.lime = o.lime || pr;
+  }
+  return o;
+}
+// the starting fertiliser for one product you chose: the amount the crop and space call for (null if it isn't one)
+export function fertLineFor(name, cropId, c, from, to, sowDate) {
+  const o = rolesOf([{ product: name }]), pr = o.base || o.compost || o.lime; if (!pr) return null;
+  return baseFertPlan(cropId, c, from, to, sowDate, o).find(x => x.product === pr.en) || null;
+}
+export function baseFertPlan(cropId, c, from, to, sowDate, use = {}) {
   if (!c) return [];
   const feed = feedOf(cropId) || 'medium', bag = c.type !== 'bed';
   const sa = soilAdvice(c, from, to, cropId), bm = sa ? sa.base : 1, cm = sa ? sa.compost : 1;
   const sr = soilReadingAdvice(c, from, to, cropId), lf = sr ? sr.lime : 1, ff = sr ? sr.feed : 1;
-  const comp = pickRole('compost'), lime = pickRole('lime'), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to), out = [];
+  const comp = use.compost || pickRole('compost'), lime = use.lime || pickRole('lime'), lg = gramsFor(limeRate(cropId, sr && sr.r ? sr.r.ph : null), c, from, to), out = [];
   const noN = cropId === 'satsumaimo';
   if (bag) {
     const ms = mixState(c, sowDate || todayStr());
@@ -217,7 +234,7 @@ export function baseFertPlan(cropId, c, from, to, sowDate) {
     const slowMix = ms && ms.fresh && (sowDate || todayStr()) < addDays(ms.date, mixFert(ms.kind).days);   // fresh mix still feeding: half the base
     const k = ((potVolume(c)) || 40) / 40;
     if (comp && !slowMix) out.push({ product: comp.en, amount: Math.round(4 * cm * k), unit: 'L' });
-    const fert = pickRole('base', 'quick');
+    const fert = use.base || pickRole('base', 'quick');
     if (fert && !noN) out.push({ product: fert.en, amount: Math.round(gramsForN(fert, BASE_N[fert.form === 'quick' ? 'bagQuick' : 'bagSlow'][feed] * k * bm * ff * (slowMix ? 0.5 : 1)) / 5) * 5, unit: 'g' });
     if (lime && lg > 0 && lf > 0 && !slowMix) out.push({ product: lime.en, amount: lg, unit: 'g' });
     return out.filter(x => x.amount > 0);
@@ -225,22 +242,22 @@ export function baseFertPlan(cropId, c, from, to, sowDate) {
   const area = soilM2(c, from, to);
   if (comp) out.push({ product: comp.en, amount: Math.round(area * 2 * cm * 10) / 10, unit: 'kg' });
   if (lime && lg > 0 && lf > 0) out.push({ product: lime.en, amount: lg, unit: 'g' });
-  const fert = pickRole('base', 'slow');
+  const fert = use.base || pickRole('base', 'slow');
   if (fert && !noN) { const g = gramsForN(fert, BASE_N.bedM2[feed] * area * bm * ff);
     out.push(fert.form === 'quick' || g < 15 ? { product: fert.en, amount: Math.max(5, Math.round(g / 5) * 5), unit: 'g' } : { product: fert.en, amount: Math.max(0.5, Math.round(g / HANDFUL_G * 2) / 2), unit: 'handful' }); }
   return out.filter(x => x.amount > 0);
 }
 const whenIn = p => !p.wait ? 'can go in on planting day' : `dig in ${p.wait >= 14 ? `${Math.round(p.wait / 7)}–${Math.round(p.wait / 7) + 1} weeks` : 'about a week'} before planting`;
-export function baseFertNote(cropId, c, sowDate) {
-  const base = pickRole('base', c && c.type !== 'bed' ? 'quick' : 'slow'), bn = base ? base.en : 'a base fertiliser';
+export function baseFertNote(cropId, c, sowDate, lines) {
+  const use = rolesOf(lines), base = use.base || pickRole('base', c && c.type !== 'bed' ? 'quick' : 'slow'), bn = base ? base.en : 'a base fertiliser';
   if (c && c.type !== 'bed') {
     const ms = mixState(c, sowDate || todayStr()), mf = ms ? mixFert(ms.kind) : null;
     if (freshMixFed(ms, sowDate)) return 'fresh potting mix: no fertiliser needed — it’s already in the mix';
     if (ms && ms.fresh && todayStr() < addDays(ms.date, mf.days)) return mf.days > 60 ? `fresh ${mixRow(ms.kind)[1]}: its built-in fertiliser keeps feeding for about ${Math.round(mf.days / 30)} months — add half the usual ${bn} for nitrogen; no lime needed` : `fresh potting mix: its starter fertiliser only lasts about a month — half the usual ${bn} mixed through; no lime needed`;
-    const comp = pickRole('compost');
+    const comp = use.compost || pickRole('compost');
     return `re-used potting mix: ${comp ? comp.en : 'compost'} plus ${bn} mixed through before planting`;
   }
-  const bits = [], comp = pickRole('compost'), lime = pickRole('lime');
+  const bits = [], comp = use.compost || pickRole('compost'), lime = use.lime || pickRole('lime');
   if (comp) bits.push(`${comp.en}: ${whenIn(comp)}`);
   if (lime) bits.push(`${lime.en}: ${whenIn(lime)}`);
   if (base) bits.push(`${base.en}: ${whenIn(base)}`);

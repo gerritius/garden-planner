@@ -16,12 +16,19 @@ const U = 'http://localhost:8765/';
   });
   // spinach down the middle, on the form
   await pg.goto(U + '#/plant/new/bd?plan=1&crop=spinach&date=2026-12-05&from=0&to=200'); await pg.waitForTimeout(500);
-  // the quick buttons: thirds across and down
-  await pg.click('[data-act=xpart][data-p="1/3"]'); await pg.waitForTimeout(300);
-  await pg.click('[data-act=part][data-p="2/3"]'); await pg.waitForTimeout(300);
-  console.log('quick thirds:', await pg.evaluate(() => { const f = document.querySelector('#pf'); return `from ${f.from.value} to ${f.to.value}, across ${f.xFrom.value}–${f.xTo.value}`; }));
-  await pg.fill('#pf input[name=from]', '0'); await pg.fill('#pf input[name=to]', '200');
-  await pg.fill('#pf input[name=xFrom]', '25'); await pg.fill('#pf input[name=xTo]', '75'); await pg.dispatchEvent('#pf input[name=xTo]', 'input'); await pg.waitForTimeout(300);
+  // the bed is whole until you say you're planting more than one crop here
+  console.log('part of the bed hidden at first:', await pg.evaluate(() => !document.querySelector('[data-part]')));
+  await pg.check('[data-multi]'); await pg.waitForTimeout(300);
+  console.log('choices:', await pg.evaluate(() => [...document.querySelectorAll('[data-part]')].map(s => s.closest('label').firstChild.textContent.trim() + ': ' + [...s.options].map(o => o.textContent).join(', ')).join(' | ')));
+  // the middle third across, the bottom third down
+  await pg.selectOption('[data-part=h]', '1/3'); await pg.waitForTimeout(300);
+  await pg.selectOption('[data-part=v]', '2/3'); await pg.waitForTimeout(300);
+  console.log('quick thirds:', await pg.evaluate(() => `from ${draft.from} to ${draft.to}, across ${draft.xFrom}–${draft.xTo}`));
+  // back to the full length; your own numbers across
+  await pg.selectOption('[data-part=v]', 'all'); await pg.waitForTimeout(300);
+  await pg.selectOption('[data-part=h]', 'custom'); await pg.waitForTimeout(300);
+  console.log('units in the boxes:', await pg.evaluate(() => [...document.querySelectorAll('#pf .unitin')].slice(0, 2).map(u => u.querySelector('input').name + ' ' + u.querySelector('i').textContent).join(', ')));
+  await pg.fill('#pf input[name=xFrom]', '25'); await pg.fill('#pf input[name=xTo]', '75'); await pg.dispatchEvent('#pf input[name=xTo]', 'change'); await pg.waitForTimeout(300);
   await pg.screenshot({ path: require('path').join(process.argv[2] || '.', 'form.png') });
   await pg.click('#pf button[type=submit]'); await pg.waitForTimeout(600);
   console.log('saved without a clash question:', await pg.evaluate(() => !document.querySelector('#modal:not([hidden]) .msg')), await pg.evaluate(() => location.hash.startsWith('#/plant/')));

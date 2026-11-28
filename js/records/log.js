@@ -2,15 +2,14 @@
 
 import { A, render, setChrome } from '../core/router.js';
 import { S, save } from '../core/state.js';
-import { confirmBox, modal } from '../core/ui.js';
-import { $, daysBetween, esc, go, niceDate, shortDate, todayStr, uid, unitOpts } from '../core/util.js';
+import { modal } from '../core/ui.js';
+import { $, daysBetween, esc, niceDate, shortDate, todayStr, uid, unitOpts } from '../core/util.js';
 import { amtFor } from '../feeding/nutrients.js';
-import { activeIn, container, decorate, isLive, planting } from '../garden/garden.js';
+import { container, isLive, planting } from '../garden/garden.js';
 import { BED_ICON, syncTasks, taskOwner } from '../garden/tasks.js';
 import { coverLogItems } from '../plants/covers.js';
 import { crop, cropName, ic } from '../plants/crops.js';
 import { germChecks, pctText } from '../plants/germination.js';
-import { canMap, firstOut, hasReal, plantPicker, plantsHere, putBack, takeOut } from '../plants/onmap.js';
 import { pestName } from '../plants/problems.js';
 import { startLogItems } from '../plants/seedlings.js';
 import { myProducts, product } from '../products/library.js';
@@ -214,52 +213,27 @@ export function harvestSection(p) {
 export function harvestDialog(p, h) {
   const isNew = !h;
   h = h || { id: uid(), date: todayStr(), count: 1, note: '' };
-  // whole plants pulled up come off the map (a cabbage, a row of carrots); picking from plants (peas, tomatoes) doesn't
-  const c = container(p.containerId), mapOK = isNew && isLive(p) && canMap(c, p), have = mapOK ? plantsHere(c, p).length : 0, picked = !!crop(p.cropId).cont;
-  const outN = n => picked ? 0 : Math.min(have, n);
   modal(`<h3>${isNew ? 'Log a harvest' : 'Edit harvest'}</h3>
     <p class="muted small">${ic(p.cropId)} ${esc(cropName(p.cropId))}${p.variety ? ' · ' + esc(p.variety) : ''}</p>
     ${isNew ? sprayBanner(p) : ''}
     <form id="hf" class="form">
       <label>How many?<div class="stepper"><button type="button" data-s="-1">−</button><input name="count" type="number" inputmode="numeric" min="0" value="${h.count}"><button type="button" data-s="1">＋</button></div></label>
-      ${mapOK && have ? `<div class="hvout"><label>Plants pulled up <small>(taken off the map — of ${have} there)</small><div class="stepper"><button type="button" data-o="-1">−</button><input name="out" type="number" inputmode="numeric" min="0" max="${have}" value="${outN(h.count)}"><button type="button" data-o="1">＋</button></div></label>
-        <div class="pickmap" id="hvmap"></div><small class="hint">Tap plants to choose which came out. ${picked ? 'Picked from the plants? Leave this at 0.' : 'Only picked leaves or pods? Set this to 0.'}</small></div>` : ''}
-      ${!isNew && (h.removed || []).length ? `<p class="hint">${h.removed.length} plant${h.removed.length === 1 ? '' : 's'} came out with this harvest — deleting it puts ${h.removed.length === 1 ? 'it' : 'them'} back on the map.</p>` : ''}
       <label>Date<input name="date" type="date" value="${h.date}"></label>
       <label>Note<input name="note" value="${esc(h.note)}" placeholder="optional, e.g. outer leaves only"></label>
       <div class="btns">${isNew ? '<button type="button" class="btn" data-x="no">Cancel</button>' : '<button type="button" class="btn danger" data-x="del">Delete</button>'}<button class="btn primary">Save</button></div>
     </form>`, (m, close) => {
     const f = m.querySelector('#hf');
-    let touched = false, pk = null;
-    const setOut = k => {   // k plants out: keep the ones you chose, and add (or drop) the app's picks to make up the number
-      k = Math.max(0, Math.min(have, k)); f.out.value = k;
-      const sel = new Set([...pk.sel].slice(0, k)); for (const i of firstOut(c, p, have)) { if (sel.size >= k) break; sel.add(i); }
-      pk.sel = sel; pk.draw();
-    };
-    if (f.out) {
-      pk = plantPicker(m.querySelector('#hvmap'), c, decorate([p])[0], decorate(activeIn(c.id).filter(x => x.id !== p.id)), () => { touched = true; f.out.value = pk.sel.size; });
-      setOut(+f.out.value);
-      m.querySelectorAll('[data-o]').forEach(b => b.onclick = () => { touched = true; setOut((+f.out.value || 0) + +b.dataset.o); });
-      f.out.oninput = () => { touched = true; setOut(+f.out.value || 0); };
-    }
-    const counted = () => { if (f.out && !touched) setOut(outN(+f.count.value || 0)); };
-    m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { f.count.value = Math.max(0, (+f.count.value || 0) + +b.dataset.s); counted(); });
-    f.count.addEventListener('input', counted);
+    m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { f.count.value = Math.max(0, (+f.count.value || 0) + +b.dataset.s); });
     const no = m.querySelector('[data-x=no]'); if (no) no.onclick = close;
     const del = m.querySelector('[data-x=del]');
-    if (del) del.onclick = async () => { p.harvests = (p.harvests || []).filter(x => x.id !== h.id); if ((h.removed || []).length) putBack(c, p, h.removed); await save(); close(); render(); };
+    if (del) del.onclick = async () => { p.harvests = (p.harvests || []).filter(x => x.id !== h.id); await save(); close(); render(); };
     f.onsubmit = async e => {
       e.preventDefault();
       const n = Math.max(0, parseInt(f.count.value) || 0);
       if (!n) return alert('Enter how many you picked.');
       Object.assign(h, { count: n, date: f.date.value || todayStr(), note: f.note.value.trim() });
-      if (isNew && pk && pk.sel.size) h.removed = takeOut(c, p, [...pk.sel]);
       if (isNew) (p.harvests = p.harvests || []).push(h);
-      await save(); close();
-      if (isNew && (h.removed || []).length && hasReal(p) && !p.real.length && await confirmBox(`That was the last of the ${esc(crop(p.cropId).en.toLowerCase())} on the map. Mark the harvest finished and clear it from ${esc(c ? c.name : 'the bed')}?<br><small>It stays in the history.</small>`, 'Harvest finished')) {
-        endPlanting(p, h.date); await save(); return go('#/container/' + c.id);
-      }
-      render();
+      await save(); close(); render();
     };
   });
 }

@@ -36,6 +36,7 @@ import { $, $$, esc } from './util.js';
 
 // ---------- per-page state ----------
 export let A = {};          // per-page action handlers
+let swapping = false;   // (the page is being swapped: a redraw asked for meanwhile comes after)
 export let draft = null;    // form draft (planting / container)
 export function setDraft(v) { draft = v; return v; }
 let lastRoute = '';
@@ -65,6 +66,7 @@ export function setChrome(title, { back = false, tab = null, kicker = '', sub = 
   $$('#tabs a').forEach(a => a.classList.toggle('on', a.dataset.tab === tab));
 }
 export function render() {
+  if (swapping) { setTimeout(render); return; }
   if (failure) return showRecovery();   // the garden couldn't be loaded: nothing else until that's sorted
   const { parts, q } = route();
   if (parts[0] === 'map') { S.homeView = 'beds'; location.replace('#/'); return; }   // the old garden map: its job is the Beds view's now
@@ -137,6 +139,9 @@ export function render() {
   if (!savingAllowed()) html = `<p class="banner warn">Changes aren’t being saved: this phone’s storage couldn’t be opened. <a href="#/recovery">Recovery</a></p>` + html;
   try { html = tourCard() + html; } catch (e) { console.warn('tour', e); }   // (the guided setup, while it's on)
   html = groupTabs(location.hash.replace(/^#\/?/, '').split(/[/?]/)[0]) + html;
+  // (taking the old page away can blur a box you were typing in, and its change handler may redraw: that waits its turn)
+  const blurred = document.activeElement && $('#view').contains(document.activeElement) ? document.activeElement : null;
+  if (blurred) { swapping = true; try { blurred.blur(); } finally { swapping = false; } }
   $('#view').innerHTML = html;
   hydrate();
   after && after();

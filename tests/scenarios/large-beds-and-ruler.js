@@ -25,7 +25,7 @@ const U = 'http://localhost:8765/';
   console.log('counted:', await pg.evaluate(id => { const p = planting(id), c = container('hu'), l = Draw.layout(c, p); return `${Draw.count(c, p)} plants, ${l.pts.length} placed one by one, many=${l.many}`; }, pid));
   console.log('bed page:', await within(10000, async () => { await pg.goto(U + '#/container/hu'); await pg.waitForSelector('.plotwrap svg'); }), '| drawn as a pattern:', await pg.$$eval('.plotwrap pattern circle.plant', x => x.length > 0), '| plants drawn one by one:', await pg.$$eval('.plotwrap circle.plant', x => x.filter(c => !c.closest('pattern')).length));
   console.log('size note on the bed page:', await pg.textContent('.banner.warn'));
-  console.log('planting page:', await within(10000, async () => { await pg.goto(U + '#/plant/' + pid); await pg.waitForTimeout(300); }), '|', (await pg.textContent('#view')).match(/[\d,]+ plants/)[0], '| arrange offered:', !!(await pg.$('a[href$="/arrange"]')));
+  console.log('planting page:', await within(10000, async () => { await pg.goto(U + '#/plant/' + pid); await pg.waitForTimeout(300); }), '|', (await pg.textContent('#view')).match(/[\d,]+\s*plants?/)[0].replace(/\s*plant/, ' plant'), '| arrange offered:', !!(await pg.$('a[href$="/arrange"]')));
   await pg.goto(U + '#/plant/' + pid + '/arrange'); await pg.waitForTimeout(300);
   console.log('arrange page:', (await pg.textContent('#view')).trim().split('.')[0]);
   console.log('home:', await within(10000, async () => { await pg.goto(U + '#/'); await pg.waitForTimeout(400); }));

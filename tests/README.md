@@ -87,7 +87,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `lime-amounts` | Lime from a pH reading, sized to the bed section or pot, the same everywhere |
 | `liquid-feed-doses` | A liquid feed with doses mixed into the can (e.g. 5 or 10 mL per 5 L) and how it's counted |
 | `log-sprays-frost-alerts` | Logging sprays (days to wait before picking), frost jobs, weather alerts |
-| `map-matches-reality` | Drawings show what's really there: seedlings from two batches, a plan that got fewer seedlings, harvests taking plants out (and back), thinning to a counted number, the plan view, dragging near a dot and zoom |
+| `planting-counts` | How many plants: seedlings from two batches, the seedling number you choose kept through section and layout changes (with a won't-fit note), a plan that got fewer seedlings, the crop page's plant counter and a thinning count over the spacing, seedling mode, recommended layouts, a fertiliser's amount following the product, explanations as tips, dragging near a dot and zoom |
 | `microclimate-and-learning` | Sun/shade/indoors changing estimates; learning from your own records |
 | `modules-loaded` | Every module is loaded by the app itself (not just by the test bridge); drop-downs work without the bridge |
 | `notes-bed-buttons-quick-add` | The note dialog (with photo), bed page buttons, Quick add |
@@ -117,7 +117,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `split-bed-sections` | Splitting a bed into sections for several crops |
 | `replant-fill-gaps` | Back-up seedlings filling gaps in a crop already growing; one planted separately by mistake: placed by hand as one, drawn by its age, added to the first |
 | `seedlings-moved-outside` | Seedling trays started indoors, moved outside or under cover part-way: where they are and since when, and the plant-out date |
-| `side-by-side-strips` | Crops in strips down a bed (peas on both edges, spinach in the middle): plants stay in their strip, strips side by side don't clash, the drawing shows each strip |
+| `side-by-side-strips` | Crops in strips down a bed (peas on both edges, spinach in the middle): plants stay in their strip, strips side by side don't clash, the drawing shows each strip; the Planting multiple crops here box with Vertical and Horizontal choices |
 | `seedlings-looks-replant` | A 49-cell tray: looks at how many cells are up, then replanting a few at a time — into 9 cm pots, a new 9-cell tray, a grow bag where snap peas grow — and throwing one away |
 | `seedlings-how-many` | Seedlings into a plan or a bag: how many go in (a diamond's 4, pairs of peas), dragging them, the rest staying in the tray; seedling suggestions only where they'd crop before the space is needed; the Plan tab |
 | `spray-days` | Good spraying days from the forecast |

@@ -1,5 +1,12 @@
 [
   {
+    "version": "1.57.0",
+    "date": "2026-11-28",
+    "notes": [
+      "Crops can now grow side by side in strips down a bed, such as peas along both edges with spinach down the middle. On the planting form, open “Side by side” and give each crop part of the width. Strips next to each other don’t count as sharing space."
+    ]
+  },
+  {
     "version": "1.56.0",
     "date": "2026-11-28",
     "notes": [

@@ -10,7 +10,7 @@ import { $, $$, esc, go, niceDate, num, shortDate, todayStr, uid } from '../core
 import { Draw, plotSVG } from '../draw.js';
 import { mixDialog, mixList } from '../feeding/mix.js';
 import { feedDialog } from '../feeding/plans.js';
-import { activeIn, decorate, gaps, isPlanned, planting, prevCrop, sizeLabel, sizeProblem, typeLabel } from '../garden/garden.js';
+import { activeIn, decorate, gaps, isPlanned, planting, prevCrop, sectionOf, sizeLabel, sizeProblem, typeLabel } from '../garden/garden.js';
 import { ideasBtn } from '../garden/ideas.js';
 import { ensureAreas } from '../garden/areas.js';
 import { freeGaps, planSection } from '../garden/planning.js';
@@ -46,7 +46,7 @@ export function pageContainer(c) {
     <div class="center"><button class="chip big" data-act="climate">${climateLabel(c)} ${ui('edit', 15)}</button></div>
     <section><h3>Growing now</h3>
       ${ps.length ? `<ul class="plist">${ps.map(p => `<li><a href="#/plant/${p.id}">${ic(p.cropId)}
-        <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${c.type !== 'round' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
+        <span class="grow"><b>${esc(cropName(p.cropId))}</b>${p.variety ? ` · ${esc(p.variety)}` : ''}<small>${sectionOf(p) ? `${esc(sectionOf(p))} · ` : ''}${p.method === 'seed' ? 'sown' : 'planted'} ${shortDate(p.sowDate)}</small></span>›</a></li>`).join('')}</ul>` : '<p class="muted">Nothing planted.</p>'}
       ${ps.length ? `<button class="btn wide primary" data-act="split">＋ Add another crop to this ${c.type === 'bed' ? 'bed' : 'pot'}</button>` : ''}
       ${gs.map(g => { const pc = prevCrop(c, g[0], g[1]); return `<button class="btn wide" data-act="gap" data-gap="${g[0]},${g[1]}">＋ Plant ${ps.length ? `in ${g[0]}–${g[1]} cm` : 'here'}${pc ? ` <small>(previously ${esc(crop(pc.cropId).en)})</small>` : ''}</button>`; }).join('')}
       ${gs.length ? ideasBtn(c, gs[0][0], gs[0][1]) : ''}

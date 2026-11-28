@@ -50,11 +50,15 @@ export function endOf(p) {
   if (isLive(p) && e < todayStr()) e = todayStr();
   return e;
 }
-export const sectionOf = p => { const c = container(p.containerId); return c && (c.type === 'bed' || p.from > 0 || p.to < Draw.dims(c).L) ? `${p.from}–${p.to} cm` : ''; };
+export const sectionOf = p => { const c = container(p.containerId); if (!c) return ''; const [xa, xb] = Draw.xSpan(c, p);
+  return (c.type === 'bed' || p.from > 0 || p.to < Draw.dims(c).L ? `${p.from}–${p.to} cm` : '') + (Draw.narrow(c, p) ? ` · ${xa}–${xb} cm across` : ''); };
+// two plantings in strips side by side (parts of the width that don't meet) don't share space, even over the same length
+export const sideBySide = (c, a, b) => { const [a0, a1] = Draw.xSpan(c, a), [b0, b1] = Draw.xSpan(c, b); return a1 <= b0 + 0.5 || b1 <= a0 + 0.5; };
 // plantings (growing or planned) that share this space at some point in [d1, d2]
-export function occupants(cid, from, to, d1, d2, excludeId) {
+export function occupants(cid, from, to, d1, d2, excludeId, across) {
+  const c = across && container(cid);
   return S.plantings.filter(p => p.containerId === cid && p.id !== excludeId && (isLive(p) || isPlanned(p)) && p.from < to - 0.5 && p.to > from + 0.5 &&
-    (p.sowDate || todayStr()) <= d2 && endOf(p) >= d1);
+    (p.sowDate || todayStr()) <= d2 && endOf(p) >= d1 && !(c && sideBySide(c, p, across)));   // (across: a planting whose width counts)
 }
 // previous crop in this space before a planned date — includes crops still growing or planned
 export function planRotation(c, from, to, cropId, date, excludeId) {

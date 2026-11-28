@@ -48,9 +48,22 @@ export const Draw = (() => {
     return [+p.from + (+p.from <= 0.5 ? m : sp / 2), +p.to - (+p.to >= L - 0.5 ? m : sp / 2)];
   }
   function band(c, p) { const [top, bot] = yRange(c, p, 0); return { top, bot, h: Math.max(1, bot - top) }; }
+  // Side by side: a planting can use part of the width (p.xFrom–p.xTo cm from the left), so crops can run in strips
+  // down a bed. Its edges are like a section's: the bed's margin at the bed's sides, half the spacing where it meets
+  // another strip. Round pots always use the whole width.
+  function xSpan(c, p) {
+    const { W } = dims(c);
+    if (c.type === 'round') return [0, W];
+    const a = Math.max(0, +p.xFrom || 0), b = p.xTo != null && p.xTo !== '' && +p.xTo > a ? Math.min(W, +p.xTo) : W;
+    return [a, b];
+  }
+  const narrow = (c, p) => { const [a, b] = xSpan(c, p), { W } = dims(c); return a > 0.5 || b < W - 0.5; };
+  function xRange(c, p, sp) {
+    const { W } = dims(c), m = +c.margin || 0, [a, b] = xSpan(c, p);
+    return [a + (a <= 0.5 ? m : sp / 2), b - (b >= W - 0.5 ? m : sp / 2)];
+  }
   function rowAxis(c, p) {
-    const { W } = dims(c), m = +c.margin || 0;
-    return p.dir === 'along' ? [m, W - m] : yRange(c, p, +p.rowSp || 0);
+    return p.dir === 'along' ? xRange(c, p, +p.rowSp || 0) : yRange(c, p, +p.rowSp || 0);
   }
   function fitRows(c, p) { if (!(+p.rowSp > 0)) return null; const [a, b] = rowAxis(c, p); return countFit(a, b, +p.rowSp); }
   function rowCount(c, p) { return Math.min(MAX_ROWS, +p.rows > 0 ? Math.round(+p.rows) : (fitRows(c, p) || 1)); }
@@ -77,9 +90,8 @@ export const Draw = (() => {
       if (along) {
         [a, b] = yRange(c, p, s);
         if (c.type === 'round') { const [ca, cb] = rowRange(c, r); a = Math.max(a, ca + m); b = Math.min(b, cb - m); }
-      } else {
-        const [ca, cb] = rowRange(c, r); a = ca + m; b = cb - m;
-      }
+      } else if (c.type !== 'round') [a, b] = xRange(c, p, s);
+      else { const [ca, cb] = rowRange(c, r); a = ca + m; b = cb - m; }
       if (b < a) { if (c.type === 'round') return; a = b = (a + b) / 2; }
       const n = countFit(a, b, s), stag = p.layout === 'staggered' && i % 2 === 1 && n > 1;
       out.push({ r, a, b, n: stag ? n - 1 : n, full: n, stag });
@@ -87,8 +99,8 @@ export const Draw = (() => {
     return out;
   }
   function scatterCount(c, p) {
-    const { W } = dims(c), s = Math.max(0.5, spacingNow(p));
-    return Math.max(1, Math.round((W * band(c, p).h) / (s * s)));
+    const [xa, xb] = xSpan(c, p), s = Math.max(0.5, spacingNow(p));
+    return Math.max(1, Math.round(((xb - xa) * band(c, p).h) / (s * s)));
   }
   // A drill (sown in a continuous line) that hasn't been thinned: the line is the sowing — how many seeds went in isn't
   // known, so it has no single plants to draw or place.
@@ -112,15 +124,15 @@ export const Draw = (() => {
   // in) rather than the planned layout; without p.real the two are the same.
   function layout(c, p, real) {
     if (real && Array.isArray(p.real)) return { pts: p.real.map(q => q.slice(0, 3)), lines: [] };
-    const { W } = dims(c), m = +c.margin || 0;
+    const m = +c.margin || 0;
     const s = Math.max(0.5, spacingNow(p));
     const lines = [];
     if (p.layout === 'free') return { pts: (p.positions || []).map(q => q.slice(0, 3)), lines };   // [x, y] — or [x, y, sown] for a plant younger than the rest (a gap filled later)
-    const midY = (+p.from + +p.to) / 2;
-    if (p.layout === 'center') return { pts: [[W / 2, midY]], lines };
+    const midY = (+p.from + +p.to) / 2, [xa, xb] = xSpan(c, p), midX = (xa + xb) / 2;
+    if (p.layout === 'center') return { pts: [[midX, midY]], lines };
     if (p.layout === 'diamond') {
-      const d = Math.min(s * 0.7, W * 0.3, (p.to - p.from) * 0.3);
-      return { pts: [[W / 2, midY - d], [W / 2 + d, midY], [W / 2, midY + d], [W / 2 - d, midY]], lines };
+      const d = Math.min(s * 0.7, (xb - xa) * 0.3, (p.to - p.from) * 0.3);
+      return { pts: [[midX, midY - d], [midX + d, midY], [midX, midY + d], [midX - d, midY]], lines };
     }
     const along = p.dir === 'along';
     if (unthinnedDrill(p)) {   // just the lines
@@ -133,9 +145,10 @@ export const Draw = (() => {
       const { top, h } = band(c, p);
       const rnd = rng(p.id || 'x');
       const pts = []; let tries = 0;
+      const [x0, x1] = xRange(c, p, 0);
       while (pts.length < n && tries < n * 30) {
         tries++;
-        const x = rnd() * W, y = top + rnd() * h;
+        const x = x0 + rnd() * (x1 - x0), y = top + rnd() * h;
         if (inside(c, x, y, Math.max(m, 1))) pts.push([x, y]);
       }
       return { pts, lines };
@@ -150,9 +163,9 @@ export const Draw = (() => {
   }
   // Too many plants to draw one by one: a pattern of plants at the planting's spacing over the area it covers.
   function manyPlants(c, p, id, r) {
-    const { W } = dims(c), m = +c.margin || 0, s = Math.max(0.5, spacingNow(p)), along = p.dir === 'along';
+    const s = Math.max(0.5, spacingNow(p)), along = p.dir === 'along';
     let x0, y0, x1, y1, sx = s, sy = s;
-    if (p.layout === 'scatter') { const { top, bot } = band(c, p); [x0, y0, x1, y1] = [m, top, W - m, bot]; }
+    if (p.layout === 'scatter') { const { top, bot } = band(c, p), [xa, xb] = xRange(c, p, 0); [x0, y0, x1, y1] = [xa, top, xb, bot]; }
     else {
       const rows = rowsOf(c, p); if (!rows.length) return '';
       const gap = rows.length > 1 ? Math.abs(rows[1].r - rows[0].r) : s;
@@ -239,7 +252,7 @@ export const Draw = (() => {
     plantings.forEach((p, pi) => {
       const dim = o.highlight && o.highlight !== p.id;
       s += `<g class="pl${dim ? ' dim' : ''}" data-pid="${p.id}" style="--c:${p._color}">`;
-      s += `<rect x="0" y="${p.from}" width="${W}" height="${p.to - p.from}" class="sec"/>`;
+      { const [xa, xb] = xSpan(c, p); s += `<rect x="${xa}" y="${p.from}" width="${xb - xa}" height="${p.to - p.from}" class="sec"/>`; }
       const { pts, lines, many, drill } = layout(c, p, !o.plan);
       let r = Math.max(minR, radius(p, o.today)), cap = Infinity;
       if (many) { s += manyPlants(c, p, `${key}m${pi}`, r) + `</g>`; return; }
@@ -264,10 +277,14 @@ export const Draw = (() => {
       });
       s += `</g>`;
     });
-    // section dividers
+    // section dividers: across the bed between sections, and down it between strips side by side
     const cuts = new Set();
-    for (const p of plantings) { if (p.from > 0.5) cuts.add(+p.from); if (p.to < L - 0.5) cuts.add(+p.to); }
-    for (const y of cuts) s += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" class="cut" ${ns}/>`;
+    for (const p of plantings) {
+      const [xa, xb] = xSpan(c, p);
+      if (p.from > 0.5) cuts.add(`${xa},${p.from},${xb},${p.from}`); if (p.to < L - 0.5) cuts.add(`${xa},${p.to},${xb},${p.to}`);
+      if (xa > 0.5) cuts.add(`${xa},${p.from},${xa},${p.to}`); if (xb < W - 0.5) cuts.add(`${xb},${p.from},${xb},${p.to}`);
+    }
+    for (const k of cuts) { const [x1, y1, x2, y2] = k.split(','); s += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="cut" ${ns}/>`; }
     // covers: nets, fleece, cloches, shade cloth over a section
     const covs = o.covers || (activeCovers(c));
     if (covs.length) {
@@ -293,8 +310,8 @@ export const Draw = (() => {
       const fs = 12 / px, sw = `stroke-width="${+(3 / px).toFixed(3)}"`;
       for (const p of plantings) {
         if (o.highlight && o.highlight !== p.id) continue;
-        const y = Math.min(p.to - fs * 0.3, +p.from + fs * 1.15);
-        s += `<text x="${W / 2}" y="${y}" font-size="${fs}" ${sw} class="lbl" text-anchor="middle">${escT(p._label)}</text>`;
+        const y = Math.min(p.to - fs * 0.3, +p.from + fs * 1.15), [xa, xb] = xSpan(c, p);
+        s += `<text x="${(xa + xb) / 2}" y="${y}" font-size="${fs}" ${sw} class="lbl" text-anchor="middle">${escT(p._label)}</text>`;
       }
       for (const g of o.gaps || []) {
         const fs2 = 11 / px;
@@ -305,7 +322,7 @@ export const Draw = (() => {
     return s;
   }
 
-  return { dims, svg, layout, count, radius, rowCount, fitRows, band, spacingNow, inside, MAX_ARRANGE };
+  return { dims, svg, layout, count, radius, rowCount, fitRows, band, spacingNow, inside, xSpan, narrow, MAX_ARRANGE };
 })();
 
 // ---------- a bed or pot as a picture ----------

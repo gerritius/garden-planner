@@ -267,6 +267,6 @@ export function harvestDialog(p, h) {
 export function endPlanting(p, date = todayStr()) {
   const c = container(p.containerId);
   p.status = 'harvested'; p.harvestedOn = date;
-  if (c) (c.history = c.history || []).push({ plantingId: p.id, cropId: p.cropId, variety: p.variety, from: p.from, to: p.to, sowDate: p.sowDate, harvestedOn: date });
+  if (c) (c.history = c.history || []).push({ plantingId: p.id, cropId: p.cropId, variety: p.variety, from: p.from, to: p.to, ...(p.xTo != null ? { xFrom: p.xFrom, xTo: p.xTo } : {}), sowDate: p.sowDate, harvestedOn: date });
   syncTasks(p);
 }

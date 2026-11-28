@@ -10,7 +10,7 @@ import { HANDFUL_G } from '../data/catalog.js';
 import { Draw } from '../draw.js';
 import { lastMixKind, mixDefaults, mixDraftC, mixFormBits, saveMixChoice } from '../feeding/mix.js';
 import { baseFertNote, baseFertPlan, careJobStart, careJobs, FRUITING, jobAmount, jobAmountText } from '../feeding/plans.js';
-import { activeIn, container, decorate, endOf, gaps, isPlanned, noteVacated, occupants, planRotation } from '../garden/garden.js';
+import { activeIn, container, decorate, endOf, gaps, isPlanned, noteVacated, occupants, planRotation, sideBySide } from '../garden/garden.js';
 import { gapAround, ideasDialog } from '../garden/ideas.js';
 import { linkedStart, planFormBits } from '../garden/planning.js';
 import { rotationNote } from '../garden/rotation.js';
@@ -57,7 +57,7 @@ export function pagePlantForm(p, c, q) {
   const isNew = !p;
   if (!isNew) c = container(p.containerId);
   if (!c) return { html: notFound() };
-  const L = Draw.dims(c).L;
+  const { L, W } = Draw.dims(c);
   if (!draft) {
     if (isNew) {
       const g = gaps(c)[0] || [0, L];
@@ -116,6 +116,9 @@ export function pagePlantForm(p, c, q) {
       <div id="rotWarn"></div>
       ${c.type === 'round' && !gaps(c, p && p.id).some(g => g[0] > 0 || g[1] < L) && d.from <= 0 && d.to >= L ? '' :
         `<div class="two"><label>From (cm from top)<input name="from" type="number" inputmode="decimal" value="${esc(d.from)}"></label><label>To (cm)<input name="to" type="number" inputmode="decimal" value="${esc(d.to)}"></label></div><small class="hint">Long side is ${L} cm. To share the bed with another crop, use only part of it — e.g. 0 to 90 — and plant the rest later.</small>`}
+      ${c.type === 'round' ? '' : `<details class="fold across"${Draw.narrow(c, d) ? ' open' : ''}><summary>Side by side <small>${Draw.narrow(c, d) ? `${esc(d.xFrom || 0)}–${esc(d.xTo ?? W)} cm across` : 'the whole width'}</small></summary>
+        <div class="two"><label>Across, from (cm from left)<input name="xFrom" type="number" inputmode="decimal" min="0" max="${W}" value="${esc(d.xFrom ?? 0)}"></label><label>To (cm)<input name="xTo" type="number" inputmode="decimal" min="0" max="${W}" value="${esc(d.xTo ?? W)}"></label></div>
+        <small class="hint">The short side is ${W} cm. For strips that run down the bed side by side — say peas along both edges and spinach in the middle — give each crop part of the width: 0 to 25, 25 to 75 and 75 to ${W}.</small></details>`}
       <label>${d.sowDate > todayStr() ? (seed ? 'Sow on' : 'Plant on') : seed ? 'Sown on' : 'Planted on'}<input name="sowDate" type="date" value="${esc(d.sowDate)}"></label>
       <div id="planBits">${planFormBits(d, c)}</div>${startReadyNote(d).replace('<p class="hint">', '<p class="hint" id="startNote">')}
       <div id="mixBits">${mixFormBits(d, c)}</div>
@@ -187,7 +190,7 @@ export function pagePlantForm(p, c, q) {
   };
   let shown = null;   // the planting as last drawn
   const preview = () => {
-    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread), real: null });   // (the plan being edited — not the plants already there)
+    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread), xFrom: num(d.xFrom), xTo: num(d.xTo), real: null });   // (the plan being edited — not the plants already there)
     tmp.thinned = p ? p.thinned : false;
     if (tmp.layout === 'free' && !(tmp.positions || []).length) {
       // placing by hand: start from the seedlings you're planting out (that many), or else from rows at this spacing
@@ -314,17 +317,18 @@ export function pagePlantForm(p, c, q) {
       if (!d.cropId) return alert('Choose a crop first.');
       if (!(d.to > d.from)) return alert('“To” must be more than “From”.');
       if (d.from < 0 || d.to > L + 0.01) return alert(`Section must be within 0–${L} cm.`);
+      if (c.type !== 'round' && (num(d.xFrom) < 0 || num(d.xTo) > W + 0.01 || (num(d.xTo) != null && !(num(d.xTo) > (num(d.xFrom) || 0))))) return alert(`Across: “To” must be more than “From”, within 0–${W} cm.`);
       if (d.layout === 'free' && !(d.positions || []).length) {
         const n = Draw.count(c, Object.assign({}, d, { layout: 'rows', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp) }));
         if (n > Draw.MAX_ARRANGE) return alert(`That's about ${n.toLocaleString('en-AU')} plants — too many to place one by one. Choose rows or another layout.`);
       }
       if (d.sowDate > todayStr()) {
         const hd = d.harvestDate && d.harvestDate > d.sowDate ? d.harvestDate : addDays(d.sowDate, 60);
-        const occ = occupants(c.id, d.from, d.to, d.sowDate, hd, p && p.id);
+        const occ = occupants(c.id, d.from, d.to, d.sowDate, hd, p && p.id, d);
         if (occ.length && !await confirmBox(`${occ.map(x => `<b>${esc(crop(x.cropId).en)}</b> (${x.from}–${x.to} cm) ${isPlanned(x) ? `is planned there from ${shortDate(x.sowDate)}` : `will probably be there until about ${shortDate(endOf(x))}`}`).join('<br>')}.<br>Save the plan anyway?`, 'Save plan')) return;
       } else {
         // sharing space is up to you: seedlings you're planting out go where you put them; anything else asks once
-        const clash = activeIn(c.id).find(x => (!p || x.id !== p.id) && x.from < d.to - 0.01 && x.to > d.from + 0.01);
+        const clash = activeIn(c.id).find(x => (!p || x.id !== p.id) && x.from < d.to - 0.01 && x.to > d.from + 0.01 && !sideBySide(c, x, d));
         if (clash && !d.startId && !d.useStart && !await confirmBox(`<b>${esc(crop(clash.cropId).en)}</b> is already growing there (${clash.from}–${clash.to} cm).<br>Plant here too?`, 'Plant here too')) return;
       }
       await savePlanting(p, d, c);
@@ -343,10 +347,12 @@ async function savePlanting(p, d, c) {
   saveMixChoice(p, d, c);
   if (isNew || p.status === 'planned') p.status = p.sowDate > todayStr() ? 'planned' : 'active';
   p.raise = p.status === 'planned' && p.method === 'seedling' ? (linkedStart(p) ? 'tray' : d.raise === 'pot' ? 'tray' : d.raise || 'buy') : (p.raise || '');   // linked to seedlings you started: sown from seed
-  const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
+  const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to, oldX = `${p.xFrom},${p.xTo}`;
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
+  // part of the width (strips side by side) — or the whole of it
+  { const xa = num(d.xFrom) || 0, xb = num(d.xTo); if (c.type === 'round' || (xa <= 0 && (xb == null || xb >= Draw.dims(c).W))) { delete p.xFrom; delete p.xTo; } else { p.xFrom = xa; p.xTo = xb == null ? Draw.dims(c).W : xb; } }
   if (!isNew && p.status === 'active') noteVacated(p, oldFrom, oldTo);
-  if (!isNew && (oldFrom !== p.from || oldTo !== p.to)) { delete p.real; delete p.thinPrev; }   // moved: the plants there are drawn from the new layout
+  if (!isNew && (oldFrom !== p.from || oldTo !== p.to || oldX !== `${p.xFrom},${p.xTo}`)) { delete p.real; delete p.thinPrev; }   // moved: the plants there are drawn from the new layout
   if (p.method !== 'seed') { p.depth = null; p.thinSp = null; p.thinDate = ''; p.thinStage = ''; }
   p.fert = (d.fert || []).filter(f => f.product || f.amount).map(f => ({ product: f.product, amount: num(f.amount), unit: f.unit || 'g' }));
   const oldSeries = p.series || [];

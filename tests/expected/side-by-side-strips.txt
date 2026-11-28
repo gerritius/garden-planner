@@ -1,0 +1,8 @@
+saved without a clash question: true true
+snappea 0–200 cm · 0–25 cm across: 19 plants, x 10–10
+snappea 0–200 cm · 75–100 cm across: 19 plants, x 90–90
+spinach 0–200 cm · 25–75 cm across: 13 drill lines, x 25.5–74.5
+peas a vs spinach share space: none
+whole width shares with all: 3
+strip dividers: 2 labels: 3
+errs []

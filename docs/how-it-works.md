@@ -1,6 +1,6 @@
 # How Garden Planner works things out
 
-A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.54.1** (live on
+A rough guide to the logic behind the app's dates, amounts and warnings, as the code stands in **v1.56.0** (live on
 both the real site and the test site). It explains each calculation in outline and names the file where it lives. Each
 crop's own numbers are in its record in `js/data/crops.js` (the header there lists every field), and this guide
 doesn't repeat them.
@@ -200,6 +200,15 @@ Thinning and harvest are counted from that day. While nothing is up, nothing is 
 - **When to sow a tray for a planting day:** the app searches backwards for a sowing date whose plant-out date lands
   within 2 days of the day you want. It tries where you usually keep trays first, then warmer spots, if the seedlings
   would otherwise crawl along. One example is tomatoes for early May, which need to start indoors.
+- **How many go in, from which batches:** a planting or plan can take seedlings from more than one batch of the same
+  crop (8 pots sown together and 2 potted on later, say). The number going in is taken from the first batch, then the
+  others in the order you added them; each batch gets its own "planted out" record, and what's left of each stays
+  where it is. A plan keeps how many it takes from each (`planN` for the first, `planMore` for the others), so each
+  batch only sets aside its share.
+- **Ticking off thinning:** the app asks how many plants are left, with the number the thinning distance would leave
+  filled in, or lets you use the distance instead. You can make either choice stick (Tools → Settings → Garden map);
+  with "use the spacing" it doesn't ask. A counted number goes on the map (section 16), spread evenly over the thinned
+  spots, or over the sowing spots if you kept more than the distance allows. Unticking puts things back.
 
 ---
 
@@ -506,6 +515,32 @@ This replaced the garden map in 1.54. Each bed or pot gets a card, and these are
   newest sowing.
 - **Filters:** all, needs attention, ready to pick, dry (Dry or Drying), or empty. Areas (Farm, Backyard…) show one at
   a time, and search matches bed names, crops and varieties.
+
+### The drawings: what's there, and the plan
+
+`js/plants/onmap.js`, `js/draw.js`
+
+A planting's layout (rows and spacing, or plants placed by hand) is its **plan**. The plants **really there** are kept
+apart from it only once they differ (`real` on the planting, a list of spots):
+
+- **Fewer seedlings went in than the plan has room for** (a plan for 10 that got 8): the 8 are spread over the planned
+  spots.
+- **Harvesting whole plants:** the harvest dialog asks how many plants were pulled up and lets you tap which ones. It
+  starts at the number harvested for crops cut whole (lettuce, cabbage, roots) and at 0 for crops picked over a
+  season (peas, tomatoes). The plants that came out are kept with the harvest, so deleting it puts them back. When
+  the last one is out, the app offers to mark the harvest finished.
+- **Thinning to a counted number** (section 6).
+- **Arranging plants by hand** moves the plants that are there; while nothing differs from the plan it changes the
+  plan, as before.
+
+Drawings show what's there. A switch over the drawing (and in Tools → Settings → Garden map) shows the plan instead;
+it only appears where the two differ. Per-plant feeding amounts count the plants that are there. Moving a crop's
+section on its form starts it again from the plan.
+
+**Dragging plants on a phone:** a fingertip within about 28 px of a plant picks it up, so tiny dots don't have to be
+hit exactly. Zoom (1×, 2×, 3×) on the arrange page and the planting form makes the drawing bigger, and it scrolls in its
+own box, which follows a dragged plant near its edges. While a plant is held, the page doesn't scroll or pull down to
+refresh.
 
 ---
 

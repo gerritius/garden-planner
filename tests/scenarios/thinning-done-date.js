@@ -8,6 +8,7 @@ const U = 'http://localhost:8765/';
   await pg.evaluate(async () => {
     S.containers.push({ id: 'b1', type: 'bed', name: 'Plot A', width: 100, length: 200, margin: 10 });
     S.plantings.push({ id: 'hk', containerId: 'b1', cropId: 'hakusai', method: 'seed', layout: 'staggered', from: 0, to: 200, rowSp: 45, plantSp: 45, thinSp: 45, sowDate: '2026-08-30', thinDate: '2026-09-24', harvestDate: '2026-11-20', spread: 50, thinned: false, status: 'active', photos: {}, series: [] });
+    S.thinBy = 'spacing';   // (the thinning distance, not a count: ticking asks only when)
     syncTasks(planting('hk')); await save();
   });
   await pg.goto(U + '#/plant/hk'); await pg.waitForTimeout(300);

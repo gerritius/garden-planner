@@ -33,6 +33,17 @@ function timeTravelSection() {
     <div class="btnrow">${[[-30, '−30 d'], [-7, '−7 d'], [-1, '−1 d'], [1, '+1 d'], [7, '+7 d'], [30, '+30 d']].map(([d, l]) => `<button type="button" class="btn small" data-act="ttStep" data-d="${d}">${l}</button>`).join('')}</div>
     <div class="btnrow"><input type="date" id="ttDate" value="${td}"><button type="button" class="btn small" data-act="ttGo">Go to date</button>${n ? '<button type="button" class="btn small primary" data-act="ttBack">Back to today</button>' : ''}</div></section>`;
 }
+// the drawings: the plants really there or the planned layout; how thinning is recorded
+function mapSettings() {
+  A.mapSet = async el => { S.mapView = el.dataset.v; await save(); render(); };
+  A.thinSet = async el => { S.thinBy = el.dataset.v || null; await save(); render(); };
+  const seg = (act, cur, opts) => `<div class="seg wrap">${opts.map(([v, l]) => `<button type="button" data-act="${act}" data-v="${v}" class="${cur === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+  return `<section><h3>Garden map</h3>
+    <p>Bed drawings show the plants that are really there: harvested plants come off, thinning leaves the number you counted, and if fewer seedlings went in than the plan had room for, only those show. Or show the planned layout instead.</p>
+    ${seg('mapSet', S.mapView === 'plan' ? 'plan' : 'real', [['real', 'What’s there'], ['plan', 'The plan']])}
+    <p>When you tick off thinning:</p>
+    ${seg('thinSet', S.thinBy === 'count' || S.thinBy === 'spacing' ? S.thinBy : '', [['count', 'Count what’s left'], ['spacing', 'Use the spacing'], ['', 'Ask each time']])}</section>`;
+}
 export function pageSettings() {
   A.tourStart = async () => { await startTour(); go('#/'); };
   setChrome('Tools', { tab: 'settings', kicker: 'Backup, weather & settings' });
@@ -66,6 +77,7 @@ export function pageSettings() {
       <div class="btnrow"><button class="btn small" data-act="waterTog">${S.water && S.water.on === false ? 'Turn on' : 'Turn off'}</button></div></section></details>
     <details class="set"><summary>${ui('weather')} Weather &amp; climate <small>${S.weather && S.weather.name ? esc(S.weather.name) : 'not set'}</small></summary>${weatherSettings()}${climateSection()}</details>
     <details class="set"><summary>${ui('palette')} Appearance</summary>${themeSettings()}</details>
+    <details class="set"><summary>${ui('grid')} Garden map <small>${S.mapView === 'plan' ? 'showing the plan' : 'showing what’s there'}</small></summary>${mapSettings()}</details>
     <details class="set"><summary>${ui('bulb')} Learned from your garden</summary>${learnSection()}</details>
     <details class="set"><summary>${ui('basket')} Harvest totals</summary>${harvestTotalsSection()}</details>
     ${eraseSection()}

@@ -161,6 +161,11 @@ svg.plot { display: block; overflow: visible; }
 .plot .drillband { stroke: var(--c); stroke-linecap: butt; opacity: .45; }
 .plot .plant { fill: var(--c); stroke: rgba(30,18,6,.55); stroke-width: .8; opacity: .93; }
 .plot .plant.drag { stroke: #fff; stroke-width: 2; cursor: grab; }
+.plot .plant.lifted { stroke: #ffe066; stroke-width: 3; }
+/* choosing plants on a drawing (e.g. which came out with a harvest): the chosen ones faded, with a cross */
+.plot .plant.pick { stroke: #fff; stroke-width: 1.5; cursor: pointer; }
+.plot .plant.pick.out { opacity: .35; stroke-dasharray: 2 2; }
+.plot .outx { stroke: #fff; stroke-width: 2.5; stroke-linecap: round; pointer-events: none; }
 /* a plant drawn as its crop's icon, on a soft disc of its colour */
 .plot .plant.iconbg { opacity: .35; stroke: none; }
 .plot .picon { pointer-events: none; overflow: visible; }
@@ -174,6 +179,19 @@ svg.plot { display: block; overflow: visible; }
 .plotwrap svg { max-width: 100%; height: auto; }
 
 .preview { display: flex; justify-content: center; padding: 12px; margin: 6px 0 12px; }
+/* a drawing you drag plants on, zoomed: it scrolls in its own box (touch empty space to scroll it, a plant to drag it) */
+.zoombox { display: block; overflow: auto; text-align: center; max-height: 72vh; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+.zoombox svg { max-width: none !important; display: inline-block; }
+.zoomrow { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 6px 0 0; }
+.zoomrow .seg { margin: 0; }
+.zoomrow .seg button { min-width: 44px; }
+/* while a plant is held: the page doesn't scroll or pull down to refresh */
+html.dragging, html.dragging body { overscroll-behavior: none; }
+.pickmap { display: flex; justify-content: center; margin: 4px 0; }
+.pickmap svg { max-width: 100%; height: auto; }
+.hvout { border-top: 1px solid var(--line); padding-top: 8px; }
+.plotwrap > .plotsz.mapview { position: absolute; top: 0; left: 0; right: auto; z-index: 1; }
+h3 .plotsz.mapview { float: right; margin: -2px 6px 0 0; }
 .preview svg { max-width: 100%; height: auto; }
 
 /* ---------- lists ---------- */
@@ -500,6 +518,11 @@ section.dx h3 { margin-top: 0; }
 .usestart > small { display: block; color: var(--muted); margin-bottom: 4px; }
 .usestart .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
 .usestart .chip small { margin-left: 4px; }
+.usestart .chip.on small, .morestart .chip.on small { color: inherit; opacity: .85; }
+.morestart { margin: 6px 0 4px; }
+.morestart > small { display: block; color: var(--muted); margin-bottom: 4px; }
+.morestart .chip.on { background: var(--green); color: var(--green-ink); border-color: var(--green); }
+.morestart .chip small { margin-left: 4px; }
 .chip.mine { border-color: var(--green); font-weight: 600; }
 details.pktpick { margin: 4px 0 10px; }
 details.pktpick summary { font-size: 14px; color: var(--green); cursor: pointer; }

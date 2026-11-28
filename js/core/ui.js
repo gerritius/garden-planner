@@ -47,22 +47,46 @@ export function confirmBox(msg, okLabel = 'OK', danger = false) {
 }
 
 // ---------- drag areas that still let the page scroll ----------
-// Touching something draggable (grab(target) true) blocks scrolling for that touch only;
-// touching empty space scrolls as normal. While dragging near the top/bottom edge the page auto-scrolls.
+// Touching something draggable (grab(target, touch) true) blocks scrolling for that touch only — and the browser's
+// pull-down-to-refresh with it; touching empty space scrolls as normal. While dragging near the top/bottom edge the
+// page auto-scrolls, and a zoomed drawing that scrolls in its own box scrolls that box near its edges.
 export function dragZone(box, grab) {
   box.style.touchAction = 'auto';
-  box.addEventListener('touchstart', e => { if (grab(e.target)) e.preventDefault(); }, { passive: false });
+  const root = document.documentElement;
+  box.addEventListener('touchstart', e => { if (grab(e.target, e.touches[0])) { e.preventDefault(); root.classList.add('dragging'); } }, { passive: false });
+  const letGo = () => root.classList.remove('dragging');
+  box.addEventListener('touchend', letGo); box.addEventListener('touchcancel', letGo);
   let last = null, raf = 0, onMove = null;
   const tick = () => {
     raf = 0; if (!last || !onMove) return;
     const H = window.innerHeight, top = 90, bot = H - 70;
-    const dy = last.clientY > bot ? Math.min(18, (last.clientY - bot) / 3 + 4) : last.clientY < top ? -Math.min(18, (top - last.clientY) / 3 + 4) : 0;
-    if (dy) { const y0 = window.scrollY; window.scrollBy(0, dy); if (window.scrollY !== y0) onMove(last); raf = requestAnimationFrame(tick); }
+    const step = (v, lo, hi) => v > hi ? Math.min(18, (v - hi) / 3 + 4) : v < lo ? -Math.min(18, (lo - v) / 3 + 4) : 0;
+    let moved = false;
+    if (box.scrollWidth > box.clientWidth + 1 || box.scrollHeight > box.clientHeight + 1) {   // a zoomed drawing in its own scrolling box
+      const r = box.getBoundingClientRect(), dx = step(last.clientX, r.left + 30, r.right - 30), dy = step(last.clientY, r.top + 30, r.bottom - 30);
+      const x0 = box.scrollLeft, y0 = box.scrollTop; box.scrollLeft += dx; box.scrollTop += dy;
+      moved = box.scrollLeft !== x0 || box.scrollTop !== y0;
+    }
+    const dy = step(last.clientY, top, bot);
+    if (dy) { const y0 = window.scrollY; window.scrollBy(0, dy); if (window.scrollY !== y0) moved = true; }
+    if (moved) { onMove(last); raf = requestAnimationFrame(tick); } else if (dy) raf = requestAnimationFrame(tick);
   };
   return {
     move(e, fn) { last = { clientX: e.clientX, clientY: e.clientY }; onMove = fn; if (!raf) raf = requestAnimationFrame(tick); },
-    stop() { last = null; onMove = null; if (raf) cancelAnimationFrame(raf); raf = 0; },
+    stop() { last = null; onMove = null; if (raf) cancelAnimationFrame(raf); raf = 0; letGo(); },
   };
+}
+// zooming a drawing you drag plants on: 1×, 2×, 3× (for this visit); the drawing then scrolls in its box
+let zoomLv = 1;
+export const plotZoom = () => zoomLv;
+export function zoomBar(redraw) {
+  A.zoom = el => { zoomLv = +el.dataset.z || 1; document.querySelectorAll('[data-act=zoom]').forEach(b => b.classList.toggle('on', +b.dataset.z === zoomLv)); redraw(); };
+  return `<span class="muted small">${ui('search', 15)} Zoom</span><div class="seg zoom">${[1, 2, 3].map(z => `<button type="button" data-act="zoom" data-z="${z}" class="${z === zoomLv ? 'on' : ''}">${z}×</button>`).join('')}</div>`;
+}
+// after zooming: keep the middle of the drawing in view
+export function centreZoom(box) {
+  if (!box) return;
+  box.scrollLeft = (box.scrollWidth - box.clientWidth) / 2; box.scrollTop = (box.scrollHeight - box.clientHeight) / 2;
 }
 
 // ---------- bed drawings: compact first, so what's under them shows without scrolling; a toggle makes them full size ----------

@@ -4,7 +4,7 @@ import { DB } from '../core/db.js';
 import { compress, dropPhoto } from '../core/photos.js';
 import { A, draft, notFound, render, setChrome, setDraft } from '../core/router.js';
 import { S, save } from '../core/state.js';
-import { confirmBox, dragZone } from '../core/ui.js';
+import { centreZoom, confirmBox, dragZone, plotZoom, zoomBar } from '../core/ui.js';
 import { $, addDays, daysBetween, esc, num, shortDate, todayStr, uid, unitOpts } from '../core/util.js';
 import { HANDFUL_G } from '../data/catalog.js';
 import { Draw } from '../draw.js';
@@ -20,8 +20,9 @@ import { onionType } from '../climate/climate.js';
 import { crop, cropOptions, kin, newCropDialog, varieties } from '../plants/crops.js';
 import { rememberSeed, seedFor, seedList } from '../plants/seeds.js';
 import { harvestEstimate, thinEstimate } from '../plants/growth.js';
+import { nearestPlant } from '../plants/onmap.js';
 import {
-  applyStart, defaultStartCount, fewSpots, formStart, linkStartOnSave, perOf, planStartOnSave, plantsOf, prefillFromStart, setStartCount, start, startChooser,
+  applyStart, defaultStartCount, fewSpots, formStart, linkStartOnSave, startAlloc, perOf, planStartOnSave, prefillFromStart, setStartCount, start, startChooser,
   startCountField, startLeft, startPlanted, startReadyNote, startWhere, unitOf
 } from '../plants/seedlings.js';
 import { myProducts } from '../products/library.js';
@@ -73,7 +74,8 @@ export function pagePlantForm(p, c, q) {
       setDraft(JSON.parse(JSON.stringify(p))); draft.newPhotos = {}; draft.removePhotos = {};
       draft.fert = draft.fert || []; draft.series = draft.series || []; draft.photos = draft.photos || {};
       draft.harvestManual = true; draft.thinManual = true; draft._pid = p.id;
-      const fs = isPlanned(p) && formStart(draft); if (fs) draft.startCount = Math.min(fs.have, p.planN || fs.have);   // a plan using your seedlings: how many
+      if ((p.planMore || []).length) draft.moreStarts = p.planMore.map(x => x.id);   // (and other batches it takes)
+      const fs = isPlanned(p) && formStart(draft); if (fs) draft.startCount = Math.min(fs.have, ((p.planN || 0) + (p.planMore || []).reduce((a, x) => a + x.n, 0)) || fs.have);   // a plan using your seedlings: how many
     }
     if (c.type !== 'bed') { if (isNew) delete draft.mixFresh; mixDefaults(draft, c); if (draft.fertAuto && draft.cropId) try { draft.fert = baseFertPlan(draft.cropId, mixDraftC(c, draft), draft.from, draft.to, draft.sowDate); } catch (e) { console.warn(e); } }
   }
@@ -99,7 +101,7 @@ export function pagePlantForm(p, c, q) {
     return bits.filter(Boolean).join(' · ');
   };
   const html = `${d.startId && start(d.startId) ? `<div class="banner" id="startBanner"></div>` : ''}<form id="pf" class="form">
-    <div class="preview big" id="pprev"></div>${startCountField(d)}
+    ${formStart(d) ? `<div class="zoomrow">${zoomBar(() => { preview(); centreZoom($('#pprev')); })}</div>` : ''}<div class="preview big${formStart(d) ? ' zoombox' : ''}" id="pprev"></div>${startCountField(d)}
     <fieldset><legend>Crop</legend>
       ${isNew && !d.startId ? startChooser(d, c, (gapAround(c, d.from, d.to, d.sowDate || todayStr()) || {}).e) : ''}
       <label>Crop<select name="cropId" id="cropSel">${cropOpts}</select></label>
@@ -185,7 +187,7 @@ export function pagePlantForm(p, c, q) {
   };
   let shown = null;   // the planting as last drawn
   const preview = () => {
-    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread) });
+    const tmp = Object.assign({}, d, { id: p ? p.id : 'new', _color: cr ? cr.color : '#888', _label: cr ? cr.en : 'New', rows: num(d.rows), rowSp: num(d.rowSp), plantSp: num(d.plantSp), thinSp: num(d.thinSp), spread: num(d.spread), real: null });   // (the plan being edited — not the plants already there)
     tmp.thinned = p ? p.thinned : false;
     if (tmp.layout === 'free' && !(tmp.positions || []).length) {
       // placing by hand: start from the seedlings you're planting out (that many), or else from rows at this spacing
@@ -195,7 +197,7 @@ export function pagePlantForm(p, c, q) {
     }
     const planMode = d.sowDate > todayStr();
     const others = decorate(planMode ? occupants(c.id, 0, 1e9, d.sowDate, d.sowDate, p && p.id) : activeIn(c.id).filter(x => !p || x.id !== p.id));
-    const vw = Math.min(window.innerWidth, 640) - 48;
+    const vw = Math.min(window.innerWidth, 640) - 48, z = formStart(d) ? plotZoom() : 1;
     const ft = $('#fitTxt'); if (ft) { const n = Draw.fitRows(c, tmp); ft.textContent = n ? `${n} row${n > 1 ? 's' : ''} fit at ${tmp.rowSp} cm. ` : ''; $('#pf').rows.placeholder = n ? 'auto: ' + n : 'auto'; }
     const rw = $('#rotWarn');
     if (rw) { const rn = planMode ? planRotation(c, d.from, d.to, d.cropId, d.sowDate, p && p.id) : rotationNote(c, d.from, d.to, d.cropId, p ? p.sowDate : null, p && p.id); rw.className = rn ? (rn.same ? 'warn' : 'note') : ''; rw.innerHTML = rn ? rn.html : ''; const sr = d.cropId ? soilReadingAdvice(c, d.from, d.to, d.cropId) : null; if (sr) { rw.innerHTML += `<p class="soiln">🧪 ${sr.bits.map(esc).join(' ')}</p>`; if (!rw.className) rw.className = 'note'; }
@@ -203,22 +205,31 @@ export function pagePlantForm(p, c, q) {
     // planting out from a tray: the plants going in are the ones the drawing holds — the rest stay in the tray
     const sb = $('#startBanner'), st = d.startId && start(d.startId);
     if (sb && st) {
-      const have = plantsOf(st, startLeft(st)), fit = Draw.count(c, tmp), per = perOf(st), use = Math.min(have, fit, d.startCount || fit);
+      const fs = formStart(d), have = fs.have, fit = Draw.count(c, tmp), per = perOf(st), use = Math.min(have, fit, d.startCount || fit);
       const cells = Math.min(startLeft(st), Math.ceil(use / per)), restCells = startLeft(st) - cells, unit = unitOf(st), n = crop(st.cropId).en;
       d.startUse = use;
-      sb.innerHTML = `🌱 Planting out <b>${use}</b> of the ${have} ${esc(n)} seedling${have === 1 ? '' : 's'} from ${esc(startWhere(st))}${per > 1 ? ` (${cells} ${unit}${cells === 1 ? '' : 's'})` : ''}${use < have
+      if (fs.more.length) sb.innerHTML = `🌱 Planting out <b>${use}</b> of the ${have} ${esc(n)} seedlings: ${startAlloc(d, use).map(a => `${a.plants} from ${esc(startWhere(a.s))} (${a.s.from ? 'replanted ' + shortDate(a.s.movedOn || a.s.pottedOn) : 'sown ' + shortDate(a.s.sowDate)})`).join(' and ')}.${use < have ? ` The other ${have - use} stay where they are until you plant them out somewhere else or discard them.` : ''}`;
+      else sb.innerHTML = `🌱 Planting out <b>${use}</b> of the ${have} ${esc(n)} seedling${have === 1 ? '' : 's'} from ${esc(startWhere(st))}${per > 1 ? ` (${cells} ${unit}${cells === 1 ? '' : 's'})` : ''}${use < have
         ? `. The other ${restCells > 0 ? `${restCells} ${unit}${restCells === 1 ? '' : 's'}` : have - use} ${(restCells > 0 ? restCells : have - use) === 1 ? 'stays' : 'stay'} in ${esc(startWhere(st).toLowerCase())} until you plant them out somewhere else or discard them.`
         : fit > have ? ` — the layout has room for ${fit}, so the drawing would show ${fit - have} more than you have. <button type="button" class="link" data-act="fitStart">Place just these ${have} by hand</button> or make the section smaller.` : '.'}`;
       A.fitStart = () => { d.layout = 'free'; d.positions = null; setStartCount(c, d, have); render(); };
     }
     shown = tmp;
-    $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L), today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
+    $('#pprev').innerHTML = Draw.svg(c, [...others, tmp], { px: Math.min(vw / Draw.dims(c).W, 300 / L) * z, today: tmp.sowDate || todayStr(), highlight: tmp.id, labels: true, showMargin: true, grid: true });
     // also show a "grown" preview at harvest
   };
   A.searchVar = () => { read(); const q = `${cr ? cr.en : ''} ${d.variety || ''} growing from seed`.trim(); window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank', 'noopener'); };
   A.method = el => { read(); d.method = el.dataset.v; recalc(d); render(); };
   A.raise = el => { read(); d.raise = el.dataset.v; render(); };
   A.useStart = el => { read(); applyStart(d, start(el.dataset.id), c); render(); };
+  // another batch of the same seedlings goes in too (or not): as many as there are room for
+  A.moreStart = el => {
+    read(); const id = el.dataset.id, cur = d.moreStarts || [];
+    d.moreStarts = cur.includes(id) ? cur.filter(x => x !== id) : cur.concat(id);
+    if (d.patLayout && !d._dragged) { d.layout = d.patLayout; d.positions = null; }   // not moved by hand yet: lay them all out along the pattern again
+    const fs = formStart(d); if (fs) setStartCount(c, d, defaultStartCount(c, d, fs.have));
+    render();
+  };
   A.usePacket = el => { read(); usePacket(d, el.dataset.k, c); render(); };
   A.addFert = () => { read(); d.fertAuto = false; d.fert.push({ product: '', amount: '', unit: 'g' }); render(); };
   A.rmFert = el => { read(); d.fertAuto = false; d.fert.splice(+el.dataset.i, 1); render(); };
@@ -245,12 +256,12 @@ export function pagePlantForm(p, c, q) {
       const box = $('#pprev'), { W, L: LL } = Draw.dims(c); let drag = null, raf = 0;
       const toCm = e => { const svg = box.querySelector('svg'); const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const r = pt.matrixTransform(svg.getScreenCTM().inverse()); return [r.x, r.y]; };
       const pts = () => (shown ? Draw.layout(c, shown).pts : []);
-      const near = e => { const q = toCm(e), px = box.querySelector('svg').getScreenCTM().a || 1, reach = 22 / px; let best = -1, bd = Infinity; pts().forEach((p0, i) => { const dd = Math.hypot(p0[0] - q[0], p0[1] - q[1]); if (dd < bd) { bd = dd; best = i; } }); return bd <= reach ? best : -1; };
-      const dz = dragZone(box, t => !!t.closest('.plant, .picon'));
+      const near = e => { const svg = box.querySelector('svg'); return svg ? nearestPlant(svg, e, pts()) : -1; };   // (a fingertip near a plant is enough)
+      const dz = dragZone(box, (t, touch) => !!touch && near(touch) >= 0);
       box.addEventListener('pointerdown', e => {
         if (!box.querySelector('svg')) return; const i = near(e); if (i < 0) return;
         if (d.layout !== 'free' || !(d.positions || []).length) { d.positions = pts().map(q => q.slice()); d.layout = 'free'; if (f.layout) f.layout.value = 'free'; }
-        drag = i; box.setPointerCapture(e.pointerId); e.preventDefault();
+        drag = i; d._dragged = true; box.setPointerCapture(e.pointerId); e.preventDefault();
       });
       const mv = e => {
         if (drag == null) return;
@@ -335,6 +346,7 @@ async function savePlanting(p, d, c) {
   const oldFrom = isNew ? null : p.from, oldTo = isNew ? null : p.to;
   for (const k of ['from', 'to', 'depth', 'rowSp', 'plantSp', 'rows', 'thinSp', 'spread']) p[k] = num(d[k]);
   if (!isNew && p.status === 'active') noteVacated(p, oldFrom, oldTo);
+  if (!isNew && (oldFrom !== p.from || oldTo !== p.to)) { delete p.real; delete p.thinPrev; }   // moved: the plants there are drawn from the new layout
   if (p.method !== 'seed') { p.depth = null; p.thinSp = null; p.thinDate = ''; p.thinStage = ''; }
   p.fert = (d.fert || []).filter(f => f.product || f.amount).map(f => ({ product: f.product, amount: num(f.amount), unit: f.unit || 'g' }));
   const oldSeries = p.series || [];

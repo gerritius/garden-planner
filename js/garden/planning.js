@@ -9,8 +9,9 @@ import { Draw } from '../draw.js';
 import { amtFor } from '../feeding/nutrients.js';
 import { crop, cropName, ic, kin } from '../plants/crops.js';
 import { harvestEstimate, KEPT } from '../plants/growth.js';
+import { plantedFewer } from '../plants/onmap.js';
 import {
-  planStartLinks, startLeft, startPlanted, startWhere, syncStartTasks, tpDays, traySowFor, traySowPlan
+  plantedInto, planStartLinks, start, startLeft, startPlanted, startWhere, syncStartTasks, tpDays, traySowFor, traySowPlan
 } from '../plants/seedlings.js';
 import { productByName } from '../products/library.js';
 import { fmtTot, purchaseDialog, unitBase } from '../records/review.js';
@@ -58,13 +59,21 @@ export function activatePlan(p, date, n) {
   const s = linkedStart(p);
   // the number you planned (or the plants the drawing holds) — any spare seedlings stay where they are
   let use = n ? null : p.planN; if (!n && !use) { const c = container(p.containerId); try { use = c ? Draw.count(c, p) : 0; } catch (e) { use = 0; } }
-  if (s && startLeft(s) > 0) startPlanted(use ? { startId: s.id, startUse: use } : { startId: s.id, startN: Math.min(startLeft(s), n || startLeft(s)) }, p);
+  if (s && startLeft(s) > 0) {
+    // (and the other batches it takes — unless you said how many go in)
+    const more = n ? [] : (p.planMore || []).map(x => ({ s: start(x.id), plants: x.n })).filter(x => x.s && startLeft(x.s) > 0);
+    startPlanted(use ? { startId: s.id, startUse: use, alloc: [{ s, plants: use }, ...more] } : { startId: s.id, startN: Math.min(startLeft(s), n || startLeft(s)) }, p);
+  }
+  // fewer went in than the plan has room for: the map shows the ones that did
+  const c = container(p.containerId), went = s ? plantedInto(p) : 0;
+  if (went && c) { let room = 0; try { room = Draw.count(c, p); } catch (e) { room = 0; } if (went < room) plantedFewer(c, p, went); }
   syncTasks(p);
 }
 export function undoActivate(p) {
   p.status = 'planned';
   if (p.plannedFor && p.plannedFor !== p.sowDate) { const back = daysBetween(p.sowDate, p.plannedFor); p.sowDate = p.plannedFor; if (p.harvestDate) p.harvestDate = addDays(p.harvestDate, back); if (p.thinDate) p.thinDate = addDays(p.thinDate, back); for (const s of p.series || []) if (s.start) s.start = addDays(s.start, back); }
   for (const s of S.starts || []) { const i = (s.events || []).findIndex(e => e.pid === p.id); if (i >= 0) { s.events.splice(i, 1); s.status = 'growing'; if (!p.planStart) s.planId = p.id; syncStartTasks(s); } }
+  delete p.real;   // (a plan again: all of it)
   S.tasks = S.tasks.filter(t => !(t.plantingId === p.id && !t.done && !t.plan));
   syncPlanTasks(p);
 }

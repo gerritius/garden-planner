@@ -87,6 +87,7 @@ from the current code with `npm run fixture`, or from an older version with `nod
 | `lime-amounts` | Lime from a pH reading, sized to the bed section or pot, the same everywhere |
 | `liquid-feed-doses` | A liquid feed with doses mixed into the can (e.g. 5 or 10 mL per 5 L) and how it's counted |
 | `log-sprays-frost-alerts` | Logging sprays (days to wait before picking), frost jobs, weather alerts |
+| `map-matches-reality` | Drawings show what's really there: seedlings from two batches, a plan that got fewer seedlings, harvests taking plants out (and back), thinning to a counted number, the plan view, dragging near a dot and zoom |
 | `microclimate-and-learning` | Sun/shade/indoors changing estimates; learning from your own records |
 | `modules-loaded` | Every module is loaded by the app itself (not just by the test bridge); drop-downs work without the bridge |
 | `notes-bed-buttons-quick-add` | The note dialog (with photo), bed page buttons, Quick add |

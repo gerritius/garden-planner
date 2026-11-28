@@ -12,6 +12,7 @@ import { completeWaterFeeds, feedTaskProduct, tickFeedTask } from '../feeding/pl
 import { crop, cropName, ic } from '../plants/crops.js';
 import { emergenceBar, germDialog, moveGermCheck, notUpYet, removeGermCheck } from '../plants/germination.js';
 import { syncCareTasks } from '../plants/growth.js';
+import { thinBy, thinCounts, thinToCount, unthin } from '../plants/onmap.js';
 import { plantOutDialog, start, startDialog, startTaskMeta, startWhere } from '../plants/seedlings.js';
 import { myProducts, productByName } from '../products/library.js';
 import { activeIn, container, isLive, isPlanned, planting, sizeLabel } from './garden.js';
@@ -109,6 +110,10 @@ export function toggleTask(id, done) {
   if (done && t.kind === 'plan_tray' && planting(t.plantingId)) { render(); return startDialog(null, planTrayPreset(planting(t.plantingId))); }
   if (done && t.kind === 'sgerm' && start(t.startId)) { render(); return germDialog(start(t.startId), { task: t }); }
   if (done && t.kind === 'germ' && planting(t.plantingId)) { render(); return germDialog(planting(t.plantingId), { task: t }); }   // how many are up, and when you looked
+  if (done && t.kind === 'thin' && planting(t.plantingId) && thinBy() !== 'spacing') {   // how many are left (or the thinning distance)
+    const p = planting(t.plantingId), c = container(p.containerId), n = c ? thinCounts(c, p) : null;
+    if (n && n.calc > 0 && n.most <= 1500) { render(); return thinDialog(t, p, c, n); }
+  }
   if (done && due && due < td && t.kind !== 'water') return whenDone(t, due, td);
   finishToggle(t, done, td);
 }
@@ -124,6 +129,35 @@ function whenDone(t, due, td) {
     m.onclick = e => { if (e.target === m) { cl(); if (!picked) render(); } };
   });
   return close;
+}
+// thinning done: how many plants are left — counted, or worked out from the thinning distance — and when. The map then
+// shows that many (the plan keeps the thinning distance). Your choice of how can be kept, so it's not asked again.
+function thinDialog(t, p, c, n) {
+  const td = todayStr(), by = thinBy(), due = t.due && t.due < td ? t.due : td;
+  let how = by || 'count', picked = false;
+  modal(`<h3>Thinned ${esc(crop(p.cropId).en.toLowerCase())}</h3><p class="muted small">${esc(t.title)}</p>
+    <form id="thf" class="form">
+      ${by ? '' : `<label>How do you want to record it?<div class="seg"><button type="button" data-h="count" class="on">Count what’s left</button><button type="button" data-h="spacing">Use the spacing</button></div></label>`}
+      <label data-for="count">Plants left after thinning<div class="stepper"><button type="button" data-s="-1">−</button><input name="n" type="number" inputmode="numeric" min="1" max="${n.most}" value="${n.calc}"><button type="button" data-s="1">＋</button></div>
+        <small>Thinned to ${p.thinSp} cm that’s about ${n.calc}. The map shows the number you enter; the plan keeps ${p.thinSp} cm.</small></label>
+      <p class="hint" data-for="spacing" hidden>The map shows about ${n.calc} plants, ${p.thinSp} cm apart.</p>
+      <label>Thinned on<input name="d" type="date" value="${due}" max="${td}"></label>
+      ${by ? `<small class="hint">You chose to ${by === 'count' ? 'count what’s left' : 'use the spacing'} — change it in Tools → Settings → Garden map.</small>` : `<label class="inl chkline"><input type="checkbox" name="keep"> <span>Always do it this way <small>(change it later in Tools → Settings)</small></span></label>`}
+      <div class="btns"><button type="button" class="btn" data-x="no">Cancel</button><button class="btn primary">Done</button></div></form>`, (m, cl) => {
+    const f = m.querySelector('#thf');
+    const show = () => { m.querySelectorAll('[data-h]').forEach(b => b.classList.toggle('on', b.dataset.h === how)); m.querySelectorAll('#thf [data-for]').forEach(x => { x.hidden = x.dataset.for !== how; }); };
+    m.querySelectorAll('[data-h]').forEach(b => b.onclick = () => { how = b.dataset.h; show(); }); show();
+    m.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { f.n.value = Math.max(1, Math.min(n.most, (+f.n.value || 0) + +b.dataset.s)); });
+    m.querySelector('[data-x=no]').onclick = () => { cl(); render(); };
+    m.onclick = e => { if (e.target === m) { cl(); if (!picked) render(); } };
+    f.onsubmit = e => {
+      e.preventDefault(); picked = true;
+      const d = f.d.value && f.d.value <= td ? f.d.value : td, k = Math.max(1, Math.min(n.most, Math.round(+f.n.value || n.calc)));
+      if (f.keep && f.keep.checked) S.thinBy = how;
+      if (how === 'count') thinToCount(c, p, k);
+      cl(); finishToggle(t, true, d);
+    };
+  });
 }
 export function finishToggle(t, done, td) {
   const p = t.plantingId ? planting(t.plantingId) : null;
@@ -148,7 +182,7 @@ export function finishToggle(t, done, td) {
     t.done = false; t.doneOn = null;
     if (t.kind === 'water') { const g = groupOf(t); S.tasks = S.tasks.filter(x => !(x.kind === 'water' && !x.done && x !== t && groupOf(x) === g)); setLastWatered(g, t.prevLast || null); }
     if (t.kind === 'germ' && p) { if (t.look) removeGermCheck(p, t.look); t.look = null; S.tasks = S.tasks.filter(x => !(x !== t && x.plantingId === p.id && x.kind === 'germ' && !x.done)); }
-    if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; }
+    if (t.kind === 'thin' && p) { p.thinned = false; p.thinDoneOn = null; unthin(container(p.containerId), p); }
     if (t.kind === 'sgerm' && t.startId && start(t.startId)) { const s = start(t.startId); if (t.look) removeGermCheck(s, t.look); else s.upOn = null; t.look = null; S.tasks = S.tasks.filter(x => !(x !== t && x.startId === s.id && x.kind === 'sgerm' && !x.done)); }
     if (t.kind === 'plan_sow' && p && isLive(p)) undoActivate(p);
     if (t.spawned) { S.tasks = S.tasks.filter(x => !(x.id === t.spawned && !x.done)); t.spawned = null; }
@@ -331,7 +365,7 @@ export function taskDialog(t, p) {
         s.stopped = true; S.tasks = S.tasks.filter(x => x !== t);
       } else {
         if (!await confirmBox('Delete this task?', 'Delete', true)) return;
-        if (t.kind === 'thin' && t.done) { p.thinned = false; }
+        if (t.kind === 'thin' && t.done) { p.thinned = false; unthin(container(p.containerId), p); }
         S.tasks = S.tasks.filter(x => x !== t);
         if (t.kind === 'thin' || t.kind === 'harvest') p['no_' + t.kind] = true;
         if (t.plan && t.key) p.planSkip = [...(p.planSkip || []), t.key];

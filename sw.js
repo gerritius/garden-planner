@@ -1,6 +1,6 @@
 // Offline support: network first (so updates arrive), cache fallback when offline.
 // The same file serves the real site and the test site (…/test/): each keeps its own offline copy and database.
-const VERSION = '1.55.0';   // the app's version: the same as js/version.js and releases.json (a test checks)
+const VERSION = '1.56.0';   // the app's version: the same as js/version.js and releases.json (a test checks)
 const SCOPE = new URL(self.registration.scope).pathname, SITE = /\/test\/$/.test(SCOPE) ? 'test' : 'main';
 const PREFIX = SITE === 'test' ? 'garden-planner-test-' : 'garden-planner-main-', CACHE = PREFIX + VERSION;
 const DB_NAME = SITE === 'test' ? 'garden-planner-test' : 'garden-planner';
@@ -16,7 +16,7 @@ const ASSETS = ['./', 'index.html', 'style.css', 'manifest.webmanifest', 'releas
   'js/garden/planning.js', 'js/garden/rotation.js', 'js/garden/soil.js', 'js/garden/tasks.js', 'js/garden/watering.js',
   'js/main.js', 'js/pages/calendar.js', 'js/pages/container.js', 'js/pages/home.js', 'js/pages/planting-form.js',
   'js/pages/planting.js', 'js/pages/search.js', 'js/pages/tools.js', 'js/pages/tour.js', 'js/pages/welcome.js', 'js/plants/covers.js', 'js/plants/crops.js',
-  'js/plants/germination.js', 'js/plants/growth.js', 'js/plants/learning.js', 'js/plants/problems.js', 'js/plants/seedlings.js', 'js/plants/seeds.js',
+  'js/plants/germination.js', 'js/plants/onmap.js', 'js/plants/growth.js', 'js/plants/learning.js', 'js/plants/problems.js', 'js/plants/seedlings.js', 'js/plants/seeds.js',
   'js/plants/varieties.js', 'js/products/library.js', 'js/products/pages.js', 'js/products/sprays.js', 'js/records/history.js',
   'js/records/log.js', 'js/records/notes.js', 'js/records/review.js', 'js/version.js'];
 

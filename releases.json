@@ -1,5 +1,16 @@
 [
   {
+    "version": "1.56.0",
+    "date": "2026-11-28",
+    "notes": [
+      "Bed drawings now show the plants that are really there. Harvesting asks how many plants you pulled up (tap the ones that came out), and they leave the drawing. Delete the harvest and they come back. For crops you pick over a season, like peas, it starts at 0.",
+      "Ticking off thinning asks how many plants are left, or you can use the thinning distance as before. Tick “Always do it this way” to stop being asked; change it in Tools → Settings → Garden map.",
+      "If fewer seedlings went in than a plan had room for, the drawing shows only those. Where the drawing differs from the plan, a switch above it shows the plan instead.",
+      "Planting out can take seedlings from more than one batch of the same crop, such as 8 pots and 2 that were potted on later. Tap the other batch under “Seedlings going in”.",
+      "Dragging plants is easier on a phone. Touching near a plant is enough to pick it up, Zoom makes the drawing up to 3× bigger, and dragging a plant down no longer refreshes the page."
+    ]
+  },
+  {
     "version": "1.55.0",
     "date": "2026-11-27",
     "notes": [

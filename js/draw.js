@@ -1,5 +1,6 @@
 // Top-down drawing of beds and pots. Coordinates are in cm.
 
+import { S } from './core/state.js';
 import { todayStr } from './core/util.js';
 import { activeIn, decorate, gaps, prevCrop } from './garden/garden.js';
 import { activeCovers } from './plants/covers.js';
@@ -94,7 +95,8 @@ export const Draw = (() => {
   const unthinnedDrill = p => p.layout === 'continuous' && !(p.thinned && p.method === 'seed');
   // How many plants a planting has, by its layout (cheap, even for a huge bed). For a drill not yet thinned: how many
   // it'll be once thinned (at the sowing spacing when there's no thinning distance).
-  function count(c, p) {
+  function count(c, p, real) {
+    if (real && Array.isArray(p.real)) return p.real.length;
     if (unthinnedDrill(p) && p.method === 'seed' && +p.thinSp > 0) return count(c, Object.assign({}, p, { thinned: true }));
     if (p.layout === 'free') return (p.positions || []).length;
     if (p.layout === 'center') return 1;
@@ -106,7 +108,10 @@ export const Draw = (() => {
 
   // Returns plant centres and drill lines for a planting. With more than MAX_DRAWN plants it returns no centres and
   // `many` (the count) instead: draw those as a pattern (see svg), and don't offer to arrange them by hand.
-  function layout(c, p) {
+  // real: the plants really there (p.real — once some were harvested, thinned to a number you counted, or never went
+  // in) rather than the planned layout; without p.real the two are the same.
+  function layout(c, p, real) {
+    if (real && Array.isArray(p.real)) return { pts: p.real.map(q => q.slice(0, 3)), lines: [] };
     const { W } = dims(c), m = +c.margin || 0;
     const s = Math.max(0.5, spacingNow(p));
     const lines = [];
@@ -202,7 +207,9 @@ export const Draw = (() => {
   }
   const escT = s => String(s ?? '').replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
 
-  // o: { px (screen px per cm), today, highlight (planting id), labels, gaps:[[from,to]], showMargin, edit (planting id) , cls }
+  // o: { px (screen px per cm), today, highlight (planting id), labels, gaps:[[from,to]], showMargin, edit (planting id), cls,
+  //      plan (draw the planned layouts, not the plants really there), pick: { id, sel: Set of plant numbers } (plants
+  //      being chosen — e.g. to take out — on that planting) }
   function svg(c, plantings, o = {}) {
     const { W, L } = dims(c);
     if (!(W > 0 && L > 0)) return '<svg viewBox="0 0 10 10"></svg>';
@@ -233,7 +240,7 @@ export const Draw = (() => {
       const dim = o.highlight && o.highlight !== p.id;
       s += `<g class="pl${dim ? ' dim' : ''}" data-pid="${p.id}" style="--c:${p._color}">`;
       s += `<rect x="0" y="${p.from}" width="${W}" height="${p.to - p.from}" class="sec"/>`;
-      const { pts, lines, many, drill } = layout(c, p);
+      const { pts, lines, many, drill } = layout(c, p, !o.plan);
       let r = Math.max(minR, radius(p, o.today)), cap = Infinity;
       if (many) { s += manyPlants(c, p, `${key}m${pi}`, r) + `</g>`; return; }
       if (pts.length > 1) {   // crowded plants: draw each no wider than its share, so they don't swallow the pot
@@ -245,14 +252,15 @@ export const Draw = (() => {
       // a drill: the sowing line, widening into a band as the crop grows (no wider than its rows allow)
       const band = drill ? Math.min(2 * r, (+p.rowSp || 2 * r) * 0.9) : 0;
       for (const ln of lines) s += (band > 1.5 / px ? `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drillband" stroke-width="${band.toFixed(2)}"/>` : '') + `<line x1="${ln[0]}" y1="${ln[1]}" x2="${ln[2]}" y2="${ln[3]}" class="drill" ${ns}/>`;
-      const editing = o.edit === p.id;
+      const editing = o.edit === p.id, pick = o.pick && o.pick.id === p.id ? o.pick : null;
       // a plant big enough to see is drawn as its crop's icon, once it's a plant of its own: planted out, thinned, or
       // (a sowing never thinned) come up — a dot before that, when there are too many to draw, and while arranging
-      const own = p.method !== 'seed' || p.thinned || !(+p.thinSp > 0), body = own && !editing && pts.length <= 80 && p.cropId ? icBody(p.cropId) : null;
+      const own = p.method !== 'seed' || p.thinned || !(+p.thinSp > 0), body = own && !editing && !pick && pts.length <= 80 && p.cropId ? icBody(p.cropId) : null;
       pts.forEach((q, i) => {
         const rq = rOf(q);
         if (body && rq * px >= 6 && (!q[2] || q[2] <= (o.today || todayStr()))) { const d = rq * 2.1; s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${rq}" class="plant iconbg" ${ns}/><svg x="${(q[0] - d / 2).toFixed(2)}" y="${(q[1] - d / 2).toFixed(2)}" width="${d.toFixed(2)}" height="${d.toFixed(2)}" viewBox="0 0 32 32" class="picon">${body}</svg>`; return; }
-        s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(rq, 6 / px) : rq}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;
+        if (pick) { const on = pick.sel.has(i), R = Math.max(rq, 6 / px); s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${R}" class="plant pick${on ? ' out' : ''}" data-i="${i}" ${ns}/>${on ? `<path d="M${q[0] - R * .6} ${q[1] - R * .6}L${q[0] + R * .6} ${q[1] + R * .6}M${q[0] + R * .6} ${q[1] - R * .6}L${q[0] - R * .6} ${q[1] + R * .6}" class="outx" ${ns}/>` : ''}`; return; }
+        s += `<circle cx="${q[0].toFixed(2)}" cy="${q[1].toFixed(2)}" r="${editing ? Math.max(rq, 7 / px) : rq}" class="plant${editing ? ' drag' : ''}" ${editing ? `data-i="${i}"` : ''} ${ns}/>`;
       });
       s += `</g>`;
     });
@@ -306,5 +314,5 @@ export function plotSVG(c, o = {}) {
   const px = o.width ? Math.min(o.width / W, (o.maxH || 1e9) / L) : (o.px || 2);
   const gs = o.gaps ? gaps(c).map(g => { const pc = prevCrop(c, g[0], g[1]); return [g[0], g[1], pc ? `empty · was ${crop(pc.cropId).en}` : '+ empty']; }) : [];
   const list = o.plantings || decorate(activeIn(c.id));
-  return Draw.svg(c, list, Object.assign({}, o, { px, today: o.today || todayStr(), gaps: gs }));
+  return Draw.svg(c, list, Object.assign({ plan: S.mapView === 'plan' }, o, { px, today: o.today || todayStr(), gaps: gs }));
 }
